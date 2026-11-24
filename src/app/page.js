@@ -162,8 +162,9 @@ function getStageStatus(percentage, stage = '') {
 }
 
 function renderMessageWithLinks(text) {
+  if (!text) return null;
   const urlRegex = /(https?:\/\/[^\s]+)/g;
-  const parts = text.split(urlRegex);
+  const parts = String(text).split(urlRegex);
 
   return parts.map((part, idx) => {
     if (part.match(urlRegex)) {
@@ -200,6 +201,7 @@ export default function HomePage() {
   const [messages, setMessages] = useState([]);
   const [username, setUsername] = useState('');
   const [newMessage, setNewMessage] = useState('');
+  const [chatError, setChatError] = useState('');
   const [syncing, setSyncing] = useState(false);
   const [sending, setSending] = useState(false);
   const [secondsLeft, setSecondsLeft] = useState(120);
@@ -208,15 +210,17 @@ export default function HomePage() {
   const [theme, setTheme] = useState('vice-sunset');
   const chatBottomRef = useRef(null);
 
-  const activeNick = username.trim().slice(0, 24) || 'ViceMisafir';
-
   useEffect(() => {
-    const savedName = localStorage.getItem('gta6takip_nick');
-    if (savedName) setUsername(savedName);
+    try {
+      const savedName = localStorage.getItem('gta6takip_nick');
+      if (savedName) setUsername(savedName);
 
-    const savedTheme = localStorage.getItem('gta6takip_theme');
-    if (savedTheme && THEMES.some((t) => t.id === savedTheme)) {
-      setTheme(savedTheme);
+      const savedTheme = localStorage.getItem('gta6takip_theme');
+      if (savedTheme && THEMES.some((t) => t.id === savedTheme)) {
+        setTheme(savedTheme);
+      }
+    } catch {
+      // Depolama erişimi kısıtlıysa atla
     }
 
     fetchProjects();
@@ -236,7 +240,14 @@ export default function HomePage() {
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'chat_messages' },
-        (payload) => setMessages((prev) => [...prev, payload.new])
+        (payload) => {
+          if (payload?.new) {
+            setMessages((prev) => {
+              const exists = prev.some((m) => m.id === payload.new.id);
+              return exists ? prev : [...prev, payload.new];
+            });
+          }
+        }
       )
       .subscribe();
 
@@ -248,13 +259,18 @@ export default function HomePage() {
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
-    localStorage.setItem('gta6takip_theme', theme);
+    try {
+      localStorage.setItem('gta6takip_theme', theme);
+    } catch {
+      // ignore
+    }
   }, [theme]);
 
   useEffect(() => {
+    const currentNick = username.trim().slice(0, 24) || 'ViceMisafir';
     const presenceChannel = supabase.channel('gta6takip-online-room', {
       config: {
-        presence: { key: activeNick },
+        presence: { key: currentNick },
       },
     });
 
@@ -262,12 +278,12 @@ export default function HomePage() {
       .on('presence', { event: 'sync' }, () => {
         const state = presenceChannel.presenceState();
         const names = Object.keys(state);
-        setOnlineUsers(names.length > 0 ? names : [activeNick]);
+        setOnlineUsers(names.length > 0 ? names : [currentNick]);
       })
       .subscribe(async (status) => {
         if (status === 'SUBSCRIBED') {
           await presenceChannel.track({
-            user: activeNick,
+            user: currentNick,
             online_at: new Date().toISOString(),
           });
         }
@@ -276,7 +292,7 @@ export default function HomePage() {
     return () => {
       supabase.removeChannel(presenceChannel);
     };
-  }, [activeNick]);
+  }, [username]);
 
   useEffect(() => {
     const countdown = setInterval(() => {
@@ -327,9 +343,13 @@ export default function HomePage() {
         .select('*')
         .order('id', { ascending: true })
         .limit(100);
-      if (!error && Array.isArray(data)) setMessages(data);
-    } catch {
-      // Bağlantı kurulana kadar boş bırak
+      if (!error && Array.isArray(data)) {
+        setMessages(data);
+      } else if (error) {
+        setChatError(`Sohbet okuma hatası: ${error.message}`);
+      }
+    } catch (err) {
+      setChatError(`Bağlantı hatası: ${err?.message || 'Bilinmiyor'}`);
     }
   }
 
@@ -346,22 +366,54 @@ export default function HomePage() {
   }
 
   async function handleSendMessage(e) {
-    e.preventDefault();
+    if (e && e.preventDefault) e.preventDefault();
+    setChatError('');
+
     const cleanMsg = newMessage.trim();
-    if (!cleanMsg || sending) return;
+    const cleanNick = username.trim().slice(0, 24) || 'ViceMisafir';
+
+    if (!cleanMsg) {
+      setChatError('Lütfen önce bir mesaj veya link yaz.');
+      return;
+    }
+    if (sending) return;
 
     setSending(true);
-    localStorage.setItem('gta6takip_nick', activeNick);
+    try {
+      localStorage.setItem('gta6takip_nick', cleanNick);
+    } catch {
+      // ignore
+    }
 
-    const { error } = await supabase.from('chat_messages').insert([
-      {
-        username: activeNick,
-        message: cleanMsg.slice(0, 500),
-      },
-    ]);
+    try {
+      const { data, error } = await supabase
+        .from('chat_messages')
+        .insert([
+          {
+            username: cleanNick,
+            message: cleanMsg.slice(0, 500),
+          },
+        ])
+        .select();
 
-    if (!error) setNewMessage('');
-    setSending(false);
+      if (error) {
+        setChatError(`Gönderilemedi: ${error.message}`);
+      } else {
+        setNewMessage('');
+        if (Array.isArray(data) && data.length > 0) {
+          setMessages((prev) => {
+            const exists = prev.some((m) => m.id === data[0].id);
+            return exists ? prev : [...prev, data[0]];
+          });
+        } else {
+          await fetchMessages();
+        }
+      }
+    } catch (err) {
+      setChatError(`Beklenmeyen hata: ${err?.message || 'İstek başarısız'}`);
+    } finally {
+      setSending(false);
+    }
   }
 
   const topScore =
@@ -547,7 +599,6 @@ export default function HomePage() {
                       </span>
                     </div>
 
-                    {/* 3D Bar + Yanında Net Aşama Simgesi */}
                     <div className="flex items-center gap-2.5 mb-3">
                       <div className="relative flex-1 h-6 sm:h-7 rounded-2xl bg-black/55 p-1 border border-white/15 shadow-[inset_0_3px_8px_rgba(0,0,0,0.85)] overflow-hidden">
                         <div
@@ -639,7 +690,11 @@ export default function HomePage() {
               value={username}
               onChange={(e) => {
                 setUsername(e.target.value);
-                localStorage.setItem('gta6takip_nick', e.target.value);
+                try {
+                  localStorage.setItem('gta6takip_nick', e.target.value);
+                } catch {
+                  // ignore
+                }
               }}
               maxLength={24}
               placeholder="Takma adını yaz..."
@@ -654,9 +709,9 @@ export default function HomePage() {
                 <p>Nickname'ini yazıp ilk mesajı veya GTA VI port linkini paylaşabilirsin.</p>
               </div>
             ) : (
-              messages.map((msg) => (
+              messages.map((msg, idx) => (
                 <div
-                  key={msg.id}
+                  key={msg.id || idx}
                   className="rounded-2xl bg-white/[0.04] border border-white/10 p-3 space-y-1"
                 >
                   <div className="flex items-center justify-between gap-2">
@@ -679,6 +734,12 @@ export default function HomePage() {
             <div ref={chatBottomRef} />
           </div>
 
+          {chatError && (
+            <div className="px-4 py-2 bg-rose-500/15 border-t border-rose-400/30 text-xs text-rose-200">
+              {chatError}
+            </div>
+          )}
+
           <form
             onSubmit={handleSendMessage}
             className="p-3 sm:p-3.5 bg-black/35 border-t border-white/10 flex items-center gap-2 shrink-0"
@@ -687,17 +748,22 @@ export default function HomePage() {
               type="text"
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  handleSendMessage(e);
+                }
+              }}
               maxLength={500}
               placeholder="Mesaj yaz veya https:// link yapıştır..."
               className="flex-1 min-w-0 rounded-xl bg-white/[0.06] border border-white/15 px-3.5 py-2.5 text-xs sm:text-sm text-white placeholder:text-slate-400 focus:outline-none focus:border-white/35"
             />
             <button
               type="submit"
-              disabled={sending || !newMessage.trim()}
+              disabled={sending}
               className="gta-bar-fill px-4 py-2.5 rounded-xl hover:brightness-110 disabled:opacity-40 text-white font-bold text-xs sm:text-sm inline-flex items-center gap-1.5 transition cursor-pointer shrink-0"
             >
               <Send className="w-4 h-4" />
-              <span>Gönder</span>
+              <span>{sending ? 'Atılıyor...' : 'Gönder'}</span>
             </button>
           </form>
         </aside>
