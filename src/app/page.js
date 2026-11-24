@@ -125,35 +125,39 @@ const FALLBACK_PROJECTS = [
   },
 ];
 
-function getStageEmojiBadge(percentage, stage = '') {
+function getStageStatus(percentage, stage = '') {
   const pct = Number(percentage) || 0;
   const s = stage.toLowerCase();
 
   if (pct >= 85 || s.includes('30 fps') || s.includes('60 fps')) {
     return {
-      emoji: '⚡',
+      symbol: '⚡',
       label: 'FPS Hedefi',
-      style: 'bg-amber-400/15 text-amber-200 border-amber-400/35',
+      dotColor: 'bg-amber-300',
+      style: 'bg-amber-400/15 text-amber-200 border-amber-400/40',
     };
   }
   if (pct >= 60 || s.includes('oyun içi') || s.includes('dünya')) {
     return {
-      emoji: '🎮',
+      symbol: '▶',
       label: 'Oyun İçi',
-      style: 'bg-emerald-400/15 text-emerald-200 border-emerald-400/35',
+      dotColor: 'bg-emerald-400',
+      style: 'bg-emerald-500/15 text-emerald-200 border-emerald-400/40',
     };
   }
   if (pct >= 40 || s.includes('ilk kare') || s.includes('menü')) {
     return {
-      emoji: '🖥️',
+      symbol: '◆',
       label: 'İlk Kare',
-      style: 'bg-sky-400/15 text-sky-200 border-sky-400/35',
+      dotColor: 'bg-sky-400',
+      style: 'bg-sky-500/15 text-sky-200 border-sky-400/40',
     };
   }
   return {
-    emoji: '🚀',
+    symbol: '■',
     label: 'Boot / Exe',
-    style: 'bg-purple-400/15 text-purple-200 border-purple-400/35',
+    dotColor: 'bg-purple-400',
+    style: 'bg-purple-500/15 text-purple-200 border-purple-400/40',
   };
 }
 
@@ -483,7 +487,7 @@ export default function HomePage() {
                   Ekiplerin Tamamlanma Yüzdeleri
                 </h1>
                 <p className="text-xs text-slate-300/90">
-                  3D barların yanındaki aşama emojileri ekibin hangi seviyede olduğunu gösterir; sayfa her 120 saniyede bir otomatik güncellenir.
+                  3D barların yanındaki aşama göstergeleri ekibin hangi seviyede olduğunu gösterir; sayfa her 120 saniyede bir otomatik güncellenir.
                 </p>
               </div>
 
@@ -512,7 +516,7 @@ export default function HomePage() {
             <ul className="flex flex-col gap-3.5 list-none p-0 m-0">
               {projects.map((proj, index) => {
                 const pct = Math.min(100, Math.max(0, Number(proj.percentage) || 0));
-                const badge = getStageEmojiBadge(pct, proj.stage);
+                const badge = getStageStatus(pct, proj.stage);
 
                 return (
                   <li
@@ -543,7 +547,7 @@ export default function HomePage() {
                       </span>
                     </div>
 
-                    {/* 3D Bar + Yanında Gerçek Emoji Aşama Rozeti */}
+                    {/* 3D Bar + Yanında Net Aşama Simgesi */}
                     <div className="flex items-center gap-2.5 mb-3">
                       <div className="relative flex-1 h-6 sm:h-7 rounded-2xl bg-black/55 p-1 border border-white/15 shadow-[inset_0_3px_8px_rgba(0,0,0,0.85)] overflow-hidden">
                         <div
@@ -559,12 +563,11 @@ export default function HomePage() {
 
                       <div
                         title={proj.stage || badge.label}
-                        className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-xs font-bold shrink-0 ${badge.style}`}
+                        className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-extrabold shrink-0 ${badge.style}`}
                       >
-                        <span className="text-sm leading-none" role="img" aria-label={badge.label}>
-                          {badge.emoji}
-                        </span>
-                        <span className="hidden sm:inline">{badge.label}</span>
+                        <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${badge.dotColor}`} />
+                        <span className="font-mono text-xs leading-none">{badge.symbol}</span>
+                        <span>{badge.label}</span>
                       </div>
                     </div>
 
