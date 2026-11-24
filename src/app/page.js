@@ -13,6 +13,7 @@ import {
   Sparkles,
   Link as LinkIcon,
   User,
+  Trophy,
 } from 'lucide-react';
 
 const FALLBACK_PROJECTS = [
@@ -110,7 +111,7 @@ function renderMessageWithLinks(text) {
           href={part}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-1 text-pink-400 underline decoration-pink-500/50 hover:text-amber-300 break-all font-medium"
+          className="inline-flex items-center gap-1 text-pink-300 underline decoration-pink-400/60 hover:text-amber-300 break-all font-medium"
         >
           <LinkIcon className="w-3.5 h-3.5 shrink-0" />
           {part}
@@ -239,183 +240,206 @@ export default function HomePage() {
       ? Math.max(...projects.map((p) => Number(p.percentage) || 0))
       : 79;
 
+  const leaderName = projects[0]?.name || 'omonkey';
+
   return (
-    <div className="min-h-screen text-white">
-      <header className="sticky top-0 z-30 backdrop-blur-xl bg-[#090614]/85 border-b border-pink-500/20">
-        <div className="max-w-5xl mx-auto px-4 py-3.5 flex flex-wrap items-center justify-between gap-3">
+    <div className="min-h-screen text-white flex flex-col">
+      {/* GTA VI Vice City Üst Bar */}
+      <header className="sticky top-0 z-30 backdrop-blur-2xl bg-[#090517]/85 border-b border-pink-500/25 shadow-[0_4px_30px_rgba(236,72,153,0.12)]">
+        <div className="max-w-[1440px] mx-auto px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 via-pink-500 to-purple-700 flex items-center justify-center shadow-lg shadow-pink-500/30">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 via-pink-500 to-violet-700 flex items-center justify-center shadow-[0_0_20px_rgba(236,72,153,0.45)] ring-1 ring-white/20">
               <Flame className="w-5 h-5 text-white" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-xl font-black tracking-tight bg-gradient-to-r from-amber-300 via-pink-400 to-purple-400 bg-clip-text text-transparent">
+                <span className="text-xl sm:text-2xl font-black tracking-wider uppercase bg-gradient-to-r from-amber-300 via-pink-400 to-cyan-300 bg-clip-text text-transparent">
                   GTA6takip
                 </span>
-                <span className="text-[11px] px-2 py-0.5 rounded-full bg-pink-500/15 border border-pink-500/30 text-pink-300 font-semibold">
-                  CANLI PC PORT
+                <span className="hidden sm:inline-flex items-center gap-1 text-[10px] tracking-widest uppercase px-2.5 py-0.5 rounded-full bg-gradient-to-r from-pink-500/20 to-amber-500/20 border border-pink-400/35 text-amber-200 font-bold">
+                  LEONIDA • PC PORT
                 </span>
               </div>
-              <p className="text-xs text-slate-400">GTA VI PC Portlama Ekipleri İlerleme Takibi</p>
+              <p className="text-[11px] sm:text-xs text-slate-400">
+                Gerçek Zamanlı PC Port İlerleme Panosu & Türkçe Sohbet
+              </p>
             </div>
           </div>
 
-          <button
-            onClick={handleAutoSync}
-            disabled={syncing}
-            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold bg-gradient-to-r from-pink-600/30 to-amber-500/30 hover:from-pink-600/50 hover:to-amber-500/50 border border-pink-400/30 transition cursor-pointer"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 text-amber-300 ${syncing ? 'animate-spin' : ''}`} />
-            {syncing ? 'GitHub Taranıyor...' : 'Otomatik Veriyi Yenile'}
-          </button>
+          <div className="flex items-center gap-2.5">
+            <div className="hidden md:flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-white/[0.04] border border-white/10 text-xs">
+              <Trophy className="w-3.5 h-3.5 text-amber-300" />
+              <span className="text-slate-400">Lider:</span>
+              <span className="font-bold text-white">{leaderName}</span>
+              <span className="font-black text-pink-400">%{topScore}</span>
+            </div>
+
+            <button
+              onClick={handleAutoSync}
+              disabled={syncing}
+              className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-amber-500/25 via-pink-600/30 to-purple-600/30 hover:from-amber-500/40 hover:to-pink-600/50 border border-pink-400/40 shadow-[0_0_15px_rgba(236,72,153,0.2)] transition cursor-pointer"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 text-amber-300 ${syncing ? 'animate-spin' : ''}`} />
+              <span>{syncing ? 'Taranıyor...' : 'Veriyi Güncelle'}</span>
+            </button>
+          </div>
         </div>
       </header>
 
-      <section className="max-w-5xl mx-auto px-4 pt-7 pb-4">
-        <div className="rounded-3xl p-6 md:p-7 bg-gradient-to-r from-purple-950/60 via-[#160b2e]/85 to-pink-950/50 border border-pink-500/25 shadow-2xl">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-5">
-            <div className="space-y-2 max-w-xl">
-              <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-300 bg-amber-400/10 border border-amber-400/25 px-3 py-1 rounded-full">
-                <Sparkles className="w-3.5 h-3.5" />
-                Otomatik GitHub & Topluluk Takibi
+      {/* Ana Alan: PC'de Sol % İlerleme + Sağ Canlı Sohbet */}
+      <main className="flex-1 max-w-[1440px] w-full mx-auto px-4 sm:px-6 py-5 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        {/* SOL SÜTUN: % İlerleme Çubukları ve Ekipler (Kaydırmalı Alan) */}
+        <section className="lg:col-span-7 xl:col-span-8 flex flex-col gap-4">
+          {/* Üst Neon Özet Bandı */}
+          <div className="rounded-3xl p-4 sm:p-5 bg-gradient-to-r from-[#1b0b36]/90 via-[#240b38]/85 to-[#2c112b]/90 border border-pink-500/30 shadow-[0_12px_40px_rgba(0,0,0,0.5)]">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div className="space-y-1">
+                <div className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-amber-300 bg-amber-400/10 border border-amber-400/25 px-2.5 py-0.5 rounded-full">
+                  <Sparkles className="w-3 h-3" />
+                  Vice City PC Port Radar
+                </div>
+                <h1 className="text-xl sm:text-2xl font-black tracking-tight text-white">
+                  Ekiplerin{' '}
+                  <span className="bg-gradient-to-r from-amber-300 via-pink-400 to-cyan-300 bg-clip-text text-transparent">
+                    Tamamlanma Yüzdeleri
+                  </span>
+                </h1>
+                <p className="text-xs text-slate-300">
+                  Sol paneldeki 3D çubuklardan güncel oranları ve özetleri incele, sağ panelden anlık sohbete katıl.
+                </p>
               </div>
-              <h1 className="text-2xl sm:text-3xl font-black tracking-tight leading-tight">
-                GTA VI PC Portunda{' '}
-                <span className="bg-gradient-to-r from-amber-300 via-pink-400 to-cyan-300 bg-clip-text text-transparent">
-                  Ekipler Yüzde Kaçta?
-                </span>
-              </h1>
-              <p className="text-xs sm:text-sm text-slate-300">
-                Ekiplerin güncel tamamlanma yüzdelerini, aşamalarını ve kısa özetlerini maddeler halinde 3D çubuklarla incele; alttan nickname yazıp sohbete katıl.
-              </p>
-            </div>
 
-            <div className="grid grid-cols-3 gap-2.5 shrink-0">
-              <div className="rounded-2xl bg-black/45 border border-white/10 p-3.5 text-center">
-                <div className="text-[11px] text-slate-400">Lider Oran</div>
-                <div className="text-xl sm:text-2xl font-black text-amber-300 mt-0.5">%{topScore}</div>
-              </div>
-              <div className="rounded-2xl bg-black/45 border border-white/10 p-3.5 text-center">
-                <div className="text-[11px] text-slate-400">Takip Edilen</div>
-                <div className="text-xl sm:text-2xl font-black text-pink-400 mt-0.5">{projects.length} Ekip</div>
-              </div>
-              <div className="rounded-2xl bg-black/45 border border-white/10 p-3.5 text-center">
-                <div className="text-[11px] text-slate-400">Hedef</div>
-                <div className="text-xl sm:text-2xl font-black text-cyan-300 mt-0.5">%100</div>
+              <div className="flex items-center gap-2 shrink-0">
+                <div className="rounded-2xl bg-black/45 border border-pink-500/20 px-3.5 py-2 text-center">
+                  <div className="text-[10px] uppercase tracking-wider text-slate-400">Zirve</div>
+                  <div className="text-lg sm:text-xl font-black text-amber-300">%{topScore}</div>
+                </div>
+                <div className="rounded-2xl bg-black/45 border border-pink-500/20 px-3.5 py-2 text-center">
+                  <div className="text-[10px] uppercase tracking-wider text-slate-400">Ekip</div>
+                  <div className="text-lg sm:text-xl font-black text-pink-400">{projects.length}</div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      </section>
 
-      <main className="max-w-5xl mx-auto px-4 pb-14 space-y-10">
-        {/* Maddeler Halinde Sıralanan Tablo / Liste + 3D Barlar */}
-        <section className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg sm:text-xl font-extrabold flex items-center gap-2">
-              <Cpu className="w-5 h-5 text-pink-400" />
-              Portlama Ekipleri Listesi ve Yüzdeleri
+          {/* Başlık Satırı */}
+          <div className="flex items-center justify-between px-1">
+            <h2 className="text-sm sm:text-base font-extrabold flex items-center gap-2 text-pink-200">
+              <Cpu className="w-4 h-4 text-amber-300" />
+              Portlama Ekipleri Sıralaması
             </h2>
-            <span className="text-xs text-slate-400">Madde madde sıralı</span>
+            <span className="text-[11px] text-slate-400">Kaydırmalı liste • Yüksekten düşüğe</span>
           </div>
 
-          <ul className="flex flex-col gap-4 list-none p-0 m-0">
-            {projects.map((proj, index) => {
-              const pct = Math.min(100, Math.max(0, Number(proj.percentage) || 0));
-              return (
-                <li
-                  key={proj.id || index}
-                  className="rounded-2xl p-5 sm:p-6 bg-gradient-to-b from-white/[0.06] to-white/[0.02] border border-white/10 hover:border-pink-500/40 shadow-[0_10px_30px_rgba(0,0,0,0.45)] transition"
-                >
-                  {/* Madde Başlığı: Ekip Adı + Yüzde */}
-                  <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
-                    <div className="flex items-center gap-2.5 flex-wrap">
-                      <span className="text-xs font-black px-2.5 py-1 rounded-lg bg-pink-500/20 border border-pink-400/30 text-pink-200">
-                        • #{index + 1}
-                      </span>
-                      <h3 className="text-xl sm:text-2xl font-black tracking-tight text-white">
-                        {proj.name}
-                      </h3>
-                      <span
-                        className={`text-[11px] px-2.5 py-0.5 rounded-full font-semibold ${
-                          proj.is_open_source
-                            ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30'
-                            : 'bg-amber-500/15 text-amber-300 border border-amber-500/30'
-                        }`}
-                      >
-                        {proj.is_open_source ? 'Açık Kaynak' : 'Kapalı / Özel'}
-                      </span>
-                    </div>
+          {/* Kaydırmalı 3D Bar Listesi */}
+          <div className="lg:max-h-[calc(100vh-235px)] lg:overflow-y-auto vice-scroll lg:pr-2">
+            <ul className="flex flex-col gap-3.5 list-none p-0 m-0">
+              {projects.map((proj, index) => {
+                const pct = Math.min(100, Math.max(0, Number(proj.percentage) || 0));
+                return (
+                  <li
+                    key={proj.id || index}
+                    className="rounded-2xl p-4 sm:p-5 bg-gradient-to-br from-[#160b2c]/90 via-[#120824]/90 to-[#1f0b2d]/85 border border-white/10 hover:border-pink-400/45 shadow-[0_10px_28px_rgba(0,0,0,0.45)] transition"
+                  >
+                    {/* Ekip Başlığı ve Yüzde */}
+                    <div className="flex items-center justify-between gap-3 mb-2.5">
+                      <div className="flex items-center gap-2.5 flex-wrap min-w-0">
+                        <span className="text-xs font-black px-2.5 py-0.5 rounded-lg bg-gradient-to-r from-amber-500/20 to-pink-500/20 border border-pink-400/35 text-amber-200 shrink-0">
+                          #{index + 1}
+                        </span>
+                        <h3 className="text-lg sm:text-xl font-black tracking-tight text-white truncate">
+                          {proj.name}
+                        </h3>
+                        <span
+                          className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wide shrink-0 ${
+                            proj.is_open_source
+                              ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-400/30'
+                              : 'bg-amber-500/15 text-amber-300 border border-amber-400/30'
+                          }`}
+                        >
+                          {proj.is_open_source ? 'Açık Kaynak' : 'Kapalı Ekip'}
+                        </span>
+                      </div>
 
-                    <div className="flex items-baseline gap-2">
-                      <span className="text-xs text-slate-400 font-medium">İlerleme:</span>
-                      <span className="text-2xl sm:text-3xl font-black bg-gradient-to-r from-amber-300 via-pink-400 to-cyan-300 bg-clip-text text-transparent">
+                      <span className="text-xl sm:text-2xl font-black bg-gradient-to-r from-amber-300 via-pink-400 to-cyan-300 bg-clip-text text-transparent shrink-0">
                         %{pct}
                       </span>
                     </div>
-                  </div>
 
-                  {/* 3D Görünümlü İlerleme Çubuğu */}
-                  <div className="relative w-full h-7 rounded-2xl bg-[#070410] p-1 border border-white/15 shadow-[inset_0_4px_10px_rgba(0,0,0,0.9),0_2px_6px_rgba(236,72,153,0.15)] mb-3.5 overflow-hidden">
-                    <div
-                      className="relative h-full rounded-xl bg-gradient-to-r from-amber-400 via-pink-500 to-purple-600 shadow-[0_4px_15px_rgba(236,72,153,0.55),inset_0_2px_3px_rgba(255,255,255,0.55),inset_0_-3px_5px_rgba(88,28,135,0.75)] transition-all duration-700 flex items-center justify-end pr-2.5"
-                      style={{ width: `${Math.max(pct, 8)}%` }}
-                    >
-                      <div className="absolute inset-x-1 top-0.5 h-2 rounded-full bg-white/35 pointer-events-none" />
-                      <span className="relative z-10 text-[11px] font-black text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
-                        %{pct}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Aşama, Kısa Özet ve Kaynak Linki */}
-                  <div className="flex flex-wrap items-start justify-between gap-3 text-xs sm:text-sm text-slate-300">
-                    <div className="space-y-1 max-w-3xl">
-                      <p className="text-xs font-bold text-amber-300">
-                        Aşama: {proj.stage || 'Geliştirme'} {proj.fps && proj.fps !== '-' ? `(${proj.fps})` : ''}
-                      </p>
-                      <p className="text-xs text-slate-300 leading-relaxed">
-                        {proj.description}
-                      </p>
-                    </div>
-
-                    {proj.repo_url && (
-                      <a
-                        href={proj.repo_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-pink-500/20 border border-white/10 hover:border-pink-400/40 text-pink-300 hover:text-amber-300 text-xs font-semibold transition shrink-0"
+                    {/* 3D Neon İlerleme Çubuğu */}
+                    <div className="relative w-full h-6 sm:h-7 rounded-2xl bg-[#06030f] p-1 border border-white/15 shadow-[inset_0_4px_10px_rgba(0,0,0,0.95),0_2px_8px_rgba(236,72,153,0.18)] mb-3 overflow-hidden">
+                      <div
+                        className="relative h-full rounded-xl bg-gradient-to-r from-amber-400 via-pink-500 to-violet-600 shadow-[0_0_16px_rgba(236,72,153,0.55),inset_0_2px_3px_rgba(255,255,255,0.6),inset_0_-3px_5px_rgba(76,29,149,0.85)] transition-all duration-700 flex items-center justify-end pr-2.5"
+                        style={{ width: `${Math.max(pct, 9)}%` }}
                       >
-                        Kaynağa Git <ExternalLink className="w-3.5 h-3.5" />
-                      </a>
-                    )}
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
+                        <div className="absolute inset-x-1 top-0.5 h-2 rounded-full bg-white/35 pointer-events-none" />
+                        <span className="relative z-10 text-[11px] font-black text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
+                          %{pct}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Aşama, Kısa Özet ve Kaynak Linki */}
+                    <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2.5 text-xs text-slate-300">
+                      <div className="space-y-1">
+                        <p className="text-xs font-bold text-amber-300">
+                          Aşama: {proj.stage || 'Geliştirme'}{' '}
+                          {proj.fps && proj.fps !== '-' ? `• ${proj.fps}` : ''}
+                        </p>
+                        <p className="text-xs text-slate-300/95 leading-relaxed">
+                          {proj.description}
+                        </p>
+                      </div>
+
+                      {proj.repo_url && (
+                        <a
+                          href={proj.repo_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-white/[0.06] hover:bg-pink-500/25 border border-white/10 hover:border-pink-400/50 text-pink-200 hover:text-amber-300 text-xs font-semibold transition shrink-0 self-start sm:self-end"
+                        >
+                          Kaynak <ExternalLink className="w-3.5 h-3.5" />
+                        </a>
+                      )}
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
         </section>
 
-        {/* Canlı Sohbet ve Nickname Alanı */}
-        <section className="rounded-3xl bg-[#110924]/95 border border-pink-500/30 overflow-hidden shadow-2xl">
-          <div className="p-4 sm:p-5 border-b border-white/10 bg-gradient-to-r from-pink-600/20 to-purple-600/20 flex flex-wrap items-center justify-between gap-3">
+        {/* SAĞ SÜTUN: GTA VI Canlı Sohbet ve Link Paylaşımı */}
+        <aside className="lg:col-span-5 xl:col-span-4 rounded-3xl bg-gradient-to-b from-[#160a2e]/95 to-[#0d061c]/95 border border-pink-500/30 overflow-hidden shadow-[0_14px_45px_rgba(0,0,0,0.6)] flex flex-col lg:sticky lg:top-[76px] lg:h-[calc(100vh-98px)] min-h-[520px]">
+          {/* Sohbet Başlığı */}
+          <div className="p-4 border-b border-white/10 bg-gradient-to-r from-amber-500/15 via-pink-600/25 to-purple-700/25 flex items-center justify-between gap-2 shrink-0">
             <div className="flex items-center gap-2.5">
-              <MessageSquare className="w-5 h-5 text-pink-400" />
+              <div className="w-9 h-9 rounded-xl bg-pink-500/20 border border-pink-400/35 flex items-center justify-center">
+                <MessageSquare className="w-4 h-4 text-pink-300" />
+              </div>
               <div>
-                <h2 className="text-base sm:text-lg font-bold">GTA6takip Türkçe Canlı Sohbet</h2>
-                <p className="text-xs text-slate-300">Kendi nickname'ini yaz, sohbete katıl ve link paylaş</p>
+                <h2 className="text-sm sm:text-base font-extrabold text-white">
+                  Vice City Canlı Sohbet
+                </h2>
+                <p className="text-[11px] text-slate-300">
+                  Nickname yaz, sohbet et ve link paylaş
+                </p>
               </div>
             </div>
-            <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-300 bg-emerald-500/15 border border-emerald-500/30 px-3 py-1 rounded-full">
+            <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-emerald-300 bg-emerald-500/15 border border-emerald-400/30 px-2.5 py-1 rounded-full shrink-0">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              Canlı Akış
+              Canlı
             </span>
           </div>
 
-          <div className="p-3.5 sm:px-5 bg-black/40 border-b border-white/10 flex flex-col sm:flex-row sm:items-center gap-2.5">
-            <label htmlFor="nickname-input" className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-300 shrink-0">
-              <User className="w-4 h-4 text-amber-300" />
-              Takma Adın (Nickname):
+          {/* Nickname Giriş Kutusu */}
+          <div className="px-4 py-3 bg-black/40 border-b border-white/10 flex items-center gap-2.5 shrink-0">
+            <label
+              htmlFor="nickname-input"
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-pink-200 shrink-0"
+            >
+              <User className="w-3.5 h-3.5 text-amber-300" />
+              Nickname:
             </label>
             <input
               id="nickname-input"
@@ -426,26 +450,27 @@ export default function HomePage() {
                 localStorage.setItem('gta6takip_nick', e.target.value);
               }}
               maxLength={24}
-              placeholder="Nickname yaz (örn: Kazarre13)"
-              className="w-full sm:max-w-xs rounded-xl bg-white/10 border border-pink-400/35 px-3.5 py-2 text-xs sm:text-sm font-bold text-amber-300 placeholder:text-slate-400 placeholder:font-normal focus:outline-none focus:border-amber-300"
+              placeholder="Takma adını yaz..."
+              className="w-full rounded-xl bg-white/[0.08] border border-pink-400/35 px-3 py-1.5 text-xs sm:text-sm font-bold text-amber-300 placeholder:text-slate-400 placeholder:font-normal focus:outline-none focus:border-amber-300"
             />
           </div>
 
-          <div className="h-[360px] overflow-y-auto p-4 sm:p-5 space-y-3">
+          {/* Kaydırmalı Sohbet Mesaj Alanı */}
+          <div className="flex-1 overflow-y-auto vice-scroll p-4 space-y-3">
             {messages.length === 0 ? (
-              <div className="h-full flex flex-col items-center justify-center text-center text-slate-400 text-xs sm:text-sm space-y-1">
-                <p>Henüz sohbete mesaj yazılmamış.</p>
-                <p>Yukarıya nickname'ini yazıp ilk mesajı veya linki paylaşabilirsin!</p>
+              <div className="h-full flex flex-col items-center justify-center text-center text-slate-400 text-xs space-y-1.5 px-4">
+                <p className="font-semibold text-pink-200/80">Sohbet odası aktif!</p>
+                <p>Nickname'ini yazıp ilk mesajı veya GTA VI port linkini paylaşabilirsin.</p>
               </div>
             ) : (
               messages.map((msg) => (
                 <div
                   key={msg.id}
-                  className="rounded-2xl bg-white/[0.05] border border-white/10 p-3.5 space-y-1"
+                  className="rounded-2xl bg-white/[0.05] hover:bg-white/[0.07] border border-white/10 p-3 space-y-1 transition"
                 >
                   <div className="flex items-center justify-between gap-2">
-                    <span className="text-xs sm:text-sm font-bold text-pink-300">{msg.username}</span>
-                    <span className="text-[11px] text-slate-500">
+                    <span className="text-xs font-extrabold text-amber-300">{msg.username}</span>
+                    <span className="text-[10px] text-slate-400">
                       {msg.created_at
                         ? new Date(msg.created_at).toLocaleTimeString('tr-TR', {
                             hour: '2-digit',
@@ -463,29 +488,34 @@ export default function HomePage() {
             <div ref={chatBottomRef} />
           </div>
 
-          <form onSubmit={handleSendMessage} className="p-3.5 sm:p-4 bg-black/50 border-t border-white/10 flex flex-col sm:flex-row gap-2.5">
+          {/* Mesaj Gönderme Formu */}
+          <form
+            onSubmit={handleSendMessage}
+            className="p-3 sm:p-3.5 bg-black/55 border-t border-white/10 flex items-center gap-2 shrink-0"
+          >
             <input
               type="text"
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
               maxLength={500}
-              placeholder="Mesajını yaz veya link yapıştır (https://...)"
-              className="flex-1 rounded-xl bg-white/5 border border-white/15 px-4 py-3 text-xs sm:text-sm text-white placeholder:text-slate-400 focus:outline-none focus:border-pink-400"
+              placeholder="Mesaj yaz veya https:// link yapıştır..."
+              className="flex-1 min-w-0 rounded-xl bg-white/[0.06] border border-white/15 px-3.5 py-2.5 text-xs sm:text-sm text-white placeholder:text-slate-400 focus:outline-none focus:border-pink-400"
             />
             <button
               type="submit"
               disabled={sending || !newMessage.trim()}
-              className="px-6 py-3 rounded-xl bg-gradient-to-r from-pink-500 to-amber-500 hover:opacity-95 disabled:opacity-40 text-white font-bold text-xs sm:text-sm inline-flex items-center justify-center gap-2 transition cursor-pointer shrink-0"
+              className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 via-pink-500 to-purple-600 hover:brightness-110 disabled:opacity-40 text-white font-bold text-xs sm:text-sm inline-flex items-center gap-1.5 shadow-[0_0_15px_rgba(236,72,153,0.35)] transition cursor-pointer shrink-0"
             >
               <Send className="w-4 h-4" />
-              Gönder
+              <span>Gönder</span>
             </button>
           </form>
-        </section>
+        </aside>
       </main>
 
-      <footer className="border-t border-white/10 py-6 px-4 text-center text-xs text-slate-400">
-        <div className="max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-center gap-2">
+      {/* Alt Bilgi */}
+      <footer className="border-t border-white/10 py-4 px-4 text-center text-[11px] text-slate-400 bg-black/30">
+        <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-center gap-2">
           <ShieldCheck className="w-4 h-4 text-pink-400 shrink-0" />
           <span>
             GTA6takip bağımsız bir topluluk takip sitesidir; Rockstar Games veya Take-Two ile resmi bağlantısı yoktur.
