@@ -14,6 +14,8 @@ import {
   Link as LinkIcon,
   User,
   Trophy,
+  Users,
+  Clock,
 } from 'lucide-react';
 
 const FALLBACK_PROJECTS = [
@@ -23,9 +25,11 @@ const FALLBACK_PROJECTS = [
     percentage: 79,
     fps: '~5 FPS',
     stage: 'Oyun İçi (Hapishane)',
-    description: 'Lucia hapishane sahnesinde shader yüklemesi ve karakter hareketi sağlandı; Rumble üzerinde canlı yayınlanıyor.',
+    description:
+      'Lucia hapishane sahnesinde shader yüklemesi ve karakter hareketi sağlandı; Rumble üzerinde canlı yayınlanıyor.',
     repo_url: 'https://t.me/omonkey6',
     is_open_source: false,
+    updated_at: null,
   },
   {
     id: 2,
@@ -33,9 +37,11 @@ const FALLBACK_PROJECTS = [
     percentage: 78,
     fps: '3 FPS (RTX 4090)',
     stage: 'Oyun İçi (3D Render)',
-    description: 'VIctory + XCL birleşimiyle en gelişmiş 3D grafik renderı ve erken raytracing ışıklandırması elde edildi.',
+    description:
+      'VIctory + XCL birleşimiyle en gelişmiş 3D grafik renderı ve erken raytracing ışıklandırması elde edildi.',
     repo_url: 'https://github.com/fxceless/victory-gta6',
     is_open_source: true,
+    updated_at: null,
   },
   {
     id: 3,
@@ -43,9 +49,11 @@ const FALLBACK_PROJECTS = [
     percentage: 72,
     fps: 'Bilinmiyor',
     stage: 'Oyun İçi (Prologue)',
-    description: 'Açılış ara sahnesi ("Nine Months Ago") ve oyun içi telefon arayüzü çalıştırıldı; gizli kolektif olarak ilerliyor.',
+    description:
+      'Açılış ara sahnesi ("Nine Months Ago") ve oyun içi telefon arayüzü çalıştırıldı; gizli kolektif olarak ilerliyor.',
     repo_url: 'https://gta6recomp.com/repo',
     is_open_source: false,
+    updated_at: null,
   },
   {
     id: 4,
@@ -53,9 +61,11 @@ const FALLBACK_PROJECTS = [
     percentage: 70,
     fps: '30 FPS (Menü)',
     stage: 'Oyun İçi (Siyah Ekran)',
-    description: 'Açık kaynaklı ana uyumluluk katmanı; menülerde 30 FPS çalışıyor, 3D oyun içi shader desteği geliştiriliyor.',
+    description:
+      'Açık kaynaklı ana uyumluluk katmanı; menülerde 30 FPS çalışıyor, 3D oyun içi shader desteği geliştiriliyor.',
     repo_url: 'https://github.com/Marvisak/VIctory',
     is_open_source: true,
+    updated_at: null,
   },
   {
     id: 5,
@@ -63,9 +73,11 @@ const FALLBACK_PROJECTS = [
     percentage: 65,
     fps: '3.2 FPS (720p)',
     stage: 'Oyun İçi (Eğitim)',
-    description: 'Kontrol edilebilir karakter ve hareket eğitim ekranı açıldı; kalan untranslated shader sayısı azaltılıyor.',
+    description:
+      'Kontrol edilebilir karakter ve hareket eğitim ekranı açıldı; kalan untranslated shader sayısı azaltılıyor.',
     repo_url: 'https://github.com/LooperSalty/AnyXboxX',
     is_open_source: true,
+    updated_at: null,
   },
   {
     id: 6,
@@ -73,9 +85,11 @@ const FALLBACK_PROJECTS = [
     percentage: 63,
     fps: '30 FPS (Intro)',
     stage: 'Dünya Yükleme',
-    description: 'Wine benzeri uyumluluk katmanı; binlerce shader işlendi, oyun dünyasında yayalar ve araçlar spawn oluyor.',
+    description:
+      'Wine benzeri uyumluluk katmanı; binlerce shader işlendi, oyun dünyasında yayalar ve araçlar spawn oluyor.',
     repo_url: 'https://github.com/ivall/xcl',
     is_open_source: true,
+    updated_at: null,
   },
   {
     id: 7,
@@ -83,9 +97,11 @@ const FALLBACK_PROJECTS = [
     percentage: 48,
     fps: '-',
     stage: 'İlk Kare (First Frame)',
-    description: 'Statik yeniden derleme ve shader çözümleme hattı ile ilk kare görüntüsüne ulaşıldı.',
+    description:
+      'Statik yeniden derleme ve shader çözümleme hattı ile ilk kare görüntüsüne ulaşıldı.',
     repo_url: 'https://github.com/R0Y00/Xbox2Windows',
     is_open_source: true,
+    updated_at: null,
   },
   {
     id: 8,
@@ -93,9 +109,11 @@ const FALLBACK_PROJECTS = [
     percentage: 25,
     fps: '-',
     stage: 'Exe Başlatma (Boot)',
-    description: 'Düşük seviyeli bellek eşleme ve .exe yükleme altyapısı geliştiriliyor.',
+    description:
+      'Düşük seviyeli bellek eşleme ve .exe yükleme altyapısı geliştiriliyor.',
     repo_url: 'https://github.com/luizwidmer/palmetto',
     is_open_source: true,
+    updated_at: null,
   },
 ];
 
@@ -122,6 +140,17 @@ function renderMessageWithLinks(text) {
   });
 }
 
+function formatUpdateTime(dateStr) {
+  if (!dateStr) return 'Henüz senkronize edilmedi';
+  const d = new Date(dateStr);
+  if (Number.isNaN(d.getTime())) return 'Bilinmiyor';
+  return d.toLocaleTimeString('tr-TR', {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  });
+}
+
 export default function HomePage() {
   const [projects, setProjects] = useState(FALLBACK_PROJECTS);
   const [messages, setMessages] = useState([]);
@@ -129,7 +158,12 @@ export default function HomePage() {
   const [newMessage, setNewMessage] = useState('');
   const [syncing, setSyncing] = useState(false);
   const [sending, setSending] = useState(false);
+  const [secondsLeft, setSecondsLeft] = useState(120);
+  const [onlineUsers, setOnlineUsers] = useState([]);
+  const [showOnlinePanel, setShowOnlinePanel] = useState(false);
   const chatBottomRef = useRef(null);
+
+  const activeNick = username.trim().slice(0, 24) || 'ViceMisafir';
 
   useEffect(() => {
     const savedName = localStorage.getItem('gta6takip_nick');
@@ -142,22 +176,75 @@ export default function HomePage() {
 
     const projectChannel = supabase
       .channel('projects-realtime')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'projects' }, () => {
-        fetchProjects();
-      })
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'projects' },
+        () => {
+          fetchProjects();
+        }
+      )
       .subscribe();
 
     const chatChannel = supabase
       .channel('chat-realtime')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages' }, (payload) => {
-        setMessages((prev) => [...prev, payload.new]);
-      })
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'chat_messages' },
+        (payload) => {
+          setMessages((prev) => [...prev, payload.new]);
+        }
+      )
       .subscribe();
 
     return () => {
       supabase.removeChannel(projectChannel);
       supabase.removeChannel(chatChannel);
     };
+  }, []);
+
+  // Çevrimiçi kullanıcı takibi (Supabase Presence)
+  useEffect(() => {
+    const presenceChannel = supabase.channel('gta6takip-online-room', {
+      config: {
+        presence: {
+          key: activeNick,
+        },
+      },
+    });
+
+    presenceChannel
+      .on('presence', { event: 'sync' }, () => {
+        const state = presenceChannel.presenceState();
+        const names = Object.keys(state);
+        setOnlineUsers(names.length > 0 ? names : [activeNick]);
+      })
+      .subscribe(async (status) => {
+        if (status === 'SUBSCRIBED') {
+          await presenceChannel.track({
+            user: activeNick,
+            online_at: new Date().toISOString(),
+          });
+        }
+      });
+
+    return () => {
+      supabase.removeChannel(presenceChannel);
+    };
+  }, [activeNick]);
+
+  // Her 120 saniyede bir otomatik güncelleme ve geri sayım
+  useEffect(() => {
+    const countdown = setInterval(() => {
+      setSecondsLeft((prev) => {
+        if (prev <= 1) {
+          handleAutoSync();
+          return 120;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(countdown);
   }, []);
 
   useEffect(() => {
@@ -204,10 +291,12 @@ export default function HomePage() {
   }
 
   async function handleAutoSync() {
+    if (syncing) return;
     setSyncing(true);
     try {
       await fetch('/api/sync');
       await fetchProjects();
+      setSecondsLeft(120);
     } finally {
       setSyncing(false);
     }
@@ -216,15 +305,14 @@ export default function HomePage() {
   async function handleSendMessage(e) {
     e.preventDefault();
     const cleanMsg = newMessage.trim();
-    const cleanNick = username.trim().slice(0, 24) || 'ViceMisafir';
     if (!cleanMsg || sending) return;
 
     setSending(true);
-    localStorage.setItem('gta6takip_nick', cleanNick);
+    localStorage.setItem('gta6takip_nick', activeNick);
 
     const { error } = await supabase.from('chat_messages').insert([
       {
-        username: cleanNick,
+        username: activeNick,
         message: cleanMsg.slice(0, 500),
       },
     ]);
@@ -241,6 +329,7 @@ export default function HomePage() {
       : 79;
 
   const leaderName = projects[0]?.name || 'omonkey';
+  const onlineCount = Math.max(1, onlineUsers.length);
 
   return (
     <div className="min-h-screen text-white flex flex-col">
@@ -261,13 +350,54 @@ export default function HomePage() {
                 </span>
               </div>
               <p className="text-[11px] sm:text-xs text-slate-400">
-                Gerçek Zamanlı PC Port İlerleme Panosu & Türkçe Sohbet
+                120sn Otomatik İlerleme Takibi & Türkçe Canlı Sohbet
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2.5">
-            <div className="hidden md:flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-white/[0.04] border border-white/10 text-xs">
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Çevrimiçi Kişi Butonu */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setShowOnlinePanel((prev) => !prev)}
+                className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-400/35 text-emerald-200 shadow-[0_0_14px_rgba(16,185,129,0.2)] transition cursor-pointer"
+              >
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                <Users className="w-3.5 h-3.5 text-emerald-300" />
+                <span>{onlineCount} Çevrimiçi</span>
+              </button>
+
+              {showOnlinePanel && (
+                <div className="absolute right-0 mt-2 w-60 rounded-2xl bg-[#130929]/95 border border-pink-500/35 shadow-2xl p-3.5 z-40">
+                  <div className="flex items-center justify-between border-b border-white/10 pb-2 mb-2">
+                    <span className="text-xs font-extrabold text-amber-300">
+                      Aktif Bağlantılar ({onlineCount})
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setShowOnlinePanel(false)}
+                      className="text-[11px] text-slate-400 hover:text-white cursor-pointer"
+                    >
+                      Kapat
+                    </button>
+                  </div>
+                  <ul className="space-y-1.5 max-h-40 overflow-y-auto vice-scroll list-none p-0 m-0">
+                    {onlineUsers.map((nick, i) => (
+                      <li
+                        key={`${nick}-${i}`}
+                        className="flex items-center gap-2 text-xs text-slate-200 bg-white/[0.04] px-2.5 py-1.5 rounded-lg"
+                      >
+                        <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0" />
+                        <span className="truncate font-semibold">{nick}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+
+            <div className="hidden xl:flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white/[0.04] border border-white/10 text-xs">
               <Trophy className="w-3.5 h-3.5 text-amber-300" />
               <span className="text-slate-400">Lider:</span>
               <span className="font-bold text-white">{leaderName}</span>
@@ -275,12 +405,17 @@ export default function HomePage() {
             </div>
 
             <button
+              type="button"
               onClick={handleAutoSync}
               disabled={syncing}
               className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-amber-500/25 via-pink-600/30 to-purple-600/30 hover:from-amber-500/40 hover:to-pink-600/50 border border-pink-400/40 shadow-[0_0_15px_rgba(236,72,153,0.2)] transition cursor-pointer"
             >
-              <RefreshCw className={`w-3.5 h-3.5 text-amber-300 ${syncing ? 'animate-spin' : ''}`} />
-              <span>{syncing ? 'Taranıyor...' : 'Veriyi Güncelle'}</span>
+              <RefreshCw
+                className={`w-3.5 h-3.5 text-amber-300 ${syncing ? 'animate-spin' : ''}`}
+              />
+              <span>
+                {syncing ? 'Güncelleniyor...' : `Oto Yenile (${secondsLeft}sn)`}
+              </span>
             </button>
           </div>
         </div>
@@ -296,7 +431,7 @@ export default function HomePage() {
               <div className="space-y-1">
                 <div className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-amber-300 bg-amber-400/10 border border-amber-400/25 px-2.5 py-0.5 rounded-full">
                   <Sparkles className="w-3 h-3" />
-                  Vice City PC Port Radar
+                  Her 120 Saniyede Otomatik Tarama
                 </div>
                 <h1 className="text-xl sm:text-2xl font-black tracking-tight text-white">
                   Ekiplerin{' '}
@@ -305,7 +440,7 @@ export default function HomePage() {
                   </span>
                 </h1>
                 <p className="text-xs text-slate-300">
-                  Sol paneldeki 3D çubuklardan güncel oranları ve özetleri incele, sağ panelden anlık sohbete katıl.
+                  Çubuklar her 120 saniyede bir otomatik kontrol edilir. Kartların altında son güncelleme saatini görebilirsin.
                 </p>
               </div>
 
@@ -315,8 +450,8 @@ export default function HomePage() {
                   <div className="text-lg sm:text-xl font-black text-amber-300">%{topScore}</div>
                 </div>
                 <div className="rounded-2xl bg-black/45 border border-pink-500/20 px-3.5 py-2 text-center">
-                  <div className="text-[10px] uppercase tracking-wider text-slate-400">Ekip</div>
-                  <div className="text-lg sm:text-xl font-black text-pink-400">{projects.length}</div>
+                  <div className="text-[10px] uppercase tracking-wider text-slate-400">Sonraki</div>
+                  <div className="text-lg sm:text-xl font-black text-cyan-300">{secondsLeft}s</div>
                 </div>
               </div>
             </div>
@@ -379,7 +514,7 @@ export default function HomePage() {
                       </div>
                     </div>
 
-                    {/* Aşama, Kısa Özet ve Kaynak Linki */}
+                    {/* Aşama, Kısa Özet, Son Güncelleme Saati ve Kaynak Linki */}
                     <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2.5 text-xs text-slate-300">
                       <div className="space-y-1">
                         <p className="text-xs font-bold text-amber-300">
@@ -388,6 +523,10 @@ export default function HomePage() {
                         </p>
                         <p className="text-xs text-slate-300/95 leading-relaxed">
                           {proj.description}
+                        </p>
+                        <p className="inline-flex items-center gap-1.5 text-[11px] text-cyan-300/90 font-medium pt-0.5">
+                          <Clock className="w-3 h-3 text-cyan-400 shrink-0" />
+                          <span>Son Güncelleme Saati: {formatUpdateTime(proj.updated_at)}</span>
                         </p>
                       </div>
 
@@ -411,7 +550,6 @@ export default function HomePage() {
 
         {/* SAĞ SÜTUN: GTA VI Canlı Sohbet ve Link Paylaşımı */}
         <aside className="lg:col-span-5 xl:col-span-4 rounded-3xl bg-gradient-to-b from-[#160a2e]/95 to-[#0d061c]/95 border border-pink-500/30 overflow-hidden shadow-[0_14px_45px_rgba(0,0,0,0.6)] flex flex-col lg:sticky lg:top-[76px] lg:h-[calc(100vh-98px)] min-h-[520px]">
-          {/* Sohbet Başlığı */}
           <div className="p-4 border-b border-white/10 bg-gradient-to-r from-amber-500/15 via-pink-600/25 to-purple-700/25 flex items-center justify-between gap-2 shrink-0">
             <div className="flex items-center gap-2.5">
               <div className="w-9 h-9 rounded-xl bg-pink-500/20 border border-pink-400/35 flex items-center justify-center">
@@ -432,7 +570,6 @@ export default function HomePage() {
             </span>
           </div>
 
-          {/* Nickname Giriş Kutusu */}
           <div className="px-4 py-3 bg-black/40 border-b border-white/10 flex items-center gap-2.5 shrink-0">
             <label
               htmlFor="nickname-input"
@@ -455,7 +592,6 @@ export default function HomePage() {
             />
           </div>
 
-          {/* Kaydırmalı Sohbet Mesaj Alanı */}
           <div className="flex-1 overflow-y-auto vice-scroll p-4 space-y-3">
             {messages.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center text-slate-400 text-xs space-y-1.5 px-4">
@@ -488,7 +624,6 @@ export default function HomePage() {
             <div ref={chatBottomRef} />
           </div>
 
-          {/* Mesaj Gönderme Formu */}
           <form
             onSubmit={handleSendMessage}
             className="p-3 sm:p-3.5 bg-black/55 border-t border-white/10 flex items-center gap-2 shrink-0"
@@ -513,7 +648,6 @@ export default function HomePage() {
         </aside>
       </main>
 
-      {/* Alt Bilgi */}
       <footer className="border-t border-white/10 py-4 px-4 text-center text-[11px] text-slate-400 bg-black/30">
         <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-center gap-2">
           <ShieldCheck className="w-4 h-4 text-pink-400 shrink-0" />
