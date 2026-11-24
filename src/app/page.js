@@ -17,17 +17,13 @@ import {
   Users,
   Clock,
   Palette,
-  Rocket,
-  MonitorPlay,
-  Gamepad2,
-  Zap,
 } from 'lucide-react';
 
 const THEMES = [
-  { id: 'vice-sunset', label: 'Vice Gün Batımı', dot: 'bg-pink-400' },
-  { id: 'leonida-night', label: 'Leonida Gece', dot: 'bg-sky-400' },
-  { id: 'mangrove-mist', label: 'Mangrov Sis', dot: 'bg-emerald-400' },
-  { id: 'miami-dusk', label: 'Miami Alacakaranlık', dot: 'bg-rose-400' },
+  { id: 'vice-sunset', label: 'Vice Gün Batımı' },
+  { id: 'leonida-night', label: 'Leonida Gece' },
+  { id: 'mangrove-mist', label: 'Mangrov Sis' },
+  { id: 'miami-dusk', label: 'Miami Alacakaranlık' },
 ];
 
 const FALLBACK_PROJECTS = [
@@ -129,34 +125,34 @@ const FALLBACK_PROJECTS = [
   },
 ];
 
-function getStageBadge(percentage, stage = '') {
+function getStageEmojiBadge(percentage, stage = '') {
   const pct = Number(percentage) || 0;
   const s = stage.toLowerCase();
 
   if (pct >= 85 || s.includes('30 fps') || s.includes('60 fps')) {
     return {
+      emoji: '⚡',
       label: 'FPS Hedefi',
-      Icon: Zap,
       style: 'bg-amber-400/15 text-amber-200 border-amber-400/35',
     };
   }
   if (pct >= 60 || s.includes('oyun içi') || s.includes('dünya')) {
     return {
+      emoji: '🎮',
       label: 'Oyun İçi',
-      Icon: Gamepad2,
       style: 'bg-emerald-400/15 text-emerald-200 border-emerald-400/35',
     };
   }
   if (pct >= 40 || s.includes('ilk kare') || s.includes('menü')) {
     return {
+      emoji: '🖥️',
       label: 'İlk Kare',
-      Icon: MonitorPlay,
       style: 'bg-sky-400/15 text-sky-200 border-sky-400/35',
     };
   }
   return {
+    emoji: '🚀',
     label: 'Boot / Exe',
-    Icon: Rocket,
     style: 'bg-purple-400/15 text-purple-200 border-purple-400/35',
   };
 }
@@ -374,7 +370,6 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen text-slate-100 flex flex-col">
-      {/* Üst Bar */}
       <header className="sticky top-0 z-30 backdrop-blur-2xl bg-[#090616]/85 border-b border-white/10">
         <div className="max-w-[1440px] mx-auto px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
@@ -397,7 +392,6 @@ export default function HomePage() {
           </div>
 
           <div className="flex items-center gap-2 flex-wrap">
-            {/* Göz Yormayan Tema Seçici */}
             <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-white/[0.04] border border-white/10">
               <Palette className="w-3.5 h-3.5 text-slate-300 hidden sm:block" />
               <select
@@ -414,7 +408,6 @@ export default function HomePage() {
               </select>
             </div>
 
-            {/* Çevrimiçi Kişi Butonu */}
             <div className="relative">
               <button
                 type="button"
@@ -477,11 +470,8 @@ export default function HomePage() {
         </div>
       </header>
 
-      {/* Ana Alan: PC'de Sol % İlerleme + Sağ Canlı Sohbet */}
       <main className="flex-1 max-w-[1440px] w-full mx-auto px-4 sm:px-6 py-5 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* SOL SÜTUN: % İlerleme Çubukları ve Ekipler */}
         <section className="lg:col-span-7 xl:col-span-8 flex flex-col gap-4">
-          {/* Üst Özet Bandı */}
           <div className="rounded-3xl p-4 sm:p-5 bg-white/[0.04] border border-white/10 shadow-xl">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div className="space-y-1">
@@ -493,7 +483,7 @@ export default function HomePage() {
                   Ekiplerin Tamamlanma Yüzdeleri
                 </h1>
                 <p className="text-xs text-slate-300/90">
-                  3D barların yanındaki aşama simgeleri ekibin hangi seviyede olduğunu gösterir; sayfa her 120 saniyede bir otomatik güncellenir.
+                  3D barların yanındaki aşama emojileri ekibin hangi seviyede olduğunu gösterir; sayfa her 120 saniyede bir otomatik güncellenir.
                 </p>
               </div>
 
@@ -518,20 +508,17 @@ export default function HomePage() {
             <span className="text-[11px] text-slate-400">Kaydırmalı liste • Yüksekten düşüğe</span>
           </div>
 
-          {/* Kaydırmalı 3D Bar Listesi */}
           <div className="lg:max-h-[calc(100vh-235px)] lg:overflow-y-auto vice-scroll lg:pr-2">
             <ul className="flex flex-col gap-3.5 list-none p-0 m-0">
               {projects.map((proj, index) => {
                 const pct = Math.min(100, Math.max(0, Number(proj.percentage) || 0));
-                const badge = getStageBadge(pct, proj.stage);
-                const StageIcon = badge.Icon;
+                const badge = getStageEmojiBadge(pct, proj.stage);
 
                 return (
                   <li
                     key={proj.id || index}
                     className="rounded-2xl p-4 sm:p-5 bg-white/[0.04] hover:bg-white/[0.06] border border-white/10 transition"
                   >
-                    {/* Ekip Başlığı ve Yüzde */}
                     <div className="flex items-center justify-between gap-3 mb-2.5">
                       <div className="flex items-center gap-2.5 flex-wrap min-w-0">
                         <span className="text-xs font-black px-2.5 py-0.5 rounded-lg bg-white/[0.07] border border-white/10 text-slate-200 shrink-0">
@@ -556,7 +543,7 @@ export default function HomePage() {
                       </span>
                     </div>
 
-                    {/* 3D Bar + Yanında Aşama Simgesi */}
+                    {/* 3D Bar + Yanında Gerçek Emoji Aşama Rozeti */}
                     <div className="flex items-center gap-2.5 mb-3">
                       <div className="relative flex-1 h-6 sm:h-7 rounded-2xl bg-black/55 p-1 border border-white/15 shadow-[inset_0_3px_8px_rgba(0,0,0,0.85)] overflow-hidden">
                         <div
@@ -570,17 +557,17 @@ export default function HomePage() {
                         </div>
                       </div>
 
-                      {/* Aşama Durum Simgesi */}
                       <div
                         title={proj.stage || badge.label}
-                        className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-[11px] font-bold shrink-0 ${badge.style}`}
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-xs font-bold shrink-0 ${badge.style}`}
                       >
-                        <StageIcon className="w-3.5 h-3.5 shrink-0" />
+                        <span className="text-sm leading-none" role="img" aria-label={badge.label}>
+                          {badge.emoji}
+                        </span>
                         <span className="hidden sm:inline">{badge.label}</span>
                       </div>
                     </div>
 
-                    {/* Aşama, Kısa Özet, Son Güncelleme Saati ve Kaynak Linki */}
                     <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2.5 text-xs text-slate-300">
                       <div className="space-y-1">
                         <p className="text-xs font-bold text-slate-100">
@@ -614,7 +601,6 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* SAĞ SÜTUN: Canlı Sohbet ve Link Paylaşımı */}
         <aside className="lg:col-span-5 xl:col-span-4 rounded-3xl bg-white/[0.04] border border-white/10 overflow-hidden shadow-xl flex flex-col lg:sticky lg:top-[76px] lg:h-[calc(100vh-98px)] min-h-[520px]">
           <div className="p-4 border-b border-white/10 bg-white/[0.03] flex items-center justify-between gap-2 shrink-0">
             <div className="flex items-center gap-2.5">
