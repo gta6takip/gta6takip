@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState, useCallback } from 'react';
-import { RefreshCw, ExternalLink, ChevronDown, ChevronUp } from 'lucide-react';
+import { RefreshCw, ExternalLink } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -124,37 +124,22 @@ function localizeDynamicText(raw, lang) {
     return text;
   }
 
-  // lang === 'tr'
   const enToTr = [
-    [/upstream's status section left out/gi, 'kaynak projenin durum bölümü çıkarıldı'],
-    [/it named upstream's test machine/gi, 'kaynak test sistemi belirtilmişti'],
-    [/and a warning that is upstream's/gi, 've kaynak projeye ait uyarı ayrıştırıldı'],
     [/Playable/gi, 'Oynanabilir'],
     [/Main [Mm]enu/gi, 'Ana Menü'],
     [/In the [Ww]orld/gi, 'Oyun Dünyası'],
     [/First [Ff]rame/gi, 'İlk Kare'],
     [/First [Aa]ct/gi, 'İlk Bölüm'],
     [/Prologue [Cc]leared/gi, 'Giriş Bölümü Geçildi'],
+    [/Prologue Geçildi/gi, 'Giriş Bölümü Geçildi'],
+    [/Lucia prologue bölümünü/gi, 'Lucia giriş bölümünü'],
+    [/VIctory fork'u/gi, 'VIctory tabanlı sürüm'],
     [/Opening [Ss]cene/gi, 'Açılış Sahnesi'],
     [/Prison [Ss]cene/gi, 'Hapishane Sahnesi'],
     [/Private [Bb]uild/gi, 'Özel Sürüm'],
     [/Diagnostic [Mm]ode/gi, 'Tanılama Modu'],
     [/GDK Samples/gi, 'GDK Örnekleri'],
     [/\(Menu\)/gi, '(Menü)'],
-    [/Merge pull request/gi, 'Çekme isteği birleştirildi'],
-    [/Update README\.md/gi, 'README.md güncellendi'],
-    [/Update /gi, 'Güncellendi: '],
-    [/Add /gi, 'Eklendi: '],
-    [/Fix /gi, 'Düzeltildi: '],
-    [/Remove /gi, 'Kaldırıldı: '],
-    [/Refactor /gi, 'Yeniden düzenlendi: '],
-    [/Support for /gi, 'Destek eklendi: '],
-    [/initial commit/gi, 'ilk sürüm kaydı'],
-    [/test machine/gi, 'test sistemi'],
-    [/warning/gi, 'uyarı'],
-    [/and /gi, 've '],
-    [/with /gi, 'ile '],
-    [/for /gi, 'için '],
   ];
   for (const [re, rep] of enToTr) text = text.replace(re, rep);
   return text;
@@ -287,9 +272,6 @@ const TEXT = {
     filterClosed: 'Kapalı Ekip',
     openSource: 'Açık Kaynak',
     closedTeam: 'Kapalı Ekip',
-    details: 'Detaylar',
-    hideDetails: 'Gizle',
-    latestCommit: 'Son Commit',
     lastSync: 'Son Güncelleme',
     refresh: 'Yenile',
     viewRepo: 'GitHub',
@@ -313,9 +295,6 @@ const TEXT = {
     filterClosed: 'Closed Team',
     openSource: 'Open Source',
     closedTeam: 'Closed Team',
-    details: 'Details',
-    hideDetails: 'Hide details',
-    latestCommit: 'Latest Commit',
     lastSync: 'Last Sync',
     refresh: 'Refresh',
     viewRepo: 'GitHub',
@@ -333,7 +312,6 @@ export default function Home() {
   const [themeId, setThemeId] = useState('dark');
   const [teams, setTeams] = useState([]);
   const [filter, setFilter] = useState('all');
-  const [expanded, setExpanded] = useState({ 0: true, 1: true, 2: true });
   const [lastUpdated, setLastUpdated] = useState('--:--:--');
   const [syncing, setSyncing] = useState(false);
   const [onlineCount, setOnlineCount] = useState(1);
@@ -595,16 +573,13 @@ export default function Home() {
                 lang === 'tr'
                   ? team.desc_tr || team.description || team.desc
                   : team.desc_en || team.description || team.desc;
-              const rawCommit = team.commit_msg || team.commitMessage || team.lastCommit;
 
               const stage = localizeDynamicText(rawStage, lang);
               const fps = localizeDynamicText(rawFps, lang);
               const desc = localizeDynamicText(rawDesc, lang);
-              const commit = localizeDynamicText(rawCommit, lang);
 
               const repoUrl = team.url || team.repo_url || team.github_url;
               const repoSlug = repoUrl ? repoUrl.replace('https://github.com/', '').replace('https://', '') : 'portwatch-vi.xyz';
-              const isExpanded = Boolean(expanded[rank - 1]);
               const filledSegments = Math.min(6, Math.max(0, (pct / 100) * 6));
 
               return (
@@ -705,7 +680,7 @@ export default function Home() {
                   </div>
 
                   {/* Aşama Noktaları */}
-                  <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 text-[11px] mb-4">
+                  <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 text-[11px] mb-3">
                     {MILESTONES[lang].map((mLabel, mIdx) => {
                       const reached = filledSegments >= mIdx + 0.5;
                       return (
@@ -728,40 +703,21 @@ export default function Home() {
                     })}
                   </div>
 
-                  {isExpanded && (commit || desc) && (
-                    <div
-                      className="text-xs leading-relaxed py-3 border-t"
-                      style={{ color: activeTheme.textMuted, borderColor: activeTheme.border }}
-                    >
-                      {desc && <p className="mb-1">{desc}</p>}
-                      {commit && (
-                        <p>
-                          <strong style={{ color: activeTheme.textPrimary }}>{t.latestCommit}:</strong> {commit}
-                        </p>
-                      )}
-                    </div>
-                  )}
-
+                  {/* Kısa Aşama Açıklaması + Bağlantı Butonu */}
                   <div
-                    className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t"
+                    className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t"
                     style={{ borderColor: activeTheme.border }}
                   >
-                    <button
-                      type="button"
-                      onClick={() => setExpanded((prev) => ({ ...prev, [rank - 1]: !isExpanded }))}
-                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border text-xs font-semibold transition hover:opacity-80"
-                      style={{ borderColor: activeTheme.border, color: activeTheme.textPrimary }}
-                    >
-                      {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-                      {isExpanded ? t.hideDetails : t.details}
-                    </button>
+                    <p className="text-xs leading-relaxed" style={{ color: activeTheme.textMuted }}>
+                      {desc || stage}
+                    </p>
 
                     {repoUrl && (
                       <a
                         href={repoUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold transition hover:opacity-90 ${
+                        className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold transition hover:opacity-90 shrink-0 self-start sm:self-auto ${
                           activeTheme.isDark ? 'bg-white text-[#0b0d12]' : 'bg-slate-900 text-white'
                         }`}
                       >
