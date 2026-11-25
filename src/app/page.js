@@ -26,6 +26,9 @@ import {
   Check,
   Smile,
   Clock,
+  Trophy,
+  Code2,
+  Activity,
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
@@ -95,16 +98,13 @@ function censorProfanity(raw) {
   return out;
 }
 
-// --- INLINE BAYRAK SVG'LERİ (Windows TR/US yazı hatası önlenir) ---
+// --- INLINE BAYRAK SVG'LERİ ---
 const FlagTR = () => (
   <svg viewBox="0 0 36 24" className="w-4 h-3 rounded-[2px] shrink-0" aria-hidden="true">
     <rect width="36" height="24" fill="#E30A17" />
     <circle cx="13.5" cy="12" r="6" fill="#FFFFFF" />
     <circle cx="15" cy="12" r="4.8" fill="#E30A17" />
-    <polygon
-      fill="#FFFFFF"
-      points="19.5,12 21.8,12.75 20.38,10.8 20.38,13.2 21.8,11.25"
-    />
+    <polygon fill="#FFFFFF" points="19.5,12 21.8,12.75 20.38,10.8 20.38,13.2 21.8,11.25" />
   </svg>
 );
 
@@ -127,8 +127,8 @@ const VerifiedBadge = () => (
 );
 
 const AVATARS = [
-  { bg: 'from-purple-500 to-pink-500', label: 'V' },
-  { bg: 'from-pink-500 to-orange-500', label: 'G' },
+  { bg: 'from-purple-500 to-pink-500', label: 'Ω' },
+  { bg: 'from-pink-500 to-orange-500', label: '⚡' },
   { bg: 'from-cyan-500 to-blue-600', label: 'P' },
   { bg: 'from-emerald-500 to-teal-600', label: 'X' },
   { bg: 'from-amber-500 to-red-500', label: '6' },
@@ -139,10 +139,13 @@ const QUICK_EMOJIS = ['🔥', '🎮', '🚗', '🌴', '⚡', '👀', '👏', '�
 
 const TEXT = {
   tr: {
-    badge: 'CANLI PORT TAKİBİ',
+    badge: 'PORTWATCH VI · CANLI YARIŞ',
     title: 'GTA VI PC Port Takibi',
     subtitle: 'PortWatch VI verileri ve açık kaynak GitHub depoları her 120 saniyede bir otomatik güncellenir.',
-    lastSync: 'Son Güncelleme',
+    statTeams: 'Takip Edilen Ekip',
+    statOpen: 'Açık Kaynak',
+    statLeader: 'Lider İlerleme',
+    statSync: 'Son Güncelleme',
     refresh: 'Yenile',
     openSource: 'AÇIK KAYNAK',
     closedTeam: 'KAPALI EKİP',
@@ -150,8 +153,7 @@ const TEXT = {
     chatTitle: 'Vice City Canlı Sohbet',
     channelsLabel: 'Kanallar: #tr-genel ve #en-general',
     live: 'Canlı',
-    online: 'Çevrimiçi',
-    nickname: 'Takma Ad:',
+    nickname: 'Nickname:',
     placeholder: 'Mesaj yaz...',
     send: 'Gönder',
     replyingTo: 'Yanıtlanıyor:',
@@ -171,7 +173,6 @@ const TEXT = {
     pollDuration: 'Süre:',
     minuteShort: 'dk',
     startPoll: 'Anketi Başlat',
-    cancel: 'İptal',
     pollEnded: 'Anket Sonuçlandı',
     pollRemaining: 'Kalan:',
     votesLabel: 'oy',
@@ -190,12 +191,16 @@ const TEXT = {
     disclaimer:
       'GTA6takip, PortWatch projesinin kâr gütmeyen, hobi amaçlı alternatifidir. Veriler otomatik olarak portwatch-vi.xyz/#race ve açık GitHub depolarından alınır.',
     emptyChat: 'Henüz mesaj yok. İlk mesajı sen yaz!',
+    loadingTeams: 'Takım verileri yükleniyor...',
   },
   en: {
-    badge: 'LIVE PORT TRACKER',
+    badge: 'PORTWATCH VI · LIVE RACE',
     title: 'GTA VI PC Port Tracker',
     subtitle: 'PortWatch VI race data and open-source GitHub repositories sync automatically every 120 seconds.',
-    lastSync: 'Last Sync',
+    statTeams: 'Tracked Teams',
+    statOpen: 'Open Source',
+    statLeader: 'Leader Progress',
+    statSync: 'Last Sync',
     refresh: 'Refresh',
     openSource: 'OPEN SOURCE',
     closedTeam: 'CLOSED TEAM',
@@ -203,7 +208,6 @@ const TEXT = {
     chatTitle: 'Vice City Live Chat',
     channelsLabel: 'Channels: #tr-genel & #en-general',
     live: 'Live',
-    online: 'Online',
     nickname: 'Nickname:',
     placeholder: 'Type a message...',
     send: 'Send',
@@ -224,7 +228,6 @@ const TEXT = {
     pollDuration: 'Duration:',
     minuteShort: 'm',
     startPoll: 'Start Poll',
-    cancel: 'Cancel',
     pollEnded: 'Poll Ended',
     pollRemaining: 'Left:',
     votesLabel: 'votes',
@@ -243,6 +246,7 @@ const TEXT = {
     disclaimer:
       'GTA6takip is a non-profit, hobbyist alternative to PortWatch. Data syncs automatically from portwatch-vi.xyz/#race and public GitHub repositories.',
     emptyChat: 'No messages yet. Be the first to say hello!',
+    loadingTeams: 'Loading team progress...',
   },
 };
 
@@ -266,7 +270,6 @@ export default function Home() {
   const [lastUpdated, setLastUpdated] = useState('--:--:--');
   const [syncing, setSyncing] = useState(false);
 
-  // Sohbet durumları
   const [channel, setChannel] = useState('tr-genel');
   const [messagesByChannel, setMessagesByChannel] = useState({ 'tr-genel': [], 'en-general': [] });
   const [clearedAtByChannel, setClearedAtByChannel] = useState({ 'tr-genel': 0, 'en-general': 0 });
@@ -281,20 +284,17 @@ export default function Home() {
   const [showEmoji, setShowEmoji] = useState(false);
   const [onlineCount, setOnlineCount] = useState(1);
 
-  // Moderasyon & Zamanlayıcılar
   const [slowmodeLeft, setSlowmodeLeft] = useState(0);
   const [muteLeft, setMuteLeft] = useState(0);
   const [chatAlert, setChatAlert] = useState('');
   const [isMobileFullscreen, setIsMobileFullscreen] = useState(false);
 
-  // Admin durumları
   const [isAdmin, setIsAdmin] = useState(false);
   const [adminPassword, setAdminPassword] = useState('');
   const [showAdminModal, setShowAdminModal] = useState(false);
   const [adminPassInput, setAdminPassInput] = useState('');
   const [confirmClear, setConfirmClear] = useState(false);
 
-  // Anket oluşturma durumları
   const [showPollModal, setShowPollModal] = useState(false);
   const [pollQuestion, setPollQuestion] = useState('');
   const [pollOptions, setPollOptions] = useState(['', '']);
@@ -306,7 +306,6 @@ export default function Home() {
   const chatScrollRef = useRef(null);
   const t = TEXT[lang];
 
-  // İlk yükleme: localStorage ayarları
   useEffect(() => {
     try {
       const savedTheme = localStorage.getItem('gta6takip_theme');
@@ -352,7 +351,6 @@ export default function Home() {
     }
   }, [theme]);
 
-  // Sayaçlar (Slowmode, Mute, Anket geri sayımı)
   useEffect(() => {
     const timer = setInterval(() => {
       setNowTick(Date.now());
@@ -362,13 +360,23 @@ export default function Home() {
     return () => clearInterval(timer);
   }, []);
 
-  // Takım verilerini çek (120sn)
   const fetchSync = useCallback(async () => {
     setSyncing(true);
     try {
       const res = await fetch('/api/sync', { cache: 'no-store' });
       const data = await res.json();
-      if (Array.isArray(data.teams)) setTeams(data.teams);
+      const rawList =
+        (Array.isArray(data) && data) ||
+        data.teams ||
+        data.projects ||
+        data.data ||
+        data.items ||
+        data.race ||
+        Object.values(data).find((v) => Array.isArray(v)) ||
+        [];
+      if (Array.isArray(rawList)) {
+        setTeams(rawList);
+      }
       setLastUpdated(new Date().toLocaleTimeString(lang === 'tr' ? 'tr-TR' : 'en-US'));
     } catch {
       // ignore
@@ -383,37 +391,38 @@ export default function Home() {
     return () => clearInterval(id);
   }, [fetchSync]);
 
-  // Sohbet verilerini çek (4.5sn)
-  const fetchChat = useCallback(async (targetChannel) => {
-    try {
-      const res = await fetch(`/api/chat?channel=${encodeURIComponent(targetChannel)}`, {
-        cache: 'no-store',
-      });
-      const data = await res.json();
-      if (!data.ok) return;
+  const fetchChat = useCallback(
+    async (targetChannel) => {
+      try {
+        const res = await fetch(`/api/chat?channel=${encodeURIComponent(targetChannel)}`, {
+          cache: 'no-store',
+        });
+        const data = await res.json();
+        if (!data.ok) return;
 
-      const serverClearedAt = Number(data.clearedAt || 0);
-      setClearedAtByChannel((prev) => ({ ...prev, [targetChannel]: serverClearedAt }));
-      setPinnedByChannel((prev) => ({ ...prev, [targetChannel]: data.pinnedMessage || null }));
-      setPollByChannel((prev) => ({ ...prev, [targetChannel]: data.activePoll || null }));
-      if (Array.isArray(data.bannedUsers)) setBannedUsers(data.bannedUsers);
+        const serverClearedAt = Number(data.clearedAt || 0);
+        setClearedAtByChannel((prev) => ({ ...prev, [targetChannel]: serverClearedAt }));
+        setPinnedByChannel((prev) => ({ ...prev, [targetChannel]: data.pinnedMessage || null }));
+        setPollByChannel((prev) => ({ ...prev, [targetChannel]: data.activePoll || null }));
+        if (Array.isArray(data.bannedUsers)) setBannedUsers(data.bannedUsers);
 
-      setMessagesByChannel((prev) => {
-        const existing = serverClearedAt > (clearedAtByChannel[targetChannel] || 0)
-          ? []
-          : prev[targetChannel] || [];
-        const merged = mergeChannelMessages(existing, data.messages || [], serverClearedAt);
-        try {
-          localStorage.setItem(`gta6takip_msgs_${targetChannel}`, JSON.stringify(merged));
-        } catch {
-          // ignore
-        }
-        return { ...prev, [targetChannel]: merged };
-      });
-    } catch {
-      // ignore
-    }
-  }, [clearedAtByChannel]);
+        setMessagesByChannel((prev) => {
+          const existing =
+            serverClearedAt > (clearedAtByChannel[targetChannel] || 0) ? [] : prev[targetChannel] || [];
+          const merged = mergeChannelMessages(existing, data.messages || [], serverClearedAt);
+          try {
+            localStorage.setItem(`gta6takip_msgs_${targetChannel}`, JSON.stringify(merged));
+          } catch {
+            // ignore
+          }
+          return { ...prev, [targetChannel]: merged };
+        });
+      } catch {
+        // ignore
+      }
+    },
+    [clearedAtByChannel]
+  );
 
   useEffect(() => {
     fetchChat(channel);
@@ -421,7 +430,6 @@ export default function Home() {
     return () => clearInterval(id);
   }, [channel, fetchChat]);
 
-  // Supabase Realtime online sayacı
   useEffect(() => {
     if (!supabase) return;
     const room = supabase.channel('gta6takip_presence', {
@@ -447,7 +455,6 @@ export default function Home() {
   const pinnedMessage = pinnedByChannel[channel] || null;
   const activePoll = pollByChannel[channel] || null;
 
-  // Brave & Tüm tarayıcılarda otomatik aşağı kaydırma
   const scrollToBottom = useCallback(() => {
     const el = chatScrollRef.current;
     if (el) {
@@ -688,7 +695,7 @@ export default function Home() {
   };
 
   const renderStageIcon = (stageText = '') => {
-    const s = stageText.toLowerCase();
+    const s = String(stageText).toLowerCase();
     if (s.includes('oynan') || s.includes('play') || s.includes('menü') || s.includes('menu')) {
       return <Gamepad2 className="w-3.5 h-3.5 text-pink-500 shrink-0" />;
     }
@@ -704,12 +711,13 @@ export default function Home() {
       : 'Tracking GTA VI PC Port progress live! 🚀';
   const shareUrl = 'https://gta6takip.vercel.app/';
 
-  const pollRemainingSec = activePoll
-    ? Math.max(0, Math.floor((activePoll.expiresAt - nowTick) / 1000))
-    : 0;
+  const pollRemainingSec = activePoll ? Math.max(0, Math.floor((activePoll.expiresAt - nowTick) / 1000)) : 0;
   const pollEnded = activePoll ? pollRemainingSec === 0 : false;
-  const totalVotes = activePoll
-    ? activePoll.options.reduce((acc, o) => acc + (o.votes || 0), 0)
+  const totalVotes = activePoll ? activePoll.options.reduce((acc, o) => acc + (o.votes || 0), 0) : 0;
+
+  const openSourceCount = teams.filter((tm) => tm.open_source ?? tm.isOpenSource ?? tm.is_open_source).length;
+  const topPct = teams.length
+    ? Math.max(...teams.map((tm) => Number(tm.percentage ?? tm.progress ?? tm.pct ?? 0)))
     : 0;
 
   return (
@@ -717,22 +725,23 @@ export default function Home() {
       className="min-h-screen transition-colors duration-200"
       style={{ backgroundColor: 'var(--bg-base)', color: 'var(--text-primary)' }}
     >
-      {/* ÜST HERO */}
+      {/* ÜST NAVBAR + VICE CITY HERO */}
       <header className="pw-hero-bg border-b" style={{ borderColor: 'var(--border-color)' }}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-5 flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full text-xs font-bold bg-pink-500/15 text-pink-500 mb-2">
-              <span className="w-2 h-2 rounded-full bg-pink-500 animate-pulse" />
-              {t.badge}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-600 via-pink-500 to-orange-500 flex items-center justify-center text-white font-black text-lg shadow-md">
+              VI
             </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold pw-text-gradient">{t.title}</h1>
-            <p className="text-xs sm:text-sm mt-1 max-w-2xl" style={{ color: 'var(--text-secondary)' }}>
-              {t.subtitle}
-            </p>
+            <div>
+              <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-pink-500/15 text-pink-500">
+                <span className="w-1.5 h-1.5 rounded-full bg-pink-500 animate-pulse" />
+                {t.badge}
+              </div>
+              <h1 className="text-xl sm:text-2xl font-black pw-text-gradient leading-tight">{t.title}</h1>
+            </div>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            {/* Dil Seçici */}
             <div
               className="flex items-center rounded-xl p-1 border"
               style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)' }}
@@ -763,7 +772,6 @@ export default function Home() {
               </button>
             </div>
 
-            {/* Tema */}
             <button
               onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
               className="p-2 rounded-xl border transition"
@@ -773,7 +781,6 @@ export default function Home() {
               {theme === 'dark' ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4" />}
             </button>
 
-            {/* Yenile */}
             <button
               onClick={fetchSync}
               className="flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-semibold transition"
@@ -784,95 +791,162 @@ export default function Home() {
             </button>
           </div>
         </div>
+
+        {/* İstatistik Özet Şeridi */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 pb-5">
+          <p className="text-xs sm:text-sm mb-3" style={{ color: 'var(--text-secondary)' }}>
+            {t.subtitle}
+          </p>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div
+              className="rounded-xl p-3 border flex items-center gap-3"
+              style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)' }}
+            >
+              <Trophy className="w-5 h-5 text-amber-500 shrink-0" />
+              <div>
+                <div className="text-[11px]" style={{ color: 'var(--text-secondary)' }}>{t.statTeams}</div>
+                <div className="text-sm font-extrabold">{teams.length}</div>
+              </div>
+            </div>
+            <div
+              className="rounded-xl p-3 border flex items-center gap-3"
+              style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)' }}
+            >
+              <Code2 className="w-5 h-5 text-emerald-500 shrink-0" />
+              <div>
+                <div className="text-[11px]" style={{ color: 'var(--text-secondary)' }}>{t.statOpen}</div>
+                <div className="text-sm font-extrabold">{openSourceCount}</div>
+              </div>
+            </div>
+            <div
+              className="rounded-xl p-3 border flex items-center gap-3"
+              style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)' }}
+            >
+              <Activity className="w-5 h-5 text-pink-500 shrink-0" />
+              <div>
+                <div className="text-[11px]" style={{ color: 'var(--text-secondary)' }}>{t.statLeader}</div>
+                <div className="text-sm font-extrabold pw-text-gradient">
+                  {lang === 'tr' ? `%${topPct}` : `${topPct}%`}
+                </div>
+              </div>
+            </div>
+            <div
+              className="rounded-xl p-3 border flex items-center gap-3"
+              style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)' }}
+            >
+              <Clock className="w-5 h-5 text-purple-500 shrink-0" />
+              <div>
+                <div className="text-[11px]" style={{ color: 'var(--text-secondary)' }}>{t.statSync}</div>
+                <div className="text-sm font-extrabold">{lastUpdated}</div>
+              </div>
+            </div>
+          </div>
+        </div>
       </header>
 
-      {/* ANA İÇERİK */}
+      {/* ANA BÖLÜM: SOL İLERLEME ÇUBUKLARI + SAĞ SOHBET */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* SOL SÜTUN: TAKIMLAR */}
+        {/* SOL SÜTUN: PORTWATCH YARIŞI */}
         <section className="lg:col-span-7 xl:col-span-8 space-y-3">
-          <div className="flex items-center justify-between text-xs px-1" style={{ color: 'var(--text-secondary)' }}>
-            <span>
-              {t.lastSync}: <strong>{lastUpdated}</strong>
-            </span>
-            <span>PortWatch VI (#race)</span>
-          </div>
+          {teams.length === 0 ? (
+            <div
+              className="rounded-2xl p-8 border text-center text-sm"
+              style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)', color: 'var(--text-secondary)' }}
+            >
+              {t.loadingTeams}
+            </div>
+          ) : (
+            teams.map((team, idx) => {
+              const pct = Number(team.percentage ?? team.progress ?? team.pct ?? 0);
+              const pctLabel = lang === 'tr' ? `%${pct}` : `${pct}%`;
+              const isOpen = Boolean(team.open_source ?? team.isOpenSource ?? team.is_open_source);
+              const stage = lang === 'tr' ? team.stage_tr || team.stage : team.stage_en || team.stage;
+              const fps = lang === 'tr' ? team.fps_tr || team.fps : team.fps_en || team.fps;
+              const desc = lang === 'tr' ? team.desc_tr || team.description || team.desc : team.desc_en || team.description || team.desc;
+              const commit = team.commit_msg || team.commitMessage || team.lastCommit;
+              const repoUrl = team.url || team.repo_url || team.github_url;
 
-          {teams.map((team, idx) => {
-            const pct = Number(team.percentage ?? team.progress ?? 0);
-            const pctLabel = lang === 'tr' ? `%${pct}` : `${pct}%`;
-            const stage = lang === 'tr' ? team.stage_tr || team.stage : team.stage_en || team.stage;
-            const fps = lang === 'tr' ? team.fps_tr || team.fps : team.fps_en || team.fps;
-            const desc = lang === 'tr' ? team.desc_tr || team.description : team.desc_en || team.description;
+              return (
+                <article
+                  key={team.name || idx}
+                  className="rounded-2xl p-4 sm:p-5 border shadow-sm transition hover:border-pink-500/50"
+                  style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)' }}
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+                    <div className="flex items-center gap-2.5 flex-wrap">
+                      <span className="text-xs font-black px-2.5 py-1 rounded-lg bg-gradient-to-r from-purple-600/15 to-pink-500/15 text-pink-500">
+                        #{idx + 1}
+                      </span>
+                      <h2 className="font-extrabold text-base sm:text-lg">{team.name || team.title}</h2>
+                      <span
+                        className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full ${
+                          isOpen ? 'bg-emerald-500/15 text-emerald-500' : 'bg-slate-500/15 text-slate-400'
+                        }`}
+                      >
+                        {isOpen ? t.openSource : t.closedTeam}
+                      </span>
+                    </div>
 
-            return (
-              <article
-                key={team.name || idx}
-                className="rounded-2xl p-4 border shadow-sm transition hover:border-pink-500/50"
-                style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)' }}
-              >
-                <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
-                  <div className="flex items-center gap-2.5">
-                    <span className="text-xs font-extrabold px-2 py-0.5 rounded-lg bg-purple-500/15 text-purple-500">
-                      #{idx + 1}
-                    </span>
-                    <h2 className="font-bold text-base">{team.name}</h2>
-                    <span
-                      className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                        team.open_source
-                          ? 'bg-emerald-500/15 text-emerald-500'
-                          : 'bg-slate-500/15 text-slate-400'
-                      }`}
-                    >
-                      {team.open_source ? t.openSource : t.closedTeam}
-                    </span>
+                    <div className="flex items-center gap-3">
+                      <span className="text-xl font-black pw-text-gradient">{pctLabel}</span>
+                      {repoUrl && (
+                        <a
+                          href={repoUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="p-1.5 rounded-lg border hover:border-pink-500 transition"
+                          style={{ borderColor: 'var(--border-color)' }}
+                        >
+                          <ExternalLink className="w-3.5 h-3.5" />
+                        </a>
+                      )}
+                    </div>
                   </div>
 
-                  <div className="flex items-center gap-3">
-                    <span className="text-lg font-black pw-text-gradient">{pctLabel}</span>
-                    {team.url && (
-                      <a
-                        href={team.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="p-1.5 rounded-lg border hover:opacity-80"
+                  {/* KALIN GRADIENT İLERLEME ÇUBUĞU */}
+                  <div className="w-full h-3.5 rounded-full overflow-hidden bg-slate-500/20 mb-3">
+                    <div
+                      className="h-full gta-bar-fill rounded-full transition-all duration-700"
+                      style={{
+                        width: `${Math.min(100, Math.max(0, pct))}%`,
+                        background: 'linear-gradient(90deg, #9333ea 0%, #ec4899 55%, #f97316 100%)',
+                      }}
+                    />
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-3 text-xs" style={{ color: 'var(--text-secondary)' }}>
+                    {stage && (
+                      <span
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border"
                         style={{ borderColor: 'var(--border-color)' }}
                       >
-                        <ExternalLink className="w-3.5 h-3.5" />
-                      </a>
+                        {renderStageIcon(stage)}
+                        {stage}
+                      </span>
+                    )}
+                    {fps && (
+                      <span
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border"
+                        style={{ borderColor: 'var(--border-color)' }}
+                      >
+                        <Monitor className="w-3.5 h-3.5 text-sky-500 shrink-0" />
+                        {fps}
+                      </span>
                     )}
                   </div>
-                </div>
 
-                <div className="w-full h-2.5 rounded-full overflow-hidden bg-slate-500/20 mb-2.5">
-                  <div className="h-full gta-bar-fill rounded-full" style={{ width: `${Math.min(100, pct)}%` }} />
-                </div>
-
-                <div className="flex flex-wrap items-center gap-3 text-xs" style={{ color: 'var(--text-secondary)' }}>
-                  {stage && (
-                    <span className="inline-flex items-center gap-1">
-                      {renderStageIcon(stage)}
-                      {stage}
-                    </span>
+                  {(commit || desc) && (
+                    <p className="text-xs mt-2.5 line-clamp-2" style={{ color: 'var(--text-secondary)' }}>
+                      {commit ? `${t.latestCommit}: ${commit}` : desc}
+                    </p>
                   )}
-                  {fps && (
-                    <span className="inline-flex items-center gap-1">
-                      <Monitor className="w-3.5 h-3.5 text-sky-500 shrink-0" />
-                      {fps}
-                    </span>
-                  )}
-                </div>
-
-                {(desc || team.commit_msg) && (
-                  <p className="text-xs mt-2 line-clamp-2" style={{ color: 'var(--text-secondary)' }}>
-                    {team.commit_msg ? `${t.latestCommit}: ${team.commit_msg}` : desc}
-                  </p>
-                )}
-              </article>
-            );
-          })}
+                </article>
+              );
+            })
+          )}
         </section>
 
-        {/* SAĞ SÜTUN: SOHBET KUTUSU */}
+        {/* SAĞ SÜTUN: VİCE CİTY CANLI SOHBET */}
         <aside
           className={`${
             isMobileFullscreen
@@ -883,14 +957,14 @@ export default function Home() {
         >
           <div
             className={`rounded-2xl border shadow-sm flex flex-col overflow-hidden ${
-              isMobileFullscreen ? 'flex-1 h-full' : 'h-[640px] lg:sticky lg:top-4'
+              isMobileFullscreen ? 'flex-1 h-full' : 'h-[660px] lg:sticky lg:top-4'
             }`}
             style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)' }}
           >
             {/* Chat Başlık */}
             <div className="p-3.5 border-b flex items-center justify-between gap-2" style={{ borderColor: 'var(--border-color)' }}>
               <div className="flex items-center gap-2.5 min-w-0">
-                <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-purple-600 via-pink-500 to-orange-500 flex items-center justify-center text-white shrink-0">
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-600 via-pink-500 to-orange-500 flex items-center justify-center text-white shrink-0 shadow-sm">
                   <MessageSquare className="w-4 h-4" />
                 </div>
                 <div className="min-w-0">
@@ -903,18 +977,18 @@ export default function Home() {
 
               <div className="flex items-center gap-1.5 shrink-0">
                 <button
-                  onClick={() => (isAdmin ? setShowAdminModal(true) : setShowAdminModal(true))}
+                  onClick={() => setShowAdminModal(true)}
                   className={`p-1.5 rounded-lg border transition ${
                     isAdmin
                       ? 'bg-purple-500/20 border-purple-500 text-purple-500'
-                      : 'border-amber-500/40 text-amber-500 hover:bg-amber-500/10'
+                      : 'bg-amber-500/10 border-amber-500/30 text-amber-500 hover:bg-amber-500/20'
                   }`}
                   title="Admin"
                 >
                   <Shield className="w-4 h-4" />
                 </button>
 
-                <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[11px] font-semibold bg-emerald-500/15 text-emerald-500">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-500/15 text-emerald-500 border border-emerald-500/20">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                   {onlineCount} {t.live}
                 </span>
@@ -961,10 +1035,10 @@ export default function Home() {
             )}
 
             {/* Kanal Seçici */}
-            <div className="p-2 border-b grid grid-cols-2 gap-2" style={{ borderColor: 'var(--border-color)' }}>
+            <div className="p-2.5 border-b grid grid-cols-2 gap-2" style={{ borderColor: 'var(--border-color)' }}>
               <button
                 onClick={() => setChannel('tr-genel')}
-                className={`flex items-center justify-center gap-1.5 py-1.5 rounded-xl text-xs font-bold transition ${
+                className={`flex items-center justify-center gap-1.5 py-1.5 rounded-full text-xs font-bold transition ${
                   channel === 'tr-genel'
                     ? 'bg-gradient-to-r from-purple-600 via-pink-500 to-orange-500 text-white shadow-sm'
                     : 'border'
@@ -975,7 +1049,7 @@ export default function Home() {
               </button>
               <button
                 onClick={() => setChannel('en-general')}
-                className={`flex items-center justify-center gap-1.5 py-1.5 rounded-xl text-xs font-bold transition ${
+                className={`flex items-center justify-center gap-1.5 py-1.5 rounded-full text-xs font-bold transition ${
                   channel === 'en-general'
                     ? 'bg-gradient-to-r from-purple-600 via-pink-500 to-orange-500 text-white shadow-sm'
                     : 'border'
@@ -995,7 +1069,6 @@ export default function Home() {
                   localStorage.setItem('gta6takip_avatar', String(next));
                 }}
                 className={`w-7 h-7 rounded-lg bg-gradient-to-br ${AVATARS[avatarIdx].bg} text-white text-xs font-bold flex items-center justify-center shrink-0`}
-                title="Avatar"
               >
                 {AVATARS[avatarIdx].label}
               </button>
@@ -1011,7 +1084,7 @@ export default function Home() {
                   setNickname(e.target.value);
                   localStorage.setItem('gta6takip_nick', e.target.value);
                 }}
-                className="flex-1 min-w-0 text-xs font-bold px-2.5 py-1 rounded-lg border outline-none"
+                className="flex-1 min-w-0 text-xs font-bold px-3 py-1.5 rounded-xl border outline-none"
                 style={{
                   backgroundColor: 'var(--bg-base)',
                   color: isAdmin ? '#ec4899' : 'var(--text-primary)',
@@ -1209,9 +1282,9 @@ export default function Home() {
                   return (
                     <div
                       key={msg.id}
-                      className={`rounded-xl p-2.5 border transition ${
+                      className={`rounded-2xl p-3 border transition ${
                         msg.is_admin
-                          ? 'bg-gradient-to-r from-purple-500/15 via-pink-500/15 to-amber-500/15 border-pink-500/40'
+                          ? 'bg-gradient-to-r from-purple-500/15 via-pink-500/15 to-amber-500/15 border-pink-400/50'
                           : ''
                       }`}
                       style={!msg.is_admin ? { backgroundColor: 'var(--bg-base)', borderColor: 'var(--border-color)' } : undefined}
@@ -1221,23 +1294,23 @@ export default function Home() {
                           className="text-[11px] px-2 py-1 mb-1.5 rounded-lg border-l-2 border-pink-500 bg-pink-500/5 truncate"
                           style={{ color: 'var(--text-secondary)' }}
                         >
-                          <strong>@{msg.reply_to.nickname}:</strong> {msg.reply_to.text}
+                          <strong>@{msg.reply_to.nickname}:</strong> {censorProfanity(msg.reply_to.text)}
                         </div>
                       )}
 
                       <div className="flex items-center justify-between gap-2 mb-1">
-                        <div className="flex items-center gap-1.5 min-w-0">
+                        <div className="flex items-center gap-2 min-w-0">
                           <span
-                            className={`w-5 h-5 rounded-md bg-gradient-to-br ${av.bg} text-white text-[10px] font-bold flex items-center justify-center shrink-0`}
+                            className={`w-6 h-6 rounded-lg bg-gradient-to-br ${av.bg} text-white text-[11px] font-bold flex items-center justify-center shrink-0`}
                           >
                             {av.label}
                           </span>
-                          <span className={`text-xs font-bold truncate ${msg.is_admin ? 'text-pink-500' : ''}`}>
+                          <span className={`text-xs font-extrabold truncate ${msg.is_admin ? 'text-pink-500' : 'text-pink-500'}`}>
                             {msg.nickname}
                           </span>
                           {msg.is_admin && (
                             <span className="inline-flex items-center gap-1">
-                              <span className="px-1.5 py-0.5 rounded text-[9px] font-extrabold bg-gradient-to-r from-purple-600 to-pink-500 text-white">
+                              <span className="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-gradient-to-r from-purple-600 to-pink-500 text-white">
                                 ADMIN
                               </span>
                               <VerifiedBadge />
@@ -1263,11 +1336,7 @@ export default function Home() {
                                 className="p-0.5 text-amber-500 hover:opacity-80"
                                 title={pinnedMessage?.id === msg.id ? t.unpin : t.pin}
                               >
-                                {pinnedMessage?.id === msg.id ? (
-                                  <PinOff className="w-3 h-3" />
-                                ) : (
-                                  <Pin className="w-3 h-3" />
-                                )}
+                                {pinnedMessage?.id === msg.id ? <PinOff className="w-3 h-3" /> : <Pin className="w-3 h-3" />}
                               </button>
                               <button
                                 onClick={() => handleDeleteMessage(msg.id)}
@@ -1290,7 +1359,9 @@ export default function Home() {
                         </div>
                       </div>
 
-                      <p className="text-xs leading-relaxed break-words">{msg.text}</p>
+                      <p className="text-xs leading-relaxed break-words">
+                        {msg.is_admin ? msg.text : censorProfanity(msg.text)}
+                      </p>
                     </div>
                   );
                 })
@@ -1298,7 +1369,6 @@ export default function Home() {
               <div ref={chatEndRef} />
             </div>
 
-            {/* Uyarı / Yanıt / Emoji Alanı */}
             {chatAlert && (
               <div className="px-3 py-1.5 bg-red-500/15 text-red-500 text-[11px] font-semibold text-center">
                 {chatAlert}
@@ -1310,7 +1380,7 @@ export default function Home() {
                 style={{ borderColor: 'var(--border-color)' }}
               >
                 <span className="truncate">
-                  {t.replyingTo} <strong>@{replyTo.nickname}</strong> — {replyTo.text}
+                  {t.replyingTo} <strong>@{replyTo.nickname}</strong> — {censorProfanity(replyTo.text)}
                 </span>
                 <button onClick={() => setReplyTo(null)}>
                   <X className="w-3.5 h-3.5" />
@@ -1344,7 +1414,7 @@ export default function Home() {
               <button
                 type="button"
                 onClick={() => setShowEmoji((v) => !v)}
-                className="p-2 rounded-xl border shrink-0"
+                className="w-9 h-9 rounded-full border flex items-center justify-center shrink-0"
                 style={{ borderColor: 'var(--border-color)' }}
               >
                 <Smile className="w-4 h-4" />
@@ -1355,7 +1425,7 @@ export default function Home() {
                 disabled={isUserBanned}
                 onChange={(e) => setChatInput(e.target.value)}
                 placeholder={isUserBanned ? t.bannedWarn : t.placeholder}
-                className="flex-1 min-w-0 text-xs px-3 py-2 rounded-xl border outline-none"
+                className="flex-1 min-w-0 text-xs px-3.5 py-2.5 rounded-2xl border outline-none"
                 style={{
                   backgroundColor: 'var(--bg-base)',
                   color: 'var(--text-primary)',
@@ -1365,7 +1435,7 @@ export default function Home() {
               <button
                 type="submit"
                 disabled={isUserBanned || (!isAdmin && (slowmodeLeft > 0 || muteLeft > 0))}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-purple-600 via-pink-500 to-orange-500 disabled:opacity-50 shrink-0"
+                className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-2xl text-xs font-bold text-white bg-gradient-to-r from-purple-600 via-pink-500 to-orange-500 disabled:opacity-50 shrink-0 shadow-sm"
               >
                 {!isAdmin && (muteLeft > 0 || slowmodeLeft > 0) ? (
                   <>
@@ -1417,7 +1487,6 @@ export default function Home() {
         </aside>
       </main>
 
-      {/* ALT BİLGİ */}
       <footer className="max-w-7xl mx-auto px-4 sm:px-6 py-6 text-center text-xs" style={{ color: 'var(--text-secondary)' }}>
         <p>{t.disclaimer}</p>
       </footer>
