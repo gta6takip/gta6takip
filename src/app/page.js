@@ -301,17 +301,33 @@ export default function HomePage() {
       )
       .subscribe();
 
-    const visitorId = `Ziyaretci-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
+    let visitorId = '';
+    try {
+      visitorId = sessionStorage.getItem('gta6takip_vid') || '';
+      if (!visitorId) {
+        visitorId = `Ziyaretci-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
+        sessionStorage.setItem('gta6takip_vid', visitorId);
+      }
+    } catch {
+      visitorId = `Ziyaretci-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
+    }
+
+    setOnlineUsers([visitorId]);
+
     const presenceChannel = supabase.channel('gta6takip-online-room', {
       config: { presence: { key: visitorId } },
     });
 
+    const syncPresenceList = () => {
+      const state = presenceChannel.presenceState();
+      const names = Array.from(new Set(Object.keys(state)));
+      setOnlineUsers(names.length > 0 ? names : [visitorId]);
+    };
+
     presenceChannel
-      .on('presence', { event: 'sync' }, () => {
-        const state = presenceChannel.presenceState();
-        const names = Object.keys(state);
-        setOnlineUsers(names.length > 0 ? names : [visitorId]);
-      })
+      .on('presence', { event: 'sync' }, syncPresenceList)
+      .on('presence', { event: 'join' }, syncPresenceList)
+      .on('presence', { event: 'leave' }, syncPresenceList)
       .subscribe(async (status) => {
         if (status === 'SUBSCRIBED') {
           await presenceChannel.track({
@@ -321,9 +337,23 @@ export default function HomePage() {
         }
       });
 
+    const handleLeave = () => {
+      try {
+        presenceChannel.untrack();
+        supabase.removeChannel(presenceChannel);
+      } catch {
+        // ignore
+      }
+    };
+
+    window.addEventListener('pagehide', handleLeave);
+    window.addEventListener('beforeunload', handleLeave);
+
     return () => {
+      window.removeEventListener('pagehide', handleLeave);
+      window.removeEventListener('beforeunload', handleLeave);
+      handleLeave();
       supabase.removeChannel(projectChannel);
-      supabase.removeChannel(presenceChannel);
     };
   }, []);
 
