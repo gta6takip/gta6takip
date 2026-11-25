@@ -16,12 +16,116 @@ import {
   Users,
   Clock,
   Palette,
+  Smile,
 } from 'lucide-react';
 
 const THEMES = [
   { id: 'portwatch-dark', tr: 'PortWatch Koyu', en: 'PortWatch Dark' },
   { id: 'portwatch-light', tr: 'PortWatch Açık', en: 'PortWatch Light' },
 ];
+
+const QUICK_EMOJIS = ['🔥', '🚗', '🌴', '🎮', '⚡', '😂', '❤️', '👀', '🚀', '👍', '🎉', '💀'];
+
+const AVATARS = [
+  { id: 'sunset', label: 'Sunset', bg: 'from-purple-600 to-pink-500' },
+  { id: 'controller', label: 'Gamer', bg: 'from-pink-500 to-orange-500' },
+  { id: 'bolt', label: 'Turbo', bg: 'from-amber-500 to-rose-500' },
+  { id: 'shades', label: 'Vice', bg: 'from-indigo-500 to-purple-600' },
+  { id: 'crown', label: 'VIP', bg: 'from-emerald-500 to-teal-500' },
+  { id: 'rocket', label: 'Port', bg: 'from-fuchsia-600 to-orange-400' },
+];
+
+function AvatarSvg({ avatarId, size = 'sm' }) {
+  const av = AVATARS.find((a) => a.id === avatarId) || AVATARS[0];
+  const dim = size === 'sm' ? 'w-6 h-6' : 'w-7 h-7';
+  const iconDim = size === 'sm' ? 'w-3.5 h-3.5' : 'w-4 h-4';
+
+  return (
+    <span
+      className={`${dim} rounded-lg bg-gradient-to-br ${av.bg} inline-flex items-center justify-center text-white shrink-0 shadow-sm`}
+    >
+      {av.id === 'sunset' && (
+        <svg className={iconDim} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+          <circle cx="12" cy="12" r="5" />
+          <path d="M3 17h18M5 20h14" strokeLinecap="round" />
+        </svg>
+      )}
+      {av.id === 'controller' && (
+        <svg className={iconDim} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+          <rect x="2" y="6" width="20" height="12" rx="4" />
+          <path d="M6 12h4M8 10v4" strokeLinecap="round" />
+          <circle cx="16" cy="11" r="1" fill="currentColor" />
+          <circle cx="18" cy="13" r="1" fill="currentColor" />
+        </svg>
+      )}
+      {av.id === 'bolt' && (
+        <svg className={iconDim} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" strokeLinejoin="round" />
+        </svg>
+      )}
+      {av.id === 'shades' && (
+        <svg className={iconDim} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+          <path d="M2 10h20M4 10l1.5 5a2 2 0 0 0 2 1.5h2a2 2 0 0 0 2-1.5L12 10l.5 5a2 2 0 0 0 2 1.5h2a2 2 0 0 0 2-1.5L20 10" strokeLinecap="round" />
+        </svg>
+      )}
+      {av.id === 'crown' && (
+        <svg className={iconDim} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+          <path d="M3 18h18L19 7l-4 4-3-6-3 6-4-4-2 11z" strokeLinejoin="round" />
+        </svg>
+      )}
+      {av.id === 'rocket' && (
+        <svg className={iconDim} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+          <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z" />
+          <path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z" />
+        </svg>
+      )}
+    </span>
+  );
+}
+
+function getAvatarForUser(name, myNick, myAvatar) {
+  const clean = (name || '').trim();
+  const mine = (myNick || '').trim() || 'ViceMisafir';
+  if (clean && clean.toLowerCase() === mine.toLowerCase()) {
+    return myAvatar;
+  }
+  let hash = 0;
+  for (let i = 0; i < clean.length; i += 1) {
+    hash = (hash * 31 + clean.charCodeAt(i)) % AVATARS.length;
+  }
+  return AVATARS[Math.abs(hash) % AVATARS.length].id;
+}
+
+// Türkçe ve İngilizce küfür/hakaret filtresi (hem geçmiş hem yeni mesajlar için)
+const BAD_WORDS = [
+  'amk', 'aq', 'mk', 'mq', 'amq', 'orospu', 'orspu', 'oç', 'oc', 'piç', 'pic',
+  'siktir', 'sikim', 'sikeyim', 'sikerim', 'sikik', 'sikiş', 'yarrak', 'yarak',
+  'taşak', 'tasak', 'göt', 'gotveren', 'götveren', 'pezevenk', 'kahpe', 'kaltak',
+  'puşt', 'pust', 'ibne', 'gavat', 'şerefsiz', 'serefsiz', 'haysiyetsiz',
+  'gerizekalı', 'salak', 'aptal', 'mal', 'ananı', 'anani', 'bacını', 'bacini',
+  'fuck', 'fucking', 'fucker', 'motherfucker', 'mf', 'shit', 'bullshit', 'bitch',
+  'asshole', 'dick', 'cock', 'pussy', 'cunt', 'bastard', 'slut', 'whore',
+  'faggot', 'retard', 'nigger', 'nigga', 'stfu', 'wtf',
+];
+
+const BAD_WORD_REGEX = new RegExp(
+  `(^|[^a-zA-ZçğıöşüÇĞİÖŞÜ0-9])(${BAD_WORDS.join('|')})(?=[^a-zA-ZçğıöşüÇĞİÖŞÜ0-9]|$)`,
+  'gi'
+);
+
+function containsProfanity(text) {
+  if (!text) return false;
+  BAD_WORD_REGEX.lastIndex = 0;
+  return BAD_WORD_REGEX.test(String(text));
+}
+
+function censorText(text) {
+  if (!text) return '';
+  return String(text).replace(BAD_WORD_REGEX, (match, prefix, word) => {
+    const masked = word[0] + '*'.repeat(Math.max(2, word.length - 1));
+    return `${prefix}${masked}`;
+  });
+}
 
 const TRANSLATIONS = {
   tr: {
@@ -53,7 +157,7 @@ const TRANSLATIONS = {
     unknownTime: 'Bilinmiyor',
     source: 'Kaynak',
     chatTitle: 'Vice City Canlı Sohbet',
-    chatSubtitle: 'Nickname yaz, sohbet et ve link paylaş',
+    chatSubtitle: 'Avatar seç, sohbet et ve link paylaş',
     live: 'Canlı',
     nicknameLabel: 'Nickname:',
     nicknamePlaceholder: 'Takma adını yaz...',
@@ -63,6 +167,7 @@ const TRANSLATIONS = {
     send: 'Gönder',
     sending: 'Atılıyor...',
     errEmptyMsg: 'Lütfen önce bir mesaj veya link yaz.',
+    errMuted: 'Küfür/uygunsuz ifade tespit edildi. Kalan engel süresi:',
     errSend: 'Gönderilemedi:',
     errUnexpected: 'Beklenmeyen hata:',
     errRead: 'Sohbet okuma hatası:',
@@ -104,7 +209,7 @@ const TRANSLATIONS = {
     unknownTime: 'Unknown',
     source: 'Source',
     chatTitle: 'Vice City Live Chat',
-    chatSubtitle: 'Pick a nickname, chat & share links',
+    chatSubtitle: 'Pick an avatar, chat & share links',
     live: 'Live',
     nicknameLabel: 'Nickname:',
     nicknamePlaceholder: 'Enter your nickname...',
@@ -114,6 +219,7 @@ const TRANSLATIONS = {
     send: 'Send',
     sending: 'Sending...',
     errEmptyMsg: 'Please enter a message or link first.',
+    errMuted: 'Profanity detected. You are muted for:',
     errSend: 'Failed to send:',
     errUnexpected: 'Unexpected error:',
     errRead: 'Chat read error:',
@@ -287,8 +393,9 @@ function StageVisualBadge({ percentage, stage = '', t }) {
 
 function renderMessageWithLinks(text) {
   if (!text) return null;
+  const cleanText = censorText(text);
   const urlRegex = /(https?:\/\/[^\s]+)/g;
-  const parts = String(text).split(urlRegex);
+  const parts = String(cleanText).split(urlRegex);
 
   return parts.map((part, idx) => {
     if (part.match(urlRegex)) {
@@ -333,6 +440,10 @@ export default function HomePage() {
   const [showOnlinePanel, setShowOnlinePanel] = useState(false);
   const [theme, setTheme] = useState('portwatch-dark');
   const [lang, setLang] = useState('tr');
+  const [avatar, setAvatar] = useState('sunset');
+  const [showAvatarPicker, setShowAvatarPicker] = useState(false);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [muteSeconds, setMuteSeconds] = useState(0);
   const chatBottomRef = useRef(null);
 
   const t = TRANSLATIONS[lang] || TRANSLATIONS.tr;
@@ -350,6 +461,16 @@ export default function HomePage() {
       const savedLang = localStorage.getItem('gta6takip_lang');
       if (savedLang === 'tr' || savedLang === 'en') {
         setLang(savedLang);
+      }
+
+      const savedAvatar = localStorage.getItem('gta6takip_avatar');
+      if (savedAvatar && AVATARS.some((a) => a.id === savedAvatar)) {
+        setAvatar(savedAvatar);
+      }
+
+      const muteUntil = Number(localStorage.getItem('gta6takip_mute_until') || 0);
+      if (muteUntil > Date.now()) {
+        setMuteSeconds(Math.ceil((muteUntil - Date.now()) / 1000));
       }
     } catch {
       // ignore
@@ -405,6 +526,22 @@ export default function HomePage() {
       // ignore
     }
   }, [lang]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('gta6takip_avatar', avatar);
+    } catch {
+      // ignore
+    }
+  }, [avatar]);
+
+  useEffect(() => {
+    if (muteSeconds <= 0) return undefined;
+    const timer = setInterval(() => {
+      setMuteSeconds((prev) => (prev <= 1 ? 0 : prev - 1));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [muteSeconds]);
 
   useEffect(() => {
     const currentNick = username.trim().slice(0, 24) || 'ViceMisafir';
@@ -529,18 +666,38 @@ export default function HomePage() {
     if (e && e.preventDefault) e.preventDefault();
     setChatError('');
 
+    if (muteSeconds > 0) {
+      setChatError(`${t.errMuted} ${muteSeconds}${t.secShort}`);
+      return;
+    }
+
     const cleanMsg = newMessage.trim();
-    const cleanNick = username.trim().slice(0, 24) || 'ViceMisafir';
+    const rawNick = username.trim().slice(0, 24) || 'ViceMisafir';
 
     if (!cleanMsg) {
       setChatError(t.errEmptyMsg);
       return;
     }
+
+    if (containsProfanity(cleanMsg) || containsProfanity(rawNick)) {
+      const muteDurationSec = 60;
+      const until = Date.now() + muteDurationSec * 1000;
+      setMuteSeconds(muteDurationSec);
+      try {
+        localStorage.setItem('gta6takip_mute_until', String(until));
+      } catch {
+        // ignore
+      }
+      setNewMessage('');
+      setChatError(`${t.errMuted} ${muteDurationSec}${t.secShort}`);
+      return;
+    }
+
     if (sending) return;
 
     setSending(true);
     try {
-      localStorage.setItem('gta6takip_nick', cleanNick);
+      localStorage.setItem('gta6takip_nick', rawNick);
     } catch {
       // ignore
     }
@@ -550,8 +707,8 @@ export default function HomePage() {
         .from('chat_messages')
         .insert([
           {
-            username: cleanNick,
-            message: cleanMsg.slice(0, 500),
+            username: censorText(rawNick),
+            message: censorText(cleanMsg.slice(0, 500)),
           },
         ])
         .select();
@@ -560,6 +717,7 @@ export default function HomePage() {
         setChatError(`${t.errSend} ${error.message}`);
       } else {
         setNewMessage('');
+        setShowEmojiPicker(false);
         if (Array.isArray(data) && data.length > 0) {
           setMessages((prev) => {
             const exists = prev.some((m) => m.id === data[0].id);
@@ -718,7 +876,7 @@ export default function HomePage() {
                         className="flex items-center gap-2 text-xs px-2.5 py-1.5 rounded-lg"
                       >
                         <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
-                        <span className="truncate font-semibold">{nick}</span>
+                        <span className="truncate font-semibold">{censorText(nick)}</span>
                       </li>
                     ))}
                   </ul>
@@ -942,14 +1100,24 @@ export default function HomePage() {
             </span>
           </div>
 
+          {/* Nickname + SVG Avatar Seçici */}
           <div
             style={{ borderColor: 'var(--card-border)' }}
-            className="px-4 py-2.5 border-b flex items-center gap-2.5 shrink-0"
+            className="px-4 py-2.5 border-b flex items-center gap-2 shrink-0 relative"
           >
+            <button
+              type="button"
+              onClick={() => setShowAvatarPicker((prev) => !prev)}
+              title="Avatar Seç"
+              className="rounded-lg hover:scale-105 transition cursor-pointer shrink-0"
+            >
+              <AvatarSvg avatarId={avatar} size="md" />
+            </button>
+
             <label
               htmlFor="nickname-input"
               style={{ color: 'var(--text-secondary)' }}
-              className="inline-flex items-center gap-1.5 text-xs font-semibold shrink-0"
+              className="inline-flex items-center gap-1 text-xs font-semibold shrink-0"
             >
               <User className="w-3.5 h-3.5 text-pink-500" />
               {t.nicknameLabel}
@@ -971,6 +1139,30 @@ export default function HomePage() {
               style={{ backgroundColor: 'var(--card-inner)', borderColor: 'var(--card-border)' }}
               className="w-full rounded-xl border px-3 py-1.5 text-xs font-bold text-pink-500 placeholder:text-slate-400 placeholder:font-normal focus:outline-none"
             />
+
+            {showAvatarPicker && (
+              <div
+                style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--card-border)' }}
+                className="absolute left-4 top-12 z-30 p-2 rounded-xl border shadow-xl flex items-center gap-1.5"
+              >
+                {AVATARS.map((av) => (
+                  <button
+                    key={av.id}
+                    type="button"
+                    onClick={() => {
+                      setAvatar(av.id);
+                      setShowAvatarPicker(false);
+                    }}
+                    title={av.label}
+                    className={`p-1 rounded-lg transition cursor-pointer ${
+                      avatar === av.id ? 'ring-2 ring-pink-500' : 'opacity-75 hover:opacity-100'
+                    }`}
+                  >
+                    <AvatarSvg avatarId={av.id} size="md" />
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="flex-1 overflow-y-auto vice-scroll p-4 space-y-2.5">
@@ -983,49 +1175,90 @@ export default function HomePage() {
                 <p>{t.chatEmptyDesc}</p>
               </div>
             ) : (
-              messages.map((msg, idx) => (
-                <div
-                  key={msg.id || idx}
-                  style={{ backgroundColor: 'var(--card-inner)', borderColor: 'var(--card-border)' }}
-                  className="rounded-xl border p-3 space-y-1"
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-xs font-extrabold text-pink-500">{msg.username}</span>
-                    <span style={{ color: 'var(--text-secondary)' }} className="text-[10px]">
-                      {msg.created_at
-                        ? new Date(msg.created_at).toLocaleTimeString(
-                            lang === 'en' ? 'en-US' : 'tr-TR',
-                            {
-                              hour: '2-digit',
-                              minute: '2-digit',
-                            }
-                          )
-                        : ''}
-                    </span>
+              messages.map((msg, idx) => {
+                const msgAvatar = getAvatarForUser(msg.username, username, avatar);
+                return (
+                  <div
+                    key={msg.id || idx}
+                    style={{ backgroundColor: 'var(--card-inner)', borderColor: 'var(--card-border)' }}
+                    className="rounded-xl border p-3 space-y-1"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <AvatarSvg avatarId={msgAvatar} size="sm" />
+                        <span className="text-xs font-extrabold text-pink-500 truncate">
+                          {censorText(msg.username)}
+                        </span>
+                      </div>
+                      <span style={{ color: 'var(--text-secondary)' }} className="text-[10px] shrink-0">
+                        {msg.created_at
+                          ? new Date(msg.created_at).toLocaleTimeString(
+                              lang === 'en' ? 'en-US' : 'tr-TR',
+                              {
+                                hour: '2-digit',
+                                minute: '2-digit',
+                              }
+                            )
+                          : ''}
+                      </span>
+                    </div>
+                    <p className="text-xs sm:text-sm leading-relaxed break-words pl-8">
+                      {renderMessageWithLinks(msg.message)}
+                    </p>
                   </div>
-                  <p className="text-xs sm:text-sm leading-relaxed break-words">
-                    {renderMessageWithLinks(msg.message)}
-                  </p>
-                </div>
-              ))
+                );
+              })
             )}
             <div ref={chatBottomRef} />
           </div>
 
-          {chatError && (
-            <div className="px-4 py-2 bg-rose-500/15 border-t border-rose-500/30 text-xs text-rose-500">
-              {chatError}
+          {(chatError || muteSeconds > 0) && (
+            <div className="px-4 py-2 bg-rose-500/15 border-t border-rose-500/30 text-xs text-rose-500 font-semibold">
+              {muteSeconds > 0 ? `${t.errMuted} ${muteSeconds}${t.secShort}` : chatError}
             </div>
           )}
 
           <form
             onSubmit={handleSendMessage}
             style={{ backgroundColor: 'var(--card-inner)', borderColor: 'var(--card-border)' }}
-            className="p-3 border-t flex items-center gap-2 shrink-0"
+            className="p-3 border-t flex items-center gap-2 shrink-0 relative"
           >
+            {showEmojiPicker && (
+              <div
+                style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--card-border)' }}
+                className="absolute bottom-14 left-3 z-30 p-2 rounded-xl border shadow-xl flex flex-wrap gap-1 max-w-[230px]"
+              >
+                {QUICK_EMOJIS.map((em) => (
+                  <button
+                    key={em}
+                    type="button"
+                    onClick={() => {
+                      setNewMessage((prev) => `${prev}${em}`);
+                      setShowEmojiPicker(false);
+                    }}
+                    className="w-8 h-8 rounded-lg hover:bg-pink-500/15 flex items-center justify-center text-base cursor-pointer transition"
+                  >
+                    {em}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            <button
+              type="button"
+              onClick={() => setShowEmojiPicker((prev) => !prev)}
+              disabled={muteSeconds > 0}
+              style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--card-border)', color: 'var(--text-secondary)' }}
+              className="p-2 rounded-xl border hover:text-pink-500 transition cursor-pointer shrink-0 disabled:opacity-40"
+              title="Emoji"
+            >
+              <Smile className="w-4 h-4" />
+            </button>
+
             <input
               type="text"
               value={newMessage}
+              disabled={muteSeconds > 0}
               onChange={(e) => setNewMessage(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
@@ -1033,17 +1266,19 @@ export default function HomePage() {
                 }
               }}
               maxLength={500}
-              placeholder={t.messagePlaceholder}
+              placeholder={
+                muteSeconds > 0 ? `${t.errMuted} ${muteSeconds}${t.secShort}` : t.messagePlaceholder
+              }
               style={{
                 backgroundColor: 'var(--card-bg)',
                 borderColor: 'var(--card-border)',
                 color: 'var(--text-primary)',
               }}
-              className="flex-1 min-w-0 rounded-xl border px-3 py-2 text-xs sm:text-sm placeholder:text-slate-400 focus:outline-none"
+              className="flex-1 min-w-0 rounded-xl border px-3 py-2 text-xs sm:text-sm placeholder:text-slate-400 focus:outline-none disabled:opacity-50"
             />
             <button
               type="submit"
-              disabled={sending}
+              disabled={sending || muteSeconds > 0}
               className="gta-bar-fill px-4 py-2 rounded-xl hover:brightness-110 disabled:opacity-40 text-white font-bold text-xs sm:text-sm inline-flex items-center gap-1.5 transition cursor-pointer shrink-0"
             >
               <Send className="w-4 h-4" />
