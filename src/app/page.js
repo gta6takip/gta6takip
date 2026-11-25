@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState, useCallback } from 'react';
-import { Sun, Moon, RefreshCw, ExternalLink } from 'lucide-react';
+import { Sun, Moon, RefreshCw, ExternalLink, ChevronDown, ChevronUp } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -10,7 +10,7 @@ const supabase = supabaseUrl && supabaseAnonKey ? createClient(supabaseUrl, supa
 
 // --- INLINE BAYRAK SVG'LERİ ---
 const FlagTR = () => (
-  <svg viewBox="0 0 36 24" className="w-4 h-3 rounded-[2px] shrink-0 shadow-sm" aria-hidden="true">
+  <svg viewBox="0 0 36 24" className="w-4 h-3 rounded-[2px] shrink-0" aria-hidden="true">
     <rect width="36" height="24" fill="#E30A17" />
     <circle cx="13.5" cy="12" r="6" fill="#FFFFFF" />
     <circle cx="15" cy="12" r="4.8" fill="#E30A17" />
@@ -19,250 +19,158 @@ const FlagTR = () => (
 );
 
 const FlagEN = () => (
-  <svg viewBox="0 0 36 24" className="w-4 h-3 rounded-[2px] shrink-0 shadow-sm" aria-hidden="true">
+  <svg viewBox="0 0 36 24" className="w-4 h-3 rounded-[2px] shrink-0" aria-hidden="true">
     <rect width="36" height="24" fill="#B22234" />
     <path d="M0,3.7h36M0,7.4h36M0,11.1h36M0,14.8h36M0,18.5h36M0,22.2h36" stroke="#FFFFFF" strokeWidth="1.85" />
     <rect width="15.5" height="13" fill="#3C3B6E" />
   </svg>
 );
 
-// --- 3D GÖRÜNÜMLÜ ÖZEL SVG İKONLAR ---
+// --- SADE 3D SVG İKONLAR ---
 const Icon3DLogo = () => (
-  <svg viewBox="0 0 48 48" className="w-11 h-11 shrink-0 drop-shadow-[0_6px_12px_rgba(236,72,153,0.45)]" aria-hidden="true">
+  <svg viewBox="0 0 40 40" className="w-9 h-9 shrink-0 drop-shadow-[0_4px_10px_rgba(236,72,153,0.4)]" aria-hidden="true">
     <defs>
-      <linearGradient id="vi3dBg" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stopColor="#a855f7" />
-        <stop offset="50%" stopColor="#ec4899" />
+      <linearGradient id="pwLogo3d" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stopColor="#7c5cff" />
+        <stop offset="55%" stopColor="#ec4899" />
         <stop offset="100%" stopColor="#f97316" />
       </linearGradient>
-      <linearGradient id="vi3dGloss" x1="0%" y1="0%" x2="0%" y2="100%">
-        <stop offset="0%" stopColor="#ffffff" stopOpacity="0.45" />
-        <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
-      </linearGradient>
     </defs>
-    <rect x="3" y="5" width="42" height="40" rx="13" fill="#4c1d95" opacity="0.45" />
-    <rect x="3" y="3" width="42" height="40" rx="13" fill="url(#vi3dBg)" />
-    <rect x="5" y="4" width="38" height="18" rx="10" fill="url(#vi3dGloss)" />
-    <text x="24" y="29" textAnchor="middle" fill="#ffffff" fontSize="19" fontWeight="900" fontFamily="system-ui, sans-serif">
+    <rect x="2" y="3" width="36" height="35" rx="10" fill="#4c1d95" opacity="0.4" />
+    <rect x="2" y="2" width="36" height="34" rx="10" fill="url(#pwLogo3d)" />
+    <text x="20" y="24" textAnchor="middle" fill="#ffffff" fontSize="15" fontWeight="900" fontFamily="system-ui, sans-serif">
       VI
     </text>
   </svg>
 );
 
-const Icon3DTrophy = () => (
-  <svg viewBox="0 0 40 40" className="w-9 h-9 shrink-0 drop-shadow-[0_4px_8px_rgba(245,158,11,0.4)]" aria-hidden="true">
-    <defs>
-      <linearGradient id="trophy3d" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stopColor="#fde047" />
-        <stop offset="55%" stopColor="#f59e0b" />
-        <stop offset="100%" stopColor="#b45309" />
-      </linearGradient>
-    </defs>
-    <path d="M12 8h16v10a8 8 0 01-16 0V8z" fill="url(#trophy3d)" />
-    <path d="M8 10h4v6a4 4 0 01-4-4v-2zm20 0h4v2a4 4 0 01-4 4v-6z" fill="#fbbf24" />
-    <rect x="17" y="25" width="6" height="5" fill="#d97706" />
-    <rect x="13" y="30" width="14" height="4" rx="2" fill="#92400e" />
-    <ellipse cx="17" cy="12" rx="2.5" ry="4" fill="#ffffff" opacity="0.35" />
-  </svg>
-);
-
-const Icon3DCode = () => (
-  <svg viewBox="0 0 40 40" className="w-9 h-9 shrink-0 drop-shadow-[0_4px_8px_rgba(16,185,129,0.4)]" aria-hidden="true">
-    <defs>
-      <linearGradient id="code3d" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stopColor="#34d399" />
-        <stop offset="100%" stopColor="#059669" />
-      </linearGradient>
-    </defs>
-    <rect x="4" y="6" width="32" height="30" rx="9" fill="#065f46" opacity="0.4" />
-    <rect x="4" y="4" width="32" height="30" rx="9" fill="url(#code3d)" />
-    <path d="M15 14l-5 5 5 5M25 14l5 5-5 5M21.5 13l-3 12" stroke="#ffffff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-  </svg>
-);
-
-const Icon3DPulse = () => (
-  <svg viewBox="0 0 40 40" className="w-9 h-9 shrink-0 drop-shadow-[0_4px_8px_rgba(236,72,153,0.4)]" aria-hidden="true">
-    <defs>
-      <linearGradient id="pulse3d" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stopColor="#f472b6" />
-        <stop offset="100%" stopColor="#db2777" />
-      </linearGradient>
-    </defs>
-    <rect x="4" y="6" width="32" height="30" rx="9" fill="#831843" opacity="0.4" />
-    <rect x="4" y="4" width="32" height="30" rx="9" fill="url(#pulse3d)" />
-    <path d="M9 20h5l3-7 5 13 3-6h6" stroke="#ffffff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-  </svg>
-);
-
-const Icon3DClock = () => (
-  <svg viewBox="0 0 40 40" className="w-9 h-9 shrink-0 drop-shadow-[0_4px_8px_rgba(147,51,234,0.4)]" aria-hidden="true">
-    <defs>
-      <linearGradient id="clock3d" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stopColor="#c084fc" />
-        <stop offset="100%" stopColor="#7e22ce" />
-      </linearGradient>
-    </defs>
-    <circle cx="20" cy="21" r="15" fill="#4c1d95" opacity="0.4" />
-    <circle cx="20" cy="19" r="15" fill="url(#clock3d)" />
-    <path d="M20 11v8l5 3" stroke="#ffffff" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-  </svg>
-);
-
-const Icon3DGamepad = () => (
-  <svg viewBox="0 0 28 28" className="w-5 h-5 shrink-0 drop-shadow-[0_2px_4px_rgba(236,72,153,0.45)]" aria-hidden="true">
-    <defs>
-      <linearGradient id="gp3d" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stopColor="#f472b6" />
-        <stop offset="100%" stopColor="#9333ea" />
-      </linearGradient>
-    </defs>
-    <rect x="2" y="7" width="24" height="15" rx="7" fill="url(#gp3d)" />
-    <path d="M8 12v5M5.5 14.5h5" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" />
-    <circle cx="19" cy="13" r="1.2" fill="#fff" />
-    <circle cx="21.5" cy="15.5" r="1.2" fill="#fff" />
-  </svg>
-);
-
-const Icon3DGlobe = () => (
-  <svg viewBox="0 0 28 28" className="w-5 h-5 shrink-0 drop-shadow-[0_2px_4px_rgba(147,51,234,0.45)]" aria-hidden="true">
-    <defs>
-      <linearGradient id="gl3d" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stopColor="#38bdf8" />
-        <stop offset="100%" stopColor="#6366f1" />
-      </linearGradient>
-    </defs>
-    <circle cx="14" cy="14" r="11" fill="url(#gl3d)" />
-    <ellipse cx="14" cy="14" rx="5" ry="10.5" fill="none" stroke="#ffffff" strokeWidth="1.4" opacity="0.85" />
-    <path d="M3.5 14h21" stroke="#ffffff" strokeWidth="1.4" opacity="0.85" />
-  </svg>
-);
-
-const Icon3DWrench = () => (
-  <svg viewBox="0 0 28 28" className="w-5 h-5 shrink-0 drop-shadow-[0_2px_4px_rgba(249,115,22,0.45)]" aria-hidden="true">
-    <defs>
-      <linearGradient id="wr3d" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stopColor="#fb923c" />
-        <stop offset="100%" stopColor="#ea580c" />
-      </linearGradient>
-    </defs>
-    <circle cx="14" cy="14" r="11" fill="url(#wr3d)" />
-    <path d="M17.5 8.5a4 4 0 00-4.9 4.9l-4.4 4.4a1.4 1.4 0 002 2l4.4-4.4a4 4 0 004.9-4.9l-2.2 2.2-2-2 2.2-2.2z" fill="#ffffff" />
-  </svg>
-);
-
-const Icon3DMonitor = () => (
-  <svg viewBox="0 0 28 28" className="w-5 h-5 shrink-0 drop-shadow-[0_2px_4px_rgba(14,165,233,0.45)]" aria-hidden="true">
-    <defs>
-      <linearGradient id="mon3d" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stopColor="#38bdf8" />
-        <stop offset="100%" stopColor="#0284c7" />
-      </linearGradient>
-    </defs>
-    <rect x="3" y="4" width="22" height="15" rx="3.5" fill="url(#mon3d)" />
-    <rect x="5.5" y="6.5" width="17" height="10" rx="1.5" fill="#0f172a" opacity="0.4" />
-    <path d="M11 19v3M17 19v3M9 22h10" stroke="#0284c7" strokeWidth="2" strokeLinecap="round" />
-  </svg>
-);
-
-const RankMedal3D = ({ rank }) => {
-  if (rank > 3) {
-    return (
-      <span className="w-8 h-8 rounded-xl bg-gradient-to-br from-purple-500/15 to-pink-500/15 border border-purple-500/25 flex items-center justify-center text-xs font-black text-pink-500 shrink-0">
-        #{rank}
-      </span>
-    );
-  }
-  const palettes = {
-    1: { top: '#fef08a', mid: '#f59e0b', bot: '#b45309', shadow: 'rgba(245,158,11,0.5)' },
-    2: { top: '#f8fafc', mid: '#94a3b8', bot: '#475569', shadow: 'rgba(148,163,184,0.5)' },
-    3: { top: '#fed7aa', mid: '#ea580c', bot: '#9a3412', shadow: 'rgba(234,88,12,0.5)' },
-  };
-  const p = palettes[rank];
+const Icon3DTeamAvatar = ({ index, isOpen }) => {
+  const gradients = [
+    ['#a855f7', '#ec4899'],
+    ['#6366f1', '#38bdf8'],
+    ['#ec4899', '#f97316'],
+    ['#10b981', '#06b6d4'],
+    ['#f59e0b', '#ef4444'],
+    ['#8b5cf6', '#d946ef'],
+  ];
+  const [c1, c2] = gradients[index % gradients.length];
+  const gid = `team-av-${index}`;
   return (
-    <svg
-      viewBox="0 0 36 36"
-      className="w-8 h-8 shrink-0"
-      style={{ filter: `drop-shadow(0 4px 6px ${p.shadow})` }}
-      aria-label={`#${rank}`}
-    >
+    <svg viewBox="0 0 42 42" className="w-10 h-10 shrink-0 drop-shadow-[0_4px_8px_rgba(0,0,0,0.35)]" aria-hidden="true">
       <defs>
-        <linearGradient id={`medal-${rank}`} x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor={p.top} />
-          <stop offset="55%" stopColor={p.mid} />
-          <stop offset="100%" stopColor={p.bot} />
+        <linearGradient id={gid} x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor={c1} />
+          <stop offset="100%" stopColor={c2} />
         </linearGradient>
       </defs>
-      <circle cx="18" cy="19" r="14" fill={p.bot} opacity="0.45" />
-      <circle cx="18" cy="17" r="14" fill={`url(#medal-${rank})`} />
-      <text x="18" y="22" textAnchor="middle" fill="#ffffff" fontSize="13" fontWeight="900" fontFamily="system-ui, sans-serif">
-        {rank}
-      </text>
+      <rect x="1" y="2" width="40" height="39" rx="11" fill="#000000" opacity="0.3" />
+      <rect x="1" y="1" width="40" height="38" rx="11" fill={`url(#${gid})`} />
+      <rect x="3" y="2" width="36" height="16" rx="8" fill="#ffffff" opacity="0.18" />
+      {isOpen ? (
+        <path d="M15 16l-4 4 4 4M27 16l4 4-4 4M22.5 14l-3 12" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+      ) : (
+        <path d="M16 19v-2a5 5 0 0110 0v2m-11 0h12a1 1 0 011 1v7a2 2 0 01-2 2H16a2 2 0 01-2-2v-7a1 1 0 011-1z" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+      )}
     </svg>
   );
 };
 
+const Icon3DMonitor = () => (
+  <svg viewBox="0 0 24 24" className="w-4 h-4 shrink-0" aria-hidden="true">
+    <defs>
+      <linearGradient id="mon3dMin" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stopColor="#38bdf8" />
+        <stop offset="100%" stopColor="#6366f1" />
+      </linearGradient>
+    </defs>
+    <rect x="2" y="3" width="20" height="13" rx="3" fill="url(#mon3dMin)" />
+    <path d="M9 16v3M15 16v3M7 19h10" stroke="#38bdf8" strokeWidth="1.8" strokeLinecap="round" />
+  </svg>
+);
+
+const Icon3DGamepad = () => (
+  <svg viewBox="0 0 24 24" className="w-4 h-4 shrink-0" aria-hidden="true">
+    <defs>
+      <linearGradient id="gp3dMin" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stopColor="#f472b6" />
+        <stop offset="100%" stopColor="#9333ea" />
+      </linearGradient>
+    </defs>
+    <rect x="2" y="6" width="20" height="12" rx="6" fill="url(#gp3dMin)" />
+    <circle cx="16.5" cy="11" r="1" fill="#fff" />
+    <circle cx="18.5" cy="13" r="1" fill="#fff" />
+    <path d="M7.5 10v4M5.5 12h4" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" />
+  </svg>
+);
+
+const MILESTONES = {
+  tr: ['Altyapı', 'Exe Çalışıyor', 'İlk Kare', 'Ana Menü', 'Oyun Dünyası', 'Oynanabilir'],
+  en: ['Groundwork', 'Exe runs', 'First frame', 'Main menu', 'In the world', 'Playable'],
+};
+
 const TEXT = {
   tr: {
-    badge: 'PORTWATCH VI · CANLI YARIŞ',
-    title: 'GTA VI PC Port Takibi',
-    subtitle: 'PortWatch VI verileri ve açık kaynak GitHub depoları her 120 saniyede bir otomatik olarak güncellenir.',
+    eyebrow: 'LİDERLİK TABLOSU',
+    title: 'Yarış',
+    subtitle:
+      'PortWatch VI verileri ve açık kaynak GitHub depoları her 120 saniyede bir otomatik olarak güncellenir.',
     onlineBtn: 'Çevrimiçi',
-    onlineTooltip: 'Şu an siteyi canlı takip eden kullanıcı sayısı',
-    statTeams: 'Takip Edilen Ekip',
-    statOpen: 'Açık Kaynak',
-    statLeader: 'Lider İlerleme',
-    statSync: 'Son Güncelleme',
-    refresh: 'Yenile',
     filterAll: 'Tümü',
     filterOpen: 'Açık Kaynak',
     filterClosed: 'Kapalı Ekip',
-    openSource: 'AÇIK KAYNAK',
-    closedTeam: 'KAPALI EKİP',
+    openSource: 'Açık Kaynak',
+    closedTeam: 'Kapalı Ekip',
+    details: 'Detaylar',
+    hideDetails: 'Gizle',
     latestCommit: 'Son Commit',
+    lastSync: 'Son Güncelleme',
+    refresh: 'Yenile',
+    viewRepo: 'GitHub',
+    viewPortwatch: 'PortWatch',
     shareWa: "WhatsApp'ta Paylaş",
     shareX: "X'te Paylaş",
     disclaimer:
       'GTA6takip, PortWatch projesinin kâr gütmeyen, hobi amaçlı alternatifidir. Veriler otomatik olarak portwatch-vi.xyz/#race ve açık GitHub depolarından alınır.',
-    loadingTeams: 'Takım verileri yükleniyor...',
-    autoSyncNote: '120 sn otomatik senkronizasyon aktif',
+    loading: 'Veriler yükleniyor...',
   },
   en: {
-    badge: 'PORTWATCH VI · LIVE RACE',
-    title: 'GTA VI PC Port Tracker',
-    subtitle: 'PortWatch VI race data and open-source GitHub repositories sync automatically every 120 seconds.',
+    eyebrow: 'LEADERBOARD',
+    title: 'The race',
+    subtitle:
+      'PortWatch VI race data and open-source GitHub repositories sync automatically every 120 seconds.',
     onlineBtn: 'Online',
-    onlineTooltip: 'Live users currently watching this tracker',
-    statTeams: 'Tracked Teams',
-    statOpen: 'Open Source',
-    statLeader: 'Leader Progress',
-    statSync: 'Last Sync',
-    refresh: 'Refresh',
     filterAll: 'All',
     filterOpen: 'Open Source',
     filterClosed: 'Closed Team',
-    openSource: 'OPEN SOURCE',
-    closedTeam: 'CLOSED TEAM',
+    openSource: 'Open Source',
+    closedTeam: 'Closed Team',
+    details: 'Details',
+    hideDetails: 'Hide details',
     latestCommit: 'Latest Commit',
+    lastSync: 'Last Sync',
+    refresh: 'Refresh',
+    viewRepo: 'GitHub',
+    viewPortwatch: 'PortWatch',
     shareWa: 'Share on WhatsApp',
     shareX: 'Share on X',
     disclaimer:
       'GTA6takip is a non-profit, hobbyist alternative to PortWatch. Data syncs automatically from portwatch-vi.xyz/#race and public GitHub repositories.',
-    loadingTeams: 'Loading team progress...',
-    autoSyncNote: '120s auto-sync active',
+    loading: 'Loading race data...',
   },
 };
 
 export default function Home() {
   const [lang, setLang] = useState('tr');
-  const [theme, setTheme] = useState('light');
+  const [theme, setTheme] = useState('dark');
   const [teams, setTeams] = useState([]);
   const [filter, setFilter] = useState('all');
+  const [expanded, setExpanded] = useState({ 0: true, 1: true, 2: true });
   const [lastUpdated, setLastUpdated] = useState('--:--:--');
   const [syncing, setSyncing] = useState(false);
   const [onlineCount, setOnlineCount] = useState(1);
-  const [onlinePulseOpen, setOnlinePulseOpen] = useState(false);
 
   const t = TEXT[lang];
+  const isDark = theme === 'dark';
 
   useEffect(() => {
     try {
@@ -276,14 +184,14 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    document.documentElement.classList.toggle('portwatch-dark', theme === 'dark');
-    document.documentElement.classList.toggle('portwatch-light', theme === 'light');
+    document.documentElement.classList.toggle('portwatch-dark', isDark);
+    document.documentElement.classList.toggle('portwatch-light', !isDark);
     try {
       localStorage.setItem('gta6takip_theme', theme);
     } catch {
       // ignore
     }
-  }, [theme]);
+  }, [theme, isDark]);
 
   const fetchSync = useCallback(async () => {
     setSyncing(true);
@@ -316,7 +224,6 @@ export default function Home() {
     return () => clearInterval(id);
   }, [fetchSync]);
 
-  // Supabase Realtime Çevrimiçi Sayacı
   useEffect(() => {
     if (!supabase) return;
     const key = `viewer_${Math.random().toString(36).slice(2, 9)}`;
@@ -338,22 +245,6 @@ export default function Home() {
     };
   }, []);
 
-  const renderStageIcon = (stageText = '') => {
-    const s = String(stageText).toLowerCase();
-    if (s.includes('oynan') || s.includes('play') || s.includes('menü') || s.includes('menu')) {
-      return <Icon3DGamepad />;
-    }
-    if (s.includes('harita') || s.includes('world') || s.includes('map')) {
-      return <Icon3DGlobe />;
-    }
-    return <Icon3DWrench />;
-  };
-
-  const openSourceCount = teams.filter((tm) => tm.open_source ?? tm.isOpenSource ?? tm.is_open_source).length;
-  const topPct = teams.length
-    ? Math.max(...teams.map((tm) => Number(tm.percentage ?? tm.progress ?? tm.pct ?? 0)))
-    : 0;
-
   const filteredTeams = teams.filter((tm) => {
     const isOpen = Boolean(tm.open_source ?? tm.isOpenSource ?? tm.is_open_source);
     if (filter === 'open') return isOpen;
@@ -363,61 +254,64 @@ export default function Home() {
 
   const shareText =
     lang === 'tr'
-      ? 'GTA VI PC Port geliştirme sürecini canlı takip ediyorum! 🚀'
-      : 'Tracking GTA VI PC Port progress live! 🚀';
+      ? 'GTA VI PC Port geliştirme yarışını canlı takip ediyorum! 🚀'
+      : 'Tracking the GTA VI PC Port race live! 🚀';
   const shareUrl = 'https://gta6takip.vercel.app/';
+
+  const bgPage = isDark ? '#0b0d12' : '#f4f6fa';
+  const bgCard = isDark ? '#11141b' : '#ffffff';
+  const borderCol = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(15,23,42,0.08)';
+  const textPrimary = isDark ? '#f3f4f6' : '#0f172a';
+  const textMuted = isDark ? '#9ca3af' : '#64748b';
+  const trackBg = isDark ? '#1c202a' : '#e2e8f0';
 
   return (
     <div
-      className="min-h-screen transition-colors duration-300"
-      style={{ backgroundColor: 'var(--bg-base)', color: 'var(--text-primary)' }}
+      className="min-h-screen transition-colors duration-200"
+      style={{
+        backgroundColor: bgPage,
+        color: textPrimary,
+        backgroundImage: isDark
+          ? 'radial-gradient(ellipse 80% 35% at 50% 0%, rgba(168, 85, 247, 0.14), transparent)'
+          : 'radial-gradient(ellipse 80% 35% at 50% 0%, rgba(236, 72, 153, 0.08), transparent)',
+      }}
     >
-      {/* ÜST CAM NAVBAR */}
+      {/* ÜST SADE BAR */}
       <nav
-        className="sticky top-0 z-40 backdrop-blur-xl border-b"
+        className="sticky top-0 z-40 backdrop-blur-md border-b"
         style={{
-          backgroundColor: theme === 'dark' ? 'rgba(11, 17, 32, 0.82)' : 'rgba(241, 245, 249, 0.82)',
-          borderColor: 'var(--border-color)',
+          backgroundColor: isDark ? 'rgba(11,13,18,0.82)' : 'rgba(244,246,250,0.85)',
+          borderColor: borderCol,
         }}
       >
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5">
             <Icon3DLogo />
-            <div>
-              <div className="text-[10px] font-extrabold tracking-wider text-pink-500 uppercase">{t.badge}</div>
-              <div className="text-base sm:text-lg font-black pw-text-gradient leading-tight">GTA6TAKİP</div>
-            </div>
+            <span className="font-black text-base tracking-tight">GTA6TAKİP</span>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            {/* ÇEVRİMİÇİ BUTONU */}
-            <button
-              type="button"
-              onClick={() => setOnlinePulseOpen((v) => !v)}
-              title={t.onlineTooltip}
-              className="relative inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-500/15 text-emerald-500 border border-emerald-500/30 shadow-[0_2px_10px_rgba(16,185,129,0.2)] hover:bg-emerald-500/20 transition"
-            >
-              <span className="relative flex h-2.5 w-2.5">
+            {/* Çevrimiçi Butonu */}
+            <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/25">
+              <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
               </span>
-              <span>
-                {onlineCount} {t.onlineBtn}
-              </span>
-            </button>
+              {onlineCount} {t.onlineBtn}
+            </span>
 
-            {/* DİL SEÇİCİ */}
+            {/* TR | EN */}
             <div
-              className="flex items-center rounded-xl p-1 border"
-              style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)' }}
+              className="flex items-center rounded-full p-0.5 border"
+              style={{ backgroundColor: bgCard, borderColor: borderCol }}
             >
               <button
                 onClick={() => {
                   setLang('tr');
                   localStorage.setItem('gta6takip_lang', 'tr');
                 }}
-                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold transition ${
-                  lang === 'tr' ? 'bg-gradient-to-r from-purple-600 to-pink-500 text-white shadow-sm' : ''
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold transition ${
+                  lang === 'tr' ? 'bg-pink-500 text-white' : ''
                 }`}
               >
                 <FlagTR /> TR
@@ -427,107 +321,59 @@ export default function Home() {
                   setLang('en');
                   localStorage.setItem('gta6takip_lang', 'en');
                 }}
-                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold transition ${
-                  lang === 'en' ? 'bg-gradient-to-r from-purple-600 to-pink-500 text-white shadow-sm' : ''
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold transition ${
+                  lang === 'en' ? 'bg-pink-500 text-white' : ''
                 }`}
               >
                 <FlagEN /> EN
               </button>
             </div>
 
-            {/* TEMA DEĞİŞTİR */}
+            {/* Tema */}
             <button
-              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-              className="p-2 rounded-xl border hover:border-pink-500/50 transition"
-              style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)' }}
+              onClick={() => setTheme(isDark ? 'light' : 'dark')}
+              className="p-2 rounded-full border transition hover:opacity-80"
+              style={{ backgroundColor: bgCard, borderColor: borderCol }}
               aria-label="Toggle theme"
             >
-              {theme === 'dark' ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4" />}
+              {isDark ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4" />}
             </button>
 
-            {/* YENİLE */}
+            {/* Yenile */}
             <button
               onClick={fetchSync}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-bold hover:border-pink-500/50 transition"
-              style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)' }}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-semibold transition hover:opacity-80"
+              style={{ backgroundColor: bgCard, borderColor: borderCol }}
             >
               <RefreshCw className={`w-3.5 h-3.5 ${syncing ? 'animate-spin text-pink-500' : ''}`} />
               <span className="hidden sm:inline">{t.refresh}</span>
             </button>
           </div>
         </div>
-
-        {onlinePulseOpen && (
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 pb-2 text-[11px] text-emerald-500 font-semibold">
-            ● {t.onlineTooltip}: {onlineCount} · {t.autoSyncNote}
-          </div>
-        )}
       </nav>
 
-      {/* HERO & 3D İSTATİSTİK KARTLARI */}
-      <header className="pw-hero-bg border-b" style={{ borderColor: 'var(--border-color)' }}>
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-7 space-y-5">
-          <div>
-            <h1 className="text-2xl sm:text-4xl font-black pw-text-gradient tracking-tight">{t.title}</h1>
-            <p className="text-xs sm:text-sm mt-1.5 max-w-2xl" style={{ color: 'var(--text-secondary)' }}>
-              {t.subtitle}
+      {/* ANA KONTEYNER (PORTWATCH #RACE DÜZENİ) */}
+      <main className="max-w-5xl mx-auto px-4 sm:px-6 py-8 sm:py-10 space-y-6">
+        {/* Başlık & Filtre Satırı */}
+        <header className="flex flex-col md:flex-row md:items-end justify-between gap-5">
+          <div className="max-w-xl">
+            <div
+              className="text-[11px] font-bold uppercase tracking-[0.18em] mb-1.5"
+              style={{ color: textMuted }}
+            >
+              {t.eyebrow}
+            </div>
+            <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight mb-2">{t.title}</h1>
+            <p className="text-sm leading-relaxed" style={{ color: textMuted }}>
+              {t.subtitle} ({t.lastSync}: <span style={{ color: textPrimary }}>{lastUpdated}</span>)
             </p>
           </div>
 
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-            <div
-              className="rounded-2xl p-4 border shadow-sm flex items-center gap-3.5 hover:-translate-y-0.5 transition"
-              style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)' }}
-            >
-              <Icon3DTrophy />
-              <div>
-                <div className="text-[11px] font-medium" style={{ color: 'var(--text-secondary)' }}>{t.statTeams}</div>
-                <div className="text-lg font-black">{teams.length}</div>
-              </div>
-            </div>
-
-            <div
-              className="rounded-2xl p-4 border shadow-sm flex items-center gap-3.5 hover:-translate-y-0.5 transition"
-              style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)' }}
-            >
-              <Icon3DCode />
-              <div>
-                <div className="text-[11px] font-medium" style={{ color: 'var(--text-secondary)' }}>{t.statOpen}</div>
-                <div className="text-lg font-black">{openSourceCount}</div>
-              </div>
-            </div>
-
-            <div
-              className="rounded-2xl p-4 border shadow-sm flex items-center gap-3.5 hover:-translate-y-0.5 transition"
-              style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)' }}
-            >
-              <Icon3DPulse />
-              <div>
-                <div className="text-[11px] font-medium" style={{ color: 'var(--text-secondary)' }}>{t.statLeader}</div>
-                <div className="text-lg font-black pw-text-gradient">
-                  {lang === 'tr' ? `%${topPct}` : `${topPct}%`}
-                </div>
-              </div>
-            </div>
-
-            <div
-              className="rounded-2xl p-4 border shadow-sm flex items-center gap-3.5 hover:-translate-y-0.5 transition"
-              style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)' }}
-            >
-              <Icon3DClock />
-              <div>
-                <div className="text-[11px] font-medium" style={{ color: 'var(--text-secondary)' }}>{t.statSync}</div>
-                <div className="text-base sm:text-lg font-black">{lastUpdated}</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {/* ANA LİSTE & FİLTRELER */}
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 py-6 space-y-5">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex flex-wrap items-center gap-2">
+          {/* Segmented Filter Pill */}
+          <div
+            className="inline-flex items-center p-1 rounded-xl border self-start md:self-auto"
+            style={{ backgroundColor: bgCard, borderColor: borderCol }}
+          >
             {[
               { id: 'all', label: t.filterAll },
               { id: 'open', label: t.filterOpen },
@@ -536,33 +382,31 @@ export default function Home() {
               <button
                 key={tab.id}
                 onClick={() => setFilter(tab.id)}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition ${
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
                   filter === tab.id
-                    ? 'bg-gradient-to-r from-purple-600 via-pink-500 to-orange-500 text-white shadow-sm'
-                    : 'border hover:border-pink-500/40'
+                    ? isDark
+                      ? 'bg-[#1f2430] text-white'
+                      : 'bg-slate-900 text-white'
+                    : ''
                 }`}
-                style={filter !== tab.id ? { backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)' } : undefined}
+                style={filter !== tab.id ? { color: textMuted } : undefined}
               >
                 {tab.label}
               </button>
             ))}
           </div>
+        </header>
 
-          <span className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>
-            {t.autoSyncNote}
-          </span>
-        </div>
-
-        {/* TAKIM KARTLARI */}
+        {/* TEK SÜTUNLU LİDERLİK KARTLARI */}
         {filteredTeams.length === 0 ? (
           <div
             className="rounded-2xl p-10 border text-center text-sm"
-            style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)', color: 'var(--text-secondary)' }}
+            style={{ backgroundColor: bgCard, borderColor: borderCol, color: textMuted }}
           >
-            {t.loadingTeams}
+            {t.loading}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-4">
             {filteredTeams.map((team, idx) => {
               const rank = teams.indexOf(team) + 1 || idx + 1;
               const pct = Number(team.percentage ?? team.progress ?? team.pct ?? 0);
@@ -570,94 +414,159 @@ export default function Home() {
               const isOpen = Boolean(team.open_source ?? team.isOpenSource ?? team.is_open_source);
               const stage = lang === 'tr' ? team.stage_tr || team.stage : team.stage_en || team.stage;
               const fps = lang === 'tr' ? team.fps_tr || team.fps : team.fps_en || team.fps;
-              const desc = lang === 'tr' ? team.desc_tr || team.description || team.desc : team.desc_en || team.description || team.desc;
+              const desc =
+                lang === 'tr'
+                  ? team.desc_tr || team.description || team.desc
+                  : team.desc_en || team.description || team.desc;
               const commit = team.commit_msg || team.commitMessage || team.lastCommit;
               const repoUrl = team.url || team.repo_url || team.github_url;
+              const repoSlug = repoUrl ? repoUrl.replace('https://github.com/', '').replace('https://', '') : 'portwatch-vi.xyz';
+              const isExpanded = Boolean(expanded[rank - 1]);
+
+              // 6 parçalı PortWatch çubuk hesabı
+              const filledSegments = Math.min(6, Math.max(0, (pct / 100) * 6));
 
               return (
                 <article
                   key={team.name || idx}
-                  className="rounded-2xl p-5 border shadow-sm hover:-translate-y-0.5 hover:border-pink-500/50 transition-all duration-200 flex flex-col justify-between gap-3"
-                  style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)' }}
+                  className="rounded-2xl p-5 sm:p-6 border transition-colors"
+                  style={{ backgroundColor: bgCard, borderColor: borderCol }}
                 >
-                  <div>
-                    <div className="flex items-start justify-between gap-3 mb-3">
-                      <div className="flex items-center gap-2.5 flex-wrap min-w-0">
-                        <RankMedal3D rank={rank} />
-                        <div className="min-w-0">
-                          <h2 className="font-extrabold text-base sm:text-lg truncate">{team.name || team.title}</h2>
-                          <span
-                            className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded-full mt-0.5 ${
-                              isOpen ? 'bg-emerald-500/15 text-emerald-500' : 'bg-slate-500/15 text-slate-400'
-                            }`}
-                          >
-                            {isOpen ? t.openSource : t.closedTeam}
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-2 shrink-0">
-                        <span className="text-xl sm:text-2xl font-black pw-text-gradient">{pctLabel}</span>
-                        {repoUrl && (
-                          <a
-                            href={repoUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="p-2 rounded-xl border hover:border-pink-500 transition"
-                            style={{ borderColor: 'var(--border-color)' }}
-                            aria-label="Open repository"
-                          >
-                            <ExternalLink className="w-3.5 h-3.5" />
-                          </a>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* 3D PARLAK İLERLEME ÇUBUĞU */}
-                    <div className="w-full h-3.5 rounded-full overflow-hidden bg-slate-500/20 p-[1px] shadow-inner mb-3">
-                      <div
-                        className="h-full rounded-full transition-all duration-700 relative overflow-hidden"
-                        style={{
-                          width: `${Math.min(100, Math.max(0, pct))}%`,
-                          background: 'linear-gradient(90deg, #9333ea 0%, #ec4899 55%, #f97316 100%)',
-                          boxShadow: '0 0 12px rgba(236, 72, 153, 0.5)',
-                        }}
+                  {/* Band 1: Üst Satır */}
+                  <div className="flex items-start justify-between gap-4 mb-3">
+                    <div className="flex items-center gap-3.5 min-w-0">
+                      <span
+                        className="text-2xl font-black w-7 text-center shrink-0"
+                        style={{ color: rank <= 3 ? '#e85595' : textMuted }}
                       >
-                        <div className="absolute inset-x-0 top-0 h-1/2 bg-white/25 rounded-full" />
+                        {rank}
+                      </span>
+                      <Icon3DTeamAvatar index={idx} isOpen={isOpen} />
+                      <div className="min-w-0">
+                        <h2 className="text-base sm:text-lg font-bold truncate">{team.name || team.title}</h2>
+                        <p className="text-xs truncate" style={{ color: textMuted }}>
+                          {repoSlug}
+                        </p>
                       </div>
                     </div>
 
-                    {/* 3D AŞAMA & FPS ROZETLERİ */}
-                    <div className="flex flex-wrap items-center gap-2 text-xs" style={{ color: 'var(--text-secondary)' }}>
+                    <div className="text-right shrink-0">
+                      <div className="text-2xl sm:text-[28px] font-black leading-none tracking-tight">
+                        {pctLabel}
+                      </div>
                       {stage && (
-                        <span
-                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl border font-medium"
-                          style={{ backgroundColor: 'var(--bg-base)', borderColor: 'var(--border-color)' }}
-                        >
-                          {renderStageIcon(stage)}
-                          {stage}
-                        </span>
-                      )}
-                      {fps && (
-                        <span
-                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl border font-medium"
-                          style={{ backgroundColor: 'var(--bg-base)', borderColor: 'var(--border-color)' }}
-                        >
-                          <Icon3DMonitor />
-                          {fps}
-                        </span>
+                        <div className="inline-flex items-center gap-1.5 text-xs mt-1.5" style={{ color: textMuted }}>
+                          <Icon3DGamepad />
+                          <span>{stage}</span>
+                        </div>
                       )}
                     </div>
                   </div>
 
-                  {(commit || desc) && (
-                    <p
-                      className="text-xs line-clamp-2 pt-2 border-t"
-                      style={{ color: 'var(--text-secondary)', borderColor: 'var(--border-color)' }}
+                  {/* Band 2: Sade Etiketler */}
+                  <div className="flex flex-wrap items-center gap-2 mb-3">
+                    <span
+                      className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-full ${
+                        isOpen ? 'bg-purple-500/15 text-purple-400' : 'bg-slate-500/15 text-slate-400'
+                      }`}
                     >
-                      {commit ? `${t.latestCommit}: ${commit}` : desc}
-                    </p>
+                      {isOpen ? t.openSource : t.closedTeam}
+                    </span>
+                    {fps && (
+                      <span
+                        className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-0.5 rounded-full"
+                        style={{ backgroundColor: trackBg, color: textPrimary }}
+                      >
+                        <Icon3DMonitor />
+                        {fps}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Band 3: 6 Parçalı PortWatch İlerleme Çubuğu */}
+                  <div className="grid grid-cols-6 gap-1.5 my-4">
+                    {[0, 1, 2, 3, 4, 5].map((segIdx) => {
+                      const segFill = Math.min(1, Math.max(0, filledSegments - segIdx)) * 100;
+                      return (
+                        <div
+                          key={segIdx}
+                          className="h-2 rounded-full overflow-hidden"
+                          style={{ backgroundColor: trackBg }}
+                        >
+                          <div
+                            className="h-full rounded-full transition-all duration-700"
+                            style={{
+                              width: `${segFill}%`,
+                              background: 'linear-gradient(90deg, #7c5cff 0%, #ec4899 100%)',
+                            }}
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Aşama Noktaları */}
+                  <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 text-[11px] mb-4">
+                    {MILESTONES[lang].map((mLabel, mIdx) => {
+                      const reached = filledSegments >= mIdx + 0.5;
+                      return (
+                        <div key={mLabel} className="flex items-center gap-1.5 truncate">
+                          <span
+                            className="w-1.5 h-1.5 rounded-full shrink-0"
+                            style={{ backgroundColor: reached ? '#ec4899' : textMuted, opacity: reached ? 1 : 0.4 }}
+                          />
+                          <span className="truncate" style={{ color: reached ? textPrimary : textMuted }}>
+                            {mLabel}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Detay Açılır Alan */}
+                  {isExpanded && (commit || desc) && (
+                    <div
+                      className="text-xs leading-relaxed py-3 border-t"
+                      style={{ color: textMuted, borderColor: borderCol }}
+                    >
+                      {desc && <p className="mb-1">{desc}</p>}
+                      {commit && (
+                        <p>
+                          <strong style={{ color: textPrimary }}>{t.latestCommit}:</strong> {commit}
+                        </p>
+                      )}
+                    </div>
                   )}
+
+                  {/* Alt Aksiyon Satırı */}
+                  <div
+                    className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t"
+                    style={{ borderColor: borderCol }}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => setExpanded((prev) => ({ ...prev, [rank - 1]: !isExpanded }))}
+                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border text-xs font-semibold transition hover:opacity-80"
+                      style={{ borderColor: borderCol, color: textPrimary }}
+                    >
+                      {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                      {isExpanded ? t.hideDetails : t.details}
+                    </button>
+
+                    {repoUrl && (
+                      <a
+                        href={repoUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold transition hover:opacity-90 ${
+                          isDark ? 'bg-white text-[#0b0d12]' : 'bg-slate-900 text-white'
+                        }`}
+                      >
+                        <span>{isOpen ? t.viewRepo : t.viewPortwatch}</span>
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
+                    )}
+                  </div>
                 </article>
               );
             })}
@@ -665,13 +574,13 @@ export default function Home() {
         )}
 
         {/* ALT SOSYAL & PAYLAŞIM ŞERİDİ */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-4">
           <a
             href="https://x.com/batmancodex"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center justify-center gap-2 py-3 px-4 rounded-2xl border text-xs font-bold hover:border-pink-500 transition shadow-sm"
-            style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)' }}
+            className="flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl border text-xs font-semibold transition hover:opacity-80"
+            style={{ backgroundColor: bgCard, borderColor: borderCol }}
           >
             <span>𝕏 | batmancodex</span>
           </a>
@@ -679,8 +588,8 @@ export default function Home() {
             href={`https://api.whatsapp.com/send?text=${encodeURIComponent(`${shareText} ${shareUrl}`)}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center justify-center gap-2 py-3 px-4 rounded-2xl border text-xs font-bold text-emerald-500 hover:border-emerald-500 transition shadow-sm"
-            style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)' }}
+            className="flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl border text-xs font-semibold text-emerald-400 transition hover:opacity-80"
+            style={{ backgroundColor: bgCard, borderColor: borderCol }}
           >
             <span>{t.shareWa}</span>
           </a>
@@ -688,15 +597,15 @@ export default function Home() {
             href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center justify-center gap-2 py-3 px-4 rounded-2xl border text-xs font-bold hover:border-sky-500 transition shadow-sm"
-            style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)' }}
+            className="flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl border text-xs font-semibold transition hover:opacity-80"
+            style={{ backgroundColor: bgCard, borderColor: borderCol }}
           >
             <span>{t.shareX}</span>
           </a>
         </div>
       </main>
 
-      <footer className="max-w-6xl mx-auto px-4 sm:px-6 py-6 text-center text-xs" style={{ color: 'var(--text-secondary)' }}>
+      <footer className="max-w-5xl mx-auto px-4 sm:px-6 py-6 text-center text-xs" style={{ color: textMuted }}>
         <p>{t.disclaimer}</p>
       </footer>
     </div>
