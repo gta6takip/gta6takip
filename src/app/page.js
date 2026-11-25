@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
-const APP_VERSION = 'v1.0.14';
+const APP_VERSION = 'v1.0.15';
 const NIGHT_POLL_KEY = 'gta6takip_night_poll_v1';
 const NIGHT_POLL_END_MS = new Date('2026-11-26T06:00:00+03:00').getTime();
 
@@ -150,6 +150,17 @@ const FALLBACK_NEWS = [
 
 const CHANGELOG = [
   {
+    version: 'v1.0.15',
+    dateTr: '26 Kasım 2026',
+    dateEn: 'November 26, 2026',
+    itemsTr: [
+      'Gece kuşu anketi gerçek Supabase veritabanına (night_poll) bağlandı; tüm ziyaretçilerin oyları canlı güncellenir.',
+    ],
+    itemsEn: [
+      'Connected the night-owl poll to live Supabase storage (night_poll) for real-time shared counts.',
+    ],
+  },
+  {
     version: 'v1.0.14',
     dateTr: '26 Kasım 2026',
     dateEn: 'November 26, 2026',
@@ -169,17 +180,6 @@ const CHANGELOG = [
     ],
     itemsEn: [
       'Scoped the floating night-owl soldier widget to appear only until 06:00 AM TRT on Nov 26, 2026.',
-    ],
-  },
-  {
-    version: 'v1.0.12',
-    dateTr: '26 Kasım 2026',
-    dateEn: 'November 26, 2026',
-    itemsTr: [
-      'Siteye girdikten 7 saniye sonra sol altta uçan gece kuşu askeri ve tek oyluk anket ("Burdayız reis." / "Yatacam şimdi kral.") eklendi.',
-    ],
-    itemsEn: [
-      'Added the floating night-owl soldier widget after 7 seconds with a one-time persistent poll.',
     ],
   },
 ];
@@ -300,10 +300,22 @@ export default function HomePage() {
   const [soldierVisible, setSoldierVisible] = useState(false);
   const [soldierDismissed, setSoldierDismissed] = useState(false);
   const [nightVote, setNightVote] = useState(null);
-  const [nightCounts, setNightCounts] = useState({ stay: 14, sleep: 5 });
+  const [nightCounts, setNightCounts] = useState({ stay: 1, sleep: 0 });
   const [showNightResults, setShowNightResults] = useState(false);
+  const [votingBusy, setVotingBusy] = useState(false);
 
   const theme = THEMES[themeKey] || THEMES.dark;
+
+  const supabaseClient = useMemo(() => {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    if (!url || !key) return null;
+    try {
+      return createClient(url, key);
+    } catch {
+      return null;
+    }
+  }, []);
 
   const fetchSyncData = async () => {
     setSyncing(true);
@@ -393,10 +405,6 @@ export default function HomePage() {
         const parsed = JSON.parse(saved);
         if (parsed?.choice === 'stay' || parsed?.choice === 'sleep') {
           setNightVote(parsed.choice);
-          setNightCounts((prev) => ({
-            stay: prev.stay + (parsed.choice === 'stay' ? 1 : 0),
-            sleep: prev.sleep + (parsed.choice === 'sleep' ? 1 : 0),
-          }));
         }
       }
     } catch {
@@ -426,6 +434,53 @@ export default function HomePage() {
   }, []);
 
   useEffect(() => {
+    if (!supabaseClient) return undefined;
+
+    const loadNightPoll = async () => {
+      try {
+        const { data } = await supabaseClient
+          .from('night_poll')
+          .select('stay_count, sleep_count')
+          .eq('id', 'tonight')
+          .single();
+        if (data) {
+          setNightCounts({
+            stay: Number(data.stay_count ?? 1),
+            sleep: Number(data.sleep_count ?? 0),
+          });
+        }
+      } catch {
+        // Supabase okuma hatası yoksayılır
+      }
+    };
+
+    loadNightPoll();
+
+    const pollChannel = supabaseClient
+      .channel('night_poll_live')
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'night_poll', filter: 'id=eq.tonight' },
+        (payload) => {
+          if (payload?.new) {
+            setNightCounts({
+              stay: Number(payload.new.stay_count ?? 1),
+              sleep: Number(payload.new.sleep_count ?? 0),
+            });
+          }
+        }
+      )
+      .subscribe();
+
+    const refreshInterval = setInterval(loadNightPoll, 15000);
+
+    return () => {
+      clearInterval(refreshInterval);
+      pollChannel.unsubscribe();
+    };
+  }, [supabaseClient]);
+
+  useEffect(() => {
     const timer = setInterval(() => {
       setCountdown((prev) => {
         if (prev <= 1) {
@@ -445,14 +500,11 @@ export default function HomePage() {
   }, []);
 
   useEffect(() => {
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-    if (!url || !key) return;
+    if (!supabaseClient) return undefined;
     let channel;
     try {
-      const supabase = createClient(url, key);
       const clientId = `v-${Math.random().toString(36).slice(2, 10)}`;
-      channel = supabase.channel('gta6takip-presence', {
+      channel = supabaseClient.channel('gta6takip-presence', {
         config: { presence: { key: clientId } },
       });
       channel
@@ -472,16 +524,14 @@ export default function HomePage() {
     return () => {
       if (channel) channel.unsubscribe();
     };
-  }, []);
+  }, [supabaseClient]);
 
-  const handleNightVote = (choice) => {
-    if (nightVote || Date.now() >= NIGHT_POLL_END_MS) return;
+  const handleNightVote = async (choice) => {
+    if (nightVote || votingBusy || Date.now() >= NIGHT_POLL_END_MS) return;
+    setVotingBusy(true);
     setNightVote(choice);
     setShowNightResults(true);
-    setNightCounts((prev) => ({
-      ...prev,
-      [choice]: prev[choice] + 1,
-    }));
+
     try {
       window.localStorage.setItem(
         NIGHT_POLL_KEY,
@@ -490,6 +540,47 @@ export default function HomePage() {
     } catch {
       // localStorage yazma hatası yoksayılır
     }
+
+    if (supabaseClient) {
+      try {
+        const { data: latest } = await supabaseClient
+          .from('night_poll')
+          .select('stay_count, sleep_count')
+          .eq('id', 'tonight')
+          .single();
+
+        const nextStay = Number(latest?.stay_count ?? nightCounts.stay) + (choice === 'stay' ? 1 : 0);
+        const nextSleep = Number(latest?.sleep_count ?? nightCounts.sleep) + (choice === 'sleep' ? 1 : 0);
+
+        const { data: updated } = await supabaseClient
+          .from('night_poll')
+          .update({ stay_count: nextStay, sleep_count: nextSleep })
+          .eq('id', 'tonight')
+          .select('stay_count, sleep_count')
+          .single();
+
+        if (updated) {
+          setNightCounts({
+            stay: Number(updated.stay_count),
+            sleep: Number(updated.sleep_count),
+          });
+        } else {
+          setNightCounts({ stay: nextStay, sleep: nextSleep });
+        }
+      } catch {
+        setNightCounts((prev) => ({
+          ...prev,
+          [choice]: prev[choice] + 1,
+        }));
+      }
+    } else {
+      setNightCounts((prev) => ({
+        ...prev,
+        [choice]: prev[choice] + 1,
+      }));
+    }
+
+    setVotingBusy(false);
   };
 
   const totalNightVotes = nightCounts.stay + nightCounts.sleep;
@@ -1024,8 +1115,8 @@ export default function HomePage() {
                     ? 'Oyun kalıcı olarak kaydedildi.'
                     : 'Your vote is locked in.'
                   : lang === 'tr'
-                    ? '06:00’a kadar geçerli · Tek oy!'
-                    : 'Valid until 06:00 TRT · One vote!'}
+                    ? '06:00’a kadar geçerli · Canlı ortak anket!'
+                    : 'Valid until 06:00 TRT · Live shared poll!'}
               </p>
             </div>
           </div>
@@ -1033,7 +1124,7 @@ export default function HomePage() {
           <div className="grid grid-cols-1 gap-1.5 mt-2.5">
             <button
               type="button"
-              disabled={Boolean(nightVote)}
+              disabled={Boolean(nightVote) || votingBusy}
               onClick={() => handleNightVote('stay')}
               className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl border text-xs font-semibold transition ${
                 nightVote === 'stay'
@@ -1047,7 +1138,7 @@ export default function HomePage() {
 
             <button
               type="button"
-              disabled={Boolean(nightVote)}
+              disabled={Boolean(nightVote) || votingBusy}
               onClick={() => handleNightVote('sleep')}
               className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl border text-xs font-semibold transition ${
                 nightVote === 'sleep'
