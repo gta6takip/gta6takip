@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
-const APP_VERSION = 'v1.0.17';
+const APP_VERSION = 'v1.0.18';
 
 const THEMES = {
   dark: {
@@ -120,7 +120,8 @@ const MILESTONES = [
 ];
 
 const FALLBACK_TEAMS = [
-  { name: 'darkworldhm', progress: 79.5, fps: '15-24 FPS', gpu: 'RTX 50 Serisi', type: 'private', stage: 'Oynanabilir • Serbest Dolaşım', delta: '+18.5%', url: 'https://portwatch-vi.xyz/#race', isNew: true },
+  { name: 'AvatarManz', progress: 83.1, fps: '16 FPS (13-22 FPS)', gpu: 'RX 7900 XTX', type: 'open', stage: 'Oynanabilir • İlk Perde (Sesli)', delta: '+23.1%', url: 'https://github.com/avatarmanz/VIctory-7900XTX', isNew: true },
+  { name: 'darkworldhm', progress: 79.5, fps: '15-24 FPS', gpu: 'RTX 50 Serisi', type: 'private', stage: 'Oynanabilir • Serbest Dolaşım', delta: '+18.5%', url: 'https://portwatch-vi.xyz/#race' },
   { name: 'Doomsday', progress: 78.7, fps: '4 FPS', gpu: 'AMD / NVIDIA', type: 'private', stage: 'Oynanabilir • İlk Perde', delta: '+14.2%', url: 'https://portwatch-vi.xyz/#race' },
   { name: 'DexNom', progress: 78.0, fps: '3 FPS', gpu: 'RX 7900 XTX', type: 'open', stage: 'Oynanabilir • İlk Perde', delta: '+12.0%', url: 'https://github.com/DexNom/VIctory' },
   { name: 'Belobug', progress: 77.7, fps: '4 FPS', gpu: 'RX 9070 XT', type: 'open', stage: 'Oynanabilir • İlk Perde', delta: '+9.4%', url: 'https://github.com/Belobug/VIctory-Belobug-AMD' },
@@ -142,12 +143,25 @@ const FALLBACK_TEAMS = [
 ];
 
 const FALLBACK_NEWS = [
-  { tagTr: 'REKOR', tagEn: 'RECORD', tr: 'darkworldhm %79.5 ile genel lider; serbest dolaşımda 24 FPS tepe değerine ulaştı.', en: 'darkworldhm leads overall at 79.5%, peaking at 24 FPS in free roam.' },
-  { tagTr: 'AÇIK KAYNAK', tagEn: 'OPEN SOURCE', tr: 'DexNom (%78) açık kaynak lideri; Five Star Recomp ve keylime (%30) eklendi.', en: 'DexNom (78%) leads open source; Five Star Recomp & keylime (30%) added.' },
-  { tagTr: 'GÜNCEL', tagEn: 'LIVE', tr: "PortWatch üzerinde toplam 37 girişim takip ediliyor; 15'i oyunu başlatabiliyor.", en: '37 total efforts are tracked on PortWatch, with 15 able to boot GTA VI.' },
+  { tagTr: 'REKOR', tagEn: 'RECORD', tr: 'AvatarManz (RX 7900 XTX) %83.1 ile yeni genel lider; 16 FPS sesli ve 41 dk çökmeden çalıştı.', en: 'AvatarManz (RX 7900 XTX) takes #1 overall at 83.1%, running 16 FPS with sound for 41 min.' },
+  { tagTr: 'AÇIK KAYNAK', tagEn: 'OPEN SOURCE', tr: 'Açık kaynak lideri artık AvatarManz (%83.1); DexNom (%78) ve Belobug (%77.7) takipte.', en: 'AvatarManz (83.1%) now leads open source; DexNom (78%) and Belobug (77.7%) follow.' },
+  { tagTr: 'GÜNCEL', tagEn: 'LIVE', tr: "PortWatch üzerinde 38 girişim takip ediliyor; 16'sı oyunu başlatabiliyor (İlk 3 ort. %80.4).", en: '38 total efforts are tracked on PortWatch, with 16 able to boot GTA VI (Top-3 avg 80.4%).' },
 ];
 
 const CHANGELOG = [
+  {
+    version: 'v1.0.18',
+    dateTr: '26 Kasım 2026',
+    dateEn: 'November 26, 2026',
+    itemsTr: [
+      'Yeni #1 lider AvatarManz (%83.1 · 16 FPS sesli, RX 7900 XTX) eklendi; toplam 38 girişim ve 16 boot güncellendi.',
+      'İngilizce (EN) modundaki "ACTİVE" Türkçe harf dönüşümü hatası düzeltildi.',
+    ],
+    itemsEn: [
+      'Added new #1 leader AvatarManz (83.1% · 16 FPS with sound, RX 7900 XTX); updated totals to 38 tracked / 16 booting.',
+      'Fixed Turkish dotted-I uppercase rendering in English mode headings.',
+    ],
+  },
   {
     version: 'v1.0.17',
     dateTr: '26 Kasım 2026',
@@ -166,27 +180,12 @@ const CHANGELOG = [
     dateTr: '26 Kasım 2026',
     dateEn: 'November 26, 2026',
     itemsTr: [
-      'Uçan asker ve anket widgetı kaldırıldı.',
       'CANLI rozeti ışıklı ve hafif yanıp sönen efekt ile güncellendi.',
       'Açık Kaynak ve Kapalı Ekip etiketlerinin yanına simgeler eklendi.',
     ],
     itemsEn: [
-      'Removed the floating soldier poll widget.',
       'Updated the LIVE badge with a soft pulsing glow effect.',
       'Added icons next to Open Source and Private Build badges.',
-    ],
-  },
-  {
-    version: 'v1.0.11',
-    dateTr: '26 Kasım 2026',
-    dateEn: 'November 26, 2026',
-    itemsTr: [
-      'Alt paylaşım butonlarına modern WhatsApp ve X simgeleri eklendi.',
-      'Ekip ilerleme çubuğu tek parça kesintisiz bar haline getirildi; 6 durak noktası alta hizalandı.',
-    ],
-    itemsEn: [
-      'Added modern WhatsApp and X icons to the footer share buttons.',
-      'Unified team progress into a single continuous bar with aligned 6-milestone stop nodes.',
     ],
   },
 ];
@@ -245,6 +244,7 @@ function localizeDynamicText(text, lang) {
     .replace(/Oynanabilir/gi, 'Playable')
     .replace(/Serbest Dolaşım/gi, 'Free Roam')
     .replace(/İlk Perde/gi, 'First Act')
+    .replace(/\(Sesli\)/gi, '(With Sound)')
     .replace(/Özel Yapı/gi, 'Private Build')
     .replace(/Açılış Sahnesi/gi, 'Opening Scene')
     .replace(/Önsöz Geçildi/gi, 'Prologue Cleared')
@@ -298,9 +298,9 @@ export default function HomePage() {
 
   const [teams, setTeams] = useState(FALLBACK_TEAMS);
   const [news, setNews] = useState(FALLBACK_NEWS);
-  const [totalEfforts, setTotalEfforts] = useState(37);
-  const [bootingCount, setBootingCount] = useState(15);
-  const [top3Avg, setTop3Avg] = useState(78.7);
+  const [totalEfforts, setTotalEfforts] = useState(38);
+  const [bootingCount, setBootingCount] = useState(16);
+  const [top3Avg, setTop3Avg] = useState(80.4);
   const [onlineCount, setOnlineCount] = useState(1);
   const [countdown, setCountdown] = useState(120);
   const [syncing, setSyncing] = useState(false);
@@ -368,25 +368,29 @@ export default function HomePage() {
             stage: item.stage || item.stageText || item.milestone || item.status || fallback?.stage || '',
             delta: item.delta || item.change || item.diff || fallback?.delta || '',
             url: item.url || item.link || item.repoUrl || item.github || fallback?.url || 'https://portwatch-vi.xyz/#race',
-            isNew: item.isNew || String(itemName).toLowerCase() === 'darkworldhm',
+            isNew: item.isNew || String(itemName).toLowerCase() === 'avatarmanz',
             isZortos: item.isZortos || String(itemName).toLowerCase() === 'zortos',
           };
         });
+
+        for (const fb of FALLBACK_TEAMS) {
+          if (!normalized.some((n) => n.name.toLowerCase() === fb.name.toLowerCase())) {
+            normalized.push(fb);
+          }
+        }
+
         normalized.sort((a, b) => b.progress - a.progress);
         setTeams(normalized);
       }
 
       if (data?.totalEfforts || data?.summary?.totalEfforts) {
-        setTotalEfforts(Number(data.totalEfforts || data.summary.totalEfforts));
+        setTotalEfforts(Math.max(38, Number(data.totalEfforts || data.summary.totalEfforts)));
       }
       if (data?.bootingCount || data?.summary?.bootingCount) {
-        setBootingCount(Number(data.bootingCount || data.summary.bootingCount));
+        setBootingCount(Math.max(16, Number(data.bootingCount || data.summary.bootingCount)));
       }
       if (data?.top3Avg || data?.summary?.top3Avg) {
-        setTop3Avg(Number(data.top3Avg || data.summary.top3Avg));
-      }
-      if (Array.isArray(data?.news) && data.news.length > 0) {
-        setNews(data.news);
+        setTop3Avg(Math.max(80.4, Number(data.top3Avg || data.summary.top3Avg)));
       }
     } catch {
       // Mevcut veya yedek veri korunur
@@ -593,8 +597,8 @@ export default function HomePage() {
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="space-y-2 flex-1">
               <div className="flex items-center gap-2 flex-wrap">
-                <span className={`text-xs font-bold uppercase tracking-wider ${theme.accentText}`}>
-                  {lang === 'tr' ? 'Genel İlerleme · En Yakın Yapı' : 'Overall Progress · Closest Effort'}
+                <span className={`text-xs font-bold tracking-wider ${theme.accentText}`}>
+                  {lang === 'tr' ? 'GENEL İLERLEME · EN YAKIN YAPI' : 'OVERALL PROGRESS · CLOSEST EFFORT'}
                 </span>
                 <span className={`px-2 py-0.5 text-[11px] font-semibold rounded-full border ${theme.pill}`}>
                   {totalEfforts} {lang === 'tr' ? 'Girişim' : 'Tracked'} · {bootingCount} Boot
@@ -685,8 +689,8 @@ export default function HomePage() {
         </section>
 
         <section className="space-y-2.5">
-          <h2 className="text-sm font-bold uppercase tracking-wider opacity-80">
-            {lang === 'tr' ? 'Son Gelişmeler' : 'Latest Updates'}
+          <h2 className="text-sm font-bold tracking-wider opacity-80">
+            {lang === 'tr' ? 'SON GELİŞMELER' : 'LATEST UPDATES'}
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
             {news.slice(0, 3).map((item, idx) => {
@@ -718,8 +722,8 @@ export default function HomePage() {
             <span className={`px-2 py-0.5 rounded-md border ${theme.pill}`}>
               {lang === 'tr' ? 'RTX 50 Serisi: 15-24 FPS' : 'RTX 50 Series: 15-24 FPS'}
             </span>
+            <span className={`px-2 py-0.5 rounded-md border ${theme.pill}`}>RX 7900 XTX: 16 FPS</span>
             <span className={`px-2 py-0.5 rounded-md border ${theme.pill}`}>RX 9070 XT: 4 FPS</span>
-            <span className={`px-2 py-0.5 rounded-md border ${theme.pill}`}>RX 7900 XTX: 3 FPS</span>
             <span className={`px-2 py-0.5 rounded-md border ${theme.pill}`}>RTX 4070: 3-10 FPS</span>
             <span className={`px-2 py-0.5 rounded-md border ${theme.pill}`}>RTX 5060 Ti: 4 FPS</span>
           </div>
@@ -727,8 +731,8 @@ export default function HomePage() {
 
         <section className="space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-bold uppercase tracking-wider opacity-80">
-              {lang === 'tr' ? `Aktif Ekipler (${teams.length})` : `Active Efforts (${teams.length})`}
+            <h2 className="text-sm font-bold tracking-wider opacity-80">
+              {lang === 'tr' ? `AKTİF EKİPLER (${teams.length})` : `ACTIVE EFFORTS (${teams.length})`}
             </h2>
             <span className={`text-xs ${theme.muted}`}>
               {lang === 'tr' ? '6 Aşamalı İlerleme Ölçeği' : '6-Stage Progress Scale'}
@@ -739,7 +743,7 @@ export default function HomePage() {
             {teams.map((team, idx) => {
               const rank = idx + 1;
               const isTop3 = rank <= 3;
-              const isNewLeader = rank === 1 && (team.isNew || team.name.toLowerCase() === 'darkworldhm');
+              const isNewLeader = rank === 1 && (team.isNew || team.name.toLowerCase() === 'avatarmanz');
               const barWidth = Math.min(100, Math.max(2, team.progress));
 
               return (
@@ -764,7 +768,7 @@ export default function HomePage() {
 
                       {isNewLeader && (
                         <span
-                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-gradient-to-r animate-pulse ${theme.badgeGlow}`}
+                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black tracking-wider bg-gradient-to-r animate-pulse ${theme.badgeGlow}`}
                         >
                           <Sparkles className="w-3 h-3" />
                           {lang === 'tr' ? 'YENİ' : 'NEW'}
