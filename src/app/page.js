@@ -39,6 +39,15 @@ const AVATARS = [
   { id: 'rocket', label: 'Port', bg: 'from-fuchsia-600 to-orange-400' },
 ];
 
+function withTimeout(promise, ms = 8000) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('Sunucu yanıt vermedi (zaman aşımı).')), ms)
+    ),
+  ]);
+}
+
 function AvatarSvg({ avatarId, size = 'sm' }) {
   const av = AVATARS.find((a) => a.id === avatarId) || AVATARS[0];
   const dim = size === 'sm' ? 'w-6 h-6' : 'w-7 h-7';
@@ -542,19 +551,9 @@ export default function HomePage() {
       )
       .subscribe();
 
-    const banChannel = supabase
-      .channel('ban-realtime')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'banned_users' },
-        () => fetchBannedUsers()
-      )
-      .subscribe();
-
     return () => {
       supabase.removeChannel(projectChannel);
       supabase.removeChannel(chatChannel);
-      supabase.removeChannel(banChannel);
     };
   }, []);
 
@@ -639,10 +638,10 @@ export default function HomePage() {
 
   async function fetchProjects() {
     try {
-      const { data, error } = await supabase
-        .from('projects')
-        .select('*')
-        .order('percentage', { ascending: false });
+      const { data, error } = await withTimeout(
+        supabase.from('projects').select('*').order('percentage', { ascending: false }),
+        8000
+      );
 
       if (!error && Array.isArray(data) && data.length > 0) {
         const cleaned = data.map((item, idx) => ({
@@ -663,11 +662,10 @@ export default function HomePage() {
 
   async function fetchMessages() {
     try {
-      const { data, error } = await supabase
-        .from('chat_messages')
-        .select('*')
-        .order('id', { ascending: true })
-        .limit(100);
+      const { data, error } = await withTimeout(
+        supabase.from('chat_messages').select('*').order('id', { ascending: true }).limit(100),
+        8000
+      );
       if (!error && Array.isArray(data)) {
         setMessages(data);
       } else if (error) {
@@ -680,7 +678,10 @@ export default function HomePage() {
 
   async function fetchBannedUsers() {
     try {
-      const { data, error } = await supabase.from('banned_users').select('username');
+      const { data, error } = await withTimeout(
+        supabase.from('banned_users').select('username'),
+        6000
+      );
       if (!error && Array.isArray(data)) {
         setBannedUsers(data.map((b) => String(b.username || '').toLowerCase()));
       }
@@ -720,46 +721,67 @@ export default function HomePage() {
   async function handleDeleteMessage(msgId) {
     if (!isAdmin || !msgId) return;
     setAdminError('');
-    const { error } = await supabase.from('chat_messages').delete().eq('id', msgId);
-    if (error) {
-      setAdminError(`${t.adminSqlWarn} ${error.message}`);
+    try {
+      const { error } = await withTimeout(
+        supabase.from('chat_messages').delete().eq('id', msgId),
+        8000
+      );
+      if (error) {
+        setAdminError(`${t.adminSqlWarn} ${error.message}`);
+        setShowAdminBox(true);
+        return;
+      }
+      setMessages((prev) => prev.filter((m) => m.id !== msgId));
+    } catch (err) {
+      setAdminError(err?.message || 'Silme hatası');
       setShowAdminBox(true);
-      return;
     }
-    setMessages((prev) => prev.filter((m) => m.id !== msgId));
   }
 
   async function handleBanUser(targetName) {
     if (!isAdmin || !targetName) return;
     setAdminError('');
     const cleanTarget = targetName.trim().toLowerCase();
-    const { error: banErr } = await supabase
-      .from('banned_users')
-      .upsert([{ username: cleanTarget }], { onConflict: 'username' });
+    try {
+      const { error: banErr } = await withTimeout(
+        supabase.from('banned_users').upsert([{ username: cleanTarget }], { onConflict: 'username' }),
+        8000
+      );
 
-    if (banErr) {
-      setAdminError(`${t.adminSqlWarn} ${banErr.message}`);
+      if (banErr) {
+        setAdminError(`${t.adminSqlWarn} ${banErr.message}`);
+        setShowAdminBox(true);
+        return;
+      }
+
+      await supabase.from('chat_messages').delete().ilike('username', targetName.trim());
+      setBannedUsers((prev) => (prev.includes(cleanTarget) ? prev : [...prev, cleanTarget]));
+      setMessages((prev) =>
+        prev.filter((m) => String(m.username || '').trim().toLowerCase() !== cleanTarget)
+      );
+    } catch (err) {
+      setAdminError(err?.message || 'Banlama hatası');
       setShowAdminBox(true);
-      return;
     }
-
-    await supabase.from('chat_messages').delete().ilike('username', targetName.trim());
-    setBannedUsers((prev) => (prev.includes(cleanTarget) ? prev : [...prev, cleanTarget]));
-    setMessages((prev) =>
-      prev.filter((m) => String(m.username || '').trim().toLowerCase() !== cleanTarget)
-    );
   }
 
   async function handleUnbanUser(targetName) {
     if (!isAdmin || !targetName) return;
     setAdminError('');
     const cleanTarget = targetName.trim().toLowerCase();
-    const { error } = await supabase.from('banned_users').delete().eq('username', cleanTarget);
-    if (error) {
-      setAdminError(`${t.adminSqlWarn} ${error.message}`);
-      return;
+    try {
+      const { error } = await withTimeout(
+        supabase.from('banned_users').delete().eq('username', cleanTarget),
+        8000
+      );
+      if (error) {
+        setAdminError(`${t.adminSqlWarn} ${error.message}`);
+        return;
+      }
+      setBannedUsers((prev) => prev.filter((u) => u !== cleanTarget));
+    } catch (err) {
+      setAdminError(err?.message || 'Ban kaldırma hatası');
     }
-    setBannedUsers((prev) => prev.filter((u) => u !== cleanTarget));
   }
 
   async function handleAutoSync() {
@@ -847,15 +869,13 @@ export default function HomePage() {
     const safeMsg = censorText(cleanMsg.slice(0, 500));
 
     try {
-      const { data, error } = await supabase
-        .from('chat_messages')
-        .insert([
-          {
-            username: safeNick,
-            message: safeMsg,
-          },
-        ])
-        .select();
+      const { data, error } = await withTimeout(
+        supabase
+          .from('chat_messages')
+          .insert([{ username: safeNick, message: safeMsg }])
+          .select(),
+        8000
+      );
 
       if (error) {
         setChatError(`${t.errSend} ${error.message}`);
