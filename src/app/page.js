@@ -3,7 +3,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import {
-  Flame,
   Send,
   ExternalLink,
   MessageSquare,
@@ -20,10 +19,8 @@ import {
 } from 'lucide-react';
 
 const THEMES = [
-  { id: 'vice-sunset', label: 'Vice Gün Batımı' },
-  { id: 'leonida-night', label: 'Leonida Gece' },
-  { id: 'mangrove-mist', label: 'Mangrov Sis' },
-  { id: 'miami-dusk', label: 'Miami Alacakaranlık' },
+  { id: 'portwatch-dark', label: 'PortWatch Koyu' },
+  { id: 'portwatch-light', label: 'PortWatch Açık' },
 ];
 
 const FALLBACK_PROJECTS = [
@@ -143,69 +140,38 @@ function StageVisualBadge({ percentage, stage = '' }) {
 
   let level = 1;
   let label = 'Boot / Exe';
-  let boxClass = 'bg-purple-500/15 text-purple-200 border-purple-400/45';
+  let boxClass = 'bg-purple-500/15 text-purple-400 border-purple-500/30';
   let stepFill = 'bg-purple-400';
 
   if (pct >= 85 || s.includes('60 fps') || s.includes('akıcı')) {
     level = 4;
     label = 'Akıcı FPS';
-    boxClass = 'bg-amber-400/15 text-amber-200 border-amber-400/45';
-    stepFill = 'bg-amber-300';
+    boxClass = 'bg-amber-500/15 text-amber-400 border-amber-500/30';
+    stepFill = 'bg-amber-400';
   } else if (pct >= 60 || s.includes('oyun içi') || s.includes('dünya')) {
     level = 3;
     label = 'Oyun İçi';
-    boxClass = 'bg-emerald-500/15 text-emerald-200 border-emerald-400/45';
+    boxClass = 'bg-emerald-500/15 text-emerald-500 border-emerald-500/30';
     stepFill = 'bg-emerald-400';
   } else if (pct >= 40 || s.includes('ilk kare') || s.includes('menü')) {
     level = 2;
     label = 'İlk Kare';
-    boxClass = 'bg-sky-500/15 text-sky-200 border-sky-400/45';
+    boxClass = 'bg-sky-500/15 text-sky-400 border-sky-500/30';
     stepFill = 'bg-sky-400';
   }
 
   return (
     <div
       title={`Aşama Seviyesi ${level}/4: ${stage || label}`}
-      className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-extrabold shrink-0 shadow-sm ${boxClass}`}
+      className={`inline-flex items-center gap-2 px-2.5 py-1 rounded-xl border text-xs font-bold shrink-0 ${boxClass}`}
     >
-      {/* Her temada kesin görünen özel SVG ikon */}
-      {level === 4 && (
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 shrink-0">
-          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-        </svg>
-      )}
-      {level === 3 && (
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 shrink-0">
-          <line x1="6" y1="12" x2="10" y2="12" />
-          <line x1="8" y1="10" x2="8" y2="14" />
-          <circle cx="15" cy="13" r="1" fill="currentColor" />
-          <circle cx="18" cy="11" r="1" fill="currentColor" />
-          <rect x="2" y="6" width="20" height="12" rx="4" />
-        </svg>
-      )}
-      {level === 2 && (
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 shrink-0">
-          <rect x="2" y="3" width="20" height="14" rx="2" />
-          <line x1="8" y1="21" x2="16" y2="21" />
-          <line x1="12" y1="17" x2="12" y2="21" />
-        </svg>
-      )}
-      {level === 1 && (
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 shrink-0">
-          <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z" />
-          <path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z" />
-        </svg>
-      )}
-
       <span>{label}</span>
-
-      {/* 4 Kademeli Mini Aşama Çubuğu */}
-      <span className="hidden sm:inline-flex items-center gap-0.5 ml-0.5" aria-hidden="true">
+      <span className="hidden sm:inline-flex items-center gap-0.5" aria-hidden="true">
         {[1, 2, 3, 4].map((step) => (
           <span
             key={step}
-            className={`w-1.5 h-3 rounded-sm ${
-              step <= level ? stepFill : 'bg-white/15'
+            className={`w-1.5 h-2.5 rounded-sm ${
+              step <= level ? stepFill : 'bg-slate-500/25'
             }`}
           />
         ))}
@@ -227,7 +193,7 @@ function renderMessageWithLinks(text) {
           href={part}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-1 text-pink-300 underline decoration-pink-400/60 hover:text-amber-300 break-all font-medium"
+          className="inline-flex items-center gap-1 text-pink-500 underline decoration-pink-500/50 hover:text-orange-400 break-all font-medium"
         >
           <LinkIcon className="w-3.5 h-3.5 shrink-0" />
           {part}
@@ -260,7 +226,7 @@ export default function HomePage() {
   const [secondsLeft, setSecondsLeft] = useState(120);
   const [onlineUsers, setOnlineUsers] = useState([]);
   const [showOnlinePanel, setShowOnlinePanel] = useState(false);
-  const [theme, setTheme] = useState('vice-sunset');
+  const [theme, setTheme] = useState('portwatch-dark');
   const chatBottomRef = useRef(null);
 
   useEffect(() => {
@@ -498,39 +464,49 @@ export default function HomePage() {
   const onlineCount = Math.max(1, onlineUsers.length);
 
   return (
-    <div className="min-h-screen text-slate-100 flex flex-col">
-      <header className="sticky top-0 z-30 backdrop-blur-2xl bg-[#090616]/85 border-b border-white/10">
+    <div className="min-h-screen flex flex-col">
+      {/* Üst Çubuk */}
+      <header
+        style={{ backgroundColor: 'var(--header-bg)', borderColor: 'var(--card-border)' }}
+        className="sticky top-0 z-30 backdrop-blur-xl border-b"
+      >
         <div className="max-w-[1440px] mx-auto px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl gta-bar-fill flex items-center justify-center shadow-lg ring-1 ring-white/20">
-              <Flame className="w-5 h-5 text-white" />
+            <div className="w-9 h-9 rounded-lg gta-bar-fill flex items-center justify-center shadow-sm text-white font-black text-sm tracking-tight">
+              VI
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-xl sm:text-2xl font-black tracking-wider uppercase text-white">
+                <span className="text-lg sm:text-xl font-extrabold tracking-tight">
                   GTA6takip
                 </span>
-                <span className="hidden sm:inline-flex items-center text-[10px] tracking-widest uppercase px-2.5 py-0.5 rounded-full bg-white/[0.06] border border-white/15 text-slate-200 font-bold">
+                <span
+                  style={{ borderColor: 'var(--card-border)', color: 'var(--text-secondary)' }}
+                  className="hidden sm:inline-flex items-center text-[10px] tracking-widest uppercase px-2 py-0.5 rounded-full border font-semibold"
+                >
                   LEONIDA • PC PORT
                 </span>
               </div>
-              <p className="text-[11px] sm:text-xs text-slate-400">
+              <p style={{ color: 'var(--text-secondary)' }} className="text-[11px]">
                 120sn Otomatik İlerleme Takibi & Türkçe Canlı Sohbet
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-2 flex-wrap">
-            <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-white/[0.04] border border-white/10">
-              <Palette className="w-3.5 h-3.5 text-slate-300 hidden sm:block" />
+            <div
+              style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--card-border)' }}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border"
+            >
+              <Palette style={{ color: 'var(--text-secondary)' }} className="w-3.5 h-3.5 hidden sm:block" />
               <select
                 aria-label="Tema Seç"
                 value={theme}
                 onChange={(e) => setTheme(e.target.value)}
-                className="bg-transparent text-xs font-semibold text-slate-100 focus:outline-none cursor-pointer"
+                className="bg-transparent text-xs font-semibold focus:outline-none cursor-pointer"
               >
                 {THEMES.map((t) => (
-                  <option key={t.id} value={t.id} className="bg-[#120c24] text-white">
+                  <option key={t.id} value={t.id} className="bg-slate-900 text-white">
                     {t.label}
                   </option>
                 ))}
@@ -541,23 +517,30 @@ export default function HomePage() {
               <button
                 type="button"
                 onClick={() => setShowOnlinePanel((prev) => !prev)}
-                className="inline-flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold bg-emerald-500/12 hover:bg-emerald-500/20 border border-emerald-400/30 text-emerald-200 transition cursor-pointer"
+                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-500/15 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-500 transition cursor-pointer"
               >
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                <Users className="w-3.5 h-3.5 text-emerald-300" />
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                <Users className="w-3.5 h-3.5" />
                 <span>{onlineCount} Çevrimiçi</span>
               </button>
 
               {showOnlinePanel && (
-                <div className="absolute right-0 mt-2 w-60 rounded-2xl bg-[#110c22]/95 border border-white/15 shadow-2xl p-3.5 z-40">
-                  <div className="flex items-center justify-between border-b border-white/10 pb-2 mb-2">
-                    <span className="text-xs font-extrabold text-slate-100">
+                <div
+                  style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--card-border)' }}
+                  className="absolute right-0 mt-2 w-60 rounded-2xl border shadow-2xl p-3.5 z-40"
+                >
+                  <div
+                    style={{ borderColor: 'var(--card-border)' }}
+                    className="flex items-center justify-between border-b pb-2 mb-2"
+                  >
+                    <span className="text-xs font-extrabold">
                       Aktif Bağlantılar ({onlineCount})
                     </span>
                     <button
                       type="button"
                       onClick={() => setShowOnlinePanel(false)}
-                      className="text-[11px] text-slate-400 hover:text-white cursor-pointer"
+                      style={{ color: 'var(--text-secondary)' }}
+                      className="text-[11px] hover:underline cursor-pointer"
                     >
                       Kapat
                     </button>
@@ -566,9 +549,10 @@ export default function HomePage() {
                     {onlineUsers.map((nick, i) => (
                       <li
                         key={`${nick}-${i}`}
-                        className="flex items-center gap-2 text-xs text-slate-200 bg-white/[0.04] px-2.5 py-1.5 rounded-lg"
+                        style={{ backgroundColor: 'var(--card-inner)' }}
+                        className="flex items-center gap-2 text-xs px-2.5 py-1.5 rounded-lg"
                       >
-                        <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0" />
+                        <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
                         <span className="truncate font-semibold">{nick}</span>
                       </li>
                     ))}
@@ -577,21 +561,25 @@ export default function HomePage() {
               )}
             </div>
 
-            <div className="hidden xl:flex items-center gap-2 px-3 py-2 rounded-xl bg-white/[0.04] border border-white/10 text-xs">
-              <Trophy className="w-3.5 h-3.5 text-amber-300" />
-              <span className="text-slate-400">Lider:</span>
-              <span className="font-bold text-white">{leaderName}</span>
-              <span className="font-black text-pink-300">%{topScore}</span>
+            <div
+              style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--card-border)' }}
+              className="hidden xl:flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs"
+            >
+              <Trophy className="w-3.5 h-3.5 text-amber-400" />
+              <span style={{ color: 'var(--text-secondary)' }}>Lider:</span>
+              <span className="font-bold">{leaderName}</span>
+              <span className="font-black pw-text-gradient">%{topScore}</span>
             </div>
 
             <button
               type="button"
               onClick={handleAutoSync}
               disabled={syncing}
-              className="inline-flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold bg-white/[0.07] hover:bg-white/[0.12] border border-white/15 text-white transition cursor-pointer"
+              style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--card-border)' }}
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold border hover:opacity-90 transition cursor-pointer"
             >
               <RefreshCw
-                className={`w-3.5 h-3.5 text-amber-300 ${syncing ? 'animate-spin' : ''}`}
+                className={`w-3.5 h-3.5 text-pink-500 ${syncing ? 'animate-spin' : ''}`}
               />
               <span>{syncing ? 'Güncelleniyor...' : `Oto Yenile (${secondsLeft}sn)`}</span>
             </button>
@@ -599,106 +587,145 @@ export default function HomePage() {
         </div>
       </header>
 
-      <main className="flex-1 max-w-[1440px] w-full mx-auto px-4 sm:px-6 py-5 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        <section className="lg:col-span-7 xl:col-span-8 flex flex-col gap-4">
-          <div className="rounded-3xl p-4 sm:p-5 bg-white/[0.04] border border-white/10 shadow-xl">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <div className="space-y-1">
-                <div className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-200 bg-white/[0.06] border border-white/10 px-2.5 py-0.5 rounded-full">
-                  <Sparkles className="w-3 h-3 text-amber-300" />
-                  Her 120 Saniyede Otomatik Tarama
-                </div>
-                <h1 className="text-xl sm:text-2xl font-black tracking-tight text-white">
-                  Ekiplerin Tamamlanma Yüzdeleri
-                </h1>
-                <p className="text-xs text-slate-300/90">
-                  3D barların yanındaki aşama simgeleri ve 4 kademeli göstergeler ekibin hangi seviyede olduğunu anlık gösterir.
-                </p>
-              </div>
+      {/* PortWatch VI Gün Batımı Hero Şeridi */}
+      <section className="pw-hero-bg relative overflow-hidden border-b border-white/10">
+        <svg
+          className="absolute right-0 bottom-0 h-full w-72 sm:w-96 opacity-20 pointer-events-none select-none"
+          viewBox="0 0 400 180"
+          fill="none"
+          aria-hidden="true"
+        >
+          <circle cx="290" cy="110" r="64" fill="url(#pwSun)" />
+          <rect x="210" y="108" width="160" height="4" fill="#120824" />
+          <rect x="210" y="120" width="160" height="5" fill="#120824" />
+          <rect x="210" y="134" width="160" height="7" fill="#120824" />
+          <path
+            d="M0 180 L0 135 L35 135 L35 110 L65 110 L65 142 L95 142 L95 95 L130 95 L130 148 L170 148 L170 120 L205 120 L205 180 Z"
+            fill="#0b1120"
+            opacity="0.65"
+          />
+          <defs>
+            <linearGradient id="pwSun" x1="290" y1="46" x2="290" y2="174" gradientUnits="userSpaceOnUse">
+              <stop stopColor="#fbbf24" />
+              <stop offset="0.55" stopColor="#ec4899" />
+              <stop offset="1" stopColor="#9333ea" />
+            </linearGradient>
+          </defs>
+        </svg>
 
-              <div className="flex items-center gap-2 shrink-0">
-                <div className="rounded-2xl bg-black/35 border border-white/10 px-3.5 py-2 text-center">
-                  <div className="text-[10px] uppercase tracking-wider text-slate-400">Zirve</div>
-                  <div className="text-lg sm:text-xl font-black text-amber-300">%{topScore}</div>
-                </div>
-                <div className="rounded-2xl bg-black/35 border border-white/10 px-3.5 py-2 text-center">
-                  <div className="text-[10px] uppercase tracking-wider text-slate-400">Sonraki</div>
-                  <div className="text-lg sm:text-xl font-black text-cyan-300">{secondsLeft}s</div>
-                </div>
-              </div>
+        <div className="max-w-[1440px] mx-auto px-4 sm:px-6 py-5 sm:py-6 relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="space-y-1.5">
+            <div className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-pink-200 bg-white/10 border border-white/15 px-2.5 py-0.5 rounded-full">
+              <Sparkles className="w-3 h-3 text-amber-300" />
+              Her 120 Saniyede Otomatik Tarama
+            </div>
+            <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-white">
+              Ekiplerin Tamamlanma Yüzdeleri
+            </h1>
+            <p className="text-xs text-purple-100/85">
+              Portlama ekiplerinin güncel ilerleme oranları, aşamaları ve anlık topluluk sohbeti.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2.5 bg-slate-950/45 backdrop-blur-md border border-white/15 rounded-2xl p-3 text-white shrink-0">
+            <div className="px-2.5 text-center">
+              <div className="text-[10px] uppercase tracking-wider text-purple-200/75">Zirve</div>
+              <div className="text-lg sm:text-xl font-extrabold text-amber-300">%{topScore}</div>
+            </div>
+            <div className="px-2.5 border-l border-white/15 text-center">
+              <div className="text-[10px] uppercase tracking-wider text-purple-200/75">Sonraki</div>
+              <div className="text-lg sm:text-xl font-extrabold text-pink-300 tabular-nums">{secondsLeft}s</div>
             </div>
           </div>
+        </div>
+      </section>
 
+      {/* Ana İçerik: Sol Bar Çubukları + Sağ Sohbet */}
+      <main className="flex-1 max-w-[1440px] w-full mx-auto px-4 sm:px-6 py-5 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        <section className="lg:col-span-7 xl:col-span-8 flex flex-col gap-3.5">
           <div className="flex items-center justify-between px-1">
-            <h2 className="text-sm sm:text-base font-extrabold flex items-center gap-2 text-slate-100">
-              <Cpu className="w-4 h-4 text-amber-300" />
+            <h2 className="text-sm sm:text-base font-extrabold flex items-center gap-2">
+              <Cpu className="w-4 h-4 text-pink-500" />
               Portlama Ekipleri Sıralaması ({projects.length} Ekip)
             </h2>
-            <span className="text-[11px] text-slate-400">Kaydırmalı liste • Yüksekten düşüğe</span>
+            <span style={{ color: 'var(--text-secondary)' }} className="text-[11px]">
+              Yüksekten düşüğe
+            </span>
           </div>
 
-          <div className="lg:max-h-[calc(100vh-235px)] lg:overflow-y-auto vice-scroll lg:pr-2">
-            <ul className="flex flex-col gap-3.5 list-none p-0 m-0">
+          <div className="lg:max-h-[calc(100vh-220px)] lg:overflow-y-auto vice-scroll lg:pr-1.5">
+            <ul className="flex flex-col gap-3 list-none p-0 m-0">
               {projects.map((proj, index) => {
                 const pct = Math.min(100, Math.max(0, Number(proj.percentage) || 0));
 
                 return (
                   <li
                     key={proj.id || index}
-                    className="rounded-2xl p-4 sm:p-5 bg-white/[0.04] hover:bg-white/[0.06] border border-white/10 transition"
+                    style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--card-border)' }}
+                    className="rounded-2xl p-4 sm:p-5 border shadow-sm transition"
                   >
                     <div className="flex items-center justify-between gap-3 mb-2.5">
                       <div className="flex items-center gap-2.5 flex-wrap min-w-0">
-                        <span className="text-xs font-black px-2.5 py-0.5 rounded-lg bg-white/[0.07] border border-white/10 text-slate-200 shrink-0">
+                        <span
+                          className={`text-base font-black shrink-0 ${
+                            index < 3 ? 'pw-text-gradient' : 'opacity-60'
+                          }`}
+                        >
                           #{index + 1}
                         </span>
-                        <h3 className="text-lg sm:text-xl font-black tracking-tight text-white truncate">
+                        <h3 className="text-base sm:text-lg font-bold tracking-tight truncate">
                           {proj.name}
                         </h3>
                         <span
-                          className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wide shrink-0 ${
+                          className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wide shrink-0 border ${
                             proj.is_open_source
-                              ? 'bg-emerald-500/12 text-emerald-300 border border-emerald-400/25'
-                              : 'bg-amber-500/12 text-amber-300 border border-amber-400/25'
+                              ? 'bg-emerald-500/15 text-emerald-500 border-emerald-500/25'
+                              : 'bg-pink-500/15 text-pink-500 border-pink-500/25'
                           }`}
                         >
                           {proj.is_open_source ? 'Açık Kaynak' : 'Kapalı Ekip'}
                         </span>
                       </div>
 
-                      <span className="text-xl sm:text-2xl font-black text-white shrink-0">
+                      <span className="text-xl sm:text-2xl font-extrabold tabular-nums pw-text-gradient shrink-0">
                         %{pct}
                       </span>
                     </div>
 
-                    {/* 3D Bar + Yanında Her Temada Çalışan SVG Simge & 4 Kademe Göstergesi */}
-                    <div className="flex items-center gap-2.5 mb-3">
-                      <div className="relative flex-1 h-6 sm:h-7 rounded-2xl bg-black/55 p-1 border border-white/15 shadow-[inset_0_3px_8px_rgba(0,0,0,0.85)] overflow-hidden">
+                    {/* İlerleme Barı + Aşama Rozeti */}
+                    <div className="flex items-center gap-3 mb-2">
+                      <div
+                        style={{ backgroundColor: 'var(--track-bg)' }}
+                        className="relative flex-1 h-3 rounded-full overflow-hidden"
+                      >
                         <div
-                          className="gta-bar-fill relative h-full rounded-xl shadow-[inset_0_2px_2px_rgba(255,255,255,0.45),inset_0_-2px_4px_rgba(0,0,0,0.45)] transition-all duration-700 flex items-center justify-end pr-2.5"
-                          style={{ width: `${Math.max(pct, 10)}%` }}
-                        >
-                          <div className="absolute inset-x-1 top-0.5 h-1.5 rounded-full bg-white/30 pointer-events-none" />
-                          <span className="relative z-10 text-[11px] font-black text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.85)]">
-                            %{pct}
-                          </span>
-                        </div>
+                          className="gta-bar-fill h-full rounded-full transition-all duration-700"
+                          style={{ width: `${Math.max(pct, 4)}%` }}
+                        />
                       </div>
-
                       <StageVisualBadge percentage={pct} stage={proj.stage} />
                     </div>
 
-                    <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2.5 text-xs text-slate-300">
+                    <div
+                      style={{ backgroundColor: 'var(--card-inner)', borderColor: 'var(--card-border)' }}
+                      className="rounded-xl px-3 py-2 border mb-2.5 flex flex-wrap items-center justify-between gap-2 text-xs"
+                    >
+                      <span className="font-semibold">Aşama: {proj.stage || 'Geliştirme'}</span>
+                      <span style={{ color: 'var(--text-secondary)' }}>
+                        {proj.fps && proj.fps !== '-' ? proj.fps : 'FPS bilgisi yok'}
+                      </span>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2.5 text-xs">
                       <div className="space-y-1">
-                        <p className="text-xs font-bold text-slate-100">
-                          Aşama: {proj.stage || 'Geliştirme'}{' '}
-                          {proj.fps && proj.fps !== '-' ? `• ${proj.fps}` : ''}
-                        </p>
-                        <p className="text-xs text-slate-300/90 leading-relaxed">
+                        <p style={{ color: 'var(--text-secondary)' }} className="leading-relaxed">
                           {proj.description}
                         </p>
-                        <p className="inline-flex items-center gap-1.5 text-[11px] text-slate-400 font-medium pt-0.5">
-                          <Clock className="w-3 h-3 text-slate-400 shrink-0" />
+                        <p
+                          style={{ color: 'var(--text-secondary)' }}
+                          className="inline-flex items-center gap-1.5 text-[11px] opacity-80 pt-0.5"
+                        >
+                          <Clock className="w-3 h-3 shrink-0" />
                           <span>Son Güncelleme Saati: {formatUpdateTime(proj.updated_at)}</span>
                         </p>
                       </div>
@@ -708,7 +735,8 @@ export default function HomePage() {
                           href={proj.repo_url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] border border-white/10 text-slate-200 hover:text-white text-xs font-semibold transition shrink-0 self-start sm:self-end"
+                          style={{ borderColor: 'var(--card-border)' }}
+                          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border text-pink-500 hover:opacity-80 text-xs font-semibold transition shrink-0 self-start sm:self-end"
                         >
                           Kaynak <ExternalLink className="w-3.5 h-3.5" />
                         </a>
@@ -721,33 +749,42 @@ export default function HomePage() {
           </div>
         </section>
 
-        <aside className="lg:col-span-5 xl:col-span-4 rounded-3xl bg-white/[0.04] border border-white/10 overflow-hidden shadow-xl flex flex-col lg:sticky lg:top-[76px] lg:h-[calc(100vh-98px)] min-h-[520px]">
-          <div className="p-4 border-b border-white/10 bg-white/[0.03] flex items-center justify-between gap-2 shrink-0">
+        {/* Sağ: Vice City Canlı Sohbet */}
+        <aside
+          style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--card-border)' }}
+          className="lg:col-span-5 xl:col-span-4 rounded-2xl border overflow-hidden shadow-sm flex flex-col lg:sticky lg:top-[76px] lg:h-[calc(100vh-98px)] min-h-[520px]"
+        >
+          <div
+            style={{ backgroundColor: 'var(--card-inner)', borderColor: 'var(--card-border)' }}
+            className="p-4 border-b flex items-center justify-between gap-2 shrink-0"
+          >
             <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-xl bg-white/[0.07] border border-white/10 flex items-center justify-center">
-                <MessageSquare className="w-4 h-4 text-slate-200" />
+              <div className="w-8 h-8 rounded-xl gta-bar-fill flex items-center justify-center text-white">
+                <MessageSquare className="w-4 h-4" />
               </div>
               <div>
-                <h2 className="text-sm sm:text-base font-extrabold text-white">
-                  Vice City Canlı Sohbet
-                </h2>
-                <p className="text-[11px] text-slate-400">
+                <h2 className="text-sm font-extrabold">Vice City Canlı Sohbet</h2>
+                <p style={{ color: 'var(--text-secondary)' }} className="text-[11px]">
                   Nickname yaz, sohbet et ve link paylaş
                 </p>
               </div>
             </div>
-            <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-emerald-300 bg-emerald-500/12 border border-emerald-400/25 px-2.5 py-1 rounded-full shrink-0">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+            <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-emerald-500 bg-emerald-500/15 border border-emerald-500/25 px-2.5 py-0.5 rounded-full shrink-0">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
               Canlı
             </span>
           </div>
 
-          <div className="px-4 py-3 bg-black/25 border-b border-white/10 flex items-center gap-2.5 shrink-0">
+          <div
+            style={{ borderColor: 'var(--card-border)' }}
+            className="px-4 py-2.5 border-b flex items-center gap-2.5 shrink-0"
+          >
             <label
               htmlFor="nickname-input"
-              className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-300 shrink-0"
+              style={{ color: 'var(--text-secondary)' }}
+              className="inline-flex items-center gap-1.5 text-xs font-semibold shrink-0"
             >
-              <User className="w-3.5 h-3.5 text-amber-300" />
+              <User className="w-3.5 h-3.5 text-pink-500" />
               Nickname:
             </label>
             <input
@@ -764,25 +801,30 @@ export default function HomePage() {
               }}
               maxLength={24}
               placeholder="Takma adını yaz..."
-              className="w-full rounded-xl bg-white/[0.06] border border-white/15 px-3 py-1.5 text-xs sm:text-sm font-bold text-amber-300 placeholder:text-slate-400 placeholder:font-normal focus:outline-none focus:border-white/35"
+              style={{ backgroundColor: 'var(--card-inner)', borderColor: 'var(--card-border)' }}
+              className="w-full rounded-xl border px-3 py-1.5 text-xs font-bold text-pink-500 placeholder:text-slate-400 placeholder:font-normal focus:outline-none"
             />
           </div>
 
-          <div className="flex-1 overflow-y-auto vice-scroll p-4 space-y-3">
+          <div className="flex-1 overflow-y-auto vice-scroll p-4 space-y-2.5">
             {messages.length === 0 ? (
-              <div className="h-full flex flex-col items-center justify-center text-center text-slate-400 text-xs space-y-1.5 px-4">
-                <p className="font-semibold text-slate-200">Sohbet odası aktif!</p>
+              <div
+                style={{ color: 'var(--text-secondary)' }}
+                className="h-full flex flex-col items-center justify-center text-center text-xs space-y-1.5 px-4"
+              >
+                <p className="font-semibold">Sohbet odası aktif!</p>
                 <p>Nickname'ini yazıp ilk mesajı veya GTA VI port linkini paylaşabilirsin.</p>
               </div>
             ) : (
               messages.map((msg, idx) => (
                 <div
                   key={msg.id || idx}
-                  className="rounded-2xl bg-white/[0.04] border border-white/10 p-3 space-y-1"
+                  style={{ backgroundColor: 'var(--card-inner)', borderColor: 'var(--card-border)' }}
+                  className="rounded-xl border p-3 space-y-1"
                 >
                   <div className="flex items-center justify-between gap-2">
-                    <span className="text-xs font-extrabold text-amber-300">{msg.username}</span>
-                    <span className="text-[10px] text-slate-400">
+                    <span className="text-xs font-extrabold text-pink-500">{msg.username}</span>
+                    <span style={{ color: 'var(--text-secondary)' }} className="text-[10px]">
                       {msg.created_at
                         ? new Date(msg.created_at).toLocaleTimeString('tr-TR', {
                             hour: '2-digit',
@@ -791,7 +833,7 @@ export default function HomePage() {
                         : ''}
                     </span>
                   </div>
-                  <p className="text-xs sm:text-sm text-slate-100 leading-relaxed break-words">
+                  <p className="text-xs sm:text-sm leading-relaxed break-words">
                     {renderMessageWithLinks(msg.message)}
                   </p>
                 </div>
@@ -801,14 +843,15 @@ export default function HomePage() {
           </div>
 
           {chatError && (
-            <div className="px-4 py-2 bg-rose-500/15 border-t border-rose-400/30 text-xs text-rose-200">
+            <div className="px-4 py-2 bg-rose-500/15 border-t border-rose-500/30 text-xs text-rose-400">
               {chatError}
             </div>
           )}
 
           <form
             onSubmit={handleSendMessage}
-            className="p-3 sm:p-3.5 bg-black/35 border-t border-white/10 flex items-center gap-2 shrink-0"
+            style={{ backgroundColor: 'var(--card-inner)', borderColor: 'var(--card-border)' }}
+            className="p-3 border-t flex items-center gap-2 shrink-0"
           >
             <input
               type="text"
@@ -821,12 +864,13 @@ export default function HomePage() {
               }}
               maxLength={500}
               placeholder="Mesaj yaz veya https:// link yapıştır..."
-              className="flex-1 min-w-0 rounded-xl bg-white/[0.06] border border-white/15 px-3.5 py-2.5 text-xs sm:text-sm text-white placeholder:text-slate-400 focus:outline-none focus:border-white/35"
+              style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--card-border)' }}
+              className="flex-1 min-w-0 rounded-xl border px-3 py-2 text-xs sm:text-sm placeholder:text-slate-400 focus:outline-none"
             />
             <button
               type="submit"
               disabled={sending}
-              className="gta-bar-fill px-4 py-2.5 rounded-xl hover:brightness-110 disabled:opacity-40 text-white font-bold text-xs sm:text-sm inline-flex items-center gap-1.5 transition cursor-pointer shrink-0"
+              className="gta-bar-fill px-4 py-2 rounded-xl hover:brightness-110 disabled:opacity-40 text-white font-bold text-xs sm:text-sm inline-flex items-center gap-1.5 transition cursor-pointer shrink-0"
             >
               <Send className="w-4 h-4" />
               <span>{sending ? 'Atılıyor...' : 'Gönder'}</span>
@@ -835,9 +879,12 @@ export default function HomePage() {
         </aside>
       </main>
 
-      <footer className="border-t border-white/10 py-4 px-4 text-center text-[11px] text-slate-400 bg-black/25">
+      <footer
+        style={{ borderColor: 'var(--card-border)', color: 'var(--text-secondary)' }}
+        className="border-t py-4 px-4 text-center text-[11px]"
+      >
         <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-center gap-2">
-          <ShieldCheck className="w-4 h-4 text-slate-300 shrink-0" />
+          <ShieldCheck className="w-4 h-4 shrink-0" />
           <span>
             GTA6takip bağımsız bir topluluk takip sitesidir; Rockstar Games veya Take-Two ile resmi bağlantısı yoktur.
           </span>
