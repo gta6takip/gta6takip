@@ -15,10 +15,11 @@ import {
   X,
   Check,
   Share2,
+  BarChart2,
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
-const APP_VERSION = 'v1.0.13';
+const APP_VERSION = 'v1.0.14';
 const NIGHT_POLL_KEY = 'gta6takip_night_poll_v1';
 const NIGHT_POLL_END_MS = new Date('2026-11-26T06:00:00+03:00').getTime();
 
@@ -149,6 +150,17 @@ const FALLBACK_NEWS = [
 
 const CHANGELOG = [
   {
+    version: 'v1.0.14',
+    dateTr: '26 Kasım 2026',
+    dateEn: 'November 26, 2026',
+    itemsTr: [
+      'Uçan gece kuşu askeri penceresine yüzdelik dağılımı gösteren "Sonuçları Gör" butonu eklendi.',
+    ],
+    itemsEn: [
+      'Added a "See Results" toggle with percentage breakdown bars to the night-owl soldier widget.',
+    ],
+  },
+  {
     version: 'v1.0.13',
     dateTr: '26 Kasım 2026',
     dateEn: 'November 26, 2026',
@@ -168,19 +180,6 @@ const CHANGELOG = [
     ],
     itemsEn: [
       'Added the floating night-owl soldier widget after 7 seconds with a one-time persistent poll.',
-    ],
-  },
-  {
-    version: 'v1.0.11',
-    dateTr: '26 Kasım 2026',
-    dateEn: 'November 26, 2026',
-    itemsTr: [
-      'Alt paylaşım butonlarına modern WhatsApp ve X simgeleri eklendi.',
-      'Ekip ilerleme çubuğu tek parça kesintisiz bar haline getirildi; 6 durak noktası alta hizalandı.',
-    ],
-    itemsEn: [
-      'Added modern WhatsApp and X icons to the footer share buttons.',
-      'Unified team progress into a single continuous bar with aligned 6-milestone stop nodes.',
     ],
   },
 ];
@@ -302,6 +301,7 @@ export default function HomePage() {
   const [soldierDismissed, setSoldierDismissed] = useState(false);
   const [nightVote, setNightVote] = useState(null);
   const [nightCounts, setNightCounts] = useState({ stay: 14, sleep: 5 });
+  const [showNightResults, setShowNightResults] = useState(false);
 
   const theme = THEMES[themeKey] || THEMES.dark;
 
@@ -477,6 +477,7 @@ export default function HomePage() {
   const handleNightVote = (choice) => {
     if (nightVote || Date.now() >= NIGHT_POLL_END_MS) return;
     setNightVote(choice);
+    setShowNightResults(true);
     setNightCounts((prev) => ({
       ...prev,
       [choice]: prev[choice] + 1,
@@ -490,6 +491,10 @@ export default function HomePage() {
       // localStorage yazma hatası yoksayılır
     }
   };
+
+  const totalNightVotes = nightCounts.stay + nightCounts.sleep;
+  const stayPct = totalNightVotes > 0 ? Math.round((nightCounts.stay / totalNightVotes) * 100) : 0;
+  const sleepPct = totalNightVotes > 0 ? 100 - stayPct : 0;
 
   const leader = teams[0] || FALLBACK_TEAMS[0];
   const peakFps = useMemo(() => extractPeakFps(teams), [teams]);
@@ -1054,6 +1059,57 @@ export default function HomePage() {
               <span className="font-black">{nightCounts.sleep}</span>
             </button>
           </div>
+
+          <button
+            type="button"
+            onClick={() => setShowNightResults((v) => !v)}
+            className={`w-full mt-2 inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-[11px] font-semibold transition hover:opacity-90 ${theme.subCard}`}
+          >
+            <BarChart2 className={`w-3.5 h-3.5 ${theme.accentText}`} />
+            <span>
+              {showNightResults
+                ? lang === 'tr'
+                  ? 'Sonuçları Gizle'
+                  : 'Hide Results'
+                : lang === 'tr'
+                  ? 'Anket Sonucunu Gör'
+                  : 'See Poll Results'}
+            </span>
+          </button>
+
+          {showNightResults && (
+            <div className={`mt-2 p-2.5 rounded-xl border space-y-2 text-[11px] ${theme.subCard}`}>
+              <div className="space-y-1">
+                <div className="flex justify-between font-semibold">
+                  <span>{lang === 'tr' ? 'Burdayız reis.' : 'Still here, chief.'}</span>
+                  <span className={theme.accentText}>%{stayPct} ({nightCounts.stay})</span>
+                </div>
+                <div className="h-1.5 rounded-full bg-zinc-700/40 overflow-hidden">
+                  <div
+                    className={`h-full rounded-full bg-gradient-to-r ${theme.accentGradient}`}
+                    style={{ width: `${stayPct}%` }}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <div className="flex justify-between font-semibold">
+                  <span>{lang === 'tr' ? 'Yatacam şimdi kral.' : 'Heading to bed, king.'}</span>
+                  <span>%{sleepPct} ({nightCounts.sleep})</span>
+                </div>
+                <div className="h-1.5 rounded-full bg-zinc-700/40 overflow-hidden">
+                  <div
+                    className="h-full rounded-full bg-zinc-400"
+                    style={{ width: `${sleepPct}%` }}
+                  />
+                </div>
+              </div>
+
+              <div className={`text-[10px] text-right ${theme.muted}`}>
+                {lang === 'tr' ? `Toplam: ${totalNightVotes} oy` : `Total: ${totalNightVotes} votes`}
+              </div>
+            </div>
+          )}
         </aside>
       )}
 
