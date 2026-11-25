@@ -4,6 +4,19 @@ export const dynamic = 'force-dynamic';
 
 const BASE_TEAMS = [
   {
+    name: 'darkworldhm',
+    repo: null,
+    url: 'https://portwatch-vi.xyz/#race',
+    open_source: false,
+    percentage: 79.5,
+    stage_tr: 'Oynanabilir • Serbest Dolaşım',
+    stage_en: 'Playable • Free Roam',
+    fps_tr: '15-24 FPS (RTX 50 Serisi)',
+    fps_en: '15-24 FPS (RTX 50 Series)',
+    desc_tr: 'Kapalı derleme: Rumble yayınında serbest dolaşımda ortalama 12-15 FPS, tepe değerde 24 FPS ile tablo rekorunu kırdı.',
+    desc_en: 'Private build: hit 12-15 fps average and 24 fps peak in free roam on Rumble, the highest frame rate on the board.',
+  },
+  {
     name: 'Doomsday',
     repo: null,
     url: 'https://portwatch-vi.xyz/#race',
@@ -65,8 +78,8 @@ const BASE_TEAMS = [
     stage_en: 'Playable • Opening Scene',
     fps_tr: '3 FPS (RTX 4070)',
     fps_en: '3 FPS (RTX 4070)',
-    desc_tr: 'RTX 4070 üzerinde açılış sahnesi ve temel dünya renderı çalışıyor.',
-    desc_en: 'Opening scene and core world rendering running on RTX 4070.',
+    desc_tr: 'RTX 4070 üzerinde açılış sahnesi ve temel dünya renderı çalışıyor (ilk odalarda 8-10 FPS).',
+    desc_en: 'Opening scene and core world rendering running on RTX 4070 (8-10 fps in first rooms).',
   },
   {
     name: 'Uilian (VItoriaBr)',
@@ -144,8 +157,34 @@ const BASE_TEAMS = [
     stage_en: 'Main Menu',
     fps_tr: '30 FPS (Menü)',
     fps_en: '30 FPS (Menu)',
-    desc_tr: 'Ana menüde 30 FPS bildirildi; pencere başlığında canlı FPS sayacı eklendi.',
-    desc_en: 'Reported 30 FPS in menus with live FPS counter in window title.',
+    desc_tr: 'Ana menüde 30 FPS bildirildi; deneysel NVIDIA dalı 5 FPS ile oyun dünyasına ulaşıyor.',
+    desc_en: 'Reported 30 FPS in menus; experimental NVIDIA branch reaches world at 5 FPS.',
+  },
+  {
+    name: 'Five Star Recomp',
+    repo: null,
+    url: 'https://portwatch-vi.xyz/#race',
+    open_source: true,
+    percentage: 30,
+    stage_tr: 'Ana Menü',
+    stage_en: 'Main Menu',
+    fps_tr: '30 FPS (Ara Sahne)',
+    fps_en: '30 FPS (Cutscene)',
+    desc_tr: 'C# tabanlı uyumluluk katmanı; hikâye modunu yüklüyor ve açılış ara sahnesinin seslerini 30 FPS oynatıyor.',
+    desc_en: 'C# compatibility layer loading story mode and playing opening cutscene audio/title cards at 30 fps.',
+  },
+  {
+    name: 'keylime',
+    repo: null,
+    url: 'https://portwatch-vi.xyz/#race',
+    open_source: true,
+    percentage: 30,
+    stage_tr: 'Ana Menü',
+    stage_en: 'Main Menu',
+    fps_tr: '30 FPS (Vulkan)',
+    fps_en: '30 FPS (Vulkan)',
+    desc_tr: 'Sıfırdan C++20 ve Vulkan ile yazılan katman; RDNA2-to-SPIR-V çeviricisi ile 30 FPS menüye ulaşıyor.',
+    desc_en: 'C++20 and Vulkan runtime built from scratch with RDNA2-to-SPIR-V translator, hitting 30 fps menus.',
   },
   {
     name: 'Xbox2Windows',
@@ -183,8 +222,8 @@ const BASE_TEAMS = [
     stage_en: 'Exe Runs',
     fps_tr: 'Açık Kaynak',
     fps_en: 'Open Source',
-    desc_tr: 'PortWatch VI tarafından tespit edilen yeni açık kaynak GTA VI PC çalıştırma girişimi.',
-    desc_en: 'New open-source GTA VI PC port effort spotted by PortWatch VI Scout.',
+    desc_tr: 'PortWatch VI tarafından tespit edilen açık kaynak GTA VI PC çalıştırma girişimi.',
+    desc_en: 'Open-source GTA VI PC port effort spotted by PortWatch VI Scout.',
   },
   {
     name: 'XValkyrie',
@@ -284,39 +323,34 @@ export async function GET() {
 
   const overallLeader = enriched[0];
   const openLeader = enriched.find((t) => t.open_source);
-  const belobug = enriched.find((t) => t.name === 'Belobug');
 
   const news = {
     tr: [
       {
-        tag: 'LİDER',
-        text: `${overallLeader.name} %${overallLeader.percentage} ile genel lider; açık kaynakta ${openLeader.name} (%${openLeader.percentage}) önde.`,
+        tag: 'REKOR',
+        text: `${overallLeader.name} %${overallLeader.percentage} ile genel lider; serbest dolaşımda 24 FPS tepe değerine ulaştı.`,
+      },
+      {
+        tag: 'AÇIK KAYNAK',
+        text: `${openLeader.name} (%${openLeader.percentage}) açık kaynak lideri; Five Star Recomp ve keylime (%30) eklendi.`,
       },
       {
         tag: 'GÜNCEL',
-        text: `Belobug %${belobug?.percentage ?? 77.7} seviyesine ulaştı; PortWatch üzerinde ${
-          trackedCount || 36
-        } girişim takip ediliyor.`,
-      },
-      {
-        tag: 'DURUM',
-        text: 'ZETTROX deposu GitHub’dan silindi ve yarıştan çıktı; Zortos bağımsız takipte.',
+        text: `PortWatch üzerinde toplam ${trackedCount || 37} girişim takip ediliyor; 15'i oyunu başlatabiliyor.`,
       },
     ],
     en: [
       {
-        tag: 'LEADER',
-        text: `${overallLeader.name} leads overall at ${overallLeader.percentage}%; ${openLeader.name} (${openLeader.percentage}%) leads open source.`,
+        tag: 'RECORD',
+        text: `${overallLeader.name} leads overall at ${overallLeader.percentage}%, peaking at 24 FPS in free roam.`,
+      },
+      {
+        tag: 'OPEN SOURCE',
+        text: `${openLeader.name} (${openLeader.percentage}%) leads open source; Five Star Recomp & keylime (30%) added.`,
       },
       {
         tag: 'LIVE',
-        text: `Belobug reached ${belobug?.percentage ?? 77.7}%; ${
-          trackedCount || 36
-        } total efforts are currently tracked on PortWatch.`,
-      },
-      {
-        tag: 'STATUS',
-        text: 'ZETTROX repo was removed from GitHub and left the race; Zortos remains tracked.',
+        text: `${trackedCount || 37} total efforts are tracked on PortWatch, with 15 able to boot GTA VI.`,
       },
     ],
   };
