@@ -111,20 +111,18 @@ const BAD_WORDS = [
   'faggot', 'retard', 'nigger', 'nigga', 'stfu', 'wtf',
 ];
 
-const BAD_WORD_REGEX = new RegExp(
-  `(^|[^a-zA-ZçğıöşüÇĞİÖŞÜ0-9])(${BAD_WORDS.join('|')})(?=[^a-zA-ZçğıöşüÇĞİÖŞÜ0-9]|$)`,
-  'gi'
-);
+const BAD_WORD_PATTERN = `(^|[^a-zA-ZçğıöşüÇĞİÖŞÜ0-9])(${BAD_WORDS.join('|')})(?=[^a-zA-ZçğıöşüÇĞİÖŞÜ0-9]|$)`;
+const BAD_WORD_TEST = new RegExp(BAD_WORD_PATTERN, 'i');
+const BAD_WORD_REPLACE = new RegExp(BAD_WORD_PATTERN, 'gi');
 
 function containsProfanity(text) {
   if (!text) return false;
-  BAD_WORD_REGEX.lastIndex = 0;
-  return BAD_WORD_REGEX.test(String(text));
+  return BAD_WORD_TEST.test(String(text));
 }
 
 function censorText(text) {
   if (!text) return '';
-  return String(text).replace(BAD_WORD_REGEX, (match, prefix, word) => {
+  return String(text).replace(BAD_WORD_REPLACE, (match, prefix, word) => {
     const masked = word[0] + '*'.repeat(Math.max(2, word.length - 1));
     return `${prefix}${masked}`;
   });
@@ -193,6 +191,7 @@ const TRANSLATIONS = {
     delBtn: 'Sil',
     bannedListTitle: 'Banlı Kullanıcılar',
     unbanBtn: 'Kaldır',
+    adminSqlWarn: 'Supabase SQL izinlerini çalıştırdığınızdan emin olun:',
   },
   en: {
     headerSubtitle: '120s Auto Progress Tracker & Live Community Chat',
@@ -256,6 +255,7 @@ const TRANSLATIONS = {
     delBtn: 'Delete',
     bannedListTitle: 'Banned Users',
     unbanBtn: 'Unban',
+    adminSqlWarn: 'Make sure Supabase SQL policies are applied:',
   },
 };
 
@@ -471,7 +471,6 @@ export default function HomePage() {
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [muteSeconds, setMuteSeconds] = useState(0);
 
-  // Admin paneli durumları
   const [showAdminBox, setShowAdminBox] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [adminUserInput, setAdminUserInput] = useState('');
@@ -636,7 +635,7 @@ export default function HomePage() {
 
   useEffect(() => {
     chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  }, [messages.length]);
 
   async function fetchProjects() {
     try {
@@ -686,7 +685,7 @@ export default function HomePage() {
         setBannedUsers(data.map((b) => String(b.username || '').toLowerCase()));
       }
     } catch {
-      // banned_users tablosu henüz açılmadıysa sessizce geç
+      // ignore
     }
   }
 
@@ -709,6 +708,7 @@ export default function HomePage() {
 
   function handleAdminLogout() {
     setIsAdmin(false);
+    setAdminError('');
     setShowAdminBox(false);
     try {
       localStorage.removeItem('gta6takip_is_admin');
@@ -719,14 +719,30 @@ export default function HomePage() {
 
   async function handleDeleteMessage(msgId) {
     if (!isAdmin || !msgId) return;
-    await supabase.from('chat_messages').delete().eq('id', msgId);
+    setAdminError('');
+    const { error } = await supabase.from('chat_messages').delete().eq('id', msgId);
+    if (error) {
+      setAdminError(`${t.adminSqlWarn} ${error.message}`);
+      setShowAdminBox(true);
+      return;
+    }
     setMessages((prev) => prev.filter((m) => m.id !== msgId));
   }
 
   async function handleBanUser(targetName) {
     if (!isAdmin || !targetName) return;
+    setAdminError('');
     const cleanTarget = targetName.trim().toLowerCase();
-    await supabase.from('banned_users').upsert([{ username: cleanTarget }], { onConflict: 'username' });
+    const { error: banErr } = await supabase
+      .from('banned_users')
+      .upsert([{ username: cleanTarget }], { onConflict: 'username' });
+
+    if (banErr) {
+      setAdminError(`${t.adminSqlWarn} ${banErr.message}`);
+      setShowAdminBox(true);
+      return;
+    }
+
     await supabase.from('chat_messages').delete().ilike('username', targetName.trim());
     setBannedUsers((prev) => (prev.includes(cleanTarget) ? prev : [...prev, cleanTarget]));
     setMessages((prev) =>
@@ -736,8 +752,13 @@ export default function HomePage() {
 
   async function handleUnbanUser(targetName) {
     if (!isAdmin || !targetName) return;
+    setAdminError('');
     const cleanTarget = targetName.trim().toLowerCase();
-    await supabase.from('banned_users').delete().eq('username', cleanTarget);
+    const { error } = await supabase.from('banned_users').delete().eq('username', cleanTarget);
+    if (error) {
+      setAdminError(`${t.adminSqlWarn} ${error.message}`);
+      return;
+    }
     setBannedUsers((prev) => prev.filter((u) => u !== cleanTarget));
   }
 
@@ -791,7 +812,6 @@ export default function HomePage() {
     }
 
     const cleanMsg = newMessage.trim();
-
     if (!cleanMsg) {
       setChatError(t.errEmptyMsg);
       return;
@@ -814,39 +834,43 @@ export default function HomePage() {
     if (sending) return;
 
     setSending(true);
+    setNewMessage('');
+    setShowEmojiPicker(false);
+
     try {
       localStorage.setItem('gta6takip_nick', rawCurrentNick);
     } catch {
       // ignore
     }
 
+    const safeNick = censorText(rawCurrentNick);
+    const safeMsg = censorText(cleanMsg.slice(0, 500));
+
     try {
       const { data, error } = await supabase
         .from('chat_messages')
         .insert([
           {
-            username: censorText(rawCurrentNick),
-            message: censorText(cleanMsg.slice(0, 500)),
+            username: safeNick,
+            message: safeMsg,
           },
         ])
         .select();
 
       if (error) {
         setChatError(`${t.errSend} ${error.message}`);
+        setNewMessage(cleanMsg);
+      } else if (Array.isArray(data) && data.length > 0) {
+        setMessages((prev) => {
+          const exists = prev.some((m) => m.id === data[0].id);
+          return exists ? prev : [...prev, data[0]];
+        });
       } else {
-        setNewMessage('');
-        setShowEmojiPicker(false);
-        if (Array.isArray(data) && data.length > 0) {
-          setMessages((prev) => {
-            const exists = prev.some((m) => m.id === data[0].id);
-            return exists ? prev : [...prev, data[0]];
-          });
-        } else {
-          await fetchMessages();
-        }
+        await fetchMessages();
       }
     } catch (err) {
       setChatError(`${t.errUnexpected} ${err?.message || '?'}`);
+      setNewMessage(cleanMsg);
     } finally {
       setSending(false);
     }
@@ -1136,7 +1160,6 @@ export default function HomePage() {
                       </span>
                     </div>
 
-                    {/* İlerleme Barı + Aşama Rozeti */}
                     <div className="flex items-center gap-3 mb-2">
                       <div
                         style={{ backgroundColor: 'var(--track-bg)' }}
@@ -1198,7 +1221,7 @@ export default function HomePage() {
         {/* Sağ: Vice City Canlı Sohbet */}
         <aside
           style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--card-border)' }}
-          className="lg:col-span-5 xl:col-span-4 rounded-2xl border overflow-hidden shadow-sm flex flex-col lg:sticky lg:top-[76px] lg:h-[calc(100vh-98px)] min-h-[520px]"
+          className="lg:col-span-5 xl:col-span-4 rounded-2xl border overflow-hidden shadow-sm flex flex-col h-[560px] lg:sticky lg:top-[76px] lg:h-[calc(100vh-98px)]"
         >
           <div
             style={{ backgroundColor: 'var(--card-inner)', borderColor: 'var(--card-border)' }}
@@ -1287,6 +1310,7 @@ export default function HomePage() {
                       {t.adminLogout}
                     </button>
                   </div>
+                  {adminError && <p className="text-[11px] text-rose-500 font-medium">{adminError}</p>}
                   {bannedUsers.length > 0 && (
                     <div className="flex flex-wrap gap-1.5 max-h-20 overflow-y-auto">
                       {bannedUsers.map((bu) => (
@@ -1498,11 +1522,6 @@ export default function HomePage() {
               value={newMessage}
               disabled={muteSeconds > 0 || isCurrentUserBanned}
               onChange={(e) => setNewMessage(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  handleSendMessage(e);
-                }
-              }}
               maxLength={500}
               placeholder={
                 isCurrentUserBanned
