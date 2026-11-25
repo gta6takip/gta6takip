@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
+export const dynamic = 'force-dynamic';
+
 const REPOS = [
   { name: 'Hyphen (fxceless)', repo: 'fxceless/victory-gta6' },
   { name: 'VIctory', repo: 'Marvisak/VIctory' },
@@ -23,30 +25,38 @@ export async function GET() {
     const supabase = createClient(supabaseUrl, supabaseKey);
     const nowIso = new Date().toISOString();
 
-    for (const item of REPOS) {
-      try {
-        const res = await fetch(`https://api.github.com/repos/${item.repo}/commits?per_page=3`, {
-          headers: { 'User-Agent': 'GTA6takip-Bot' },
-          cache: 'no-store',
-        });
+    const headers = { 'User-Agent': 'GTA6takip-Bot' };
+    if (process.env.GITHUB_TOKEN) {
+      headers.Authorization = `Bearer ${process.env.GITHUB_TOKEN}`;
+    }
 
-        if (res.ok) {
-          const commits = await res.json();
-          const latestMsg = commits?.[0]?.commit?.message?.split('\n')?.[0];
+    await Promise.allSettled(
+      REPOS.map(async (item) => {
+        try {
+          const res = await fetch(`https://api.github.com/repos/${item.repo}/commits?per_page=1`, {
+            headers,
+            cache: 'no-store',
+            signal: AbortSignal.timeout(4000),
+          });
 
-          const updatePayload = { updated_at: nowIso };
-          if (latestMsg && latestMsg.length > 4) {
-            updatePayload.description = `Son GitHub güncellemesi: "${latestMsg.slice(0, 140)}"`;
+          if (res.ok) {
+            const commits = await res.json();
+            const latestMsg = commits?.[0]?.commit?.message?.split('\n')?.[0];
+
+            const updatePayload = { updated_at: nowIso };
+            if (latestMsg && latestMsg.length > 4) {
+              updatePayload.description = `Son GitHub güncellemesi: "${latestMsg.slice(0, 140)}"`;
+            }
+
+            await supabase.from('projects').update(updatePayload).eq('name', item.name);
+          } else {
+            await supabase.from('projects').update({ updated_at: nowIso }).eq('name', item.name);
           }
-
-          await supabase.from('projects').update(updatePayload).eq('name', item.name);
-        } else {
+        } catch {
           await supabase.from('projects').update({ updated_at: nowIso }).eq('name', item.name);
         }
-      } catch {
-        await supabase.from('projects').update({ updated_at: nowIso }).eq('name', item.name);
-      }
-    }
+      })
+    );
 
     await supabase.from('projects').update({ updated_at: nowIso }).is('updated_at', null);
 
