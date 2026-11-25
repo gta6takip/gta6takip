@@ -2,135 +2,212 @@ import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
 
-const BASE_PROJECTS = [
+const PORTWATCH_TEAMS = [
   {
     id: 1,
-    name: 'omonkey',
-    percentage: 79,
-    fps: '~5 FPS',
-    stage: 'Oyun İçi (Hapishane)',
-    description:
-      'Lucia hapishane sahnesinde shader yüklemesi ve karakter hareketi sağlandı; Rumble üzerinde canlı yayınlanıyor.',
-    repo_url: 'https://t.me/omonkey6',
-    is_open_source: false,
-    github_repo: null,
+    name: 'Belobug',
+    pattern: 'Belobug\\s+Belobug\\/VIctory-Belobug-AMD',
+    percentage: 77.4,
+    fps: '3 FPS (RX 9070 XT)',
+    stage: 'Playable • First act',
+    description: 'AMD Radeon için VIctory fork\'u; açık dünya dokuları ve görevler oynanabilir durumda.',
+    repo_url: 'https://github.com/Belobug/VIctory-Belobug-AMD',
+    is_open_source: true,
+    github_repo: 'Belobug/VIctory-Belobug-AMD',
   },
   {
     id: 2,
-    name: 'Hyphen (fxceless)',
-    percentage: 78,
-    fps: '3 FPS (RTX 4090)',
-    stage: 'Oyun İçi (3D Render)',
-    description:
-      'VIctory + XCL birleşimiyle en gelişmiş 3D grafik renderı ve erken raytracing ışıklandırması elde edildi.',
-    repo_url: 'https://github.com/fxceless/victory-gta6',
+    name: 'ZETTROX',
+    pattern: 'ZETTROX\\s+Zettrox\\/ztrx',
+    percentage: 64.2,
+    fps: '2 FPS (NVIDIA)',
+    stage: 'Playable • Prologue cleared',
+    description: 'Lucia prologue bölümünü geçip Jason\'ın ilk görevi "Gone Fishing" aşamasına ulaştı.',
+    repo_url: 'https://github.com/Zettrox/ztrx',
     is_open_source: true,
-    github_repo: 'fxceless/victory-gta6',
+    github_repo: 'Zettrox/ztrx',
   },
   {
     id: 3,
-    name: 'CGBJ',
-    percentage: 72,
-    fps: 'Bilinmiyor',
-    stage: 'Oyun İçi (Prologue)',
-    description:
-      'Açılış ara sahnesi ("Nine Months Ago") ve oyun içi telefon arayüzü çalıştırıldı; gizli kolektif olarak ilerliyor.',
-    repo_url: 'https://gta6recomp.com/repo',
+    name: 'suri',
+    pattern: 'suri\\s+Working in private',
+    percentage: 61,
+    fps: '3 FPS',
+    stage: 'Playable • Kapalı Derleme',
+    description: 'Kapalı ekip: victory-fork tabanlı özel derleme, perakende sürüme yakın ışıklandırma.',
+    repo_url: 'https://portwatch-vi.xyz/#race',
     is_open_source: false,
     github_repo: null,
   },
   {
     id: 4,
+    name: 'hyphennn',
+    pattern: 'hyphennn\\s+fxceless\\/victory-fork',
+    percentage: 59.8,
+    fps: '3 FPS (RTX 4070)',
+    stage: 'Playable • Opening',
+    description: 'VIctory fork\'u; ray-traced ışıklandırma, detaylı dokular ve HUD desteği.',
+    repo_url: 'https://github.com/fxceless/victory-fork',
+    is_open_source: true,
+    github_repo: 'fxceless/victory-fork',
+  },
+  {
+    id: 5,
+    name: 'Uilian (VItoriaBr)',
+    pattern: 'Uilian\\s+uiliannn\\/VItoriaBr',
+    percentage: 59.6,
+    fps: '4 FPS (RTX 5060 Ti)',
+    stage: 'Playable • Prologue cleared',
+    description: 'NVIDIA odaklı victory-fork uyarlaması; "Gone Fishing" görevine ulaşıyor.',
+    repo_url: 'https://github.com/uiliannn/VItoriaBr',
+    is_open_source: true,
+    github_repo: 'uiliannn/VItoriaBr',
+  },
+  {
+    id: 6,
+    name: 'omonkey',
+    pattern: 'omonkey\\s+Streamed on Rumble',
+    percentage: 57.9,
+    fps: '~5 FPS',
+    stage: 'Playable • Hapishane',
+    description: 'Kapalı ekip: Rumble yayınlarında açılış hapishane sahnesinde hareket sağlanıyor.',
+    repo_url: 'https://portwatch-vi.xyz/#race',
+    is_open_source: false,
+    github_repo: null,
+  },
+  {
+    id: 7,
+    name: 'CGBJ',
+    pattern: 'CGBJ\\s+Private code',
+    percentage: 54.5,
+    fps: '4 FPS',
+    stage: 'Playable • Kapalı Derleme',
+    description: 'Kapalı ekip: VIctory ve XCL tabanlı özel derleme ile oyun içi NPC etkileşimi.',
+    repo_url: 'https://portwatch-vi.xyz/#race',
+    is_open_source: false,
+    github_repo: null,
+  },
+  {
+    id: 8,
     name: 'VIctory',
-    percentage: 70,
+    pattern: 'VIctory\\s+Marvisak\\/VIctory',
+    percentage: 40,
     fps: '30 FPS (Menü)',
-    stage: 'Oyun İçi (Siyah Ekran)',
-    description:
-      'Açık kaynaklı ana uyumluluk katmanı; menülerde 30 FPS çalışıyor, 3D oyun içi shader desteği geliştiriliyor.',
+    stage: 'In the world',
+    description: 'Rust tabanlı ana uyumluluk katmanı; menüler 30 FPS, oyun dünyasında ilk ışıklar.',
     repo_url: 'https://github.com/Marvisak/VIctory',
     is_open_source: true,
     github_repo: 'Marvisak/VIctory',
   },
   {
-    id: 5,
-    name: 'JoshuuDev (victory-amd)',
-    percentage: 68,
-    fps: 'Ara Sahne / DX12',
-    stage: 'Oyun İçi (3D Ara Sahneler)',
-    description:
-      'AMD GPU uyumluluğu, DX12 ve shader cache ısıtma iyileştirmeleriyle temiz renkli 3D oyun içi ara sahneler ve neon ışıklandırma elde edildi.',
-    repo_url: 'https://github.com/JoshuuDev/victory-amd',
-    is_open_source: true,
-    github_repo: 'JoshuuDev/victory-amd',
-  },
-  {
-    id: 6,
-    name: 'AnyXboxX',
-    percentage: 65,
-    fps: '3.2 FPS (720p)',
-    stage: 'Oyun İçi (Eğitim)',
-    description:
-      'Kontrol edilebilir karakter ve hareket eğitim ekranı açıldı; kalan untranslated shader sayısı azaltılıyor.',
-    repo_url: 'https://github.com/LooperSalty/AnyXboxX',
-    is_open_source: true,
-    github_repo: 'LooperSalty/AnyXboxX',
-  },
-  {
-    id: 7,
+    id: 9,
     name: 'XCL',
-    percentage: 63,
-    fps: '30 FPS (Intro)',
-    stage: 'Dünya Yükleme',
-    description:
-      'Wine benzeri uyumluluk katmanı; binlerce shader işlendi, oyun dünyasında yayalar ve araçlar spawn oluyor.',
-    repo_url: 'https://github.com/ivall/xcl',
+    pattern: 'XCL\\s+xcl-dev\\/xcl',
+    percentage: 35,
+    fps: '30 FPS (Menü)',
+    stage: 'Main menu',
+    description: 'Wine benzeri katman; 26.698 RDNA2 shader\'ın tamamı HLSL\'e çevrildi.',
+    repo_url: 'https://github.com/xcl-dev/xcl',
     is_open_source: true,
-    github_repo: 'ivall/xcl',
+    github_repo: 'xcl-dev/xcl',
   },
   {
-    id: 8,
+    id: 10,
     name: 'Xbox2Windows',
-    percentage: 48,
+    pattern: 'Xbox2Windows\\s+R0Y00\\/Xbox2Windows',
+    percentage: 25,
     fps: '-',
-    stage: 'İlk Kare (First Frame)',
-    description:
-      'Statik yeniden derleme ve shader çözümleme hattı ile ilk kare görüntüsüne ulaşıldı.',
+    stage: 'First frame',
+    description: 'Statik yeniden derleme projesi; ilk kare ve menü testleri sürüyor.',
     repo_url: 'https://github.com/R0Y00/Xbox2Windows',
     is_open_source: true,
     github_repo: 'R0Y00/Xbox2Windows',
   },
   {
-    id: 9,
-    name: 'Palmetto',
-    percentage: 25,
-    fps: '-',
-    stage: 'Exe Başlatma (Boot)',
-    description:
-      'Düşük seviyeli bellek eşleme ve .exe yükleme altyapısı geliştiriliyor.',
-    repo_url: 'https://github.com/luizwidmer/palmetto',
+    id: 11,
+    name: 'TuxBox',
+    pattern: 'TuxBox\\s+brcly\\/TuxBox',
+    percentage: 20,
+    fps: 'Linux / Proton',
+    stage: 'First frame',
+    description: 'Linux Proton uyumluluk katmanı; hikaye giriş scriptine ulaşıldı.',
+    repo_url: 'https://github.com/brcly/TuxBox',
     is_open_source: true,
-    github_repo: 'luizwidmer/palmetto',
+    github_repo: 'brcly/TuxBox',
+  },
+  {
+    id: 12,
+    name: 'AnyXboxX',
+    pattern: 'AnyXboxX\\s+LooperSalty\\/AnyXboxX',
+    percentage: 2.5,
+    fps: '-',
+    stage: 'Groundwork',
+    description: 'Unicorn tabanlı GDK emülasyonu; temel sistem kütüphaneleri başlatıldı.',
+    repo_url: 'https://github.com/LooperSalty/AnyXboxX',
+    is_open_source: true,
+    github_repo: 'LooperSalty/AnyXboxX',
   },
 ];
 
 export async function GET() {
   const nowIso = new Date().toISOString();
-  const headers = { 'User-Agent': 'GTA6takip-Bot' };
+
+  // 1. PortWatch VI sayfasından canlı yüzdeleri çek
+  let portwatchText = '';
+  let liveMatched = 0;
+  try {
+    const pwRes = await fetch('https://portwatch-vi.xyz/', {
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; GTA6takip/1.0)' },
+      cache: 'no-store',
+      signal: AbortSignal.timeout(5000),
+    });
+    if (pwRes.ok) {
+      const html = await pwRes.text();
+      portwatchText = html
+        .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+        .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+        .replace(/<[^>]+>/g, ' ')
+        .replace(/\s+/g, ' ');
+    }
+  } catch {
+    // PortWatch geçici yanıt vermezse yedek değerlerle devam et
+  }
+
+  // 2. GitHub commit mesajlarını paralel çek
+  const ghHeaders = { 'User-Agent': 'GTA6takip-Bot' };
   if (process.env.GITHUB_TOKEN) {
-    headers.Authorization = `Bearer ${process.env.GITHUB_TOKEN}`;
+    ghHeaders.Authorization = `Bearer ${process.env.GITHUB_TOKEN}`;
   }
 
   const projects = await Promise.all(
-    BASE_PROJECTS.map(async (proj) => {
-      let description = proj.description;
-      if (proj.github_repo) {
+    PORTWATCH_TEAMS.map(async (team) => {
+      let pct = team.percentage;
+
+      if (portwatchText) {
+        try {
+          const rx = new RegExp(`${team.pattern}.{0,260}?(\\d+(?:\\.\\d+)?)%`, 'i');
+          const match = portwatchText.match(rx);
+          if (match && match[1]) {
+            const parsed = parseFloat(match[1]);
+            if (!Number.isNaN(parsed) && parsed >= 0 && parsed <= 100) {
+              pct = parsed;
+              liveMatched += 1;
+            }
+          }
+        } catch {
+          // ignore
+        }
+      }
+
+      let description = team.description;
+      if (team.github_repo) {
         try {
           const res = await fetch(
-            `https://api.github.com/repos/${proj.github_repo}/commits?per_page=1`,
+            `https://api.github.com/repos/${team.github_repo}/commits?per_page=1`,
             {
-              headers,
+              headers: ghHeaders,
               cache: 'no-store',
-              signal: AbortSignal.timeout(4000),
+              signal: AbortSignal.timeout(3500),
             }
           );
           if (res.ok) {
@@ -141,26 +218,35 @@ export async function GET() {
             }
           }
         } catch {
-          // GitHub geçici yanıt vermezse varsayılan açıklamayı koru
+          // ignore
         }
       }
 
       return {
-        id: proj.id,
-        name: proj.name,
-        percentage: proj.percentage,
-        fps: proj.fps,
-        stage: proj.stage,
+        id: team.id,
+        name: team.name,
+        percentage: pct,
+        fps: team.fps,
+        stage: team.stage,
         description,
-        repo_url: proj.repo_url,
-        is_open_source: proj.is_open_source,
+        repo_url: team.repo_url,
+        is_open_source: team.is_open_source,
         updated_at: nowIso,
       };
     })
   );
 
+  // En yüksek yüzdenin en üstte görünmesi için sırala
+  projects.sort((a, b) => b.percentage - a.percentage);
+
   return NextResponse.json(
-    { ok: true, synced_at: nowIso, projects },
+    {
+      ok: true,
+      source: liveMatched > 0 ? 'portwatch-live' : 'portwatch-fallback',
+      liveMatched,
+      synced_at: nowIso,
+      projects,
+    },
     {
       headers: {
         'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=60',
