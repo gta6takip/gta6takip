@@ -95,7 +95,6 @@ function getAvatarForUser(name, myNick, myAvatar) {
   return AVATARS[Math.abs(hash) % AVATARS.length].id;
 }
 
-// Titiz Türkçe & İngilizce küfür filtresi (aradaki nokta/boşluk/rakam gizlemeleri dahil)
 const BAD_ROOTS = [
   'amk', 'aq', 'mk', 'mq', 'amq', 'amcik', 'orospu', 'orspu', 'oc', 'pic',
   'siktir', 'sikim', 'sikeyim', 'sikerim', 'sikik', 'sikis', 'yarrak', 'yarak',
@@ -138,7 +137,6 @@ function containsProfanity(text) {
   if (!text) return false;
   const norm = normalizeForCheck(text);
   if (WORD_BOUNDARY_TEST.test(norm)) return true;
-  // Araya nokta/boşluk/tire konulan gizlemeleri yakala (ör: "a.m.k", "s i k")
   const squashed = norm.replace(/[^a-z0-9]/g, '');
   const strictRoots = [
     'amk', 'orospu', 'siktir', 'sikim', 'sikeyim', 'sikerim', 'yarrak',
@@ -423,6 +421,19 @@ function formatUpdateTime(dateStr, t, lang) {
   });
 }
 
+function mergeChannelMessages(prevList, incomingList) {
+  const merged = [...incomingList];
+  for (const m of prevList) {
+    const exists = merged.some(
+      (d) =>
+        String(d.id) === String(m.id) ||
+        (d.username === m.username && d.message === m.message)
+    );
+    if (!exists) merged.push(m);
+  }
+  return merged.slice(-100);
+}
+
 export default function HomePage() {
   const [projects, setProjects] = useState(FALLBACK_PROJECTS);
   const [syncing, setSyncing] = useState(false);
@@ -432,9 +443,8 @@ export default function HomePage() {
   const [theme, setTheme] = useState('portwatch-dark');
   const [lang, setLang] = useState('tr');
 
-  // Sohbet durumları (TR & EN ayrı kanallar)
   const [chatChannel, setChatChannel] = useState('tr');
-  const [messages, setMessages] = useState([]);
+  const [messagesByChannel, setMessagesByChannel] = useState({ tr: [], en: [] });
   const [username, setUsername] = useState('');
   const [newMessage, setNewMessage] = useState('');
   const [chatError, setChatError] = useState('');
@@ -447,6 +457,7 @@ export default function HomePage() {
   const chatChannelRef = useRef('tr');
   const chatBottomRef = useRef(null);
   const t = TRANSLATIONS[lang] || TRANSLATIONS.tr;
+  const currentMessages = messagesByChannel[chatChannel] || [];
 
   useEffect(() => {
     try {
@@ -590,7 +601,7 @@ export default function HomePage() {
 
   useEffect(() => {
     chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages.length, chatChannel]);
+  }, [currentMessages.length, chatChannel]);
 
   function handleLanguageSwitch(nextLang) {
     setLang(nextLang);
@@ -609,8 +620,11 @@ export default function HomePage() {
     try {
       const res = await fetch(`/api/chat?channel=${ch}`, { cache: 'no-store' });
       const json = await res.json();
-      if (json?.ok && Array.isArray(json.messages) && chatChannelRef.current === ch) {
-        setMessages(json.messages);
+      if (json?.ok && Array.isArray(json.messages)) {
+        setMessagesByChannel((prev) => ({
+          ...prev,
+          [ch]: mergeChannelMessages(prev[ch] || [], json.messages),
+        }));
       }
     } catch {
       // ignore
@@ -672,6 +686,7 @@ export default function HomePage() {
 
     if (sending) return;
 
+    const targetCh = chatChannel;
     setSending(true);
     setNewMessage('');
     setShowEmojiPicker(false);
@@ -690,7 +705,7 @@ export default function HomePage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          channel: chatChannel,
+          channel: targetCh,
           username: safeNick,
           message: safeMsg,
         }),
@@ -700,9 +715,10 @@ export default function HomePage() {
         setChatError(`${t.errSend} ${json.error || '?'}`);
         setNewMessage(cleanMsg);
       } else if (json.message) {
-        setMessages((prev) => [...prev, json.message]);
-      } else {
-        await fetchChatMessages(chatChannel);
+        setMessagesByChannel((prev) => ({
+          ...prev,
+          [targetCh]: mergeChannelMessages(prev[targetCh] || [], [json.message]),
+        }));
       }
     } catch (err) {
       setChatError(`${t.errSend} ${err?.message || '?'}`);
@@ -1195,7 +1211,7 @@ export default function HomePage() {
           </div>
 
           <div className="flex-1 overflow-y-auto vice-scroll p-4 space-y-2.5">
-            {messages.length === 0 ? (
+            {currentMessages.length === 0 ? (
               <div
                 style={{ color: 'var(--text-secondary)' }}
                 className="h-full flex flex-col items-center justify-center text-center text-xs space-y-1.5 px-4"
@@ -1204,7 +1220,7 @@ export default function HomePage() {
                 <p>{t.chatEmptyDesc}</p>
               </div>
             ) : (
-              messages.map((msg, idx) => {
+              currentMessages.map((msg, idx) => {
                 const msgAvatar = getAvatarForUser(msg.username, username, avatar);
                 return (
                   <div
