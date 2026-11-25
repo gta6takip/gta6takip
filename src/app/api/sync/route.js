@@ -4,30 +4,43 @@ export const dynamic = 'force-dynamic';
 
 const BASE_TEAMS = [
   {
+    name: 'Doomsday',
+    repo: null,
+    url: 'https://portwatch-vi.xyz/#race',
+    open_source: false,
+    percentage: 78.7,
+    stage_tr: 'Oynanabilir • İlk Bölüm',
+    stage_en: 'Playable • First Act',
+    fps_tr: '4 FPS (AMD / NVIDIA)',
+    fps_en: '4 FPS (AMD / NVIDIA)',
+    desc_tr: 'Kapalı ekip: ışın izleme açık şekilde 3-5 FPS ile hikâyede ilerliyor, neredeyse hiç çökmüyor.',
+    desc_en: 'Private group: runs ray-traced lighting at 3-5 fps, rarely crashes, and matches leaders in story progress.',
+  },
+  {
+    name: 'DexNom',
+    repo: 'DexNom/VIctory',
+    url: 'https://github.com/DexNom/VIctory',
+    open_source: true,
+    percentage: 78,
+    stage_tr: 'Oynanabilir • İlk Bölüm',
+    stage_en: 'Playable • First Act',
+    fps_tr: '3 FPS (RX 7900 XTX)',
+    fps_en: '3 FPS (RX 7900 XTX)',
+    desc_tr: 'RX 7900 XTX üzerinde ışın izleme açık açık dünya ve görevler oynanabilir durumda.',
+    desc_en: 'Open-source AMD fork running open world and missions with ray-traced lighting on RX 7900 XTX.',
+  },
+  {
     name: 'Belobug',
     repo: 'Belobug/VIctory-Belobug-AMD',
     url: 'https://github.com/Belobug/VIctory-Belobug-AMD',
     open_source: true,
-    percentage: 77.4,
+    percentage: 77.7,
     stage_tr: 'Oynanabilir • İlk Bölüm',
     stage_en: 'Playable • First Act',
-    fps_tr: '3 FPS (RX 9070 XT)',
-    fps_en: '3 FPS (RX 9070 XT)',
+    fps_tr: '4 FPS (RX 9070 XT)',
+    fps_en: '4 FPS (RX 9070 XT)',
     desc_tr: 'AMD Radeon için VIctory tabanlı sürüm; açık dünya dokuları ve görevler oynanabilir durumda.',
     desc_en: 'VIctory fork for AMD Radeon; open world textures and missions are playable.',
-  },
-  {
-    name: 'ZETTROX',
-    repo: 'Zettrox/ztrx',
-    url: 'https://github.com/Zettrox/ztrx',
-    open_source: true,
-    percentage: 64.2,
-    stage_tr: 'Oynanabilir • Giriş Bölümü Geçildi',
-    stage_en: 'Playable • Prologue Cleared',
-    fps_tr: '2 FPS (NVIDIA)',
-    fps_en: '2 FPS (NVIDIA)',
-    desc_tr: 'Lucia giriş bölümünü geçip Jason’ın ilk görevi "Gone Fishing" aşamasına ulaştı.',
-    desc_en: 'Clears Lucia prologue and reaches Jason first mission "Gone Fishing".',
   },
   {
     name: 'suri',
@@ -65,8 +78,8 @@ const BASE_TEAMS = [
     stage_en: 'Playable • Prologue Cleared',
     fps_tr: '4 FPS (RTX 5060 Ti)',
     fps_en: '4 FPS (RTX 5060 Ti)',
-    desc_tr: 'RTX 5060 Ti üzerinde giriş bölümü geçildi; oynanış testleri sürüyor.',
-    desc_en: 'Prologue cleared on RTX 5060 Ti; gameplay testing continues.',
+    desc_tr: 'RTX 5060 Ti üzerinde giriş bölümü geçildi; "Gone Fishing" görevine ulaşıldı.',
+    desc_en: 'Prologue cleared on RTX 5060 Ti; reaches Jason first mission "Gone Fishing".',
   },
   {
     name: 'omonkey',
@@ -98,6 +111,7 @@ const BASE_TEAMS = [
     name: 'Zortos',
     repo: null,
     url: 'https://thecode.media/ii-agenty-perekompiliruyut-gta-vi-dlya-pk-v-pryamom-efire/',
+    x_url: 'https://x.com/Zortosdev',
     open_source: false,
     percentage: 45,
     stage_tr: 'Oyun Dünyası • X Bildirimi',
@@ -200,28 +214,35 @@ const BASE_TEAMS = [
   },
 ];
 
-async function fetchPortWatchPercentages() {
+async function fetchPortWatchLive() {
   const map = new Map();
+  let trackedCount = null;
   try {
     const res = await fetch('https://portwatch-vi.xyz/', {
       headers: { 'User-Agent': 'GTA6takip-Sync/1.0' },
-      signal: AbortSignal.timeout(4000),
+      signal: AbortSignal.timeout(4500),
     });
-    if (!res.ok) return map;
+    if (!res.ok) return { map, trackedCount };
     const html = await res.text();
+
     for (const t of BASE_TEAMS) {
       const escaped = t.name.split(' ')[0].replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      const re = new RegExp(`${escaped}[\\s\\S]{0,400}?(\\d{1,3}(?:\\.\\d)?)%`, 'i');
+      const re = new RegExp(`${escaped}[\\s\\S]{0,450}?(\\d{1,3}(?:\\.\\d)?)%`, 'i');
       const m = html.match(re);
       if (m && m[1]) {
         const val = parseFloat(m[1]);
         if (val > 0 && val <= 100) map.set(t.name, val);
       }
     }
+
+    const countMatch = html.match(/(\d{1,3})\s*Efforts tracked/i);
+    if (countMatch && countMatch[1]) {
+      trackedCount = Number(countMatch[1]);
+    }
   } catch {
     // PortWatch erişilemezse yerel değerler korunur
   }
-  return map;
+  return { map, trackedCount };
 }
 
 async function fetchRepoLastPush(repo) {
@@ -245,7 +266,7 @@ async function fetchRepoLastPush(repo) {
 }
 
 export async function GET() {
-  const pwMap = await fetchPortWatchPercentages();
+  const { map: pwMap, trackedCount } = await fetchPortWatchLive();
 
   const enriched = await Promise.all(
     BASE_TEAMS.map(async (team) => {
@@ -261,11 +282,51 @@ export async function GET() {
 
   enriched.sort((a, b) => b.percentage - a.percentage);
 
+  const overallLeader = enriched[0];
+  const openLeader = enriched.find((t) => t.open_source);
+  const belobug = enriched.find((t) => t.name === 'Belobug');
+
+  const news = {
+    tr: [
+      {
+        tag: 'LİDER',
+        text: `${overallLeader.name} %${overallLeader.percentage} ile genel lider; açık kaynakta ${openLeader.name} (%${openLeader.percentage}) önde.`,
+      },
+      {
+        tag: 'GÜNCEL',
+        text: `Belobug %${belobug?.percentage ?? 77.7} seviyesine ulaştı; PortWatch üzerinde ${
+          trackedCount || 36
+        } girişim takip ediliyor.`,
+      },
+      {
+        tag: 'DURUM',
+        text: 'ZETTROX deposu GitHub’dan silindi ve yarıştan çıktı; Zortos bağımsız takipte.',
+      },
+    ],
+    en: [
+      {
+        tag: 'LEADER',
+        text: `${overallLeader.name} leads overall at ${overallLeader.percentage}%; ${openLeader.name} (${openLeader.percentage}%) leads open source.`,
+      },
+      {
+        tag: 'LIVE',
+        text: `Belobug reached ${belobug?.percentage ?? 77.7}%; ${
+          trackedCount || 36
+        } total efforts are currently tracked on PortWatch.`,
+      },
+      {
+        tag: 'STATUS',
+        text: 'ZETTROX repo was removed from GitHub and left the race; Zortos remains tracked.',
+      },
+    ],
+  };
+
   return NextResponse.json(
     {
       ok: true,
       updatedAt: new Date().toISOString(),
       teams: enriched,
+      news,
     },
     {
       headers: {
