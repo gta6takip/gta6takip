@@ -1,13 +1,22 @@
 'use client';
 
-import React, { useEffect, useState, useCallback } from 'react';
-import { RefreshCw, ExternalLink, Sparkles, X } from 'lucide-react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
+import { RefreshCw, ExternalLink, Sparkles, X, TrendingUp, Cpu, Radio } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
-const APP_VERSION = 'v1.0.1';
+const APP_VERSION = 'v1.0.2';
 
 const CHANGELOG = {
   tr: [
+    {
+      version: 'v1.0.2',
+      date: '25 Kasım 2026',
+      items: [
+        '120 saniyelik canlı geri sayım sayacı ("Sonraki kontrol") eklendi.',
+        '"Son Gelişmeler" mini bülten bandı ve Test Edilen Ekran Kartları (FPS) özeti eklendi.',
+        'Yüzdesi artan ekipler için yeşil artış rozeti (▲ +%...) ve @batmancodex X takip çağrısı eklendi.',
+      ],
+    },
     {
       version: 'v1.0.1',
       date: '25 Kasım 2026',
@@ -21,12 +30,21 @@ const CHANGELOG = {
       date: '25 Kasım 2026',
       items: [
         'PortWatch VI #race düzenine uyumlu sade ve modern arayüz eklendi.',
-        '2 standart (Koyu/Açık) + 3 GTA VI temalı (Vice Sunset, Leonida Neon, Ocean Drive) olmak üzere 5 tema desteği getirildi.',
-        'Zortos (resmi X bağlantısıyla), vice-pc ve XValkyrie dahil 15 ekip için 120 saniyede bir otomatik veri akışı sağlandı.',
+        '2 standart (Koyu/Açık) + 3 GTA VI temalı olmak üzere 5 tema desteği getirildi.',
+        'Zortos, vice-pc ve XValkyrie dahil 15 ekip için 120 saniyede bir otomatik veri akışı sağlandı.',
       ],
     },
   ],
   en: [
+    {
+      version: 'v1.0.2',
+      date: 'November 25, 2026',
+      items: [
+        'Added live 120s countdown timer ("Next check").',
+        'Added "Latest Updates" mini news strip and Tested GPUs (FPS) summary bar.',
+        'Added green progress delta badge (▲ +...%) and @batmancodex X follow banner.',
+      ],
+    },
     {
       version: 'v1.0.1',
       date: 'November 25, 2026',
@@ -41,11 +59,31 @@ const CHANGELOG = {
       items: [
         'Introduced clean leaderboard layout inspired by PortWatch VI #race.',
         'Added 5 themes: 2 standard (Dark/Light) + 3 GTA VI themed (Vice Sunset, Leonida Neon, Ocean Drive).',
-        'Expanded automatic 120s live tracking to 15 teams including Zortos (with official X link), vice-pc, and XValkyrie.',
+        'Expanded automatic 120s live tracking to 15 teams including Zortos, vice-pc, and XValkyrie.',
       ],
     },
   ],
 };
+
+const NEWS_FEED = {
+  tr: [
+    { tag: 'LİDER', text: 'Belobug AMD sürümü %77.4 ile ilk bölüm oynanışında liderliğini koruyor.' },
+    { tag: 'YENİ', text: 'Zortos PC başlatma duyurusu yaptı; vice-pc ve XValkyrie takibe eklendi.' },
+    { tag: 'NOT', text: 'Leonida projesi Take-Two DMCA bildirimi sonrası GitHub’dan kaldırıldı.' },
+  ],
+  en: [
+    { tag: 'LEADER', text: 'Belobug AMD build leads at 77.4% with First Act playable.' },
+    { tag: 'NEW', text: 'Zortos reported PC boot; vice-pc and XValkyrie added to live tracking.' },
+    { tag: 'NOTE', text: 'Leonida was taken down from GitHub following a Take-Two DMCA notice.' },
+  ],
+};
+
+const TESTED_GPUS = [
+  { gpu: 'RX 9070 XT', fps: '3 FPS', team: 'Belobug' },
+  { gpu: 'RTX 5060 Ti', fps: '4 FPS', team: 'Uilian' },
+  { gpu: 'RTX 4070', fps: '3 FPS', team: 'hyphennn' },
+  { gpu: 'NVIDIA', fps: '2 FPS', team: 'ZETTROX' },
+];
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
@@ -307,6 +345,11 @@ const TEXT = {
     liveBadge: 'CANLI',
     updatesBtn: 'Güncelleme Notları',
     updatesTitle: 'Güncelleme Notları',
+    nextCheck: 'Sonraki kontrol',
+    newsTitle: 'Son Gelişmeler',
+    gpuTitle: 'Test Edilen Ekran Kartları',
+    followXTitle: 'Büyük kırılmalar olduğunda anında bildirim için X’ten takip et',
+    followXBtn: 'Takip Et',
     filterAll: 'Tümü',
     filterOpen: 'Açık Kaynak',
     filterClosed: 'Kapalı Ekip',
@@ -333,6 +376,11 @@ const TEXT = {
     liveBadge: 'LIVE',
     updatesBtn: 'Release Notes',
     updatesTitle: 'Release Notes',
+    nextCheck: 'Next check',
+    newsTitle: 'Latest Updates',
+    gpuTitle: 'Tested GPUs & FPS',
+    followXTitle: 'Follow on X for instant alerts when major breakthroughs happen',
+    followXBtn: 'Follow',
     filterAll: 'All',
     filterOpen: 'Open Source',
     filterClosed: 'Closed Team',
@@ -355,11 +403,14 @@ export default function Home() {
   const [lang, setLang] = useState('tr');
   const [themeId, setThemeId] = useState('dark');
   const [teams, setTeams] = useState([]);
+  const [deltas, setDeltas] = useState({});
   const [filter, setFilter] = useState('all');
   const [lastUpdated, setLastUpdated] = useState('--:--:--');
+  const [countdown, setCountdown] = useState(120);
   const [syncing, setSyncing] = useState(false);
   const [onlineCount, setOnlineCount] = useState(1);
   const [showChangelog, setShowChangelog] = useState(false);
+  const prevPctsRef = useRef({});
 
   const t = TEXT[lang];
   const activeTheme = THEMES[themeId] || THEMES.dark;
@@ -370,6 +421,8 @@ export default function Home() {
       if (savedTheme && THEMES[savedTheme]) setThemeId(savedTheme);
       const savedLang = localStorage.getItem('gta6takip_lang');
       if (savedLang === 'tr' || savedLang === 'en') setLang(savedLang);
+      const savedPcts = JSON.parse(localStorage.getItem('gta6takip_prev_pcts') || '{}');
+      if (savedPcts && typeof savedPcts === 'object') prevPctsRef.current = savedPcts;
     } catch {
       // ignore
     }
@@ -399,10 +452,35 @@ export default function Home() {
         data.race ||
         Object.values(data).find((v) => Array.isArray(v)) ||
         [];
-      if (Array.isArray(rawList)) {
+
+      if (Array.isArray(rawList) && rawList.length > 0) {
+        const nextDeltas = {};
+        const nextSnapshot = { ...prevPctsRef.current };
+
+        for (const item of rawList) {
+          const name = item.name || item.title;
+          const pct = Number(item.percentage ?? item.progress ?? item.pct ?? 0);
+          if (!name) continue;
+          const prev = prevPctsRef.current[name];
+          if (typeof prev === 'number' && pct > prev) {
+            nextDeltas[name] = Number((pct - prev).toFixed(1));
+          }
+          nextSnapshot[name] = pct;
+        }
+
+        if (Object.keys(nextDeltas).length > 0) {
+          setDeltas((old) => ({ ...old, ...nextDeltas }));
+        }
+        prevPctsRef.current = nextSnapshot;
+        try {
+          localStorage.setItem('gta6takip_prev_pcts', JSON.stringify(nextSnapshot));
+        } catch {
+          // ignore
+        }
         setTeams(rawList);
       }
       setLastUpdated(new Date().toLocaleTimeString(lang === 'tr' ? 'tr-TR' : 'en-US'));
+      setCountdown(120);
     } catch {
       // ignore
     } finally {
@@ -412,9 +490,16 @@ export default function Home() {
 
   useEffect(() => {
     fetchSync();
-    const id = setInterval(fetchSync, 120000);
-    return () => clearInterval(id);
+    const syncTimer = setInterval(fetchSync, 120000);
+    return () => clearInterval(syncTimer);
   }, [fetchSync]);
+
+  useEffect(() => {
+    const tick = setInterval(() => {
+      setCountdown((prev) => (prev > 1 ? prev - 1 : 120));
+    }, 1000);
+    return () => clearInterval(tick);
+  }, []);
 
   useEffect(() => {
     if (!supabase) return;
@@ -450,6 +535,10 @@ export default function Home() {
       : 'Tracking the GTA VI PC Port teams live! 🚀';
   const shareUrl = 'https://gta6takip.vercel.app/';
 
+  const countdownStr = `${String(Math.floor(countdown / 60)).padStart(2, '0')}:${String(
+    countdown % 60
+  ).padStart(2, '0')}`;
+
   return (
     <div
       className="min-h-screen transition-colors duration-300"
@@ -467,8 +556,8 @@ export default function Home() {
           borderColor: activeTheme.border,
         }}
       >
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-2.5">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-2.5">
+          <div className="flex items-center gap-2">
             <Icon3DLogo />
             <span className="font-black text-base tracking-tight">{t.brand}</span>
             <button
@@ -488,7 +577,7 @@ export default function Home() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/25">
+            <span className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/25">
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
@@ -510,7 +599,7 @@ export default function Home() {
                     onClick={() => setThemeId(th.id)}
                     title={lang === 'tr' ? th.labelTr : th.labelEn}
                     aria-label={th.labelEn}
-                    className={`w-5 h-5 rounded-full transition-transform ${
+                    className={`w-4 h-4 sm:w-5 sm:h-5 rounded-full transition-transform ${
                       selected ? 'scale-110 ring-2 ring-offset-1 ring-pink-500' : 'opacity-70 hover:opacity-100'
                     }`}
                     style={{ background: th.dot }}
@@ -551,7 +640,7 @@ export default function Home() {
 
             <button
               onClick={fetchSync}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-semibold transition hover:opacity-80"
+              className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-full border text-xs font-semibold transition hover:opacity-80"
               style={{ backgroundColor: activeTheme.bgCard, borderColor: activeTheme.border }}
             >
               <RefreshCw
@@ -565,9 +654,9 @@ export default function Home() {
       </nav>
 
       {/* ANA KONTEYNER */}
-      <main className="max-w-5xl mx-auto px-4 sm:px-6 py-8 sm:py-10 space-y-6">
-        <header className="flex flex-col md:flex-row md:items-end justify-between gap-5">
-          <div className="max-w-xl">
+      <main className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-9 space-y-5">
+        <header className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+          <div className="max-w-2xl">
             <div
               className="text-[11px] font-bold uppercase tracking-[0.18em] mb-1.5"
               style={{ color: activeTheme.textMuted }}
@@ -575,8 +664,16 @@ export default function Home() {
               {t.eyebrow}
             </div>
             <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight mb-2">{t.title}</h1>
-            <p className="text-sm leading-relaxed" style={{ color: activeTheme.textMuted }}>
-              {t.subtitle} ({t.lastSync}: <span style={{ color: activeTheme.textPrimary }}>{lastUpdated}</span>)
+            <p className="text-xs sm:text-sm leading-relaxed" style={{ color: activeTheme.textMuted }}>
+              {t.subtitle} ({t.lastSync}:{' '}
+              <span className="font-semibold" style={{ color: activeTheme.textPrimary }}>
+                {lastUpdated}
+              </span>{' '}
+              · {t.nextCheck}:{' '}
+              <span className="font-mono font-bold" style={{ color: activeTheme.accent }}>
+                {countdownStr}
+              </span>
+              )
             </p>
           </div>
 
@@ -607,6 +704,56 @@ export default function Home() {
           </div>
         </header>
 
+        {/* SON GELİŞMELER MİNİ BÜLTEN */}
+        <section
+          className="rounded-2xl p-4 border space-y-2.5"
+          style={{ backgroundColor: activeTheme.bgCard, borderColor: activeTheme.border }}
+        >
+          <div className="flex items-center gap-2 text-xs font-bold" style={{ color: activeTheme.accent }}>
+            <Radio className="w-3.5 h-3.5" />
+            <span>{t.newsTitle}</span>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
+            {NEWS_FEED[lang].map((item, i) => (
+              <div
+                key={i}
+                className="rounded-xl p-2.5 border text-xs leading-relaxed"
+                style={{ backgroundColor: activeTheme.bgPage, borderColor: activeTheme.border }}
+              >
+                <span
+                  className="inline-block text-[9px] font-black px-1.5 py-0.5 rounded mr-1.5 text-white"
+                  style={{ background: activeTheme.barGradient }}
+                >
+                  {item.tag}
+                </span>
+                <span style={{ color: activeTheme.textMuted }}>{item.text}</span>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* TEST EDİLEN EKRAN KARTLARI ÖZETİ */}
+        <section
+          className="rounded-2xl px-4 py-3 border flex flex-wrap items-center gap-2"
+          style={{ backgroundColor: activeTheme.bgCard, borderColor: activeTheme.border }}
+        >
+          <span className="inline-flex items-center gap-1.5 text-xs font-bold mr-1" style={{ color: activeTheme.textPrimary }}>
+            <Cpu className="w-3.5 h-3.5" style={{ color: activeTheme.accent }} />
+            {t.gpuTitle}:
+          </span>
+          {TESTED_GPUS.map((item) => (
+            <span
+              key={item.gpu}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold border"
+              style={{ backgroundColor: activeTheme.bgPage, borderColor: activeTheme.border }}
+            >
+              <span>{item.gpu}</span>
+              <span style={{ color: activeTheme.accent }}>{item.fps}</span>
+              <span style={{ color: activeTheme.textMuted }}>({item.team})</span>
+            </span>
+          ))}
+        </section>
+
         {/* TEK SÜTUNLU LİDERLİK KARTLARI */}
         {filteredTeams.length === 0 ? (
           <div
@@ -622,6 +769,7 @@ export default function Home() {
               const teamName = team.name || team.title || '';
               const pct = Number(team.percentage ?? team.progress ?? team.pct ?? 0);
               const pctLabel = lang === 'tr' ? `%${pct}` : `${pct}%`;
+              const delta = deltas[teamName];
               const isOpen = Boolean(team.open_source ?? team.isOpenSource ?? team.is_open_source);
               const rawStage = lang === 'tr' ? team.stage_tr || team.stage : team.stage_en || team.stage;
               const rawFps = lang === 'tr' ? team.fps_tr || team.fps : team.fps_en || team.fps;
@@ -649,7 +797,7 @@ export default function Home() {
                   className="rounded-2xl p-4 sm:p-6 border transition-colors"
                   style={{ backgroundColor: activeTheme.bgCard, borderColor: activeTheme.border }}
                 >
-                  {/* ANDROID MOBİL UYUMLU BAŞLIK (İsimler asla "..." olmaz) */}
+                  {/* ANDROID MOBİL UYUMLU BAŞLIK */}
                   <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 mb-3">
                     <div className="flex items-start gap-2.5 sm:gap-3 min-w-0">
                       <div className="flex items-center gap-1.5 shrink-0 pt-1">
@@ -707,8 +855,16 @@ export default function Home() {
                     </div>
 
                     <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-start gap-2 shrink-0 pl-8 sm:pl-0">
-                      <div className="text-2xl sm:text-[28px] font-black leading-none tracking-tight">
-                        {pctLabel}
+                      <div className="flex items-center gap-2">
+                        {delta && (
+                          <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[11px] font-extrabold bg-emerald-500/15 text-emerald-400">
+                            <TrendingUp className="w-3 h-3" />
+                            {lang === 'tr' ? `+%${delta}` : `+${delta}%`}
+                          </span>
+                        )}
+                        <div className="text-2xl sm:text-[28px] font-black leading-none tracking-tight">
+                          {pctLabel}
+                        </div>
                       </div>
                       {stage && (
                         <div className="inline-flex items-center gap-1.5 text-xs" style={{ color: activeTheme.textMuted }}>
@@ -816,8 +972,29 @@ export default function Home() {
           </div>
         )}
 
+        {/* X TAKİP ÇAĞRISI */}
+        <div
+          className="rounded-2xl p-4 border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3"
+          style={{ backgroundColor: activeTheme.bgCard, borderColor: activeTheme.border }}
+        >
+          <div className="flex items-center gap-2.5 text-xs sm:text-sm font-medium">
+            <XLogoSVG className="w-4 h-4 shrink-0" />
+            <span>{t.followXTitle}</span>
+          </div>
+          <a
+            href="https://x.com/batmancodex"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white transition hover:opacity-90 shrink-0"
+            style={{ background: activeTheme.barGradient }}
+          >
+            <XLogoSVG className="w-3.5 h-3.5" />
+            <span>@batmancodex · {t.followXBtn}</span>
+          </a>
+        </div>
+
         {/* ALT SOSYAL & PAYLAŞIM ŞERİDİ */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
           <a
             href="https://x.com/batmancodex"
             target="_blank"
