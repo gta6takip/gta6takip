@@ -23,6 +23,8 @@ import {
   Reply,
   Maximize2,
   Minimize2,
+  Trash2,
+  Ban,
   X as CloseIcon,
 } from 'lucide-react';
 
@@ -214,6 +216,7 @@ const TRANSLATIONS = {
     sending: 'Atılıyor...',
     errEmptyMsg: 'Lütfen önce bir mesaj veya link yaz.',
     errMuted: 'Küfür tespit edildi! 60sn ban yediniz. Kalan süre:',
+    errBanned: 'Yönetici tarafından sohbetten kalıcı olarak banlandınız.',
     errSlow: 'Spam koruması: 60 saniyede 1 mesaj atabilirsiniz. Kalan:',
     errSend: 'Gönderilemedi:',
     footerText:
@@ -231,9 +234,14 @@ const TRANSLATIONS = {
     adminWrong: 'Hatalı bilgi.',
     adminActive: 'Admin Aktif',
     adminLogout: 'Çıkış',
+    bannedListLabel: 'Banlılar:',
+    delBtn: 'Sil',
+    banBtn: 'Banla',
     replyBtn: 'Yanıtla',
     replyingTo: 'Yanıtlanıyor:',
     fullscreenTitle: 'Tam Ekran Sohbet',
+    shareWa: "WhatsApp'ta Paylaş",
+    shareX: "X'te Paylaş",
   },
   en: {
     headerSubtitle: '120s Auto Progress Tracker (PortWatch VI)',
@@ -279,6 +287,7 @@ const TRANSLATIONS = {
     sending: 'Sending...',
     errEmptyMsg: 'Please enter a message or link first.',
     errMuted: 'Profanity detected! You are banned for 60s. Remaining:',
+    errBanned: 'You have been permanently banned from chat by an admin.',
     errSlow: 'Slowmode: 1 message per 60 seconds. Remaining:',
     errSend: 'Failed to send:',
     footerText:
@@ -296,9 +305,14 @@ const TRANSLATIONS = {
     adminWrong: 'Invalid credentials.',
     adminActive: 'Admin Active',
     adminLogout: 'Logout',
+    bannedListLabel: 'Banned:',
+    delBtn: 'Delete',
+    banBtn: 'Ban',
     replyBtn: 'Reply',
     replyingTo: 'Replying to:',
     fullscreenTitle: 'Fullscreen Chat',
+    shareWa: 'WhatsApp',
+    shareX: 'Share on X',
   },
 };
 
@@ -474,7 +488,8 @@ function formatUpdateTime(dateStr, t, lang) {
   });
 }
 
-function mergeChannelMessages(prevList, incomingList) {
+function mergeChannelMessages(prevList, incomingList, bans) {
+  const banSet = new Set((bans || []).map((b) => b.toLowerCase()));
   const merged = [...incomingList];
   for (const m of prevList) {
     const exists = merged.some(
@@ -484,12 +499,15 @@ function mergeChannelMessages(prevList, incomingList) {
     );
     if (!exists) merged.push(m);
   }
-  merged.sort((a, b) => {
+  const filtered = merged.filter(
+    (m) => !banSet.has(String(m.username || '').trim().toLowerCase())
+  );
+  filtered.sort((a, b) => {
     const ta = a.created_at ? new Date(a.created_at).getTime() : 0;
     const tb = b.created_at ? new Date(b.created_at).getTime() : 0;
     return ta - tb;
   });
-  return merged.slice(-100);
+  return filtered.slice(-100);
 }
 
 export default function HomePage() {
@@ -503,6 +521,8 @@ export default function HomePage() {
 
   const [chatChannel, setChatChannel] = useState('tr');
   const [messagesByChannel, setMessagesByChannel] = useState({ tr: [], en: [] });
+  const [bannedUsers, setBannedUsers] = useState([]);
+  const [localDeviceBanned, setLocalDeviceBanned] = useState(false);
   const [username, setUsername] = useState('');
   const [newMessage, setNewMessage] = useState('');
   const [chatError, setChatError] = useState('');
@@ -525,6 +545,7 @@ export default function HomePage() {
   const chatListRef = useRef(null);
   const t = TRANSLATIONS[lang] || TRANSLATIONS.tr;
   const currentMessages = messagesByChannel[chatChannel] || [];
+  const lastMsgId = currentMessages.length > 0 ? currentMessages[currentMessages.length - 1].id : '';
 
   useEffect(() => {
     try {
@@ -550,6 +571,9 @@ export default function HomePage() {
 
       const savedAdmin = localStorage.getItem('gta6takip_is_admin');
       if (savedAdmin === '1') setIsAdmin(true);
+
+      const savedBan = localStorage.getItem('gta6takip_banned');
+      if (savedBan === '1') setLocalDeviceBanned(true);
 
       const muteUntil = Number(localStorage.getItem('gta6takip_mute_until') || 0);
       if (muteUntil > Date.now()) {
@@ -682,12 +706,19 @@ export default function HomePage() {
     return () => clearInterval(countdown);
   }, []);
 
-  // Yalnızca sohbet kutusunun içini en alta kaydır (sayfayı oynatmadan)
+  // Brave/Chrome uyumlu kesin otomatik en alta kaydırma
   useEffect(() => {
-    if (chatListRef.current) {
-      chatListRef.current.scrollTop = chatListRef.current.scrollHeight;
-    }
-  }, [currentMessages.length, chatChannel, mobileChatFull]);
+    const el = chatListRef.current;
+    if (!el) return;
+    requestAnimationFrame(() => {
+      el.scrollTop = el.scrollHeight;
+      setTimeout(() => {
+        if (chatListRef.current) {
+          chatListRef.current.scrollTop = chatListRef.current.scrollHeight;
+        }
+      }, 60);
+    });
+  }, [lastMsgId, chatChannel, mobileChatFull]);
 
   function handleLanguageSwitch(nextLang) {
     setLang(nextLang);
@@ -738,14 +769,70 @@ export default function HomePage() {
       const res = await fetch(`/api/chat?channel=${ch}`, { cache: 'no-store' });
       const json = await res.json();
       if (json?.ok && Array.isArray(json.messages)) {
+        const serverBans = Array.isArray(json.bannedUsers) ? json.bannedUsers : [];
+        setBannedUsers(serverBans);
+
+        const nickNow = (username.trim() || 'ViceMisafir').toLowerCase();
+        if (serverBans.includes(nickNow)) {
+          setLocalDeviceBanned(true);
+          try {
+            localStorage.setItem('gta6takip_banned', '1');
+          } catch {
+            // ignore
+          }
+        }
+
         setMessagesByChannel((prev) => ({
           ...prev,
-          [ch]: mergeChannelMessages(prev[ch] || [], json.messages),
+          [ch]: mergeChannelMessages(prev[ch] || [], json.messages, serverBans),
         }));
       }
     } catch {
       // ignore
     }
+  }
+
+  async function handleDeleteMessage(msgId) {
+    if (!isAdmin || !msgId) return;
+    await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'delete', channel: chatChannel, id: msgId, adminPass: '657210' }),
+    }).catch(() => {});
+    setMessagesByChannel((prev) => ({
+      ...prev,
+      [chatChannel]: (prev[chatChannel] || []).filter((m) => String(m.id) !== String(msgId)),
+    }));
+  }
+
+  async function handleBanUser(targetName) {
+    if (!isAdmin || !targetName) return;
+    const cleanTarget = targetName.trim().toLowerCase();
+    const res = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'ban', username: targetName, adminPass: '657210' }),
+    }).catch(() => null);
+    const json = res ? await res.json().catch(() => null) : null;
+    const nextBans = Array.isArray(json?.bannedUsers)
+      ? json.bannedUsers
+      : Array.from(new Set([...bannedUsers, cleanTarget]));
+    setBannedUsers(nextBans);
+    setMessagesByChannel((prev) => ({
+      tr: (prev.tr || []).filter((m) => String(m.username || '').trim().toLowerCase() !== cleanTarget),
+      en: (prev.en || []).filter((m) => String(m.username || '').trim().toLowerCase() !== cleanTarget),
+    }));
+  }
+
+  async function handleUnbanUser(targetName) {
+    if (!isAdmin || !targetName) return;
+    const cleanTarget = targetName.trim().toLowerCase();
+    await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'unban', username: targetName, adminPass: '657210' }),
+    }).catch(() => {});
+    setBannedUsers((prev) => prev.filter((u) => u !== cleanTarget));
   }
 
   async function handleAutoSync() {
@@ -770,9 +857,18 @@ export default function HomePage() {
     }
   }
 
+  const rawCurrentNick = username.trim().slice(0, 24) || (isAdmin ? 'ADMIN' : 'ViceMisafir');
+  const isCurrentUserBanned =
+    !isAdmin && (localDeviceBanned || bannedUsers.includes(rawCurrentNick.toLowerCase()));
+
   async function handleSendMessage(e) {
     if (e && e.preventDefault) e.preventDefault();
     setChatError('');
+
+    if (isCurrentUserBanned) {
+      setChatError(t.errBanned);
+      return;
+    }
 
     if (muteSeconds > 0) {
       setChatError(`${t.errMuted} ${muteSeconds}${t.secShort}`);
@@ -785,9 +881,9 @@ export default function HomePage() {
     }
 
     const cleanMsg = newMessage.trim();
-    let rawNick = username.trim().slice(0, 24) || (isAdmin ? 'ADMIN' : 'ViceMisafir');
-    if (!isAdmin && /^(admin|yönetici|yonetici)$/i.test(rawNick)) {
-      rawNick = 'ViceMisafir';
+    let finalNick = rawCurrentNick;
+    if (!isAdmin && /^(admin|yönetici|yonetici)$/i.test(finalNick)) {
+      finalNick = 'ViceMisafir';
     }
 
     if (!cleanMsg) {
@@ -795,7 +891,7 @@ export default function HomePage() {
       return;
     }
 
-    if (!isAdmin && (containsProfanity(cleanMsg) || containsProfanity(rawNick))) {
+    if (!isAdmin && (containsProfanity(cleanMsg) || containsProfanity(finalNick))) {
       const muteDurationSec = 60;
       const until = Date.now() + muteDurationSec * 1000;
       setMuteSeconds(muteDurationSec);
@@ -819,12 +915,12 @@ export default function HomePage() {
     setShowEmojiPicker(false);
 
     try {
-      localStorage.setItem('gta6takip_nick', rawNick);
+      localStorage.setItem('gta6takip_nick', finalNick);
     } catch {
       // ignore
     }
 
-    const safeNick = isAdmin ? rawNick : censorText(rawNick);
+    const safeNick = isAdmin ? finalNick : censorText(finalNick);
     const cleanedBody = isAdmin ? cleanMsg.slice(0, 420) : censorText(cleanMsg.slice(0, 420));
     const replyTag = activeReply
       ? `[REPLY:${censorText(activeReply.user).replace(/[|\]]/g, '')}|${censorText(activeReply.snippet).replace(/[|\]]/g, '').slice(0, 55)}] `
@@ -843,13 +939,23 @@ export default function HomePage() {
       });
       const json = await res.json();
       if (!json.ok) {
-        setChatError(`${t.errSend} ${json.error || '?'}`);
-        setNewMessage(cleanMsg);
+        if (res.status === 403) {
+          setLocalDeviceBanned(true);
+          try {
+            localStorage.setItem('gta6takip_banned', '1');
+          } catch {
+            // ignore
+          }
+          setChatError(t.errBanned);
+        } else {
+          setChatError(`${t.errSend} ${json.error || '?'}`);
+          setNewMessage(cleanMsg);
+        }
       } else {
         if (json.message) {
           setMessagesByChannel((prev) => ({
             ...prev,
-            [targetCh]: mergeChannelMessages(prev[targetCh] || [], [json.message]),
+            [targetCh]: mergeChannelMessages(prev[targetCh] || [], [json.message], bannedUsers),
           }));
         }
         if (!isAdmin) {
@@ -877,7 +983,14 @@ export default function HomePage() {
 
   const leaderName = projects[0]?.name || 'Belobug';
   const onlineCount = Math.max(1, onlineUsers.length);
-  const isInputBlocked = muteSeconds > 0 || (!isAdmin && slowSeconds > 0);
+  const isInputBlocked = isCurrentUserBanned || muteSeconds > 0 || (!isAdmin && slowSeconds > 0);
+
+  const shareText =
+    lang === 'en'
+      ? 'Track GTA VI PC Port progress live on GTA6takip:'
+      : 'GTA VI PC Port ilerlemesini ve canlı sohbeti GTA6takip üzerinden takip et:';
+  const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(`${shareText} https://gta6takip.vercel.app/`)}`;
+  const xShareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent('https://gta6takip.vercel.app/')}`;
 
   return (
     <div
@@ -1225,7 +1338,7 @@ export default function HomePage() {
           className={
             mobileChatFull
               ? 'fixed inset-0 z-50 h-[100dvh] w-full flex flex-col overflow-hidden'
-              : 'lg:col-span-5 xl:col-span-4 rounded-2xl border overflow-hidden shadow-sm flex flex-col h-[520px] lg:sticky lg:top-[88px] lg:h-[calc(100vh-110px)] lg:max-h-[700px] z-20'
+              : 'lg:col-span-5 xl:col-span-4 rounded-2xl border overflow-hidden shadow-sm flex flex-col h-[540px] lg:sticky lg:top-[88px] lg:h-[calc(100vh-110px)] lg:max-h-[700px] z-20'
           }
         >
           <div
@@ -1274,7 +1387,7 @@ export default function HomePage() {
           {showAdminBox && (
             <div
               style={{ backgroundColor: 'var(--card-inner)', borderColor: 'var(--card-border)' }}
-              className="px-3.5 py-2.5 border-b shrink-0"
+              className="px-3.5 py-2.5 border-b shrink-0 space-y-2"
             >
               {!isAdmin ? (
                 <form onSubmit={handleAdminLogin} className="flex items-center gap-1.5">
@@ -1302,19 +1415,41 @@ export default function HomePage() {
                   </button>
                 </form>
               ) : (
-                <div className="flex items-center justify-between text-xs">
-                  <span className="font-extrabold text-amber-500">✓ {t.adminActive}</span>
-                  <button
-                    type="button"
-                    onClick={handleAdminLogout}
-                    className="inline-flex items-center gap-1 text-rose-500 font-bold hover:underline cursor-pointer"
-                  >
-                    <LogOut className="w-3 h-3" />
-                    {t.adminLogout}
-                  </button>
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-extrabold text-amber-500">✓ {t.adminActive}</span>
+                    <button
+                      type="button"
+                      onClick={handleAdminLogout}
+                      className="inline-flex items-center gap-1 text-rose-500 font-bold hover:underline cursor-pointer"
+                    >
+                      <LogOut className="w-3 h-3" />
+                      {t.adminLogout}
+                    </button>
+                  </div>
+                  {bannedUsers.length > 0 && (
+                    <div className="flex flex-wrap items-center gap-1 text-[11px]">
+                      <span style={{ color: 'var(--text-secondary)' }}>{t.bannedListLabel}</span>
+                      {bannedUsers.map((bu) => (
+                        <span
+                          key={bu}
+                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-rose-500/15 text-rose-500 border border-rose-500/25"
+                        >
+                          <span>{bu}</span>
+                          <button
+                            type="button"
+                            onClick={() => handleUnbanUser(bu)}
+                            className="font-bold hover:underline cursor-pointer"
+                          >
+                            ×
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
-              {adminErr && <p className="text-[11px] text-rose-500 mt-1">{adminErr}</p>}
+              {adminErr && <p className="text-[11px] text-rose-500">{adminErr}</p>}
             </div>
           )}
 
@@ -1489,7 +1624,27 @@ export default function HomePage() {
                           </span>
                         )}
                       </div>
-                      <div className="flex items-center gap-1.5 shrink-0">
+                      <div className="flex items-center gap-1 shrink-0">
+                        {isAdmin && !isAdminMsg && (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteMessage(msg.id)}
+                              title={t.delBtn}
+                              className="p-1 rounded hover:bg-rose-500/15 text-rose-500 cursor-pointer"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleBanUser(msg.username)}
+                              title={t.banBtn}
+                              className="p-1 rounded hover:bg-rose-500/15 text-rose-500 cursor-pointer"
+                            >
+                              <Ban className="w-3 h-3" />
+                            </button>
+                          </>
+                        )}
                         <button
                           type="button"
                           onClick={() =>
@@ -1522,7 +1677,7 @@ export default function HomePage() {
                         isAdminMsg ? 'font-medium' : ''
                       }`}
                     >
-                      {isAdminMsg ? renderMessageWithLinks(body) : renderMessageWithLinks(body)}
+                      {renderMessageWithLinks(body)}
                     </p>
                   </div>
                 );
@@ -1550,9 +1705,13 @@ export default function HomePage() {
             </div>
           )}
 
-          {(chatError || muteSeconds > 0) && (
+          {(chatError || muteSeconds > 0 || isCurrentUserBanned) && (
             <div className="px-4 py-2 bg-rose-500/15 border-t border-rose-500/30 text-xs text-rose-500 font-semibold shrink-0">
-              {muteSeconds > 0 ? `${t.errMuted} ${muteSeconds}${t.secShort}` : chatError}
+              {isCurrentUserBanned
+                ? t.errBanned
+                : muteSeconds > 0
+                  ? `${t.errMuted} ${muteSeconds}${t.secShort}`
+                  : chatError}
             </div>
           )}
 
@@ -1600,11 +1759,13 @@ export default function HomePage() {
               onChange={(e) => setNewMessage(e.target.value)}
               maxLength={420}
               placeholder={
-                muteSeconds > 0
-                  ? `${t.errMuted} ${muteSeconds}${t.secShort}`
-                  : !isAdmin && slowSeconds > 0
-                    ? `${t.slowPlaceholder} ${slowSeconds}${t.secShort}`
-                    : t.messagePlaceholder
+                isCurrentUserBanned
+                  ? t.errBanned
+                  : muteSeconds > 0
+                    ? `${t.errMuted} ${muteSeconds}${t.secShort}`
+                    : !isAdmin && slowSeconds > 0
+                      ? `${t.slowPlaceholder} ${slowSeconds}${t.secShort}`
+                      : t.messagePlaceholder
               }
               style={{
                 backgroundColor: 'var(--card-bg)',
@@ -1629,29 +1790,48 @@ export default function HomePage() {
             </button>
           </form>
 
-          {/* Chat Altı X | batmancodex Butonu */}
+          {/* Chat Altı: X | batmancodex + WhatsApp & X'te Paylaş Butonları */}
           <div
             style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--card-border)' }}
-            className="px-3 py-2 border-t flex items-center justify-center shrink-0"
+            className="px-3 py-2 border-t grid grid-cols-3 gap-1.5 shrink-0"
           >
             <a
               href="https://x.com/batmancodex"
               target="_blank"
               rel="noopener noreferrer"
               style={{ backgroundColor: 'var(--card-inner)', borderColor: 'var(--card-border)' }}
-              className="w-full inline-flex items-center justify-center gap-2 py-1.5 px-3 rounded-xl border text-xs font-bold hover:border-pink-500/50 transition group"
+              className="inline-flex items-center justify-center gap-1 py-1.5 px-2 rounded-xl border text-[11px] font-bold hover:border-pink-500/50 transition truncate"
             >
-              <svg
-                className="w-3.5 h-3.5 text-pink-500 group-hover:scale-110 transition"
-                viewBox="0 0 24 24"
-                fill="currentColor"
-                aria-hidden="true"
-              >
+              <svg className="w-3 h-3 text-pink-500 shrink-0" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                 <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
               </svg>
-              <span className="opacity-50">|</span>
-              <span className="pw-text-gradient font-extrabold">batmancodex</span>
-              <ExternalLink className="w-3 h-3 opacity-50 group-hover:opacity-100" />
+              <span className="pw-text-gradient font-extrabold truncate">batmancodex</span>
+            </a>
+
+            <a
+              href={whatsappUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ backgroundColor: 'var(--card-inner)', borderColor: 'var(--card-border)' }}
+              className="inline-flex items-center justify-center gap-1 py-1.5 px-2 rounded-xl border text-[11px] font-bold text-emerald-500 hover:border-emerald-500/50 transition truncate"
+            >
+              <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2 22l5.25-1.38c1.45.79 3.08 1.21 4.79 1.21 5.46 0 9.91-4.45 9.91-9.91S17.5 2 12.04 2zm5.8 14.02c-.24.68-1.41 1.3-1.95 1.38-.52.08-1.17.11-1.89-.12-.44-.14-1-.32-1.72-.63-3.03-1.31-5-4.37-5.15-4.57-.15-.2-1.23-1.64-1.23-3.13 0-1.49.78-2.22 1.06-2.52.28-.3.61-.38.81-.38h.59c.19 0 .44-.07.69.52.26.62.88 2.15.96 2.31.08.16.13.34.02.54-.1.2-.16.33-.31.51-.15.18-.32.4-.46.54-.15.15-.31.32-.13.62.18.3.79 1.31 1.7 2.12 1.17 1.04 2.15 1.36 2.46 1.51.3.15.48.13.66-.08.18-.2.76-.88.96-1.18.2-.3.41-.25.68-.15.28.1 1.75.83 2.05.98.3.15.5.22.58.35.08.13.08.74-.16 1.42z" />
+              </svg>
+              <span className="truncate">{t.shareWa}</span>
+            </a>
+
+            <a
+              href={xShareUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ backgroundColor: 'var(--card-inner)', borderColor: 'var(--card-border)' }}
+              className="inline-flex items-center justify-center gap-1 py-1.5 px-2 rounded-xl border text-[11px] font-bold hover:border-pink-500/50 transition truncate"
+            >
+              <svg className="w-3 h-3 text-sky-500 shrink-0" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+              </svg>
+              <span className="truncate">{t.shareX}</span>
             </a>
           </div>
         </aside>
