@@ -20,6 +20,10 @@ import {
   Monitor,
   Smile,
   LogOut,
+  Reply,
+  Maximize2,
+  Minimize2,
+  X as CloseIcon,
 } from 'lucide-react';
 
 const THEMES = [
@@ -227,6 +231,9 @@ const TRANSLATIONS = {
     adminWrong: 'Hatalı bilgi.',
     adminActive: 'Admin Aktif',
     adminLogout: 'Çıkış',
+    replyBtn: 'Yanıtla',
+    replyingTo: 'Yanıtlanıyor:',
+    fullscreenTitle: 'Tam Ekran Sohbet',
   },
   en: {
     headerSubtitle: '120s Auto Progress Tracker (PortWatch VI)',
@@ -289,6 +296,9 @@ const TRANSLATIONS = {
     adminWrong: 'Invalid credentials.',
     adminActive: 'Admin Active',
     adminLogout: 'Logout',
+    replyBtn: 'Reply',
+    replyingTo: 'Replying to:',
+    fullscreenTitle: 'Fullscreen Chat',
   },
 };
 
@@ -434,6 +444,25 @@ function renderMessageWithLinks(text) {
   });
 }
 
+function parseMessageMeta(rawText) {
+  let txt = String(rawText || '');
+  let isAdminMsg = false;
+  let replyMeta = null;
+
+  if (txt.startsWith('[ADMIN] ')) {
+    isAdminMsg = true;
+    txt = txt.replace(/^\[ADMIN\]\s*/, '');
+  }
+
+  const replyMatch = txt.match(/^\[REPLY:([^|\]]+)\|([^\]]*)\]\s*/);
+  if (replyMatch) {
+    replyMeta = { user: replyMatch[1], snippet: replyMatch[2] };
+    txt = txt.slice(replyMatch[0].length);
+  }
+
+  return { isAdminMsg, replyMeta, body: txt };
+}
+
 function formatUpdateTime(dateStr, t, lang) {
   if (!dateStr) return t.notSynced;
   const d = new Date(dateStr);
@@ -483,6 +512,8 @@ export default function HomePage() {
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [muteSeconds, setMuteSeconds] = useState(0);
   const [slowSeconds, setSlowSeconds] = useState(0);
+  const [replyTo, setReplyTo] = useState(null);
+  const [mobileChatFull, setMobileChatFull] = useState(false);
 
   const [showAdminBox, setShowAdminBox] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -491,7 +522,7 @@ export default function HomePage() {
   const [adminErr, setAdminErr] = useState('');
 
   const chatChannelRef = useRef('tr');
-  const chatBottomRef = useRef(null);
+  const chatListRef = useRef(null);
   const t = TRANSLATIONS[lang] || TRANSLATIONS.tr;
   const currentMessages = messagesByChannel[chatChannel] || [];
 
@@ -651,20 +682,25 @@ export default function HomePage() {
     return () => clearInterval(countdown);
   }, []);
 
+  // Yalnızca sohbet kutusunun içini en alta kaydır (sayfayı oynatmadan)
   useEffect(() => {
-    chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [currentMessages.length, chatChannel]);
+    if (chatListRef.current) {
+      chatListRef.current.scrollTop = chatListRef.current.scrollHeight;
+    }
+  }, [currentMessages.length, chatChannel, mobileChatFull]);
 
   function handleLanguageSwitch(nextLang) {
     setLang(nextLang);
     setChatChannel(nextLang);
     chatChannelRef.current = nextLang;
+    setReplyTo(null);
     fetchChatMessages(nextLang);
   }
 
   function handleChannelSwitch(nextChannel) {
     setChatChannel(nextChannel);
     chatChannelRef.current = nextChannel;
+    setReplyTo(null);
     fetchChatMessages(nextChannel);
   }
 
@@ -749,7 +785,10 @@ export default function HomePage() {
     }
 
     const cleanMsg = newMessage.trim();
-    const rawNick = username.trim().slice(0, 24) || (isAdmin ? 'Admin' : 'ViceMisafir');
+    let rawNick = username.trim().slice(0, 24) || (isAdmin ? 'ADMIN' : 'ViceMisafir');
+    if (!isAdmin && /^(admin|yönetici|yonetici)$/i.test(rawNick)) {
+      rawNick = 'ViceMisafir';
+    }
 
     if (!cleanMsg) {
       setChatError(t.errEmptyMsg);
@@ -773,8 +812,10 @@ export default function HomePage() {
     if (sending) return;
 
     const targetCh = chatChannel;
+    const activeReply = replyTo;
     setSending(true);
     setNewMessage('');
+    setReplyTo(null);
     setShowEmojiPicker(false);
 
     try {
@@ -784,8 +825,11 @@ export default function HomePage() {
     }
 
     const safeNick = isAdmin ? rawNick : censorText(rawNick);
-    const cleanedBody = isAdmin ? cleanMsg.slice(0, 480) : censorText(cleanMsg.slice(0, 500));
-    const payloadMessage = isAdmin ? `[ADMIN] ${cleanedBody}` : cleanedBody;
+    const cleanedBody = isAdmin ? cleanMsg.slice(0, 420) : censorText(cleanMsg.slice(0, 420));
+    const replyTag = activeReply
+      ? `[REPLY:${censorText(activeReply.user).replace(/[|\]]/g, '')}|${censorText(activeReply.snippet).replace(/[|\]]/g, '').slice(0, 55)}] `
+      : '';
+    const payloadMessage = `${isAdmin ? '[ADMIN] ' : ''}${replyTag}${cleanedBody}`;
 
     try {
       const res = await fetch('/api/chat', {
@@ -1175,27 +1219,39 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* Sağ: Discord Tarzı Çift Kanallı Sohbet */}
+        {/* Sağ: Discord Tarzı Çift Kanallı Sohbet (Mobilde Tam Ekran Destekli) */}
         <aside
           style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--card-border)' }}
-          className="lg:col-span-5 xl:col-span-4 rounded-2xl border overflow-hidden shadow-sm flex flex-col h-[540px] lg:sticky lg:top-[88px] lg:h-[calc(100vh-110px)] lg:max-h-[680px] z-20"
+          className={
+            mobileChatFull
+              ? 'fixed inset-0 z-50 h-[100dvh] w-full flex flex-col overflow-hidden'
+              : 'lg:col-span-5 xl:col-span-4 rounded-2xl border overflow-hidden shadow-sm flex flex-col h-[520px] lg:sticky lg:top-[88px] lg:h-[calc(100vh-110px)] lg:max-h-[700px] z-20'
+          }
         >
           <div
             style={{ backgroundColor: 'var(--card-inner)', borderColor: 'var(--card-border)' }}
             className="p-3.5 border-b flex items-center justify-between gap-2 shrink-0"
           >
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl gta-bar-fill flex items-center justify-center text-white">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-8 h-8 rounded-xl gta-bar-fill flex items-center justify-center text-white shrink-0">
                 <MessageSquare className="w-4 h-4" />
               </div>
-              <div>
-                <h2 className="text-sm font-extrabold">{t.chatTitle}</h2>
-                <p style={{ color: 'var(--text-secondary)' }} className="text-[11px]">
+              <div className="min-w-0">
+                <h2 className="text-sm font-extrabold truncate">{t.chatTitle}</h2>
+                <p style={{ color: 'var(--text-secondary)' }} className="text-[11px] truncate">
                   {t.chatSubtitle}
                 </p>
               </div>
             </div>
             <div className="flex items-center gap-1.5 shrink-0">
+              <button
+                type="button"
+                onClick={() => setMobileChatFull((prev) => !prev)}
+                title={t.fullscreenTitle}
+                className="lg:hidden p-1.5 rounded-lg border border-slate-500/25 bg-slate-500/10 hover:opacity-100 opacity-80 transition cursor-pointer"
+              >
+                {mobileChatFull ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
+              </button>
               <button
                 type="button"
                 onClick={() => setShowAdminBox((prev) => !prev)}
@@ -1369,7 +1425,7 @@ export default function HomePage() {
             )}
           </div>
 
-          <div className="flex-1 overflow-y-auto vice-scroll p-4 space-y-2.5">
+          <div ref={chatListRef} className="flex-1 overflow-y-auto vice-scroll p-4 space-y-2.5">
             {currentMessages.length === 0 ? (
               <div
                 style={{ color: 'var(--text-secondary)' }}
@@ -1380,9 +1436,7 @@ export default function HomePage() {
               </div>
             ) : (
               currentMessages.map((msg, idx) => {
-                const rawMsgText = String(msg.message || '');
-                const isAdminMsg = rawMsgText.startsWith('[ADMIN] ');
-                const displayMsgText = isAdminMsg ? rawMsgText.replace(/^\[ADMIN\]\s*/, '') : rawMsgText;
+                const { isAdminMsg, replyMeta, body } = parseMessageMeta(msg.message);
                 const msgAvatar = getAvatarForUser(msg.username, username, avatar);
 
                 return (
@@ -1393,14 +1447,24 @@ export default function HomePage() {
                         ? undefined
                         : { backgroundColor: 'var(--card-inner)', borderColor: 'var(--card-border)' }
                     }
-                    className={`rounded-xl border p-3 space-y-1 ${
+                    className={`rounded-xl border p-3 space-y-1.5 ${
                       isAdminMsg
                         ? 'bg-gradient-to-r from-purple-600/20 via-pink-500/20 to-amber-500/20 border-pink-500/50 shadow-sm'
                         : ''
                     }`}
                   >
+                    {replyMeta && (
+                      <div
+                        style={{ borderColor: 'var(--card-border)' }}
+                        className="ml-8 px-2.5 py-1 rounded-lg bg-slate-500/10 border-l-2 border-l-pink-500 text-[11px] opacity-85 truncate"
+                      >
+                        <span className="font-bold text-pink-500">@{replyMeta.user}:</span>{' '}
+                        <span>{replyMeta.snippet}</span>
+                      </div>
+                    )}
+
                     <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-2 min-w-0">
+                      <div className="flex items-center gap-1.5 min-w-0">
                         <AvatarSvg avatarId={msgAvatar} size="sm" />
                         <span
                           className={`text-xs font-extrabold truncate ${
@@ -1410,39 +1474,84 @@ export default function HomePage() {
                           {isAdminMsg ? msg.username : censorText(msg.username)}
                         </span>
                         {isAdminMsg && (
-                          <span className="px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider gta-bar-fill text-white shrink-0">
-                            ADMIN
+                          <span className="inline-flex items-center gap-1 shrink-0">
+                            <span className="px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider gta-bar-fill text-white">
+                              ADMIN
+                            </span>
+                            <svg
+                              className="w-3.5 h-3.5 text-sky-500 shrink-0"
+                              viewBox="0 0 24 24"
+                              fill="currentColor"
+                              aria-label="Verified Admin"
+                            >
+                              <path d="M12 2l2.4 2.2 3.2-.4.9 3.1 2.9 1.5-.8 3.1 1.6 2.8-2.2 2.4.4 3.2-3.1.9-1.5 2.9-3.1-.8-2.8 1.6-2.4-2.2-3.2.4-.9-3.1-2.9-1.5.8-3.1L1.8 11l2.2-2.4-.4-3.2 3.1-.9 1.5-2.9 3.1.8L12 2zm-1.2 13.2l5.2-5.2-1.4-1.4-3.8 3.8-1.8-1.8-1.4 1.4 3.2 3.2z" />
+                            </svg>
                           </span>
                         )}
                       </div>
-                      <span style={{ color: 'var(--text-secondary)' }} className="text-[10px] shrink-0">
-                        {msg.created_at
-                          ? new Date(msg.created_at).toLocaleTimeString(
-                              lang === 'en' ? 'en-US' : 'tr-TR',
-                              {
-                                hour: '2-digit',
-                                minute: '2-digit',
-                              }
-                            )
-                          : ''}
-                      </span>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setReplyTo({
+                              user: isAdminMsg ? msg.username : censorText(msg.username),
+                              snippet: body.slice(0, 55),
+                            })
+                          }
+                          title={t.replyBtn}
+                          style={{ color: 'var(--text-secondary)' }}
+                          className="p-1 rounded hover:text-pink-500 transition cursor-pointer"
+                        >
+                          <Reply className="w-3 h-3" />
+                        </button>
+                        <span style={{ color: 'var(--text-secondary)' }} className="text-[10px]">
+                          {msg.created_at
+                            ? new Date(msg.created_at).toLocaleTimeString(
+                                lang === 'en' ? 'en-US' : 'tr-TR',
+                                {
+                                  hour: '2-digit',
+                                  minute: '2-digit',
+                                }
+                              )
+                            : ''}
+                        </span>
+                      </div>
                     </div>
                     <p
                       className={`text-xs sm:text-sm leading-relaxed break-words pl-8 ${
                         isAdminMsg ? 'font-medium' : ''
                       }`}
                     >
-                      {isAdminMsg ? displayMsgText : renderMessageWithLinks(displayMsgText)}
+                      {isAdminMsg ? renderMessageWithLinks(body) : renderMessageWithLinks(body)}
                     </p>
                   </div>
                 );
               })
             )}
-            <div ref={chatBottomRef} />
           </div>
 
+          {replyTo && (
+            <div
+              style={{ backgroundColor: 'var(--card-inner)', borderColor: 'var(--card-border)' }}
+              className="px-3.5 py-1.5 border-t flex items-center justify-between gap-2 text-xs shrink-0"
+            >
+              <div className="truncate">
+                <span style={{ color: 'var(--text-secondary)' }}>{t.replyingTo} </span>
+                <span className="font-bold text-pink-500">@{replyTo.user}</span>{' '}
+                <span style={{ color: 'var(--text-secondary)' }}>{replyTo.snippet}</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setReplyTo(null)}
+                className="p-0.5 rounded hover:bg-slate-500/15 cursor-pointer shrink-0"
+              >
+                <CloseIcon className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
+
           {(chatError || muteSeconds > 0) && (
-            <div className="px-4 py-2 bg-rose-500/15 border-t border-rose-500/30 text-xs text-rose-500 font-semibold">
+            <div className="px-4 py-2 bg-rose-500/15 border-t border-rose-500/30 text-xs text-rose-500 font-semibold shrink-0">
               {muteSeconds > 0 ? `${t.errMuted} ${muteSeconds}${t.secShort}` : chatError}
             </div>
           )}
@@ -1489,7 +1598,7 @@ export default function HomePage() {
               value={newMessage}
               disabled={isInputBlocked}
               onChange={(e) => setNewMessage(e.target.value)}
-              maxLength={500}
+              maxLength={420}
               placeholder={
                 muteSeconds > 0
                   ? `${t.errMuted} ${muteSeconds}${t.secShort}`
@@ -1519,6 +1628,32 @@ export default function HomePage() {
               </span>
             </button>
           </form>
+
+          {/* Chat Altı X | batmancodex Butonu */}
+          <div
+            style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--card-border)' }}
+            className="px-3 py-2 border-t flex items-center justify-center shrink-0"
+          >
+            <a
+              href="https://x.com/batmancodex"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ backgroundColor: 'var(--card-inner)', borderColor: 'var(--card-border)' }}
+              className="w-full inline-flex items-center justify-center gap-2 py-1.5 px-3 rounded-xl border text-xs font-bold hover:border-pink-500/50 transition group"
+            >
+              <svg
+                className="w-3.5 h-3.5 text-pink-500 group-hover:scale-110 transition"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+                aria-hidden="true"
+              >
+                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+              </svg>
+              <span className="opacity-50">|</span>
+              <span className="pw-text-gradient font-extrabold">batmancodex</span>
+              <ExternalLink className="w-3 h-3 opacity-50 group-hover:opacity-100" />
+            </a>
+          </div>
         </aside>
       </main>
 
