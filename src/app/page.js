@@ -19,9 +19,114 @@ import {
 } from 'lucide-react';
 
 const THEMES = [
-  { id: 'portwatch-dark', label: 'PortWatch Koyu' },
-  { id: 'portwatch-light', label: 'PortWatch Açık' },
+  { id: 'portwatch-dark', tr: 'PortWatch Koyu', en: 'PortWatch Dark' },
+  { id: 'portwatch-light', tr: 'PortWatch Açık', en: 'PortWatch Light' },
 ];
+
+const TRANSLATIONS = {
+  tr: {
+    headerSubtitle: '120sn Otomatik İlerleme Takibi & Türkçe Canlı Sohbet',
+    themeLabel: 'Tema Seç',
+    online: 'Çevrimiçi',
+    activeConnections: 'Aktif Bağlantılar',
+    close: 'Kapat',
+    leader: 'Lider:',
+    syncing: 'Güncelleniyor...',
+    autoRefresh: 'Oto Yenile',
+    secShort: 'sn',
+    heroBadge: 'Her 120 Saniyede Otomatik Tarama',
+    heroTitle: 'Ekiplerin Tamamlanma Yüzdeleri',
+    heroSubtitle:
+      'Portlama ekiplerinin güncel ilerleme oranları, aşamaları ve anlık topluluk sohbeti.',
+    peak: 'Zirve',
+    next: 'Sonraki',
+    leaderboardTitle: 'Portlama Ekipleri Sıralaması',
+    teamWord: 'Ekip',
+    highToLow: 'Yüksekten düşüğe',
+    openSource: 'Açık Kaynak',
+    closedTeam: 'Kapalı Ekip',
+    stagePrefix: 'Aşama:',
+    developing: 'Geliştirme',
+    noFps: 'FPS bilgisi yok',
+    lastUpdate: 'Son Güncelleme Saati:',
+    notSynced: 'Henüz senkronize edilmedi',
+    unknownTime: 'Bilinmiyor',
+    source: 'Kaynak',
+    chatTitle: 'Vice City Canlı Sohbet',
+    chatSubtitle: 'Nickname yaz, sohbet et ve link paylaş',
+    live: 'Canlı',
+    nicknameLabel: 'Nickname:',
+    nicknamePlaceholder: 'Takma adını yaz...',
+    chatEmptyTitle: 'Sohbet odası aktif!',
+    chatEmptyDesc: "Nickname'ini yazıp ilk mesajı veya GTA VI port linkini paylaşabilirsin.",
+    messagePlaceholder: 'Mesaj yaz veya https:// link yapıştır...',
+    send: 'Gönder',
+    sending: 'Atılıyor...',
+    errEmptyMsg: 'Lütfen önce bir mesaj veya link yaz.',
+    errSend: 'Gönderilemedi:',
+    errUnexpected: 'Beklenmeyen hata:',
+    errRead: 'Sohbet okuma hatası:',
+    errConn: 'Bağlantı hatası:',
+    footerText:
+      'GTA6takip bağımsız bir topluluk takip sitesidir; Rockstar Games veya Take-Two ile resmi bağlantısı yoktur.',
+    stageLevel1: 'Boot / Exe',
+    stageLevel2: 'İlk Kare',
+    stageLevel3: 'Oyun İçi',
+    stageLevel4: 'Akıcı FPS',
+    stageTooltip: 'Aşama Seviyesi',
+  },
+  en: {
+    headerSubtitle: '120s Auto Progress Tracker & Live Community Chat',
+    themeLabel: 'Select Theme',
+    online: 'Online',
+    activeConnections: 'Active Connections',
+    close: 'Close',
+    leader: 'Leader:',
+    syncing: 'Syncing...',
+    autoRefresh: 'Auto Refresh',
+    secShort: 's',
+    heroBadge: 'Auto Scan Every 120 Seconds',
+    heroTitle: 'Team Completion Progress',
+    heroSubtitle:
+      'Live completion percentages, milestones, and community chat for PC port teams.',
+    peak: 'Peak',
+    next: 'Next',
+    leaderboardTitle: 'Porting Teams Leaderboard',
+    teamWord: 'Teams',
+    highToLow: 'Highest to lowest',
+    openSource: 'Open Source',
+    closedTeam: 'Closed Team',
+    stagePrefix: 'Stage:',
+    developing: 'In Development',
+    noFps: 'No FPS data',
+    lastUpdate: 'Last Updated:',
+    notSynced: 'Not synced yet',
+    unknownTime: 'Unknown',
+    source: 'Source',
+    chatTitle: 'Vice City Live Chat',
+    chatSubtitle: 'Pick a nickname, chat & share links',
+    live: 'Live',
+    nicknameLabel: 'Nickname:',
+    nicknamePlaceholder: 'Enter your nickname...',
+    chatEmptyTitle: 'Chat room is live!',
+    chatEmptyDesc: 'Enter a nickname to send the first message or share a GTA VI port link.',
+    messagePlaceholder: 'Type a message or paste an https:// link...',
+    send: 'Send',
+    sending: 'Sending...',
+    errEmptyMsg: 'Please enter a message or link first.',
+    errSend: 'Failed to send:',
+    errUnexpected: 'Unexpected error:',
+    errRead: 'Chat read error:',
+    errConn: 'Connection error:',
+    footerText:
+      'GTA6takip is an independent community tracker; not affiliated with Rockstar Games or Take-Two.',
+    stageLevel1: 'Boot / Exe',
+    stageLevel2: 'First Frame',
+    stageLevel3: 'In-Game',
+    stageLevel4: 'Smooth FPS',
+    stageTooltip: 'Stage Level',
+  },
+};
 
 const FALLBACK_PROJECTS = [
   {
@@ -134,35 +239,35 @@ const FALLBACK_PROJECTS = [
   },
 ];
 
-function StageVisualBadge({ percentage, stage = '' }) {
+function StageVisualBadge({ percentage, stage = '', t }) {
   const pct = Number(percentage) || 0;
   const s = stage.toLowerCase();
 
   let level = 1;
-  let label = 'Boot / Exe';
+  let label = t.stageLevel1;
   let boxClass = 'bg-purple-500/15 text-purple-500 border-purple-500/30';
   let stepFill = 'bg-purple-500';
 
   if (pct >= 85 || s.includes('60 fps') || s.includes('akıcı')) {
     level = 4;
-    label = 'Akıcı FPS';
+    label = t.stageLevel4;
     boxClass = 'bg-amber-500/15 text-amber-500 border-amber-500/30';
     stepFill = 'bg-amber-500';
   } else if (pct >= 60 || s.includes('oyun içi') || s.includes('dünya')) {
     level = 3;
-    label = 'Oyun İçi';
+    label = t.stageLevel3;
     boxClass = 'bg-emerald-500/15 text-emerald-600 border-emerald-500/30';
     stepFill = 'bg-emerald-500';
   } else if (pct >= 40 || s.includes('ilk kare') || s.includes('menü')) {
     level = 2;
-    label = 'İlk Kare';
+    label = t.stageLevel2;
     boxClass = 'bg-sky-500/15 text-sky-500 border-sky-500/30';
     stepFill = 'bg-sky-500';
   }
 
   return (
     <div
-      title={`Aşama Seviyesi ${level}/4: ${stage || label}`}
+      title={`${t.stageTooltip} ${level}/4: ${stage || label}`}
       className={`inline-flex items-center gap-2 px-2.5 py-1 rounded-xl border text-xs font-bold shrink-0 ${boxClass}`}
     >
       <span>{label}</span>
@@ -204,11 +309,11 @@ function renderMessageWithLinks(text) {
   });
 }
 
-function formatUpdateTime(dateStr) {
-  if (!dateStr) return 'Henüz senkronize edilmedi';
+function formatUpdateTime(dateStr, t, lang) {
+  if (!dateStr) return t.notSynced;
   const d = new Date(dateStr);
-  if (Number.isNaN(d.getTime())) return 'Bilinmiyor';
-  return d.toLocaleTimeString('tr-TR', {
+  if (Number.isNaN(d.getTime())) return t.unknownTime;
+  return d.toLocaleTimeString(lang === 'en' ? 'en-US' : 'tr-TR', {
     hour: '2-digit',
     minute: '2-digit',
     second: '2-digit',
@@ -227,7 +332,10 @@ export default function HomePage() {
   const [onlineUsers, setOnlineUsers] = useState([]);
   const [showOnlinePanel, setShowOnlinePanel] = useState(false);
   const [theme, setTheme] = useState('portwatch-dark');
+  const [lang, setLang] = useState('tr');
   const chatBottomRef = useRef(null);
+
+  const t = TRANSLATIONS[lang] || TRANSLATIONS.tr;
 
   useEffect(() => {
     try {
@@ -235,8 +343,13 @@ export default function HomePage() {
       if (savedName) setUsername(savedName);
 
       const savedTheme = localStorage.getItem('gta6takip_theme');
-      if (savedTheme && THEMES.some((t) => t.id === savedTheme)) {
+      if (savedTheme && THEMES.some((th) => th.id === savedTheme)) {
         setTheme(savedTheme);
+      }
+
+      const savedLang = localStorage.getItem('gta6takip_lang');
+      if (savedLang === 'tr' || savedLang === 'en') {
+        setLang(savedLang);
       }
     } catch {
       // ignore
@@ -284,6 +397,14 @@ export default function HomePage() {
       // ignore
     }
   }, [theme]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('gta6takip_lang', lang);
+    } catch {
+      // ignore
+    }
+  }, [lang]);
 
   useEffect(() => {
     const currentNick = username.trim().slice(0, 24) || 'ViceMisafir';
@@ -365,10 +486,10 @@ export default function HomePage() {
       if (!error && Array.isArray(data)) {
         setMessages(data);
       } else if (error) {
-        setChatError(`Sohbet okuma hatası: ${error.message}`);
+        setChatError(`${t.errRead} ${error.message}`);
       }
     } catch (err) {
-      setChatError(`Bağlantı hatası: ${err?.message || 'Bilinmiyor'}`);
+      setChatError(`${t.errConn} ${err?.message || '?'}`);
     }
   }
 
@@ -412,7 +533,7 @@ export default function HomePage() {
     const cleanNick = username.trim().slice(0, 24) || 'ViceMisafir';
 
     if (!cleanMsg) {
-      setChatError('Lütfen önce bir mesaj veya link yaz.');
+      setChatError(t.errEmptyMsg);
       return;
     }
     if (sending) return;
@@ -436,7 +557,7 @@ export default function HomePage() {
         .select();
 
       if (error) {
-        setChatError(`Gönderilemedi: ${error.message}`);
+        setChatError(`${t.errSend} ${error.message}`);
       } else {
         setNewMessage('');
         if (Array.isArray(data) && data.length > 0) {
@@ -449,7 +570,7 @@ export default function HomePage() {
         }
       }
     } catch (err) {
-      setChatError(`Beklenmeyen hata: ${err?.message || 'İstek başarısız'}`);
+      setChatError(`${t.errUnexpected} ${err?.message || '?'}`);
     } finally {
       setSending(false);
     }
@@ -491,27 +612,55 @@ export default function HomePage() {
                 </span>
               </div>
               <p style={{ color: 'var(--text-secondary)' }} className="text-[11px]">
-                120sn Otomatik İlerleme Takibi & Türkçe Canlı Sohbet
+                {t.headerSubtitle}
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-2 flex-wrap">
+            {/* TR | EN Bayraklı Dil Seçici */}
+            <div
+              style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--card-border)' }}
+              className="inline-flex items-center p-0.5 rounded-xl border"
+            >
+              <button
+                type="button"
+                onClick={() => setLang('tr')}
+                className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
+                  lang === 'tr' ? 'gta-bar-fill text-white shadow-sm' : 'opacity-70 hover:opacity-100'
+                }`}
+              >
+                <span>🇹🇷</span>
+                <span>TR</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setLang('en')}
+                className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
+                  lang === 'en' ? 'gta-bar-fill text-white shadow-sm' : 'opacity-70 hover:opacity-100'
+                }`}
+              >
+                <span>🇺🇸</span>
+                <span>EN</span>
+              </button>
+            </div>
+
+            {/* Tema Seçici */}
             <div
               style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--card-border)' }}
               className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border"
             >
               <Palette style={{ color: 'var(--text-secondary)' }} className="w-3.5 h-3.5 hidden sm:block" />
               <select
-                aria-label="Tema Seç"
+                aria-label={t.themeLabel}
                 value={theme}
                 onChange={(e) => setTheme(e.target.value)}
                 style={{ color: 'var(--text-primary)' }}
                 className="bg-transparent text-xs font-semibold focus:outline-none cursor-pointer"
               >
-                {THEMES.map((t) => (
-                  <option key={t.id} value={t.id} className="bg-slate-900 text-white">
-                    {t.label}
+                {THEMES.map((th) => (
+                  <option key={th.id} value={th.id} className="bg-slate-900 text-white">
+                    {lang === 'en' ? th.en : th.tr}
                   </option>
                 ))}
               </select>
@@ -525,7 +674,7 @@ export default function HomePage() {
               >
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                 <Users className="w-3.5 h-3.5" />
-                <span>{onlineCount} Çevrimiçi</span>
+                <span>{onlineCount} {t.online}</span>
               </button>
 
               {showOnlinePanel && (
@@ -538,7 +687,7 @@ export default function HomePage() {
                     className="flex items-center justify-between border-b pb-2 mb-2"
                   >
                     <span className="text-xs font-extrabold">
-                      Aktif Bağlantılar ({onlineCount})
+                      {t.activeConnections} ({onlineCount})
                     </span>
                     <button
                       type="button"
@@ -546,7 +695,7 @@ export default function HomePage() {
                       style={{ color: 'var(--text-secondary)' }}
                       className="text-[11px] hover:underline cursor-pointer"
                     >
-                      Kapat
+                      {t.close}
                     </button>
                   </div>
                   <ul className="space-y-1.5 max-h-40 overflow-y-auto vice-scroll list-none p-0 m-0">
@@ -570,7 +719,7 @@ export default function HomePage() {
               className="hidden xl:flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs"
             >
               <Trophy className="w-3.5 h-3.5 text-amber-500" />
-              <span style={{ color: 'var(--text-secondary)' }}>Lider:</span>
+              <span style={{ color: 'var(--text-secondary)' }}>{t.leader}</span>
               <span className="font-bold">{leaderName}</span>
               <span className="font-black pw-text-gradient">%{topScore}</span>
             </div>
@@ -585,7 +734,7 @@ export default function HomePage() {
               <RefreshCw
                 className={`w-3.5 h-3.5 text-pink-500 ${syncing ? 'animate-spin' : ''}`}
               />
-              <span>{syncing ? 'Güncelleniyor...' : `Oto Yenile (${secondsLeft}sn)`}</span>
+              <span>{syncing ? t.syncing : `${t.autoRefresh} (${secondsLeft}${t.secShort})`}</span>
             </button>
           </div>
         </div>
@@ -621,24 +770,24 @@ export default function HomePage() {
           <div className="space-y-1.5">
             <div className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-pink-200 bg-white/10 border border-white/15 px-2.5 py-0.5 rounded-full">
               <Sparkles className="w-3 h-3 text-amber-300" />
-              Her 120 Saniyede Otomatik Tarama
+              {t.heroBadge}
             </div>
             <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-white">
-              Ekiplerin Tamamlanma Yüzdeleri
+              {t.heroTitle}
             </h1>
             <p className="text-xs text-purple-100/85">
-              Portlama ekiplerinin güncel ilerleme oranları, aşamaları ve anlık topluluk sohbeti.
+              {t.heroSubtitle}
             </p>
           </div>
 
           <div className="flex items-center gap-2.5 bg-slate-950/45 backdrop-blur-md border border-white/15 rounded-2xl p-3 text-white shrink-0">
             <div className="px-2.5 text-center">
-              <div className="text-[10px] uppercase tracking-wider text-purple-200/75">Zirve</div>
+              <div className="text-[10px] uppercase tracking-wider text-purple-200/75">{t.peak}</div>
               <div className="text-lg sm:text-xl font-extrabold text-amber-300">%{topScore}</div>
             </div>
             <div className="px-2.5 border-l border-white/15 text-center">
-              <div className="text-[10px] uppercase tracking-wider text-purple-200/75">Sonraki</div>
-              <div className="text-lg sm:text-xl font-extrabold text-pink-300 tabular-nums">{secondsLeft}s</div>
+              <div className="text-[10px] uppercase tracking-wider text-purple-200/75">{t.next}</div>
+              <div className="text-lg sm:text-xl font-extrabold text-pink-300 tabular-nums">{secondsLeft}{t.secShort}</div>
             </div>
           </div>
         </div>
@@ -650,10 +799,10 @@ export default function HomePage() {
           <div className="flex items-center justify-between px-1">
             <h2 className="text-sm sm:text-base font-extrabold flex items-center gap-2">
               <Cpu className="w-4 h-4 text-pink-500" />
-              Portlama Ekipleri Sıralaması ({projects.length} Ekip)
+              {t.leaderboardTitle} ({projects.length} {t.teamWord})
             </h2>
             <span style={{ color: 'var(--text-secondary)' }} className="text-[11px]">
-              Yüksekten düşüğe
+              {t.highToLow}
             </span>
           </div>
 
@@ -687,7 +836,7 @@ export default function HomePage() {
                               : 'bg-pink-500/15 text-pink-600 border-pink-500/25'
                           }`}
                         >
-                          {proj.is_open_source ? 'Açık Kaynak' : 'Kapalı Ekip'}
+                          {proj.is_open_source ? t.openSource : t.closedTeam}
                         </span>
                       </div>
 
@@ -707,16 +856,18 @@ export default function HomePage() {
                           style={{ width: `${Math.max(pct, 4)}%` }}
                         />
                       </div>
-                      <StageVisualBadge percentage={pct} stage={proj.stage} />
+                      <StageVisualBadge percentage={pct} stage={proj.stage} t={t} />
                     </div>
 
                     <div
                       style={{ backgroundColor: 'var(--card-inner)', borderColor: 'var(--card-border)' }}
                       className="rounded-xl px-3 py-2 border mb-2.5 flex flex-wrap items-center justify-between gap-2 text-xs"
                     >
-                      <span className="font-semibold">Aşama: {proj.stage || 'Geliştirme'}</span>
+                      <span className="font-semibold">
+                        {t.stagePrefix} {proj.stage || t.developing}
+                      </span>
                       <span style={{ color: 'var(--text-secondary)' }}>
-                        {proj.fps && proj.fps !== '-' ? proj.fps : 'FPS bilgisi yok'}
+                        {proj.fps && proj.fps !== '-' ? proj.fps : t.noFps}
                       </span>
                     </div>
 
@@ -730,7 +881,7 @@ export default function HomePage() {
                           className="inline-flex items-center gap-1.5 text-[11px] opacity-80 pt-0.5"
                         >
                           <Clock className="w-3 h-3 shrink-0" />
-                          <span>Son Güncelleme Saati: {formatUpdateTime(proj.updated_at)}</span>
+                          <span>{t.lastUpdate} {formatUpdateTime(proj.updated_at, t, lang)}</span>
                         </p>
                       </div>
 
@@ -742,7 +893,7 @@ export default function HomePage() {
                           style={{ borderColor: 'var(--card-border)' }}
                           className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border text-pink-500 hover:opacity-80 text-xs font-semibold transition shrink-0 self-start sm:self-end"
                         >
-                          Kaynak <ExternalLink className="w-3.5 h-3.5" />
+                          {t.source} <ExternalLink className="w-3.5 h-3.5" />
                         </a>
                       )}
                     </div>
@@ -767,15 +918,15 @@ export default function HomePage() {
                 <MessageSquare className="w-4 h-4" />
               </div>
               <div>
-                <h2 className="text-sm font-extrabold">Vice City Canlı Sohbet</h2>
+                <h2 className="text-sm font-extrabold">{t.chatTitle}</h2>
                 <p style={{ color: 'var(--text-secondary)' }} className="text-[11px]">
-                  Nickname yaz, sohbet et ve link paylaş
+                  {t.chatSubtitle}
                 </p>
               </div>
             </div>
             <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-emerald-600 bg-emerald-500/15 border border-emerald-500/25 px-2.5 py-0.5 rounded-full shrink-0">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              Canlı
+              {t.live}
             </span>
           </div>
 
@@ -789,7 +940,7 @@ export default function HomePage() {
               className="inline-flex items-center gap-1.5 text-xs font-semibold shrink-0"
             >
               <User className="w-3.5 h-3.5 text-pink-500" />
-              Nickname:
+              {t.nicknameLabel}
             </label>
             <input
               id="nickname-input"
@@ -804,7 +955,7 @@ export default function HomePage() {
                 }
               }}
               maxLength={24}
-              placeholder="Takma adını yaz..."
+              placeholder={t.nicknamePlaceholder}
               style={{ backgroundColor: 'var(--card-inner)', borderColor: 'var(--card-border)' }}
               className="w-full rounded-xl border px-3 py-1.5 text-xs font-bold text-pink-500 placeholder:text-slate-400 placeholder:font-normal focus:outline-none"
             />
@@ -816,8 +967,8 @@ export default function HomePage() {
                 style={{ color: 'var(--text-secondary)' }}
                 className="h-full flex flex-col items-center justify-center text-center text-xs space-y-1.5 px-4"
               >
-                <p className="font-semibold">Sohbet odası aktif!</p>
-                <p>Nickname'ini yazıp ilk mesajı veya GTA VI port linkini paylaşabilirsin.</p>
+                <p className="font-semibold">{t.chatEmptyTitle}</p>
+                <p>{t.chatEmptyDesc}</p>
               </div>
             ) : (
               messages.map((msg, idx) => (
@@ -830,10 +981,13 @@ export default function HomePage() {
                     <span className="text-xs font-extrabold text-pink-500">{msg.username}</span>
                     <span style={{ color: 'var(--text-secondary)' }} className="text-[10px]">
                       {msg.created_at
-                        ? new Date(msg.created_at).toLocaleTimeString('tr-TR', {
-                            hour: '2-digit',
-                            minute: '2-digit',
-                          })
+                        ? new Date(msg.created_at).toLocaleTimeString(
+                            lang === 'en' ? 'en-US' : 'tr-TR',
+                            {
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            }
+                          )
                         : ''}
                     </span>
                   </div>
@@ -867,7 +1021,7 @@ export default function HomePage() {
                 }
               }}
               maxLength={500}
-              placeholder="Mesaj yaz veya https:// link yapıştır..."
+              placeholder={t.messagePlaceholder}
               style={{
                 backgroundColor: 'var(--card-bg)',
                 borderColor: 'var(--card-border)',
@@ -881,7 +1035,7 @@ export default function HomePage() {
               className="gta-bar-fill px-4 py-2 rounded-xl hover:brightness-110 disabled:opacity-40 text-white font-bold text-xs sm:text-sm inline-flex items-center gap-1.5 transition cursor-pointer shrink-0"
             >
               <Send className="w-4 h-4" />
-              <span>{sending ? 'Atılıyor...' : 'Gönder'}</span>
+              <span>{sending ? t.sending : t.send}</span>
             </button>
           </form>
         </aside>
@@ -893,9 +1047,7 @@ export default function HomePage() {
       >
         <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-center gap-2">
           <ShieldCheck className="w-4 h-4 shrink-0" />
-          <span>
-            GTA6takip bağımsız bir topluluk takip sitesidir; Rockstar Games veya Take-Two ile resmi bağlantısı yoktur.
-          </span>
+          <span>{t.footerText}</span>
         </div>
       </footer>
     </div>
