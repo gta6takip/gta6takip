@@ -39,15 +39,6 @@ const AVATARS = [
   { id: 'rocket', label: 'Port', bg: 'from-fuchsia-600 to-orange-400' },
 ];
 
-function withTimeout(promise, ms = 8000) {
-  return Promise.race([
-    promise,
-    new Promise((_, reject) =>
-      setTimeout(() => reject(new Error('Sunucu yanıt vermedi (zaman aşımı).')), ms)
-    ),
-  ]);
-}
-
 function AvatarSvg({ avatarId, size = 'sm' }) {
   const av = AVATARS.find((a) => a.id === avatarId) || AVATARS[0];
   const dim = size === 'sm' ? 'w-6 h-6' : 'w-7 h-7';
@@ -200,7 +191,6 @@ const TRANSLATIONS = {
     delBtn: 'Sil',
     bannedListTitle: 'Banlı Kullanıcılar',
     unbanBtn: 'Kaldır',
-    adminSqlWarn: 'Supabase SQL izinlerini çalıştırdığınızdan emin olun:',
   },
   en: {
     headerSubtitle: '120s Auto Progress Tracker & Live Community Chat',
@@ -264,7 +254,6 @@ const TRANSLATIONS = {
     delBtn: 'Delete',
     bannedListTitle: 'Banned Users',
     unbanBtn: 'Unban',
-    adminSqlWarn: 'Make sure Supabase SQL policies are applied:',
   },
 };
 
@@ -521,40 +510,11 @@ export default function HomePage() {
     }
 
     fetchProjects();
-    fetchMessages();
-    fetchBannedUsers();
+    fetchChatState();
 
-    const projectChannel = supabase
-      .channel('projects-realtime')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'projects' },
-        () => fetchProjects()
-      )
-      .subscribe();
-
-    const chatChannel = supabase
-      .channel('chat-realtime')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'chat_messages' },
-        (payload) => {
-          if (payload.eventType === 'INSERT' && payload?.new) {
-            setMessages((prev) => {
-              const exists = prev.some((m) => m.id === payload.new.id);
-              return exists ? prev : [...prev, payload.new];
-            });
-          } else if (payload.eventType === 'DELETE') {
-            fetchMessages();
-          }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(projectChannel);
-      supabase.removeChannel(chatChannel);
-    };
+    // Her 5 saniyede bir Vercel API üzerinden sohbeti tazele (hızlı ve kararlı)
+    const chatPoll = setInterval(fetchChatState, 5000);
+    return () => clearInterval(chatPoll);
   }, []);
 
   useEffect(() => {
@@ -591,31 +551,8 @@ export default function HomePage() {
   }, [muteSeconds]);
 
   useEffect(() => {
-    const currentNick = username.trim().slice(0, 24) || 'ViceMisafir';
-    const presenceChannel = supabase.channel('gta6takip-online-room', {
-      config: {
-        presence: { key: currentNick },
-      },
-    });
-
-    presenceChannel
-      .on('presence', { event: 'sync' }, () => {
-        const state = presenceChannel.presenceState();
-        const names = Object.keys(state);
-        setOnlineUsers(names.length > 0 ? names : [currentNick]);
-      })
-      .subscribe(async (status) => {
-        if (status === 'SUBSCRIBED') {
-          await presenceChannel.track({
-            user: currentNick,
-            online_at: new Date().toISOString(),
-          });
-        }
-      });
-
-    return () => {
-      supabase.removeChannel(presenceChannel);
-    };
+    const nick = username.trim().slice(0, 24) || 'ViceMisafir';
+    setOnlineUsers([nick]);
   }, [username]);
 
   useEffect(() => {
@@ -638,10 +575,10 @@ export default function HomePage() {
 
   async function fetchProjects() {
     try {
-      const { data, error } = await withTimeout(
-        supabase.from('projects').select('*').order('percentage', { ascending: false }),
-        8000
-      );
+      const { data, error } = await supabase
+        .from('projects')
+        .select('*')
+        .order('percentage', { ascending: false });
 
       if (!error && Array.isArray(data) && data.length > 0) {
         const cleaned = data.map((item, idx) => ({
@@ -660,33 +597,19 @@ export default function HomePage() {
     }
   }
 
-  async function fetchMessages() {
+  async function fetchChatState() {
     try {
-      const { data, error } = await withTimeout(
-        supabase.from('chat_messages').select('*').order('id', { ascending: true }).limit(100),
-        8000
-      );
-      if (!error && Array.isArray(data)) {
-        setMessages(data);
-      } else if (error) {
-        setChatError(`${t.errRead} ${error.message}`);
-      }
-    } catch (err) {
-      setChatError(`${t.errConn} ${err?.message || '?'}`);
-    }
-  }
-
-  async function fetchBannedUsers() {
-    try {
-      const { data, error } = await withTimeout(
-        supabase.from('banned_users').select('username'),
-        6000
-      );
-      if (!error && Array.isArray(data)) {
-        setBannedUsers(data.map((b) => String(b.username || '').toLowerCase()));
+      const res = await fetch('/api/chat', { cache: 'no-store' });
+      const json = await res.json();
+      if (json.ok) {
+        setMessages(Array.isArray(json.messages) ? json.messages : []);
+        setBannedUsers(Array.isArray(json.bannedUsers) ? json.bannedUsers : []);
+        if (json.error) setChatError(`${t.errRead} ${json.error}`);
+      } else if (json.error) {
+        setChatError(`${t.errRead} ${json.error}`);
       }
     } catch {
-      // ignore
+      // sessiz geç
     }
   }
 
@@ -722,19 +645,20 @@ export default function HomePage() {
     if (!isAdmin || !msgId) return;
     setAdminError('');
     try {
-      const { error } = await withTimeout(
-        supabase.from('chat_messages').delete().eq('id', msgId),
-        8000
-      );
-      if (error) {
-        setAdminError(`${t.adminSqlWarn} ${error.message}`);
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'delete', id: msgId, adminPass: '657210' }),
+      });
+      const json = await res.json();
+      if (!json.ok) {
+        setAdminError(json.error || 'Silinemedi');
         setShowAdminBox(true);
         return;
       }
       setMessages((prev) => prev.filter((m) => m.id !== msgId));
     } catch (err) {
       setAdminError(err?.message || 'Silme hatası');
-      setShowAdminBox(true);
     }
   }
 
@@ -743,25 +667,23 @@ export default function HomePage() {
     setAdminError('');
     const cleanTarget = targetName.trim().toLowerCase();
     try {
-      const { error: banErr } = await withTimeout(
-        supabase.from('banned_users').upsert([{ username: cleanTarget }], { onConflict: 'username' }),
-        8000
-      );
-
-      if (banErr) {
-        setAdminError(`${t.adminSqlWarn} ${banErr.message}`);
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'ban', username: targetName, adminPass: '657210' }),
+      });
+      const json = await res.json();
+      if (!json.ok) {
+        setAdminError(json.error || 'Banlanamadı');
         setShowAdminBox(true);
         return;
       }
-
-      await supabase.from('chat_messages').delete().ilike('username', targetName.trim());
       setBannedUsers((prev) => (prev.includes(cleanTarget) ? prev : [...prev, cleanTarget]));
       setMessages((prev) =>
         prev.filter((m) => String(m.username || '').trim().toLowerCase() !== cleanTarget)
       );
     } catch (err) {
       setAdminError(err?.message || 'Banlama hatası');
-      setShowAdminBox(true);
     }
   }
 
@@ -770,12 +692,14 @@ export default function HomePage() {
     setAdminError('');
     const cleanTarget = targetName.trim().toLowerCase();
     try {
-      const { error } = await withTimeout(
-        supabase.from('banned_users').delete().eq('username', cleanTarget),
-        8000
-      );
-      if (error) {
-        setAdminError(`${t.adminSqlWarn} ${error.message}`);
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'unban', username: targetName, adminPass: '657210' }),
+      });
+      const json = await res.json();
+      if (!json.ok) {
+        setAdminError(json.error || 'Kaldırılamadı');
         return;
       }
       setBannedUsers((prev) => prev.filter((u) => u !== cleanTarget));
@@ -791,20 +715,7 @@ export default function HomePage() {
 
     try {
       await fetch('/api/sync').catch(() => {});
-
-      const { error } = await supabase
-        .from('projects')
-        .update({ updated_at: nowIso })
-        .not('name', 'is', null);
-
-      if (!error) {
-        await fetchProjects();
-      } else {
-        setProjects((prev) =>
-          prev.map((item) => ({ ...item, updated_at: nowIso }))
-        );
-      }
-
+      await fetchProjects();
       setSecondsLeft(120);
     } catch {
       setProjects((prev) =>
@@ -869,24 +780,23 @@ export default function HomePage() {
     const safeMsg = censorText(cleanMsg.slice(0, 500));
 
     try {
-      const { data, error } = await withTimeout(
-        supabase
-          .from('chat_messages')
-          .insert([{ username: safeNick, message: safeMsg }])
-          .select(),
-        8000
-      );
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'send', username: safeNick, message: safeMsg }),
+      });
+      const json = await res.json();
 
-      if (error) {
-        setChatError(`${t.errSend} ${error.message}`);
+      if (!json.ok) {
+        setChatError(`${t.errSend} ${json.error || '?'}`);
         setNewMessage(cleanMsg);
-      } else if (Array.isArray(data) && data.length > 0) {
+      } else if (json.message) {
         setMessages((prev) => {
-          const exists = prev.some((m) => m.id === data[0].id);
-          return exists ? prev : [...prev, data[0]];
+          const exists = prev.some((m) => m.id === json.message.id);
+          return exists ? prev : [...prev, json.message];
         });
       } else {
-        await fetchMessages();
+        await fetchChatState();
       }
     } catch (err) {
       setChatError(`${t.errUnexpected} ${err?.message || '?'}`);
@@ -1278,7 +1188,6 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Admin Giriş / Yönetim Kutusu */}
           {showAdminBox && (
             <div
               style={{ backgroundColor: 'var(--card-inner)', borderColor: 'var(--card-border)' }}
