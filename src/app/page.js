@@ -1,658 +1,350 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
-import { supabase } from '@/lib/supabase';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import {
-  Send,
+  Sun,
+  Moon,
+  RefreshCw,
   ExternalLink,
   MessageSquare,
-  Cpu,
-  RefreshCw,
-  ShieldCheck,
-  ShieldAlert,
-  Sparkles,
-  Link as LinkIcon,
-  User,
-  Trophy,
-  Users,
-  Clock,
-  Palette,
-  Monitor,
-  Smile,
-  LogOut,
-  Reply,
-  Maximize2,
-  Minimize2,
+  Send,
+  Shield,
   Trash2,
   Ban,
-  X as CloseIcon,
+  Reply,
+  X,
+  Maximize2,
+  Minimize2,
+  Pin,
+  PinOff,
+  BarChart3,
+  Eraser,
+  Monitor,
+  Gamepad2,
+  Globe,
+  Wrench,
+  Check,
+  Smile,
+  Clock,
 } from 'lucide-react';
+import { createClient } from '@supabase/supabase-js';
 
-const THEMES = [
-  { id: 'portwatch-dark', tr: 'PortWatch Koyu', en: 'PortWatch Dark' },
-  { id: 'portwatch-light', tr: 'PortWatch Açık', en: 'PortWatch Light' },
-];
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+const supabase = supabaseUrl && supabaseAnonKey ? createClient(supabaseUrl, supabaseAnonKey) : null;
 
-const QUICK_EMOJIS = ['🔥', '🚗', '🌴', '🎮', '⚡', '😂', '❤️', '👀', '🚀', '👍', '🎉', '💀'];
-
-const AVATARS = [
-  { id: 'sunset', label: 'Sunset', bg: 'from-purple-600 to-pink-500' },
-  { id: 'controller', label: 'Gamer', bg: 'from-pink-500 to-orange-500' },
-  { id: 'bolt', label: 'Turbo', bg: 'from-amber-500 to-rose-500' },
-  { id: 'shades', label: 'Vice', bg: 'from-indigo-500 to-purple-600' },
-  { id: 'crown', label: 'VIP', bg: 'from-emerald-500 to-teal-500' },
-  { id: 'rocket', label: 'Port', bg: 'from-fuchsia-600 to-orange-400' },
-];
-
-function formatPct(val, lang) {
-  return lang === 'en' ? `${val}%` : `%${val}`;
-}
-
-function AvatarSvg({ avatarId, size = 'sm' }) {
-  const av = AVATARS.find((a) => a.id === avatarId) || AVATARS[0];
-  const dim = size === 'sm' ? 'w-6 h-6' : 'w-7 h-7';
-  const iconDim = size === 'sm' ? 'w-3.5 h-3.5' : 'w-4 h-4';
-
-  return (
-    <span
-      className={`${dim} rounded-lg bg-gradient-to-br ${av.bg} inline-flex items-center justify-center text-white shrink-0 shadow-sm`}
-    >
-      {av.id === 'sunset' && (
-        <svg className={iconDim} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-          <circle cx="12" cy="12" r="5" />
-          <path d="M3 17h18M5 20h14" strokeLinecap="round" />
-        </svg>
-      )}
-      {av.id === 'controller' && (
-        <svg className={iconDim} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-          <rect x="2" y="6" width="20" height="12" rx="4" />
-          <path d="M6 12h4M8 10v4" strokeLinecap="round" />
-          <circle cx="16" cy="11" r="1" fill="currentColor" />
-          <circle cx="18" cy="13" r="1" fill="currentColor" />
-        </svg>
-      )}
-      {av.id === 'bolt' && (
-        <svg className={iconDim} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" strokeLinejoin="round" />
-        </svg>
-      )}
-      {av.id === 'shades' && (
-        <svg className={iconDim} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-          <path d="M2 10h20M4 10l1.5 5a2 2 0 0 0 2 1.5h2a2 2 0 0 0 2-1.5L12 10l.5 5a2 2 0 0 0 2 1.5h2a2 2 0 0 0 2-1.5L20 10" strokeLinecap="round" />
-        </svg>
-      )}
-      {av.id === 'crown' && (
-        <svg className={iconDim} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-          <path d="M3 18h18L19 7l-4 4-3-6-3 6-4-4-2 11z" strokeLinejoin="round" />
-        </svg>
-      )}
-      {av.id === 'rocket' && (
-        <svg className={iconDim} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-          <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z" />
-          <path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z" />
-        </svg>
-      )}
-    </span>
-  );
-}
-
-function getAvatarForUser(name, myNick, myAvatar) {
-  const clean = (name || '').trim();
-  const mine = (myNick || '').trim() || 'ViceMisafir';
-  if (clean && clean.toLowerCase() === mine.toLowerCase()) return myAvatar;
-  let hash = 0;
-  for (let i = 0; i < clean.length; i += 1) {
-    hash = (hash * 31 + clean.charCodeAt(i)) % AVATARS.length;
-  }
-  return AVATARS[Math.abs(hash) % AVATARS.length].id;
-}
-
-const BAD_ROOTS = [
-  'amk', 'aq', 'mk', 'mq', 'amq', 'amcik', 'orospu', 'orspu', 'oc', 'pic',
-  'siktir', 'sikim', 'sikeyim', 'sikerim', 'sikik', 'sikis', 'yarrak', 'yarak',
-  'tasak', 'gotveren', 'pezevenk', 'kahpe', 'kaltak', 'pust', 'ibne', 'gavat',
-  'serefsiz', 'haysiyetsiz', 'gerizekali', 'salak', 'aptal', 'anani', 'bacini',
-  'fuck', 'fck', 'fucker', 'motherfucker', 'shit', 'bullshit', 'bitch', 'asshole',
-  'dick', 'cock', 'pussy', 'cunt', 'bastard', 'slut', 'whore', 'faggot', 'retard',
-  'nigger', 'nigga', 'stfu', 'wtf', 'kys',
-];
-
-function normalizeForCheck(input) {
+// --- SIKI KÜFÜR FİLTRESİ ---
+function normalizeProfanityText(input) {
   return String(input || '')
-    .toLowerCase()
-    .replace(/ç/g, 'c')
-    .replace(/ğ/g, 'g')
+    .toLocaleLowerCase('tr-TR')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
     .replace(/ı/g, 'i')
-    .replace(/ö/g, 'o')
-    .replace(/ş/g, 's')
-    .replace(/ü/g, 'u')
-    .replace(/0/g, 'o')
-    .replace(/1/g, 'i')
+    .replace(/[@4]/g, 'a')
     .replace(/3/g, 'e')
-    .replace(/4/g, 'a')
-    .replace(/5/g, 's')
+    .replace(/[1!|]/g, 'i')
+    .replace(/0/g, 'o')
+    .replace(/[5$]/g, 's')
     .replace(/7/g, 't')
-    .replace(/@/g, 'a')
-    .replace(/\$/g, 's');
+    .replace(/(.)\1{2,}/g, '$1$1');
 }
 
-const WORD_BOUNDARY_TEST = new RegExp(
-  `(^|[^a-z0-9])(${BAD_ROOTS.join('|')})(?=[^a-z0-9]|$)`,
-  'i'
-);
-const WORD_BOUNDARY_REPLACE = new RegExp(
-  `(^|[^a-zçğıöşü0-9])(${BAD_ROOTS.join('|')})(?=[^a-zçğıöşü0-9]|$)`,
-  'gi'
-);
+const EXACT_BAD_WORDS = [
+  'amk', 'aq', 'mk', 'oc', 'sg', 'am', 'sik', 'pic', 'piç', 'yarak', 'yarrak',
+  'orospu', 'orspu', 'ibne', 'pust', 'puşt', 'kahpe', 'gavat', 'pezevenk',
+  'amcik', 'amcık', 'tasak', 'taşak', 'dassak', 'daşşak', 'got', 'göt',
+  'fuck', 'shit', 'bitch', 'cunt', 'dick', 'cock', 'pussy', 'whore', 'slut',
+  'asshole', 'bastard', 'motherfucker', 'nigger', 'faggot', 'retard', 'stfu',
+];
 
-function containsProfanity(text) {
-  if (!text) return false;
-  const norm = normalizeForCheck(text);
-  if (WORD_BOUNDARY_TEST.test(norm)) return true;
-  const squashed = norm.replace(/[^a-z0-9]/g, '');
-  const strictRoots = [
-    'amk', 'orospu', 'siktir', 'sikim', 'sikeyim', 'sikerim', 'yarrak',
-    'pezevenk', 'gotveren', 'fuck', 'motherfucker', 'bitch', 'asshole', 'nigger', 'cunt',
-  ];
-  return strictRoots.some((r) => squashed.includes(r));
+const STEM_BAD_WORDS = [
+  'siktir', 'siksin', 'sikeyim', 'sikerim', 'sikim', 'sikis', 'sikiy', 'siken',
+  'sikem', 'sikti', 'sikec', 'amina', 'amini', 'amına', 'amını', 'amcik',
+  'ananiz', 'anani', 'anasin', 'ananı', 'ananız', 'anasın', 'orospu', 'orspu',
+  'orosbu', 'yarrak', 'yarak', 'pezevenk', 'pzvnk', 'gotun', 'gotune', 'gotunu',
+  'gotver', 'götün', 'götver', 'soksun', 'sokayim', 'koyayim', 'koyim',
+  'gerizekali', 'kahpe', 'ibne', 'gavat', 'motherfuck', 'fucked', 'fucking',
+  'bullshit', 'asshole', 'bitch',
+];
+
+function containsProfanity(raw) {
+  if (!raw) return false;
+  const lowerTr = String(raw).toLocaleLowerCase('tr-TR');
+  if (/\bgöt(ü|ün|üne|ünü|ver)?\b/i.test(lowerTr)) return true;
+
+  const normalized = normalizeProfanityText(raw);
+  const spaced = normalized.replace(/[^a-z0-9]+/g, ' ').trim();
+  const compact = normalized.replace(/[^a-z0-9]/g, '');
+
+  for (const w of EXACT_BAD_WORDS) {
+    const cleanW = normalizeProfanityText(w);
+    if (new RegExp(`\\b${cleanW}\\b`, 'i').test(spaced)) return true;
+  }
+  for (const stem of STEM_BAD_WORDS) {
+    if (compact.includes(normalizeProfanityText(stem))) return true;
+  }
+  return false;
 }
 
-function censorText(text) {
-  if (!text) return '';
-  let out = String(text).replace(WORD_BOUNDARY_REPLACE, (m, prefix, word) => {
-    const masked = word[0] + '*'.repeat(Math.max(2, word.length - 1));
-    return `${prefix}${masked}`;
-  });
-  if (containsProfanity(out)) {
-    out = out.replace(/[a-zA-ZçğıöşüÇĞİÖŞÜ0-9]{2,}/g, (w) =>
-      containsProfanity(w) ? w[0] + '*'.repeat(w.length - 1) : w
-    );
+function censorProfanity(raw) {
+  let out = String(raw || '');
+  for (const w of [...EXACT_BAD_WORDS, ...STEM_BAD_WORDS]) {
+    const escaped = w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    out = out.replace(new RegExp(escaped, 'gi'), '***');
   }
   return out;
 }
 
-const TRANSLATIONS = {
+// --- INLINE BAYRAK SVG'LERİ (Windows TR/US yazı hatası önlenir) ---
+const FlagTR = () => (
+  <svg viewBox="0 0 36 24" className="w-4 h-3 rounded-[2px] shrink-0" aria-hidden="true">
+    <rect width="36" height="24" fill="#E30A17" />
+    <circle cx="13.5" cy="12" r="6" fill="#FFFFFF" />
+    <circle cx="15" cy="12" r="4.8" fill="#E30A17" />
+    <polygon
+      fill="#FFFFFF"
+      points="19.5,12 21.8,12.75 20.38,10.8 20.38,13.2 21.8,11.25"
+    />
+  </svg>
+);
+
+const FlagEN = () => (
+  <svg viewBox="0 0 36 24" className="w-4 h-3 rounded-[2px] shrink-0" aria-hidden="true">
+    <rect width="36" height="24" fill="#B22234" />
+    <path d="M0,3.7h36M0,7.4h36M0,11.1h36M0,14.8h36M0,18.5h36M0,22.2h36" stroke="#FFFFFF" strokeWidth="1.85" />
+    <rect width="15.5" height="13" fill="#3C3B6E" />
+  </svg>
+);
+
+const VerifiedBadge = () => (
+  <svg viewBox="0 0 20 20" className="w-4 h-4 shrink-0 text-sky-400" fill="currentColor" aria-label="Verified">
+    <path
+      fillRule="evenodd"
+      d="M10 1.5l2.12 1.54 2.6-.16 1.13 2.36 2.36 1.13-.16 2.6L19.5 10l-1.54 2.12.16 2.6-2.36 1.13-1.13 2.36-2.6-.16L10 18.5l-2.12-1.54-2.6.16-1.13-2.36-2.36-1.13.16-2.6L.5 10l1.54-2.12-.16-2.6 2.36-1.13 1.13-2.36 2.6.16L10 1.5zm3.7 6.8a.75.75 0 00-1.06-1.06L9 10.88 7.36 9.24a.75.75 0 00-1.06 1.06l2.17 2.17a.75.75 0 001.06 0l4.17-4.17z"
+      clipRule="evenodd"
+    />
+  </svg>
+);
+
+const AVATARS = [
+  { bg: 'from-purple-500 to-pink-500', label: 'V' },
+  { bg: 'from-pink-500 to-orange-500', label: 'G' },
+  { bg: 'from-cyan-500 to-blue-600', label: 'P' },
+  { bg: 'from-emerald-500 to-teal-600', label: 'X' },
+  { bg: 'from-amber-500 to-red-500', label: '6' },
+  { bg: 'from-indigo-500 to-purple-600', label: 'S' },
+];
+
+const QUICK_EMOJIS = ['🔥', '🎮', '🚗', '🌴', '⚡', '👀', '👏', '😂'];
+
+const TEXT = {
   tr: {
-    headerSubtitle: '120sn Otomatik İlerleme Takibi (PortWatch VI)',
-    themeLabel: 'Tema Seç',
-    online: 'Çevrimiçi',
-    activeConnections: 'Aktif Ziyaretçiler',
-    close: 'Kapat',
-    leader: 'Lider:',
-    syncing: 'Güncelleniyor...',
-    autoRefresh: 'Oto Yenile',
-    secShort: 'sn',
-    heroBadge: 'Her 120 Saniyede Otomatik Tarama',
-    heroTitle: 'Ekiplerin Tamamlanma Yüzdeleri',
-    heroSubtitle:
-      'PortWatch VI verileri ve GitHub commit akışlarıyla otomatik güncellenen PC port takip paneli.',
-    peak: 'Zirve',
-    next: 'Sonraki',
-    leaderboardTitle: 'Portlama Ekipleri Sıralaması',
-    teamWord: 'Ekip',
-    highToLow: 'Yüksekten düşüğe',
-    openSource: 'Açık Kaynak',
-    closedTeam: 'Kapalı Ekip',
-    stagePrefix: 'Aşama:',
-    developing: 'Geliştirme',
-    noFps: 'FPS bilgisi yok',
-    lastUpdate: 'Son Güncelleme Saati:',
-    notSynced: 'Senkronize ediliyor...',
-    unknownTime: 'Bilinmiyor',
-    source: 'Kaynak',
-    commitPrefix: 'Son GitHub güncellemesi:',
+    badge: 'CANLI PORT TAKİBİ',
+    title: 'GTA VI PC Port Takibi',
+    subtitle: 'PortWatch VI verileri ve açık kaynak GitHub depoları her 120 saniyede bir otomatik güncellenir.',
+    lastSync: 'Son Güncelleme',
+    refresh: 'Yenile',
+    openSource: 'AÇIK KAYNAK',
+    closedTeam: 'KAPALI EKİP',
+    latestCommit: 'Son Commit',
     chatTitle: 'Vice City Canlı Sohbet',
-    chatSubtitle: 'Kanallar: #tr-genel ve #en-general',
+    channelsLabel: 'Kanallar: #tr-genel ve #en-general',
     live: 'Canlı',
-    channelTr: '#tr-genel',
-    channelEn: '#en-general',
-    nicknameLabel: 'Nickname:',
-    nicknamePlaceholder: 'Takma adını yaz...',
-    chatEmptyTitle: 'Kanal aktif!',
-    chatEmptyDesc: 'İlk mesajı yazıp toplulukla sohbet edebilirsin.',
-    messagePlaceholder: 'Mesaj yaz...',
-    slowPlaceholder: 'Yeni mesaj için bekleyin:',
+    online: 'Çevrimiçi',
+    nickname: 'Takma Ad:',
+    placeholder: 'Mesaj yaz...',
     send: 'Gönder',
-    sending: 'Atılıyor...',
-    errEmptyMsg: 'Lütfen önce bir mesaj veya link yaz.',
-    errMuted: 'Küfür tespit edildi! 60sn ban yediniz. Kalan süre:',
-    errBanned: 'Yönetici tarafından sohbetten kalıcı olarak banlandınız.',
-    errSlow: 'Spam koruması: 60 saniyede 1 mesaj atabilirsiniz. Kalan:',
-    errSend: 'Gönderilemedi:',
-    footerText:
-      'GTA6takip, PortWatch projesinin kâr gütmeyen, hobi amaçlı alternatifidir. Rockstar Games veya Take-Two Interactive ile resmi bir bağlantısı yoktur.',
-    stageLevel1: 'Temel Altyapı',
-    stageLevel2: 'İlk Kare / Menü',
-    stageLevel3: 'Oyun Dünyası',
-    stageLevel4: 'Oynanabilir',
-    stageTooltip: 'Aşama Seviyesi',
-    visitorPrefix: 'Ziyaretçi',
-    adminTitle: 'Admin Girişi',
-    adminUser: 'Kullanıcı',
-    adminPass: 'Şifre',
-    adminLogin: 'Giriş',
-    adminWrong: 'Hatalı bilgi.',
-    adminActive: 'Admin Aktif',
-    adminLogout: 'Çıkış',
-    bannedListLabel: 'Banlılar:',
-    delBtn: 'Sil',
-    banBtn: 'Banla',
-    replyBtn: 'Yanıtla',
     replyingTo: 'Yanıtlanıyor:',
-    fullscreenTitle: 'Tam Ekran Sohbet',
+    reply: 'Yanıtla',
+    pin: 'Sabitle',
+    unpin: 'Sabitlemeyi Kaldır',
+    pinnedLabel: 'Sabitlenen Mesaj',
+    delete: 'Sil',
+    ban: 'Banla',
+    clearChat: 'Sohbeti Temizle',
+    clearConfirm: 'Emin misin?',
+    createPoll: 'Anket Aç',
+    pollTitle: 'Mini Anket Oluştur (Maks. 5 dk)',
+    pollQuestionPlaceholder: 'Anket sorusunu yaz...',
+    pollOptionPlaceholder: 'Seçenek',
+    addOption: '+ Seçenek Ekle',
+    pollDuration: 'Süre:',
+    minuteShort: 'dk',
+    startPoll: 'Anketi Başlat',
+    cancel: 'İptal',
+    pollEnded: 'Anket Sonuçlandı',
+    pollRemaining: 'Kalan:',
+    votesLabel: 'oy',
+    closePoll: 'Anketi Kapat',
+    profanityWarn: 'Küfür/argo tespit edildi! Mesajın engellendi ve 60 saniye susturuldun.',
+    mutedWarn: 'Susturuldun! Kalan süre:',
+    slowmodeWarn: 'Yavaş mod aktif! Tekrar mesaj için:',
+    bannedWarn: 'Sohbetten kalıcı olarak engellendin.',
+    reservedNick: 'Bu takma ad sadece yönetici içindir.',
+    adminLoginTitle: 'Yönetici Girişi',
+    adminPassPlaceholder: 'Yönetici şifresi...',
+    login: 'Giriş Yap',
+    logout: 'Çıkış',
     shareWa: "WhatsApp'ta Paylaş",
     shareX: "X'te Paylaş",
+    disclaimer:
+      'GTA6takip, PortWatch projesinin kâr gütmeyen, hobi amaçlı alternatifidir. Veriler otomatik olarak portwatch-vi.xyz/#race ve açık GitHub depolarından alınır.',
+    emptyChat: 'Henüz mesaj yok. İlk mesajı sen yaz!',
   },
   en: {
-    headerSubtitle: '120s Auto Progress Tracker (PortWatch VI)',
-    themeLabel: 'Select Theme',
-    online: 'Online',
-    activeConnections: 'Active Visitors',
-    close: 'Close',
-    leader: 'Leader:',
-    syncing: 'Syncing...',
-    autoRefresh: 'Auto Refresh',
-    secShort: 's',
-    heroBadge: 'Auto Scan Every 120 Seconds',
-    heroTitle: 'Team Completion Progress',
-    heroSubtitle:
-      'Live PC port tracker automatically synced with PortWatch VI and GitHub commits.',
-    peak: 'Peak',
-    next: 'Next',
-    leaderboardTitle: 'Porting Teams Leaderboard',
-    teamWord: 'Teams',
-    highToLow: 'Highest to lowest',
-    openSource: 'Open Source',
-    closedTeam: 'Closed Team',
-    stagePrefix: 'Stage:',
-    developing: 'In Development',
-    noFps: 'No FPS data',
-    lastUpdate: 'Last Updated:',
-    notSynced: 'Syncing...',
-    unknownTime: 'Unknown',
-    source: 'Source',
-    commitPrefix: 'Latest GitHub commit:',
+    badge: 'LIVE PORT TRACKER',
+    title: 'GTA VI PC Port Tracker',
+    subtitle: 'PortWatch VI race data and open-source GitHub repositories sync automatically every 120 seconds.',
+    lastSync: 'Last Sync',
+    refresh: 'Refresh',
+    openSource: 'OPEN SOURCE',
+    closedTeam: 'CLOSED TEAM',
+    latestCommit: 'Latest Commit',
     chatTitle: 'Vice City Live Chat',
-    chatSubtitle: 'Channels: #tr-genel & #en-general',
+    channelsLabel: 'Channels: #tr-genel & #en-general',
     live: 'Live',
-    channelTr: '#tr-genel',
-    channelEn: '#en-general',
-    nicknameLabel: 'Nickname:',
-    nicknamePlaceholder: 'Enter your nickname...',
-    chatEmptyTitle: 'Channel is live!',
-    chatEmptyDesc: 'Be the first to send a message in this channel.',
-    messagePlaceholder: 'Type a message...',
-    slowPlaceholder: 'Next message in:',
+    online: 'Online',
+    nickname: 'Nickname:',
+    placeholder: 'Type a message...',
     send: 'Send',
-    sending: 'Sending...',
-    errEmptyMsg: 'Please enter a message or link first.',
-    errMuted: 'Profanity detected! You are banned for 60s. Remaining:',
-    errBanned: 'You have been permanently banned from chat by an admin.',
-    errSlow: 'Slowmode: 1 message per 60 seconds. Remaining:',
-    errSend: 'Failed to send:',
-    footerText:
-      'GTA6takip is a non-profit, hobbyist alternative to the PortWatch project. Not affiliated with Rockstar Games or Take-Two Interactive.',
-    stageLevel1: 'Groundwork',
-    stageLevel2: 'First Frame / Menu',
-    stageLevel3: 'In the World',
-    stageLevel4: 'Playable',
-    stageTooltip: 'Stage Level',
-    visitorPrefix: 'Visitor',
-    adminTitle: 'Admin Login',
-    adminUser: 'Username',
-    adminPass: 'Password',
-    adminLogin: 'Login',
-    adminWrong: 'Invalid credentials.',
-    adminActive: 'Admin Active',
-    adminLogout: 'Logout',
-    bannedListLabel: 'Banned:',
-    delBtn: 'Delete',
-    banBtn: 'Ban',
-    replyBtn: 'Reply',
     replyingTo: 'Replying to:',
-    fullscreenTitle: 'Fullscreen Chat',
-    shareWa: 'WhatsApp',
+    reply: 'Reply',
+    pin: 'Pin',
+    unpin: 'Unpin',
+    pinnedLabel: 'Pinned Message',
+    delete: 'Delete',
+    ban: 'Ban',
+    clearChat: 'Clear Chat',
+    clearConfirm: 'Confirm?',
+    createPoll: 'New Poll',
+    pollTitle: 'Create Mini Poll (Max 5 min)',
+    pollQuestionPlaceholder: 'Enter poll question...',
+    pollOptionPlaceholder: 'Option',
+    addOption: '+ Add Option',
+    pollDuration: 'Duration:',
+    minuteShort: 'm',
+    startPoll: 'Start Poll',
+    cancel: 'Cancel',
+    pollEnded: 'Poll Ended',
+    pollRemaining: 'Left:',
+    votesLabel: 'votes',
+    closePoll: 'Close Poll',
+    profanityWarn: 'Profanity detected! Your message was blocked and you are muted for 60s.',
+    mutedWarn: 'You are muted! Remaining:',
+    slowmodeWarn: 'Slowmode active! Wait:',
+    bannedWarn: 'You are permanently banned from chat.',
+    reservedNick: 'This nickname is reserved for Admin.',
+    adminLoginTitle: 'Admin Login',
+    adminPassPlaceholder: 'Admin password...',
+    login: 'Login',
+    logout: 'Logout',
+    shareWa: 'Share on WhatsApp',
     shareX: 'Share on X',
+    disclaimer:
+      'GTA6takip is a non-profit, hobbyist alternative to PortWatch. Data syncs automatically from portwatch-vi.xyz/#race and public GitHub repositories.',
+    emptyChat: 'No messages yet. Be the first to say hello!',
   },
 };
 
-const FALLBACK_PROJECTS = [
-  {
-    id: 1,
-    name: 'Belobug',
-    percentage: 77.4,
-    fps_tr: '3 FPS (RX 9070 XT)',
-    fps_en: '3 FPS (RX 9070 XT)',
-    stage_tr: 'Oynanabilir • İlk Bölüm',
-    stage_en: 'Playable • First Act',
-    desc_tr: "AMD Radeon için VIctory fork'u; açık dünya dokuları ve görevler oynanabilir durumda.",
-    desc_en: 'VIctory fork for AMD Radeon; open world textures and missions are playable.',
-    commit_msg: '',
-    repo_url: 'https://github.com/Belobug/VIctory-Belobug-AMD',
-    is_open_source: true,
-    updated_at: null,
-  },
-  {
-    id: 2,
-    name: 'ZETTROX',
-    percentage: 64.2,
-    fps_tr: '2 FPS (NVIDIA)',
-    fps_en: '2 FPS (NVIDIA)',
-    stage_tr: 'Oynanabilir • Prologue Geçildi',
-    stage_en: 'Playable • Prologue Cleared',
-    desc_tr: 'Lucia prologue bölümünü geçip Jason\'ın ilk görevi "Gone Fishing" aşamasına ulaştı.',
-    desc_en: 'Clears Lucia\'s prologue and reaches Jason\'s first mission "Gone Fishing".',
-    commit_msg: '',
-    repo_url: 'https://github.com/Zettrox/ztrx',
-    is_open_source: true,
-    updated_at: null,
-  },
-  {
-    id: 3,
-    name: 'suri',
-    percentage: 61,
-    fps_tr: '3 FPS',
-    fps_en: '3 FPS',
-    stage_tr: 'Oynanabilir • Kapalı Derleme',
-    stage_en: 'Playable • Private Build',
-    desc_tr: 'Kapalı ekip: victory-fork tabanlı özel derleme, perakende sürüme yakın ışıklandırma.',
-    desc_en: 'Private build on victory-fork with lighting close to retail quality.',
-    commit_msg: '',
-    repo_url: 'https://portwatch-vi.xyz/#race',
-    is_open_source: false,
-    updated_at: null,
-  },
-];
-
-function StageVisualBadge({ percentage, stage = '', t }) {
-  const pct = Number(percentage) || 0;
-  const s = stage.toLowerCase();
-
-  let level = 1;
-  let label = t.stageLevel1;
-  let boxClass = 'bg-purple-500/15 text-purple-500 border-purple-500/30';
-  let stepFill = 'bg-purple-500';
-
-  if (pct >= 50 || s.includes('playable') || s.includes('oynanabilir')) {
-    level = 4;
-    label = t.stageLevel4;
-    boxClass = 'bg-emerald-500/15 text-emerald-600 border-emerald-500/30';
-    stepFill = 'bg-emerald-500';
-  } else if (pct >= 40 || s.includes('world') || s.includes('dünya')) {
-    level = 3;
-    label = t.stageLevel3;
-    boxClass = 'bg-amber-500/15 text-amber-500 border-amber-500/30';
-    stepFill = 'bg-amber-500';
-  } else if (pct >= 20 || s.includes('menu') || s.includes('menü') || s.includes('kare') || s.includes('frame')) {
-    level = 2;
-    label = t.stageLevel2;
-    boxClass = 'bg-sky-500/15 text-sky-500 border-sky-500/30';
-    stepFill = 'bg-sky-500';
+function mergeChannelMessages(existing, incoming, clearedAt = 0) {
+  const map = new Map();
+  for (const m of [...existing, ...incoming]) {
+    if (!m || !m.id) continue;
+    const ts = new Date(m.created_at || 0).getTime();
+    if (clearedAt && ts <= clearedAt) continue;
+    map.set(m.id, m);
   }
-
-  return (
-    <div
-      title={`${t.stageTooltip} ${level}/4: ${stage || label}`}
-      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl border text-xs font-bold shrink-0 ${boxClass}`}
-    >
-      {level === 4 && (
-        <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-          <rect x="2" y="6" width="20" height="12" rx="4" />
-          <path d="M6 12h4M8 10v4" strokeLinecap="round" />
-          <circle cx="16" cy="11" r="1" fill="currentColor" />
-          <circle cx="18" cy="13" r="1" fill="currentColor" />
-        </svg>
-      )}
-      {level === 3 && (
-        <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-          <circle cx="12" cy="12" r="9" />
-          <path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18" />
-        </svg>
-      )}
-      {level === 2 && (
-        <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-          <rect x="2" y="3" width="20" height="14" rx="2" />
-          <path d="M8 21h8M12 17v4" strokeLinecap="round" />
-        </svg>
-      )}
-      {level === 1 && (
-        <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-          <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
-        </svg>
-      )}
-      <span>{label}</span>
-      <span className="hidden sm:inline-flex items-center gap-0.5 ml-0.5" aria-hidden="true">
-        {[1, 2, 3, 4].map((step) => (
-          <span
-            key={step}
-            className={`w-1.5 h-2.5 rounded-sm ${step <= level ? stepFill : 'bg-slate-400/30'}`}
-          />
-        ))}
-      </span>
-    </div>
-  );
+  return Array.from(map.values())
+    .sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
+    .slice(-100);
 }
 
-function renderMessageWithLinks(text) {
-  if (!text) return null;
-  const cleanText = censorText(text);
-  const urlRegex = /(https?:\/\/[^\s]+)/g;
-  const parts = String(cleanText).split(urlRegex);
-
-  return parts.map((part, idx) => {
-    if (part.match(urlRegex)) {
-      return (
-        <a
-          key={idx}
-          href={part}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-1 text-pink-500 underline decoration-pink-500/50 hover:text-orange-500 break-all font-medium"
-        >
-          <LinkIcon className="w-3.5 h-3.5 shrink-0" />
-          {part}
-        </a>
-      );
-    }
-    return <span key={idx}>{part}</span>;
-  });
-}
-
-function parseMessageMeta(rawText) {
-  let txt = String(rawText || '');
-  let isAdminMsg = false;
-  let replyMeta = null;
-
-  if (txt.startsWith('[ADMIN] ')) {
-    isAdminMsg = true;
-    txt = txt.replace(/^\[ADMIN\]\s*/, '');
-  }
-
-  const replyMatch = txt.match(/^\[REPLY:([^|\]]+)\|([^\]]*)\]\s*/);
-  if (replyMatch) {
-    replyMeta = { user: replyMatch[1], snippet: replyMatch[2] };
-    txt = txt.slice(replyMatch[0].length);
-  }
-
-  return { isAdminMsg, replyMeta, body: txt };
-}
-
-function formatUpdateTime(dateStr, t, lang) {
-  if (!dateStr) return t.notSynced;
-  const d = new Date(dateStr);
-  if (Number.isNaN(d.getTime())) return t.unknownTime;
-  return d.toLocaleTimeString(lang === 'en' ? 'en-US' : 'tr-TR', {
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-  });
-}
-
-function mergeChannelMessages(prevList, incomingList, bans) {
-  const banSet = new Set((bans || []).map((b) => b.toLowerCase()));
-  const merged = [...incomingList];
-  for (const m of prevList) {
-    const exists = merged.some(
-      (d) =>
-        String(d.id) === String(m.id) ||
-        (d.username === m.username && d.message === m.message)
-    );
-    if (!exists) merged.push(m);
-  }
-  const filtered = merged.filter(
-    (m) => !banSet.has(String(m.username || '').trim().toLowerCase())
-  );
-  filtered.sort((a, b) => {
-    const ta = a.created_at ? new Date(a.created_at).getTime() : 0;
-    const tb = b.created_at ? new Date(b.created_at).getTime() : 0;
-    return ta - tb;
-  });
-  return filtered.slice(-100);
-}
-
-export default function HomePage() {
-  const [projects, setProjects] = useState(FALLBACK_PROJECTS);
-  const [syncing, setSyncing] = useState(false);
-  const [secondsLeft, setSecondsLeft] = useState(120);
-  const [onlineUsers, setOnlineUsers] = useState([]);
-  const [showOnlinePanel, setShowOnlinePanel] = useState(false);
-  const [theme, setTheme] = useState('portwatch-dark');
+export default function Home() {
   const [lang, setLang] = useState('tr');
+  const [theme, setTheme] = useState('light');
+  const [teams, setTeams] = useState([]);
+  const [lastUpdated, setLastUpdated] = useState('--:--:--');
+  const [syncing, setSyncing] = useState(false);
 
-  const [chatChannel, setChatChannel] = useState('tr');
-  const [messagesByChannel, setMessagesByChannel] = useState({ tr: [], en: [] });
+  // Sohbet durumları
+  const [channel, setChannel] = useState('tr-genel');
+  const [messagesByChannel, setMessagesByChannel] = useState({ 'tr-genel': [], 'en-general': [] });
+  const [clearedAtByChannel, setClearedAtByChannel] = useState({ 'tr-genel': 0, 'en-general': 0 });
+  const [pinnedByChannel, setPinnedByChannel] = useState({ 'tr-genel': null, 'en-general': null });
+  const [pollByChannel, setPollByChannel] = useState({ 'tr-genel': null, 'en-general': null });
   const [bannedUsers, setBannedUsers] = useState([]);
-  const [localDeviceBanned, setLocalDeviceBanned] = useState(false);
-  const [username, setUsername] = useState('');
-  const [newMessage, setNewMessage] = useState('');
-  const [chatError, setChatError] = useState('');
-  const [sending, setSending] = useState(false);
-  const [avatar, setAvatar] = useState('sunset');
-  const [showAvatarPicker, setShowAvatarPicker] = useState(false);
-  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-  const [muteSeconds, setMuteSeconds] = useState(0);
-  const [slowSeconds, setSlowSeconds] = useState(0);
+
+  const [nickname, setNickname] = useState('ViceMisafir');
+  const [avatarIdx, setAvatarIdx] = useState(0);
+  const [chatInput, setChatInput] = useState('');
   const [replyTo, setReplyTo] = useState(null);
-  const [mobileChatFull, setMobileChatFull] = useState(false);
+  const [showEmoji, setShowEmoji] = useState(false);
+  const [onlineCount, setOnlineCount] = useState(1);
 
-  const [showAdminBox, setShowAdminBox] = useState(false);
+  // Moderasyon & Zamanlayıcılar
+  const [slowmodeLeft, setSlowmodeLeft] = useState(0);
+  const [muteLeft, setMuteLeft] = useState(0);
+  const [chatAlert, setChatAlert] = useState('');
+  const [isMobileFullscreen, setIsMobileFullscreen] = useState(false);
+
+  // Admin durumları
   const [isAdmin, setIsAdmin] = useState(false);
-  const [adminUser, setAdminUser] = useState('');
-  const [adminPass, setAdminPass] = useState('');
-  const [adminErr, setAdminErr] = useState('');
+  const [adminPassword, setAdminPassword] = useState('');
+  const [showAdminModal, setShowAdminModal] = useState(false);
+  const [adminPassInput, setAdminPassInput] = useState('');
+  const [confirmClear, setConfirmClear] = useState(false);
 
-  const chatChannelRef = useRef('tr');
-  const chatListRef = useRef(null);
-  const t = TRANSLATIONS[lang] || TRANSLATIONS.tr;
-  const currentMessages = messagesByChannel[chatChannel] || [];
-  const lastMsgId = currentMessages.length > 0 ? currentMessages[currentMessages.length - 1].id : '';
+  // Anket oluşturma durumları
+  const [showPollModal, setShowPollModal] = useState(false);
+  const [pollQuestion, setPollQuestion] = useState('');
+  const [pollOptions, setPollOptions] = useState(['', '']);
+  const [pollDuration, setPollDuration] = useState(5);
+  const [voterId, setVoterId] = useState('');
+  const [nowTick, setNowTick] = useState(Date.now());
 
+  const chatEndRef = useRef(null);
+  const chatScrollRef = useRef(null);
+  const t = TEXT[lang];
+
+  // İlk yükleme: localStorage ayarları
   useEffect(() => {
     try {
-      const savedName = localStorage.getItem('gta6takip_nick');
-      if (savedName) setUsername(savedName);
-
       const savedTheme = localStorage.getItem('gta6takip_theme');
-      if (savedTheme && THEMES.some((th) => th.id === savedTheme)) {
-        setTheme(savedTheme);
-      }
-
+      if (savedTheme === 'dark' || savedTheme === 'light') setTheme(savedTheme);
       const savedLang = localStorage.getItem('gta6takip_lang');
       if (savedLang === 'tr' || savedLang === 'en') {
         setLang(savedLang);
-        setChatChannel(savedLang);
-        chatChannelRef.current = savedLang;
+        setChannel(savedLang === 'tr' ? 'tr-genel' : 'en-general');
       }
-
+      const savedNick = localStorage.getItem('gta6takip_nick');
+      if (savedNick) setNickname(savedNick);
       const savedAvatar = localStorage.getItem('gta6takip_avatar');
-      if (savedAvatar && AVATARS.some((a) => a.id === savedAvatar)) {
-        setAvatar(savedAvatar);
+      if (savedAvatar) setAvatarIdx(Number(savedAvatar) || 0);
+
+      let vId = localStorage.getItem('gta6takip_voter_id');
+      if (!vId) {
+        vId = `v_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+        localStorage.setItem('gta6takip_voter_id', vId);
+      }
+      setVoterId(vId);
+
+      const savedAdmin = localStorage.getItem('gta6takip_admin_pass');
+      if (savedAdmin === '657210') {
+        setIsAdmin(true);
+        setAdminPassword(savedAdmin);
       }
 
-      const savedAdmin = localStorage.getItem('gta6takip_is_admin');
-      if (savedAdmin === '1') setIsAdmin(true);
-
-      const savedBan = localStorage.getItem('gta6takip_banned');
-      if (savedBan === '1') setLocalDeviceBanned(true);
-
-      const muteUntil = Number(localStorage.getItem('gta6takip_mute_until') || 0);
-      if (muteUntil > Date.now()) {
-        setMuteSeconds(Math.ceil((muteUntil - Date.now()) / 1000));
-      }
-
-      const slowUntil = Number(localStorage.getItem('gta6takip_slow_until') || 0);
-      if (slowUntil > Date.now()) {
-        setSlowSeconds(Math.ceil((slowUntil - Date.now()) / 1000));
-      }
+      const cachedTr = JSON.parse(localStorage.getItem('gta6takip_msgs_tr-genel') || '[]');
+      const cachedEn = JSON.parse(localStorage.getItem('gta6takip_msgs_en-general') || '[]');
+      setMessagesByChannel({ 'tr-genel': cachedTr, 'en-general': cachedEn });
     } catch {
       // ignore
     }
-
-    handleAutoSync();
-    fetchChatMessages(chatChannelRef.current);
-
-    const chatPoll = setInterval(() => {
-      fetchChatMessages(chatChannelRef.current);
-    }, 4500);
-
-    let visitorId = '';
-    try {
-      visitorId = sessionStorage.getItem('gta6takip_vid') || '';
-      if (!visitorId) {
-        visitorId = `Ziyaretci-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
-        sessionStorage.setItem('gta6takip_vid', visitorId);
-      }
-    } catch {
-      visitorId = `Ziyaretci-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
-    }
-
-    setOnlineUsers([visitorId]);
-
-    const presenceChannel = supabase.channel('gta6takip-online-room', {
-      config: { presence: { key: visitorId } },
-    });
-
-    const syncPresenceList = () => {
-      const state = presenceChannel.presenceState();
-      const names = Array.from(new Set(Object.keys(state)));
-      setOnlineUsers(names.length > 0 ? names : [visitorId]);
-    };
-
-    presenceChannel
-      .on('presence', { event: 'sync' }, syncPresenceList)
-      .on('presence', { event: 'join' }, syncPresenceList)
-      .on('presence', { event: 'leave' }, syncPresenceList)
-      .subscribe(async (status) => {
-        if (status === 'SUBSCRIBED') {
-          await presenceChannel.track({
-            user: visitorId,
-            online_at: new Date().toISOString(),
-          });
-        }
-      });
-
-    const handleLeave = () => {
-      try {
-        presenceChannel.untrack();
-        supabase.removeChannel(presenceChannel);
-      } catch {
-        // ignore
-      }
-    };
-
-    window.addEventListener('pagehide', handleLeave);
-    window.addEventListener('beforeunload', handleLeave);
-
-    return () => {
-      clearInterval(chatPoll);
-      window.removeEventListener('pagehide', handleLeave);
-      window.removeEventListener('beforeunload', handleLeave);
-      handleLeave();
-    };
   }, []);
 
   useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme);
+    document.documentElement.classList.toggle('portwatch-dark', theme === 'dark');
+    document.documentElement.classList.toggle('portwatch-light', theme === 'light');
     try {
       localStorage.setItem('gta6takip_theme', theme);
     } catch {
@@ -660,1080 +352,982 @@ export default function HomePage() {
     }
   }, [theme]);
 
+  // Sayaçlar (Slowmode, Mute, Anket geri sayımı)
   useEffect(() => {
+    const timer = setInterval(() => {
+      setNowTick(Date.now());
+      setSlowmodeLeft((prev) => (prev > 0 ? prev - 1 : 0));
+      setMuteLeft((prev) => (prev > 0 ? prev - 1 : 0));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Takım verilerini çek (120sn)
+  const fetchSync = useCallback(async () => {
+    setSyncing(true);
     try {
-      localStorage.setItem('gta6takip_lang', lang);
+      const res = await fetch('/api/sync', { cache: 'no-store' });
+      const data = await res.json();
+      if (Array.isArray(data.teams)) setTeams(data.teams);
+      setLastUpdated(new Date().toLocaleTimeString(lang === 'tr' ? 'tr-TR' : 'en-US'));
     } catch {
       // ignore
+    } finally {
+      setSyncing(false);
     }
   }, [lang]);
 
   useEffect(() => {
+    fetchSync();
+    const id = setInterval(fetchSync, 120000);
+    return () => clearInterval(id);
+  }, [fetchSync]);
+
+  // Sohbet verilerini çek (4.5sn)
+  const fetchChat = useCallback(async (targetChannel) => {
     try {
-      localStorage.setItem('gta6takip_avatar', avatar);
+      const res = await fetch(`/api/chat?channel=${encodeURIComponent(targetChannel)}`, {
+        cache: 'no-store',
+      });
+      const data = await res.json();
+      if (!data.ok) return;
+
+      const serverClearedAt = Number(data.clearedAt || 0);
+      setClearedAtByChannel((prev) => ({ ...prev, [targetChannel]: serverClearedAt }));
+      setPinnedByChannel((prev) => ({ ...prev, [targetChannel]: data.pinnedMessage || null }));
+      setPollByChannel((prev) => ({ ...prev, [targetChannel]: data.activePoll || null }));
+      if (Array.isArray(data.bannedUsers)) setBannedUsers(data.bannedUsers);
+
+      setMessagesByChannel((prev) => {
+        const existing = serverClearedAt > (clearedAtByChannel[targetChannel] || 0)
+          ? []
+          : prev[targetChannel] || [];
+        const merged = mergeChannelMessages(existing, data.messages || [], serverClearedAt);
+        try {
+          localStorage.setItem(`gta6takip_msgs_${targetChannel}`, JSON.stringify(merged));
+        } catch {
+          // ignore
+        }
+        return { ...prev, [targetChannel]: merged };
+      });
     } catch {
       // ignore
     }
-  }, [avatar]);
+  }, [clearedAtByChannel]);
 
   useEffect(() => {
-    if (muteSeconds <= 0) return undefined;
-    const timer = setInterval(() => {
-      setMuteSeconds((prev) => (prev <= 1 ? 0 : prev - 1));
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [muteSeconds]);
+    fetchChat(channel);
+    const id = setInterval(() => fetchChat(channel), 4500);
+    return () => clearInterval(id);
+  }, [channel, fetchChat]);
 
+  // Supabase Realtime online sayacı
   useEffect(() => {
-    if (slowSeconds <= 0) return undefined;
-    const timer = setInterval(() => {
-      setSlowSeconds((prev) => (prev <= 1 ? 0 : prev - 1));
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [slowSeconds]);
-
-  useEffect(() => {
-    const countdown = setInterval(() => {
-      setSecondsLeft((prev) => {
-        if (prev <= 1) {
-          handleAutoSync();
-          return 120;
+    if (!supabase) return;
+    const room = supabase.channel('gta6takip_presence', {
+      config: { presence: { key: voterId || `u_${Math.random().toString(36).slice(2, 7)}` } },
+    });
+    room
+      .on('presence', { event: 'sync' }, () => {
+        const state = room.presenceState();
+        setOnlineCount(Math.max(1, Object.keys(state).length));
+      })
+      .subscribe(async (status) => {
+        if (status === 'SUBSCRIBED') {
+          await room.track({ online_at: new Date().toISOString() });
         }
-        return prev - 1;
       });
-    }, 1000);
+    return () => {
+      supabase.removeChannel(room);
+    };
+  }, [voterId]);
 
-    return () => clearInterval(countdown);
+  const currentMessages = messagesByChannel[channel] || [];
+  const lastMsgId = currentMessages.length ? currentMessages[currentMessages.length - 1].id : '';
+  const pinnedMessage = pinnedByChannel[channel] || null;
+  const activePoll = pollByChannel[channel] || null;
+
+  // Brave & Tüm tarayıcılarda otomatik aşağı kaydırma
+  const scrollToBottom = useCallback(() => {
+    const el = chatScrollRef.current;
+    if (el) {
+      el.scrollTop = el.scrollHeight;
+    }
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
   }, []);
 
-  // Brave/Chrome uyumlu kesin otomatik en alta kaydırma
   useEffect(() => {
-    const el = chatListRef.current;
-    if (!el) return;
     requestAnimationFrame(() => {
-      el.scrollTop = el.scrollHeight;
-      setTimeout(() => {
-        if (chatListRef.current) {
-          chatListRef.current.scrollTop = chatListRef.current.scrollHeight;
-        }
-      }, 60);
+      scrollToBottom();
+      setTimeout(scrollToBottom, 60);
     });
-  }, [lastMsgId, chatChannel, mobileChatFull]);
+  }, [lastMsgId, channel, isMobileFullscreen, scrollToBottom]);
 
-  function handleLanguageSwitch(nextLang) {
-    setLang(nextLang);
-    setChatChannel(nextLang);
-    chatChannelRef.current = nextLang;
+  const activeNick = isAdmin ? 'ADMIN' : nickname.trim() || 'ViceMisafir';
+  const isUserBanned = !isAdmin && bannedUsers.includes(activeNick.toLowerCase());
+
+  const handleSendMessage = async (e) => {
+    e?.preventDefault();
+    setChatAlert('');
+
+    if (isUserBanned) {
+      setChatAlert(t.bannedWarn);
+      return;
+    }
+    if (!isAdmin && muteLeft > 0) {
+      setChatAlert(`${t.mutedWarn} ${muteLeft}s`);
+      return;
+    }
+    if (!isAdmin && slowmodeLeft > 0) {
+      setChatAlert(`${t.slowmodeWarn} ${slowmodeLeft}s`);
+      return;
+    }
+
+    const trimmed = chatInput.trim();
+    if (!trimmed) return;
+
+    const lowerNick = activeNick.toLowerCase();
+    if (!isAdmin && (lowerNick.includes('admin') || lowerNick.includes('yönetici') || lowerNick.includes('yonetici'))) {
+      setChatAlert(t.reservedNick);
+      return;
+    }
+
+    if (!isAdmin && (containsProfanity(trimmed) || containsProfanity(activeNick))) {
+      setMuteLeft(60);
+      setChatInput(censorProfanity(trimmed));
+      setChatAlert(t.profanityWarn);
+      return;
+    }
+
+    const tempId = `msg_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+    const optimistic = {
+      id: tempId,
+      channel,
+      nickname: activeNick,
+      text: trimmed,
+      avatar: avatarIdx,
+      is_admin: isAdmin,
+      reply_to: replyTo,
+      created_at: new Date().toISOString(),
+    };
+
+    setMessagesByChannel((prev) => {
+      const next = mergeChannelMessages(prev[channel] || [], [optimistic], clearedAtByChannel[channel] || 0);
+      return { ...prev, [channel]: next };
+    });
+    setChatInput('');
     setReplyTo(null);
-    fetchChatMessages(nextLang);
-  }
-
-  function handleChannelSwitch(nextChannel) {
-    setChatChannel(nextChannel);
-    chatChannelRef.current = nextChannel;
-    setReplyTo(null);
-    fetchChatMessages(nextChannel);
-  }
-
-  function handleAdminLogin(e) {
-    e.preventDefault();
-    setAdminErr('');
-    if (adminUser.trim() === 'admin' && adminPass.trim() === '657210') {
-      setIsAdmin(true);
-      setAdminUser('');
-      setAdminPass('');
-      setShowAdminBox(false);
-      setSlowSeconds(0);
-      try {
-        localStorage.setItem('gta6takip_is_admin', '1');
-      } catch {
-        // ignore
-      }
-    } else {
-      setAdminErr(t.adminWrong);
-    }
-  }
-
-  function handleAdminLogout() {
-    setIsAdmin(false);
-    setShowAdminBox(false);
-    try {
-      localStorage.removeItem('gta6takip_is_admin');
-    } catch {
-      // ignore
-    }
-  }
-
-  async function fetchChatMessages(ch) {
-    try {
-      const res = await fetch(`/api/chat?channel=${ch}`, { cache: 'no-store' });
-      const json = await res.json();
-      if (json?.ok && Array.isArray(json.messages)) {
-        const serverBans = Array.isArray(json.bannedUsers) ? json.bannedUsers : [];
-        setBannedUsers(serverBans);
-
-        const nickNow = (username.trim() || 'ViceMisafir').toLowerCase();
-        if (serverBans.includes(nickNow)) {
-          setLocalDeviceBanned(true);
-          try {
-            localStorage.setItem('gta6takip_banned', '1');
-          } catch {
-            // ignore
-          }
-        }
-
-        setMessagesByChannel((prev) => ({
-          ...prev,
-          [ch]: mergeChannelMessages(prev[ch] || [], json.messages, serverBans),
-        }));
-      }
-    } catch {
-      // ignore
-    }
-  }
-
-  async function handleDeleteMessage(msgId) {
-    if (!isAdmin || !msgId) return;
-    await fetch('/api/chat', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'delete', channel: chatChannel, id: msgId, adminPass: '657210' }),
-    }).catch(() => {});
-    setMessagesByChannel((prev) => ({
-      ...prev,
-      [chatChannel]: (prev[chatChannel] || []).filter((m) => String(m.id) !== String(msgId)),
-    }));
-  }
-
-  async function handleBanUser(targetName) {
-    if (!isAdmin || !targetName) return;
-    const cleanTarget = targetName.trim().toLowerCase();
-    const res = await fetch('/api/chat', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'ban', username: targetName, adminPass: '657210' }),
-    }).catch(() => null);
-    const json = res ? await res.json().catch(() => null) : null;
-    const nextBans = Array.isArray(json?.bannedUsers)
-      ? json.bannedUsers
-      : Array.from(new Set([...bannedUsers, cleanTarget]));
-    setBannedUsers(nextBans);
-    setMessagesByChannel((prev) => ({
-      tr: (prev.tr || []).filter((m) => String(m.username || '').trim().toLowerCase() !== cleanTarget),
-      en: (prev.en || []).filter((m) => String(m.username || '').trim().toLowerCase() !== cleanTarget),
-    }));
-  }
-
-  async function handleUnbanUser(targetName) {
-    if (!isAdmin || !targetName) return;
-    const cleanTarget = targetName.trim().toLowerCase();
-    await fetch('/api/chat', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'unban', username: targetName, adminPass: '657210' }),
-    }).catch(() => {});
-    setBannedUsers((prev) => prev.filter((u) => u !== cleanTarget));
-  }
-
-  async function handleAutoSync() {
-    if (syncing) return;
-    setSyncing(true);
-    const nowIso = new Date().toISOString();
-
-    try {
-      const res = await fetch('/api/sync', { cache: 'no-store' });
-      const json = await res.json();
-      if (json?.ok && Array.isArray(json.projects) && json.projects.length > 0) {
-        setProjects(json.projects);
-      } else {
-        setProjects((prev) => prev.map((item) => ({ ...item, updated_at: nowIso })));
-      }
-      setSecondsLeft(120);
-    } catch {
-      setProjects((prev) => prev.map((item) => ({ ...item, updated_at: nowIso })));
-      setSecondsLeft(120);
-    } finally {
-      setSyncing(false);
-    }
-  }
-
-  const rawCurrentNick = username.trim().slice(0, 24) || (isAdmin ? 'ADMIN' : 'ViceMisafir');
-  const isCurrentUserBanned =
-    !isAdmin && (localDeviceBanned || bannedUsers.includes(rawCurrentNick.toLowerCase()));
-
-  async function handleSendMessage(e) {
-    if (e && e.preventDefault) e.preventDefault();
-    setChatError('');
-
-    if (isCurrentUserBanned) {
-      setChatError(t.errBanned);
-      return;
-    }
-
-    if (muteSeconds > 0) {
-      setChatError(`${t.errMuted} ${muteSeconds}${t.secShort}`);
-      return;
-    }
-
-    if (!isAdmin && slowSeconds > 0) {
-      setChatError(`${t.errSlow} ${slowSeconds}${t.secShort}`);
-      return;
-    }
-
-    const cleanMsg = newMessage.trim();
-    let finalNick = rawCurrentNick;
-    if (!isAdmin && /^(admin|yönetici|yonetici)$/i.test(finalNick)) {
-      finalNick = 'ViceMisafir';
-    }
-
-    if (!cleanMsg) {
-      setChatError(t.errEmptyMsg);
-      return;
-    }
-
-    if (!isAdmin && (containsProfanity(cleanMsg) || containsProfanity(finalNick))) {
-      const muteDurationSec = 60;
-      const until = Date.now() + muteDurationSec * 1000;
-      setMuteSeconds(muteDurationSec);
-      try {
-        localStorage.setItem('gta6takip_mute_until', String(until));
-      } catch {
-        // ignore
-      }
-      setNewMessage('');
-      setChatError(`${t.errMuted} ${muteDurationSec}${t.secShort}`);
-      return;
-    }
-
-    if (sending) return;
-
-    const targetCh = chatChannel;
-    const activeReply = replyTo;
-    setSending(true);
-    setNewMessage('');
-    setReplyTo(null);
-    setShowEmojiPicker(false);
-
-    try {
-      localStorage.setItem('gta6takip_nick', finalNick);
-    } catch {
-      // ignore
-    }
-
-    const safeNick = isAdmin ? finalNick : censorText(finalNick);
-    const cleanedBody = isAdmin ? cleanMsg.slice(0, 420) : censorText(cleanMsg.slice(0, 420));
-    const replyTag = activeReply
-      ? `[REPLY:${censorText(activeReply.user).replace(/[|\]]/g, '')}|${censorText(activeReply.snippet).replace(/[|\]]/g, '').slice(0, 55)}] `
-      : '';
-    const payloadMessage = `${isAdmin ? '[ADMIN] ' : ''}${replyTag}${cleanedBody}`;
+    setShowEmoji(false);
+    if (!isAdmin) setSlowmodeLeft(60);
+    requestAnimationFrame(scrollToBottom);
 
     try {
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          channel: targetCh,
-          username: safeNick,
-          message: payloadMessage,
+          action: 'send_message',
+          id: tempId,
+          channel,
+          nickname: activeNick,
+          text: trimmed,
+          avatar: avatarIdx,
+          adminPassword: isAdmin ? adminPassword : '',
+          reply_to: replyTo,
         }),
       });
-      const json = await res.json();
-      if (!json.ok) {
-        if (res.status === 403) {
-          setLocalDeviceBanned(true);
-          try {
-            localStorage.setItem('gta6takip_banned', '1');
-          } catch {
-            // ignore
-          }
-          setChatError(t.errBanned);
-        } else {
-          setChatError(`${t.errSend} ${json.error || '?'}`);
-          setNewMessage(cleanMsg);
-        }
-      } else {
-        if (json.message) {
-          setMessagesByChannel((prev) => ({
-            ...prev,
-            [targetCh]: mergeChannelMessages(prev[targetCh] || [], [json.message], bannedUsers),
-          }));
-        }
-        if (!isAdmin) {
-          const slowDurationSec = 60;
-          setSlowSeconds(slowDurationSec);
-          try {
-            localStorage.setItem('gta6takip_slow_until', String(Date.now() + slowDurationSec * 1000));
-          } catch {
-            // ignore
-          }
+      const data = await res.json();
+      if (!res.ok) {
+        setMessagesByChannel((prev) => ({
+          ...prev,
+          [channel]: (prev[channel] || []).filter((m) => m.id !== tempId),
+        }));
+        if (data.error === 'profanity') {
+          setMuteLeft(60);
+          setChatAlert(t.profanityWarn);
+        } else if (data.error === 'banned') {
+          setChatAlert(t.bannedWarn);
         }
       }
-    } catch (err) {
-      setChatError(`${t.errSend} ${err?.message || '?'}`);
-      setNewMessage(cleanMsg);
-    } finally {
-      setSending(false);
+    } catch {
+      // ignore
     }
-  }
+  };
 
-  const topScore =
-    projects.length > 0
-      ? Math.max(...projects.map((p) => Number(p.percentage) || 0))
-      : 77.4;
+  const handleAdminLogin = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'verify_admin', password: adminPassInput }),
+      });
+      const data = await res.json();
+      if (data.ok) {
+        setIsAdmin(true);
+        setAdminPassword(adminPassInput);
+        localStorage.setItem('gta6takip_admin_pass', adminPassInput);
+        setShowAdminModal(false);
+        setAdminPassInput('');
+      }
+    } catch {
+      // ignore
+    }
+  };
 
-  const leaderName = projects[0]?.name || 'Belobug';
-  const onlineCount = Math.max(1, onlineUsers.length);
-  const isInputBlocked = isCurrentUserBanned || muteSeconds > 0 || (!isAdmin && slowSeconds > 0);
+  const handleClearChat = async () => {
+    if (!confirmClear) {
+      setConfirmClear(true);
+      setTimeout(() => setConfirmClear(false), 3000);
+      return;
+    }
+    setConfirmClear(false);
+    await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'clear_chat', channel, adminPassword }),
+    });
+    setMessagesByChannel((prev) => ({ ...prev, [channel]: [] }));
+    setPinnedByChannel((prev) => ({ ...prev, [channel]: null }));
+    try {
+      localStorage.removeItem(`gta6takip_msgs_${channel}`);
+    } catch {
+      // ignore
+    }
+  };
+
+  const handleDeleteMessage = async (id) => {
+    setMessagesByChannel((prev) => ({
+      ...prev,
+      [channel]: (prev[channel] || []).filter((m) => m.id !== id),
+    }));
+    await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'delete_message', channel, id, adminPassword }),
+    });
+  };
+
+  const handleBanUser = async (targetNick) => {
+    await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'ban_user', nickname: targetNick, adminPassword }),
+    });
+    fetchChat(channel);
+  };
+
+  const handlePinMessage = async (msg) => {
+    const isSame = pinnedMessage?.id === msg.id;
+    await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: isSame ? 'unpin_message' : 'pin_message',
+        channel,
+        message: isSame ? null : msg,
+        adminPassword,
+      }),
+    });
+    setPinnedByChannel((prev) => ({ ...prev, [channel]: isSame ? null : msg }));
+  };
+
+  const handleCreatePoll = async (e) => {
+    e.preventDefault();
+    const cleanOpts = pollOptions.map((o) => o.trim()).filter(Boolean);
+    if (!pollQuestion.trim() || cleanOpts.length < 2) return;
+
+    const res = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'create_poll',
+        channel,
+        question: pollQuestion,
+        options: cleanOpts,
+        durationMinutes: Math.min(5, Math.max(1, pollDuration)),
+        adminPassword,
+      }),
+    });
+    const data = await res.json();
+    if (data.ok) {
+      setPollByChannel((prev) => ({ ...prev, [channel]: data.activePoll }));
+      setShowPollModal(false);
+      setPollQuestion('');
+      setPollOptions(['', '']);
+      setPollDuration(5);
+    }
+  };
+
+  const handleVotePoll = async (optionId) => {
+    if (!activePoll) return;
+    const res = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'vote_poll',
+        channel,
+        pollId: activePoll.id,
+        optionId,
+        voterId,
+      }),
+    });
+    const data = await res.json();
+    if (data.activePoll) {
+      setPollByChannel((prev) => ({ ...prev, [channel]: data.activePoll }));
+    }
+  };
+
+  const handleClosePoll = async () => {
+    await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'close_poll', channel, adminPassword }),
+    });
+    setPollByChannel((prev) => ({ ...prev, [channel]: null }));
+  };
+
+  const renderStageIcon = (stageText = '') => {
+    const s = stageText.toLowerCase();
+    if (s.includes('oynan') || s.includes('play') || s.includes('menü') || s.includes('menu')) {
+      return <Gamepad2 className="w-3.5 h-3.5 text-pink-500 shrink-0" />;
+    }
+    if (s.includes('harita') || s.includes('world') || s.includes('map')) {
+      return <Globe className="w-3.5 h-3.5 text-purple-500 shrink-0" />;
+    }
+    return <Wrench className="w-3.5 h-3.5 text-orange-500 shrink-0" />;
+  };
 
   const shareText =
-    lang === 'en'
-      ? 'Track GTA VI PC Port progress live on GTA6takip:'
-      : 'GTA VI PC Port ilerlemesini ve canlı sohbeti GTA6takip üzerinden takip et:';
-  const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(`${shareText} https://gta6takip.vercel.app/`)}`;
-  const xShareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent('https://gta6takip.vercel.app/')}`;
+    lang === 'tr'
+      ? 'GTA VI PC Port geliştirme sürecini canlı takip ediyorum! 🚀'
+      : 'Tracking GTA VI PC Port progress live! 🚀';
+  const shareUrl = 'https://gta6takip.vercel.app/';
+
+  const pollRemainingSec = activePoll
+    ? Math.max(0, Math.floor((activePoll.expiresAt - nowTick) / 1000))
+    : 0;
+  const pollEnded = activePoll ? pollRemainingSec === 0 : false;
+  const totalVotes = activePoll
+    ? activePoll.options.reduce((acc, o) => acc + (o.votes || 0), 0)
+    : 0;
 
   return (
     <div
+      className="min-h-screen transition-colors duration-200"
       style={{ backgroundColor: 'var(--bg-base)', color: 'var(--text-primary)' }}
-      className="min-h-screen flex flex-col transition-colors duration-200"
     >
-      {/* Üst Çubuk */}
-      <header
-        style={{ backgroundColor: 'var(--header-bg)', borderColor: 'var(--card-border)' }}
-        className="sticky top-0 z-30 backdrop-blur-xl border-b"
-      >
-        <div className="max-w-[1440px] mx-auto px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg gta-bar-fill flex items-center justify-center shadow-sm text-white font-black text-sm tracking-tight">
-              VI
+      {/* ÜST HERO */}
+      <header className="pw-hero-bg border-b" style={{ borderColor: 'var(--border-color)' }}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-5 flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full text-xs font-bold bg-pink-500/15 text-pink-500 mb-2">
+              <span className="w-2 h-2 rounded-full bg-pink-500 animate-pulse" />
+              {t.badge}
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-lg sm:text-xl font-extrabold tracking-tight">
-                  GTA6takip
-                </span>
-                <span
-                  style={{ borderColor: 'var(--card-border)', color: 'var(--text-secondary)' }}
-                  className="hidden sm:inline-flex items-center text-[10px] tracking-widest uppercase px-2 py-0.5 rounded-full border font-semibold"
-                >
-                  LEONIDA • PC PORT
-                </span>
-              </div>
-              <p style={{ color: 'var(--text-secondary)' }} className="text-[11px]">
-                {t.headerSubtitle}
-              </p>
-            </div>
+            <h1 className="text-2xl sm:text-3xl font-extrabold pw-text-gradient">{t.title}</h1>
+            <p className="text-xs sm:text-sm mt-1 max-w-2xl" style={{ color: 'var(--text-secondary)' }}>
+              {t.subtitle}
+            </p>
           </div>
 
-          <div className="flex items-center gap-2 flex-wrap">
-            {/* TR | EN SVG Bayraklı Dil Seçici */}
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Dil Seçici */}
             <div
-              style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--card-border)' }}
-              className="inline-flex items-center p-0.5 rounded-xl border"
+              className="flex items-center rounded-xl p-1 border"
+              style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)' }}
             >
               <button
-                type="button"
-                onClick={() => handleLanguageSwitch('tr')}
-                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
-                  lang === 'tr' ? 'gta-bar-fill text-white shadow-sm' : 'opacity-75 hover:opacity-100'
+                onClick={() => {
+                  setLang('tr');
+                  setChannel('tr-genel');
+                  localStorage.setItem('gta6takip_lang', 'tr');
+                }}
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold transition ${
+                  lang === 'tr' ? 'bg-gradient-to-r from-purple-600 to-pink-500 text-white' : ''
                 }`}
               >
-                <svg className="w-4 h-3 rounded-[2px] shrink-0 shadow-sm" viewBox="0 0 30 20" aria-hidden="true">
-                  <rect width="30" height="20" fill="#E30A17" />
-                  <circle cx="11.5" cy="10" r="5" fill="#fff" />
-                  <circle cx="12.8" cy="10" r="4" fill="#E30A17" />
-                  <polygon points="16.5,10 19.2,9.1 17.5,11.4 17.5,8.6 19.2,10.9" fill="#fff" />
-                </svg>
-                <span>TR</span>
+                <FlagTR /> TR
               </button>
               <button
-                type="button"
-                onClick={() => handleLanguageSwitch('en')}
-                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
-                  lang === 'en' ? 'gta-bar-fill text-white shadow-sm' : 'opacity-75 hover:opacity-100'
+                onClick={() => {
+                  setLang('en');
+                  setChannel('en-general');
+                  localStorage.setItem('gta6takip_lang', 'en');
+                }}
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold transition ${
+                  lang === 'en' ? 'bg-gradient-to-r from-purple-600 to-pink-500 text-white' : ''
                 }`}
               >
-                <svg className="w-4 h-3 rounded-[2px] shrink-0 shadow-sm" viewBox="0 0 30 20" aria-hidden="true">
-                  <rect width="30" height="20" fill="#fff" />
-                  <rect y="0" width="30" height="2.8" fill="#B22234" />
-                  <rect y="5.7" width="30" height="2.8" fill="#B22234" />
-                  <rect y="11.4" width="30" height="2.8" fill="#B22234" />
-                  <rect y="17.1" width="30" height="2.9" fill="#B22234" />
-                  <rect width="13" height="11.4" fill="#3C3B6E" />
-                </svg>
-                <span>EN</span>
+                <FlagEN /> EN
               </button>
             </div>
 
-            {/* Tema Seçici */}
-            <div
-              style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--card-border)' }}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border"
-            >
-              <Palette style={{ color: 'var(--text-secondary)' }} className="w-3.5 h-3.5 hidden sm:block" />
-              <select
-                aria-label={t.themeLabel}
-                value={theme}
-                onChange={(e) => setTheme(e.target.value)}
-                style={{ color: 'var(--text-primary)' }}
-                className="bg-transparent text-xs font-semibold focus:outline-none cursor-pointer"
-              >
-                {THEMES.map((th) => (
-                  <option key={th.id} value={th.id} className="bg-slate-900 text-white">
-                    {lang === 'en' ? th.en : th.tr}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => setShowOnlinePanel((prev) => !prev)}
-                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-500/15 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-600 transition cursor-pointer"
-              >
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                <Users className="w-3.5 h-3.5" />
-                <span>{onlineCount} {t.online}</span>
-              </button>
-
-              {showOnlinePanel && (
-                <div
-                  style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--card-border)' }}
-                  className="absolute right-0 mt-2 w-60 rounded-2xl border shadow-2xl p-3.5 z-40"
-                >
-                  <div
-                    style={{ borderColor: 'var(--card-border)' }}
-                    className="flex items-center justify-between border-b pb-2 mb-2"
-                  >
-                    <span className="text-xs font-extrabold">
-                      {t.activeConnections} ({onlineCount})
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => setShowOnlinePanel(false)}
-                      style={{ color: 'var(--text-secondary)' }}
-                      className="text-[11px] hover:underline cursor-pointer"
-                    >
-                      {t.close}
-                    </button>
-                  </div>
-                  <ul className="space-y-1.5 max-h-40 overflow-y-auto vice-scroll list-none p-0 m-0">
-                    {(onlineUsers.length > 0 ? onlineUsers : [`${t.visitorPrefix}-1`]).map((nick, i) => (
-                      <li
-                        key={`${nick}-${i}`}
-                        style={{ backgroundColor: 'var(--card-inner)' }}
-                        className="flex items-center gap-2 text-xs px-2.5 py-1.5 rounded-lg"
-                      >
-                        <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
-                        <span className="truncate font-semibold">{nick}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </div>
-
-            <div
-              style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--card-border)' }}
-              className="hidden xl:flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs"
-            >
-              <Trophy className="w-3.5 h-3.5 text-amber-500" />
-              <span style={{ color: 'var(--text-secondary)' }}>{t.leader}</span>
-              <span className="font-bold">{leaderName}</span>
-              <span className="font-black pw-text-gradient">{formatPct(topScore, lang)}</span>
-            </div>
-
+            {/* Tema */}
             <button
-              type="button"
-              onClick={handleAutoSync}
-              disabled={syncing}
-              style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--card-border)', color: 'var(--text-primary)' }}
-              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold border hover:opacity-90 transition cursor-pointer"
+              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+              className="p-2 rounded-xl border transition"
+              style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)' }}
+              aria-label="Toggle theme"
             >
-              <RefreshCw
-                className={`w-3.5 h-3.5 text-pink-500 ${syncing ? 'animate-spin' : ''}`}
-              />
-              <span>{syncing ? t.syncing : `${t.autoRefresh} (${secondsLeft}${t.secShort})`}</span>
+              {theme === 'dark' ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4" />}
+            </button>
+
+            {/* Yenile */}
+            <button
+              onClick={fetchSync}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-semibold transition"
+              style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)' }}
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${syncing ? 'animate-spin' : ''}`} />
+              <span>{t.refresh}</span>
             </button>
           </div>
         </div>
       </header>
 
-      {/* PortWatch VI Gün Batımı Hero Şeridi */}
-      <section className="pw-hero-bg relative overflow-hidden border-b border-white/10">
-        <svg
-          className="absolute right-0 bottom-0 h-full w-72 sm:w-96 opacity-20 pointer-events-none select-none"
-          viewBox="0 0 400 180"
-          fill="none"
-          aria-hidden="true"
-        >
-          <circle cx="290" cy="110" r="64" fill="url(#pwSun)" />
-          <rect x="210" y="108" width="160" height="4" fill="#120824" />
-          <rect x="210" y="120" width="160" height="5" fill="#120824" />
-          <rect x="210" y="134" width="160" height="7" fill="#120824" />
-          <path
-            d="M0 180 L0 135 L35 135 L35 110 L65 110 L65 142 L95 142 L95 95 L130 95 L130 148 L170 148 L170 120 L205 120 L205 180 Z"
-            fill="#0b1120"
-            opacity="0.65"
-          />
-          <defs>
-            <linearGradient id="pwSun" x1="290" y1="46" x2="290" y2="174" gradientUnits="userSpaceOnUse">
-              <stop stopColor="#fbbf24" />
-              <stop offset="0.55" stopColor="#ec4899" />
-              <stop offset="1" stopColor="#9333ea" />
-            </linearGradient>
-          </defs>
-        </svg>
-
-        <div className="max-w-[1440px] mx-auto px-4 sm:px-6 py-5 sm:py-6 relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="space-y-1.5">
-            <div className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-pink-200 bg-white/10 border border-white/15 px-2.5 py-0.5 rounded-full">
-              <Sparkles className="w-3 h-3 text-amber-300" />
-              {t.heroBadge}
-            </div>
-            <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-white">
-              {t.heroTitle}
-            </h1>
-            <p className="text-xs text-purple-100/85">
-              {t.heroSubtitle}
-            </p>
-          </div>
-
-          <div className="flex items-center gap-2.5 bg-slate-950/45 backdrop-blur-md border border-white/15 rounded-2xl p-3 text-white shrink-0">
-            <div className="px-2.5 text-center">
-              <div className="text-[10px] uppercase tracking-wider text-purple-200/75">{t.peak}</div>
-              <div className="text-lg sm:text-xl font-extrabold text-amber-300">{formatPct(topScore, lang)}</div>
-            </div>
-            <div className="px-2.5 border-l border-white/15 text-center">
-              <div className="text-[10px] uppercase tracking-wider text-purple-200/75">{t.next}</div>
-              <div className="text-lg sm:text-xl font-extrabold text-pink-300 tabular-nums">{secondsLeft}{t.secShort}</div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Ana İçerik: Sol Bar Çubukları + Sağ Discord Tarzı Çift Kanallı Chat */}
-      <main className="flex-1 max-w-[1440px] w-full mx-auto px-4 sm:px-6 py-5 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        <section className="lg:col-span-7 xl:col-span-8 flex flex-col gap-3.5">
-          <div className="flex items-center justify-between px-1">
-            <h2 className="text-sm sm:text-base font-extrabold flex items-center gap-2">
-              <Cpu className="w-4 h-4 text-pink-500" />
-              {t.leaderboardTitle} ({projects.length} {t.teamWord})
-            </h2>
-            <span style={{ color: 'var(--text-secondary)' }} className="text-[11px]">
-              {t.highToLow}
+      {/* ANA İÇERİK */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* SOL SÜTUN: TAKIMLAR */}
+        <section className="lg:col-span-7 xl:col-span-8 space-y-3">
+          <div className="flex items-center justify-between text-xs px-1" style={{ color: 'var(--text-secondary)' }}>
+            <span>
+              {t.lastSync}: <strong>{lastUpdated}</strong>
             </span>
+            <span>PortWatch VI (#race)</span>
           </div>
 
-          <div className="lg:max-h-[calc(100vh-230px)] lg:overflow-y-auto vice-scroll lg:pr-1.5">
-            <ul className="flex flex-col gap-3 list-none p-0 m-0">
-              {projects.map((proj, index) => {
-                const pct = Math.min(100, Math.max(0, Number(proj.percentage) || 0));
-                const stageText = lang === 'en' ? (proj.stage_en || proj.stage) : (proj.stage_tr || proj.stage);
-                const fpsText = lang === 'en' ? (proj.fps_en || proj.fps) : (proj.fps_tr || proj.fps);
-                const descText = proj.commit_msg
-                  ? `${t.commitPrefix} "${proj.commit_msg}"`
-                  : (lang === 'en' ? (proj.desc_en || proj.description) : (proj.desc_tr || proj.description));
+          {teams.map((team, idx) => {
+            const pct = Number(team.percentage ?? team.progress ?? 0);
+            const pctLabel = lang === 'tr' ? `%${pct}` : `${pct}%`;
+            const stage = lang === 'tr' ? team.stage_tr || team.stage : team.stage_en || team.stage;
+            const fps = lang === 'tr' ? team.fps_tr || team.fps : team.fps_en || team.fps;
+            const desc = lang === 'tr' ? team.desc_tr || team.description : team.desc_en || team.description;
 
-                return (
-                  <li
-                    key={proj.id || index}
-                    style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--card-border)' }}
-                    className="rounded-2xl p-4 sm:p-5 border shadow-sm transition"
-                  >
-                    <div className="flex items-center justify-between gap-3 mb-2.5">
-                      <div className="flex items-center gap-2.5 flex-wrap min-w-0">
-                        <span
-                          className={`text-base font-black shrink-0 ${
-                            index < 3 ? 'pw-text-gradient' : 'opacity-60'
-                          }`}
-                        >
-                          #{index + 1}
-                        </span>
-                        <h3 className="text-base sm:text-lg font-bold tracking-tight truncate">
-                          {proj.name}
-                        </h3>
-                        <span
-                          className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wide shrink-0 border ${
-                            proj.is_open_source
-                              ? 'bg-emerald-500/15 text-emerald-600 border-emerald-500/25'
-                              : 'bg-pink-500/15 text-pink-600 border-pink-500/25'
-                          }`}
-                        >
-                          {proj.is_open_source ? t.openSource : t.closedTeam}
-                        </span>
-                      </div>
-
-                      <span className="text-xl sm:text-2xl font-extrabold tabular-nums pw-text-gradient shrink-0">
-                        {formatPct(pct, lang)}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-3 mb-2">
-                      <div
-                        style={{ backgroundColor: 'var(--track-bg)' }}
-                        className="relative flex-1 h-3 rounded-full overflow-hidden"
-                      >
-                        <div
-                          className="gta-bar-fill h-full rounded-full transition-all duration-700"
-                          style={{ width: `${Math.max(pct, 4)}%` }}
-                        />
-                      </div>
-                      <StageVisualBadge percentage={pct} stage={stageText} t={t} />
-                    </div>
-
-                    <div
-                      style={{ backgroundColor: 'var(--card-inner)', borderColor: 'var(--card-border)' }}
-                      className="rounded-xl px-3 py-2 border mb-2.5 flex flex-wrap items-center justify-between gap-2 text-xs"
-                    >
-                      <span className="font-semibold">
-                        {t.stagePrefix} {stageText || t.developing}
-                      </span>
-                      <span
-                        style={{ color: 'var(--text-secondary)' }}
-                        className="inline-flex items-center gap-1.5 font-medium"
-                      >
-                        <Monitor className="w-3.5 h-3.5 text-pink-500 shrink-0" />
-                        <span>{fpsText && fpsText !== '-' ? fpsText : t.noFps}</span>
-                      </span>
-                    </div>
-
-                    <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2.5 text-xs">
-                      <div className="space-y-1">
-                        <p style={{ color: 'var(--text-secondary)' }} className="leading-relaxed">
-                          {descText}
-                        </p>
-                        <p
-                          style={{ color: 'var(--text-secondary)' }}
-                          className="inline-flex items-center gap-1.5 text-[11px] opacity-80 pt-0.5"
-                        >
-                          <Clock className="w-3 h-3 shrink-0" />
-                          <span>{t.lastUpdate} {formatUpdateTime(proj.updated_at, t, lang)}</span>
-                        </p>
-                      </div>
-
-                      {proj.repo_url && (
-                        <a
-                          href={proj.repo_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          style={{ borderColor: 'var(--card-border)' }}
-                          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border text-pink-500 hover:opacity-80 text-xs font-semibold transition shrink-0 self-start sm:self-end"
-                        >
-                          {t.source} <ExternalLink className="w-3.5 h-3.5" />
-                        </a>
-                      )}
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
-        </section>
-
-        {/* Sağ: Discord Tarzı Çift Kanallı Sohbet (Mobilde Tam Ekran Destekli) */}
-        <aside
-          style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--card-border)' }}
-          className={
-            mobileChatFull
-              ? 'fixed inset-0 z-50 h-[100dvh] w-full flex flex-col overflow-hidden'
-              : 'lg:col-span-5 xl:col-span-4 rounded-2xl border overflow-hidden shadow-sm flex flex-col h-[540px] lg:sticky lg:top-[88px] lg:h-[calc(100vh-110px)] lg:max-h-[700px] z-20'
-          }
-        >
-          <div
-            style={{ backgroundColor: 'var(--card-inner)', borderColor: 'var(--card-border)' }}
-            className="p-3.5 border-b flex items-center justify-between gap-2 shrink-0"
-          >
-            <div className="flex items-center gap-2.5 min-w-0">
-              <div className="w-8 h-8 rounded-xl gta-bar-fill flex items-center justify-center text-white shrink-0">
-                <MessageSquare className="w-4 h-4" />
-              </div>
-              <div className="min-w-0">
-                <h2 className="text-sm font-extrabold truncate">{t.chatTitle}</h2>
-                <p style={{ color: 'var(--text-secondary)' }} className="text-[11px] truncate">
-                  {t.chatSubtitle}
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-1.5 shrink-0">
-              <button
-                type="button"
-                onClick={() => setMobileChatFull((prev) => !prev)}
-                title={t.fullscreenTitle}
-                className="lg:hidden p-1.5 rounded-lg border border-slate-500/25 bg-slate-500/10 hover:opacity-100 opacity-80 transition cursor-pointer"
+            return (
+              <article
+                key={team.name || idx}
+                className="rounded-2xl p-4 border shadow-sm transition hover:border-pink-500/50"
+                style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)' }}
               >
-                {mobileChatFull ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
-              </button>
-              <button
-                type="button"
-                onClick={() => setShowAdminBox((prev) => !prev)}
-                title={t.adminTitle}
-                className={`p-1.5 rounded-lg border text-xs transition cursor-pointer ${
-                  isAdmin
-                    ? 'bg-amber-500/20 border-amber-500/40 text-amber-500'
-                    : 'bg-slate-500/10 border-slate-500/20 opacity-70 hover:opacity-100'
-                }`}
-              >
-                <ShieldAlert className="w-3.5 h-3.5" />
-              </button>
-              <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-emerald-600 bg-emerald-500/15 border border-emerald-500/25 px-2.5 py-0.5 rounded-full">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                {t.live}
-              </span>
-            </div>
-          </div>
-
-          {showAdminBox && (
-            <div
-              style={{ backgroundColor: 'var(--card-inner)', borderColor: 'var(--card-border)' }}
-              className="px-3.5 py-2.5 border-b shrink-0 space-y-2"
-            >
-              {!isAdmin ? (
-                <form onSubmit={handleAdminLogin} className="flex items-center gap-1.5">
-                  <input
-                    type="text"
-                    value={adminUser}
-                    onChange={(e) => setAdminUser(e.target.value)}
-                    placeholder={t.adminUser}
-                    style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--card-border)', color: 'var(--text-primary)' }}
-                    className="w-1/3 rounded-lg border px-2 py-1 text-xs focus:outline-none"
-                  />
-                  <input
-                    type="password"
-                    value={adminPass}
-                    onChange={(e) => setAdminPass(e.target.value)}
-                    placeholder={t.adminPass}
-                    style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--card-border)', color: 'var(--text-primary)' }}
-                    className="w-1/3 rounded-lg border px-2 py-1 text-xs focus:outline-none"
-                  />
-                  <button
-                    type="submit"
-                    className="w-1/3 gta-bar-fill text-white rounded-lg py-1 text-xs font-bold cursor-pointer"
-                  >
-                    {t.adminLogin}
-                  </button>
-                </form>
-              ) : (
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="font-extrabold text-amber-500">✓ {t.adminActive}</span>
-                    <button
-                      type="button"
-                      onClick={handleAdminLogout}
-                      className="inline-flex items-center gap-1 text-rose-500 font-bold hover:underline cursor-pointer"
-                    >
-                      <LogOut className="w-3 h-3" />
-                      {t.adminLogout}
-                    </button>
-                  </div>
-                  {bannedUsers.length > 0 && (
-                    <div className="flex flex-wrap items-center gap-1 text-[11px]">
-                      <span style={{ color: 'var(--text-secondary)' }}>{t.bannedListLabel}</span>
-                      {bannedUsers.map((bu) => (
-                        <span
-                          key={bu}
-                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-rose-500/15 text-rose-500 border border-rose-500/25"
-                        >
-                          <span>{bu}</span>
-                          <button
-                            type="button"
-                            onClick={() => handleUnbanUser(bu)}
-                            className="font-bold hover:underline cursor-pointer"
-                          >
-                            ×
-                          </button>
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
-              {adminErr && <p className="text-[11px] text-rose-500">{adminErr}</p>}
-            </div>
-          )}
-
-          {/* Discord Tarzı Ayrı Dil Kanalları (#tr-genel | #en-general) */}
-          <div
-            style={{ borderColor: 'var(--card-border)' }}
-            className="px-3 py-2 border-b grid grid-cols-2 gap-1.5 shrink-0"
-          >
-            <button
-              type="button"
-              onClick={() => handleChannelSwitch('tr')}
-              className={`inline-flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-xl text-xs font-bold transition cursor-pointer ${
-                chatChannel === 'tr'
-                  ? 'gta-bar-fill text-white shadow-sm'
-                  : 'opacity-70 hover:opacity-100 border border-slate-500/20'
-              }`}
-            >
-              <svg className="w-4 h-3 rounded-[2px] shrink-0" viewBox="0 0 30 20" aria-hidden="true">
-                <rect width="30" height="20" fill="#E30A17" />
-                <circle cx="11.5" cy="10" r="5" fill="#fff" />
-                <circle cx="12.8" cy="10" r="4" fill="#E30A17" />
-                <polygon points="16.5,10 19.2,9.1 17.5,11.4 17.5,8.6 19.2,10.9" fill="#fff" />
-              </svg>
-              <span>{t.channelTr}</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => handleChannelSwitch('en')}
-              className={`inline-flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-xl text-xs font-bold transition cursor-pointer ${
-                chatChannel === 'en'
-                  ? 'gta-bar-fill text-white shadow-sm'
-                  : 'opacity-70 hover:opacity-100 border border-slate-500/20'
-              }`}
-            >
-              <svg className="w-4 h-3 rounded-[2px] shrink-0" viewBox="0 0 30 20" aria-hidden="true">
-                <rect width="30" height="20" fill="#fff" />
-                <rect y="0" width="30" height="2.8" fill="#B22234" />
-                <rect y="5.7" width="30" height="2.8" fill="#B22234" />
-                <rect y="11.4" width="30" height="2.8" fill="#B22234" />
-                <rect y="17.1" width="30" height="2.9" fill="#B22234" />
-                <rect width="13" height="11.4" fill="#3C3B6E" />
-              </svg>
-              <span>{t.channelEn}</span>
-            </button>
-          </div>
-
-          <div
-            style={{ borderColor: 'var(--card-border)' }}
-            className="px-4 py-2.5 border-b flex items-center gap-2 shrink-0 relative"
-          >
-            <button
-              type="button"
-              onClick={() => setShowAvatarPicker((prev) => !prev)}
-              title="Avatar"
-              className="rounded-lg hover:scale-105 transition cursor-pointer shrink-0"
-            >
-              <AvatarSvg avatarId={avatar} size="md" />
-            </button>
-
-            <label
-              htmlFor="nickname-input"
-              style={{ color: 'var(--text-secondary)' }}
-              className="inline-flex items-center gap-1 text-xs font-semibold shrink-0"
-            >
-              <User className="w-3.5 h-3.5 text-pink-500" />
-              {t.nicknameLabel}
-            </label>
-            <input
-              id="nickname-input"
-              type="text"
-              value={username}
-              onChange={(e) => {
-                setUsername(e.target.value);
-                try {
-                  localStorage.setItem('gta6takip_nick', e.target.value);
-                } catch {
-                  // ignore
-                }
-              }}
-              maxLength={24}
-              placeholder={t.nicknamePlaceholder}
-              style={{ backgroundColor: 'var(--card-inner)', borderColor: 'var(--card-border)' }}
-              className="w-full rounded-xl border px-3 py-1.5 text-xs font-bold text-pink-500 placeholder:text-slate-400 placeholder:font-normal focus:outline-none"
-            />
-
-            {showAvatarPicker && (
-              <div
-                style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--card-border)' }}
-                className="absolute left-4 top-12 z-30 p-2 rounded-xl border shadow-xl flex items-center gap-1.5"
-              >
-                {AVATARS.map((av) => (
-                  <button
-                    key={av.id}
-                    type="button"
-                    onClick={() => {
-                      setAvatar(av.id);
-                      setShowAvatarPicker(false);
-                    }}
-                    title={av.label}
-                    className={`p-1 rounded-lg transition cursor-pointer ${
-                      avatar === av.id ? 'ring-2 ring-pink-500' : 'opacity-75 hover:opacity-100'
-                    }`}
-                  >
-                    <AvatarSvg avatarId={av.id} size="md" />
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div ref={chatListRef} className="flex-1 overflow-y-auto vice-scroll p-4 space-y-2.5">
-            {currentMessages.length === 0 ? (
-              <div
-                style={{ color: 'var(--text-secondary)' }}
-                className="h-full flex flex-col items-center justify-center text-center text-xs space-y-1.5 px-4"
-              >
-                <p className="font-semibold">{t.chatEmptyTitle}</p>
-                <p>{t.chatEmptyDesc}</p>
-              </div>
-            ) : (
-              currentMessages.map((msg, idx) => {
-                const { isAdminMsg, replyMeta, body } = parseMessageMeta(msg.message);
-                const msgAvatar = getAvatarForUser(msg.username, username, avatar);
-
-                return (
-                  <div
-                    key={msg.id || idx}
-                    style={
-                      isAdminMsg
-                        ? undefined
-                        : { backgroundColor: 'var(--card-inner)', borderColor: 'var(--card-border)' }
-                    }
-                    className={`rounded-xl border p-3 space-y-1.5 ${
-                      isAdminMsg
-                        ? 'bg-gradient-to-r from-purple-600/20 via-pink-500/20 to-amber-500/20 border-pink-500/50 shadow-sm'
-                        : ''
-                    }`}
-                  >
-                    {replyMeta && (
-                      <div
-                        style={{ borderColor: 'var(--card-border)' }}
-                        className="ml-8 px-2.5 py-1 rounded-lg bg-slate-500/10 border-l-2 border-l-pink-500 text-[11px] opacity-85 truncate"
-                      >
-                        <span className="font-bold text-pink-500">@{replyMeta.user}:</span>{' '}
-                        <span>{replyMeta.snippet}</span>
-                      </div>
-                    )}
-
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-1.5 min-w-0">
-                        <AvatarSvg avatarId={msgAvatar} size="sm" />
-                        <span
-                          className={`text-xs font-extrabold truncate ${
-                            isAdminMsg ? 'pw-text-gradient' : 'text-pink-500'
-                          }`}
-                        >
-                          {isAdminMsg ? msg.username : censorText(msg.username)}
-                        </span>
-                        {isAdminMsg && (
-                          <span className="inline-flex items-center gap-1 shrink-0">
-                            <span className="px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider gta-bar-fill text-white">
-                              ADMIN
-                            </span>
-                            <svg
-                              className="w-3.5 h-3.5 text-sky-500 shrink-0"
-                              viewBox="0 0 24 24"
-                              fill="currentColor"
-                              aria-label="Verified Admin"
-                            >
-                              <path d="M12 2l2.4 2.2 3.2-.4.9 3.1 2.9 1.5-.8 3.1 1.6 2.8-2.2 2.4.4 3.2-3.1.9-1.5 2.9-3.1-.8-2.8 1.6-2.4-2.2-3.2.4-.9-3.1-2.9-1.5.8-3.1L1.8 11l2.2-2.4-.4-3.2 3.1-.9 1.5-2.9 3.1.8L12 2zm-1.2 13.2l5.2-5.2-1.4-1.4-3.8 3.8-1.8-1.8-1.4 1.4 3.2 3.2z" />
-                            </svg>
-                          </span>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-1 shrink-0">
-                        {isAdmin && !isAdminMsg && (
-                          <>
-                            <button
-                              type="button"
-                              onClick={() => handleDeleteMessage(msg.id)}
-                              title={t.delBtn}
-                              className="p-1 rounded hover:bg-rose-500/15 text-rose-500 cursor-pointer"
-                            >
-                              <Trash2 className="w-3 h-3" />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleBanUser(msg.username)}
-                              title={t.banBtn}
-                              className="p-1 rounded hover:bg-rose-500/15 text-rose-500 cursor-pointer"
-                            >
-                              <Ban className="w-3 h-3" />
-                            </button>
-                          </>
-                        )}
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setReplyTo({
-                              user: isAdminMsg ? msg.username : censorText(msg.username),
-                              snippet: body.slice(0, 55),
-                            })
-                          }
-                          title={t.replyBtn}
-                          style={{ color: 'var(--text-secondary)' }}
-                          className="p-1 rounded hover:text-pink-500 transition cursor-pointer"
-                        >
-                          <Reply className="w-3 h-3" />
-                        </button>
-                        <span style={{ color: 'var(--text-secondary)' }} className="text-[10px]">
-                          {msg.created_at
-                            ? new Date(msg.created_at).toLocaleTimeString(
-                                lang === 'en' ? 'en-US' : 'tr-TR',
-                                {
-                                  hour: '2-digit',
-                                  minute: '2-digit',
-                                }
-                              )
-                            : ''}
-                        </span>
-                      </div>
-                    </div>
-                    <p
-                      className={`text-xs sm:text-sm leading-relaxed break-words pl-8 ${
-                        isAdminMsg ? 'font-medium' : ''
+                <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+                  <div className="flex items-center gap-2.5">
+                    <span className="text-xs font-extrabold px-2 py-0.5 rounded-lg bg-purple-500/15 text-purple-500">
+                      #{idx + 1}
+                    </span>
+                    <h2 className="font-bold text-base">{team.name}</h2>
+                    <span
+                      className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                        team.open_source
+                          ? 'bg-emerald-500/15 text-emerald-500'
+                          : 'bg-slate-500/15 text-slate-400'
                       }`}
                     >
-                      {renderMessageWithLinks(body)}
-                    </p>
+                      {team.open_source ? t.openSource : t.closedTeam}
+                    </span>
                   </div>
-                );
-              })
-            )}
-          </div>
 
-          {replyTo && (
-            <div
-              style={{ backgroundColor: 'var(--card-inner)', borderColor: 'var(--card-border)' }}
-              className="px-3.5 py-1.5 border-t flex items-center justify-between gap-2 text-xs shrink-0"
-            >
-              <div className="truncate">
-                <span style={{ color: 'var(--text-secondary)' }}>{t.replyingTo} </span>
-                <span className="font-bold text-pink-500">@{replyTo.user}</span>{' '}
-                <span style={{ color: 'var(--text-secondary)' }}>{replyTo.snippet}</span>
+                  <div className="flex items-center gap-3">
+                    <span className="text-lg font-black pw-text-gradient">{pctLabel}</span>
+                    {team.url && (
+                      <a
+                        href={team.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="p-1.5 rounded-lg border hover:opacity-80"
+                        style={{ borderColor: 'var(--border-color)' }}
+                      >
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      </a>
+                    )}
+                  </div>
+                </div>
+
+                <div className="w-full h-2.5 rounded-full overflow-hidden bg-slate-500/20 mb-2.5">
+                  <div className="h-full gta-bar-fill rounded-full" style={{ width: `${Math.min(100, pct)}%` }} />
+                </div>
+
+                <div className="flex flex-wrap items-center gap-3 text-xs" style={{ color: 'var(--text-secondary)' }}>
+                  {stage && (
+                    <span className="inline-flex items-center gap-1">
+                      {renderStageIcon(stage)}
+                      {stage}
+                    </span>
+                  )}
+                  {fps && (
+                    <span className="inline-flex items-center gap-1">
+                      <Monitor className="w-3.5 h-3.5 text-sky-500 shrink-0" />
+                      {fps}
+                    </span>
+                  )}
+                </div>
+
+                {(desc || team.commit_msg) && (
+                  <p className="text-xs mt-2 line-clamp-2" style={{ color: 'var(--text-secondary)' }}>
+                    {team.commit_msg ? `${t.latestCommit}: ${team.commit_msg}` : desc}
+                  </p>
+                )}
+              </article>
+            );
+          })}
+        </section>
+
+        {/* SAĞ SÜTUN: SOHBET KUTUSU */}
+        <aside
+          className={`${
+            isMobileFullscreen
+              ? 'fixed inset-0 z-50 flex flex-col p-3'
+              : 'lg:col-span-5 xl:col-span-4 flex flex-col gap-3'
+          }`}
+          style={isMobileFullscreen ? { backgroundColor: 'var(--bg-base)' } : undefined}
+        >
+          <div
+            className={`rounded-2xl border shadow-sm flex flex-col overflow-hidden ${
+              isMobileFullscreen ? 'flex-1 h-full' : 'h-[640px] lg:sticky lg:top-4'
+            }`}
+            style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)' }}
+          >
+            {/* Chat Başlık */}
+            <div className="p-3.5 border-b flex items-center justify-between gap-2" style={{ borderColor: 'var(--border-color)' }}>
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-purple-600 via-pink-500 to-orange-500 flex items-center justify-center text-white shrink-0">
+                  <MessageSquare className="w-4 h-4" />
+                </div>
+                <div className="min-w-0">
+                  <h2 className="font-bold text-sm truncate">{t.chatTitle}</h2>
+                  <p className="text-[11px] truncate" style={{ color: 'var(--text-secondary)' }}>
+                    {t.channelsLabel}
+                  </p>
+                </div>
               </div>
-              <button
-                type="button"
-                onClick={() => setReplyTo(null)}
-                className="p-0.5 rounded hover:bg-slate-500/15 cursor-pointer shrink-0"
+
+              <div className="flex items-center gap-1.5 shrink-0">
+                <button
+                  onClick={() => (isAdmin ? setShowAdminModal(true) : setShowAdminModal(true))}
+                  className={`p-1.5 rounded-lg border transition ${
+                    isAdmin
+                      ? 'bg-purple-500/20 border-purple-500 text-purple-500'
+                      : 'border-amber-500/40 text-amber-500 hover:bg-amber-500/10'
+                  }`}
+                  title="Admin"
+                >
+                  <Shield className="w-4 h-4" />
+                </button>
+
+                <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[11px] font-semibold bg-emerald-500/15 text-emerald-500">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  {onlineCount} {t.live}
+                </span>
+
+                <button
+                  onClick={() => setIsMobileFullscreen((v) => !v)}
+                  className="lg:hidden p-1.5 rounded-lg border"
+                  style={{ borderColor: 'var(--border-color)' }}
+                  aria-label="Toggle fullscreen chat"
+                >
+                  {isMobileFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+
+            {/* Admin Araç Çubuğu */}
+            {isAdmin && (
+              <div
+                className="px-3 py-2 border-b flex flex-wrap items-center justify-between gap-2 bg-purple-500/10"
+                style={{ borderColor: 'var(--border-color)' }}
               >
-                <CloseIcon className="w-3.5 h-3.5" />
+                <span className="text-[11px] font-bold text-purple-500 flex items-center gap-1">
+                  ADMIN <VerifiedBadge />
+                </span>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    onClick={() => setShowPollModal((v) => !v)}
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-pink-500 text-white hover:opacity-90"
+                  >
+                    <BarChart3 className="w-3.5 h-3.5" />
+                    {t.createPoll}
+                  </button>
+                  <button
+                    onClick={handleClearChat}
+                    className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold text-white transition ${
+                      confirmClear ? 'bg-red-600' : 'bg-slate-700 hover:bg-red-600'
+                    }`}
+                  >
+                    <Eraser className="w-3.5 h-3.5" />
+                    {confirmClear ? t.clearConfirm : t.clearChat}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Kanal Seçici */}
+            <div className="p-2 border-b grid grid-cols-2 gap-2" style={{ borderColor: 'var(--border-color)' }}>
+              <button
+                onClick={() => setChannel('tr-genel')}
+                className={`flex items-center justify-center gap-1.5 py-1.5 rounded-xl text-xs font-bold transition ${
+                  channel === 'tr-genel'
+                    ? 'bg-gradient-to-r from-purple-600 via-pink-500 to-orange-500 text-white shadow-sm'
+                    : 'border'
+                }`}
+                style={channel !== 'tr-genel' ? { borderColor: 'var(--border-color)' } : undefined}
+              >
+                <FlagTR /> #tr-genel
+              </button>
+              <button
+                onClick={() => setChannel('en-general')}
+                className={`flex items-center justify-center gap-1.5 py-1.5 rounded-xl text-xs font-bold transition ${
+                  channel === 'en-general'
+                    ? 'bg-gradient-to-r from-purple-600 via-pink-500 to-orange-500 text-white shadow-sm'
+                    : 'border'
+                }`}
+                style={channel !== 'en-general' ? { borderColor: 'var(--border-color)' } : undefined}
+              >
+                <FlagEN /> #en-general
               </button>
             </div>
-          )}
 
-          {(chatError || muteSeconds > 0 || isCurrentUserBanned) && (
-            <div className="px-4 py-2 bg-rose-500/15 border-t border-rose-500/30 text-xs text-rose-500 font-semibold shrink-0">
-              {isCurrentUserBanned
-                ? t.errBanned
-                : muteSeconds > 0
-                  ? `${t.errMuted} ${muteSeconds}${t.secShort}`
-                  : chatError}
+            {/* Takma Ad & Avatar */}
+            <div className="px-3 py-2 border-b flex items-center gap-2" style={{ borderColor: 'var(--border-color)' }}>
+              <button
+                onClick={() => {
+                  const next = (avatarIdx + 1) % AVATARS.length;
+                  setAvatarIdx(next);
+                  localStorage.setItem('gta6takip_avatar', String(next));
+                }}
+                className={`w-7 h-7 rounded-lg bg-gradient-to-br ${AVATARS[avatarIdx].bg} text-white text-xs font-bold flex items-center justify-center shrink-0`}
+                title="Avatar"
+              >
+                {AVATARS[avatarIdx].label}
+              </button>
+              <span className="text-xs shrink-0" style={{ color: 'var(--text-secondary)' }}>
+                {t.nickname}
+              </span>
+              <input
+                type="text"
+                value={isAdmin ? 'ADMIN' : nickname}
+                disabled={isAdmin}
+                maxLength={24}
+                onChange={(e) => {
+                  setNickname(e.target.value);
+                  localStorage.setItem('gta6takip_nick', e.target.value);
+                }}
+                className="flex-1 min-w-0 text-xs font-bold px-2.5 py-1 rounded-lg border outline-none"
+                style={{
+                  backgroundColor: 'var(--bg-base)',
+                  color: isAdmin ? '#ec4899' : 'var(--text-primary)',
+                  borderColor: 'var(--border-color)',
+                }}
+              />
             </div>
-          )}
 
-          <form
-            onSubmit={handleSendMessage}
-            style={{ backgroundColor: 'var(--card-inner)', borderColor: 'var(--card-border)' }}
-            className="p-3 border-t flex items-center gap-2 shrink-0 relative"
-          >
-            {showEmojiPicker && (
+            {/* Sabitlenen Mesaj */}
+            {pinnedMessage && (
               <div
-                style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--card-border)' }}
-                className="absolute bottom-14 left-3 z-30 p-2 rounded-xl border shadow-xl flex flex-wrap gap-1 max-w-[230px]"
+                className="px-3 py-2 border-b flex items-start justify-between gap-2 bg-amber-500/10"
+                style={{ borderColor: 'var(--border-color)' }}
+              >
+                <div className="min-w-0">
+                  <div className="flex items-center gap-1 text-[10px] font-bold text-amber-500">
+                    <Pin className="w-3 h-3" /> {t.pinnedLabel} · {pinnedMessage.nickname}
+                  </div>
+                  <p className="text-xs truncate">{pinnedMessage.text}</p>
+                </div>
+                {isAdmin && (
+                  <button
+                    onClick={() => handlePinMessage(pinnedMessage)}
+                    className="p-1 text-amber-500 hover:opacity-75 shrink-0"
+                    title={t.unpin}
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* Mini Anket Kartı */}
+            {activePoll && (
+              <div
+                className="px-3 py-2.5 border-b bg-purple-500/10 space-y-2"
+                style={{ borderColor: 'var(--border-color)' }}
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-purple-500">
+                    <BarChart3 className="w-3.5 h-3.5" />
+                    <span>{activePoll.question}</span>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-pink-500/15 text-pink-500">
+                      {pollEnded
+                        ? t.pollEnded
+                        : `${t.pollRemaining} ${Math.floor(pollRemainingSec / 60)}:${String(
+                            pollRemainingSec % 60
+                          ).padStart(2, '0')}`}
+                    </span>
+                    {isAdmin && (
+                      <button onClick={handleClosePoll} className="text-slate-400 hover:text-red-500" title={t.closePoll}>
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  {activePoll.options.map((opt) => {
+                    const pct = totalVotes > 0 ? Math.round((opt.votes / totalVotes) * 100) : 0;
+                    const myVote = activePoll.voters?.[voterId] === opt.id;
+                    return (
+                      <button
+                        key={opt.id}
+                        disabled={pollEnded}
+                        onClick={() => handleVotePoll(opt.id)}
+                        className={`w-full text-left relative overflow-hidden rounded-lg border px-2.5 py-1.5 text-xs transition ${
+                          myVote ? 'border-pink-500 font-bold' : ''
+                        }`}
+                        style={{ borderColor: myVote ? '#ec4899' : 'var(--border-color)' }}
+                      >
+                        <div
+                          className="absolute inset-y-0 left-0 bg-gradient-to-r from-purple-500/20 to-pink-500/20 transition-all"
+                          style={{ width: `${pct}%` }}
+                        />
+                        <div className="relative flex items-center justify-between gap-2">
+                          <span className="flex items-center gap-1 truncate">
+                            {myVote && <Check className="w-3 h-3 text-pink-500 shrink-0" />}
+                            {opt.text}
+                          </span>
+                          <span className="text-[11px] shrink-0" style={{ color: 'var(--text-secondary)' }}>
+                            {pct}% · {opt.votes} {t.votesLabel}
+                          </span>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Anket Oluşturma Formu (Admin) */}
+            {showPollModal && isAdmin && (
+              <form
+                onSubmit={handleCreatePoll}
+                className="p-3 border-b space-y-2"
+                style={{ backgroundColor: 'var(--bg-base)', borderColor: 'var(--border-color)' }}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold">{t.pollTitle}</span>
+                  <button type="button" onClick={() => setShowPollModal(false)}>
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+                <input
+                  type="text"
+                  required
+                  value={pollQuestion}
+                  onChange={(e) => setPollQuestion(e.target.value)}
+                  placeholder={t.pollQuestionPlaceholder}
+                  className="w-full text-xs px-2.5 py-1.5 rounded-lg border outline-none"
+                  style={{
+                    backgroundColor: 'var(--bg-card)',
+                    color: 'var(--text-primary)',
+                    borderColor: 'var(--border-color)',
+                  }}
+                />
+                {pollOptions.map((opt, idx) => (
+                  <input
+                    key={idx}
+                    type="text"
+                    required={idx < 2}
+                    value={opt}
+                    onChange={(e) => {
+                      const copy = [...pollOptions];
+                      copy[idx] = e.target.value;
+                      setPollOptions(copy);
+                    }}
+                    placeholder={`${t.pollOptionPlaceholder} ${idx + 1}`}
+                    className="w-full text-xs px-2.5 py-1.5 rounded-lg border outline-none"
+                    style={{
+                      backgroundColor: 'var(--bg-card)',
+                      color: 'var(--text-primary)',
+                      borderColor: 'var(--border-color)',
+                    }}
+                  />
+                ))}
+                <div className="flex items-center justify-between gap-2 pt-1">
+                  {pollOptions.length < 4 && (
+                    <button
+                      type="button"
+                      onClick={() => setPollOptions([...pollOptions, ''])}
+                      className="text-[11px] font-semibold text-pink-500"
+                    >
+                      {t.addOption}
+                    </button>
+                  )}
+                  <div className="flex items-center gap-1.5 text-xs ml-auto">
+                    <span>{t.pollDuration}</span>
+                    <select
+                      value={pollDuration}
+                      onChange={(e) => setPollDuration(Number(e.target.value))}
+                      className="px-2 py-1 rounded-lg border text-xs"
+                      style={{
+                        backgroundColor: 'var(--bg-card)',
+                        color: 'var(--text-primary)',
+                        borderColor: 'var(--border-color)',
+                      }}
+                    >
+                      {[1, 2, 3, 4, 5].map((m) => (
+                        <option key={m} value={m}>
+                          {m} {t.minuteShort}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                <button
+                  type="submit"
+                  className="w-full py-1.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-purple-600 to-pink-500"
+                >
+                  {t.startPoll}
+                </button>
+              </form>
+            )}
+
+            {/* Mesaj Listesi */}
+            <div ref={chatScrollRef} className="flex-1 overflow-y-auto p-3 space-y-2.5 vice-scroll">
+              {currentMessages.length === 0 ? (
+                <p className="text-xs text-center py-10" style={{ color: 'var(--text-secondary)' }}>
+                  {t.emptyChat}
+                </p>
+              ) : (
+                currentMessages.map((msg) => {
+                  const av = AVATARS[msg.avatar % AVATARS.length] || AVATARS[0];
+                  const timeStr = msg.created_at
+                    ? new Date(msg.created_at).toLocaleTimeString(lang === 'tr' ? 'tr-TR' : 'en-US', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })
+                    : '';
+
+                  return (
+                    <div
+                      key={msg.id}
+                      className={`rounded-xl p-2.5 border transition ${
+                        msg.is_admin
+                          ? 'bg-gradient-to-r from-purple-500/15 via-pink-500/15 to-amber-500/15 border-pink-500/40'
+                          : ''
+                      }`}
+                      style={!msg.is_admin ? { backgroundColor: 'var(--bg-base)', borderColor: 'var(--border-color)' } : undefined}
+                    >
+                      {msg.reply_to && (
+                        <div
+                          className="text-[11px] px-2 py-1 mb-1.5 rounded-lg border-l-2 border-pink-500 bg-pink-500/5 truncate"
+                          style={{ color: 'var(--text-secondary)' }}
+                        >
+                          <strong>@{msg.reply_to.nickname}:</strong> {msg.reply_to.text}
+                        </div>
+                      )}
+
+                      <div className="flex items-center justify-between gap-2 mb-1">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <span
+                            className={`w-5 h-5 rounded-md bg-gradient-to-br ${av.bg} text-white text-[10px] font-bold flex items-center justify-center shrink-0`}
+                          >
+                            {av.label}
+                          </span>
+                          <span className={`text-xs font-bold truncate ${msg.is_admin ? 'text-pink-500' : ''}`}>
+                            {msg.nickname}
+                          </span>
+                          {msg.is_admin && (
+                            <span className="inline-flex items-center gap-1">
+                              <span className="px-1.5 py-0.5 rounded text-[9px] font-extrabold bg-gradient-to-r from-purple-600 to-pink-500 text-white">
+                                ADMIN
+                              </span>
+                              <VerifiedBadge />
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <span className="text-[10px]" style={{ color: 'var(--text-secondary)' }}>
+                            {timeStr}
+                          </span>
+                          <button
+                            onClick={() => setReplyTo({ id: msg.id, nickname: msg.nickname, text: msg.text })}
+                            className="p-0.5 opacity-60 hover:opacity-100"
+                            title={t.reply}
+                          >
+                            <Reply className="w-3 h-3" />
+                          </button>
+                          {isAdmin && (
+                            <>
+                              <button
+                                onClick={() => handlePinMessage(msg)}
+                                className="p-0.5 text-amber-500 hover:opacity-80"
+                                title={pinnedMessage?.id === msg.id ? t.unpin : t.pin}
+                              >
+                                {pinnedMessage?.id === msg.id ? (
+                                  <PinOff className="w-3 h-3" />
+                                ) : (
+                                  <Pin className="w-3 h-3" />
+                                )}
+                              </button>
+                              <button
+                                onClick={() => handleDeleteMessage(msg.id)}
+                                className="p-0.5 text-red-500 hover:opacity-80"
+                                title={t.delete}
+                              >
+                                <Trash2 className="w-3 h-3" />
+                              </button>
+                              {!msg.is_admin && (
+                                <button
+                                  onClick={() => handleBanUser(msg.nickname)}
+                                  className="p-0.5 text-red-600 hover:opacity-80"
+                                  title={t.ban}
+                                >
+                                  <Ban className="w-3 h-3" />
+                                </button>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      </div>
+
+                      <p className="text-xs leading-relaxed break-words">{msg.text}</p>
+                    </div>
+                  );
+                })
+              )}
+              <div ref={chatEndRef} />
+            </div>
+
+            {/* Uyarı / Yanıt / Emoji Alanı */}
+            {chatAlert && (
+              <div className="px-3 py-1.5 bg-red-500/15 text-red-500 text-[11px] font-semibold text-center">
+                {chatAlert}
+              </div>
+            )}
+            {replyTo && (
+              <div
+                className="px-3 py-1.5 border-t flex items-center justify-between text-[11px]"
+                style={{ borderColor: 'var(--border-color)' }}
+              >
+                <span className="truncate">
+                  {t.replyingTo} <strong>@{replyTo.nickname}</strong> — {replyTo.text}
+                </span>
+                <button onClick={() => setReplyTo(null)}>
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
+            {showEmoji && (
+              <div
+                className="px-3 py-1.5 border-t flex items-center gap-2 flex-wrap"
+                style={{ borderColor: 'var(--border-color)' }}
               >
                 {QUICK_EMOJIS.map((em) => (
                   <button
                     key={em}
                     type="button"
-                    onClick={() => {
-                      setNewMessage((prev) => `${prev}${em}`);
-                      setShowEmojiPicker(false);
-                    }}
-                    className="w-8 h-8 rounded-lg hover:bg-pink-500/15 flex items-center justify-center text-base cursor-pointer transition"
+                    onClick={() => setChatInput((prev) => prev + em)}
+                    className="text-base hover:scale-125 transition"
                   >
                     {em}
                   </button>
@@ -1741,111 +1335,144 @@ export default function HomePage() {
               </div>
             )}
 
-            <button
-              type="button"
-              onClick={() => setShowEmojiPicker((prev) => !prev)}
-              disabled={isInputBlocked}
-              style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--card-border)', color: 'var(--text-secondary)' }}
-              className="p-2 rounded-xl border hover:text-pink-500 transition cursor-pointer shrink-0 disabled:opacity-40"
-              title="Emoji"
+            {/* Mesaj Girişi */}
+            <form
+              onSubmit={handleSendMessage}
+              className="p-2.5 border-t flex items-center gap-2"
+              style={{ borderColor: 'var(--border-color)' }}
             >
-              <Smile className="w-4 h-4" />
-            </button>
-
-            <input
-              type="text"
-              value={newMessage}
-              disabled={isInputBlocked}
-              onChange={(e) => setNewMessage(e.target.value)}
-              maxLength={420}
-              placeholder={
-                isCurrentUserBanned
-                  ? t.errBanned
-                  : muteSeconds > 0
-                    ? `${t.errMuted} ${muteSeconds}${t.secShort}`
-                    : !isAdmin && slowSeconds > 0
-                      ? `${t.slowPlaceholder} ${slowSeconds}${t.secShort}`
-                      : t.messagePlaceholder
-              }
-              style={{
-                backgroundColor: 'var(--card-bg)',
-                borderColor: 'var(--card-border)',
-                color: 'var(--text-primary)',
-              }}
-              className="flex-1 min-w-0 rounded-xl border px-3 py-2 text-xs sm:text-sm placeholder:text-slate-400 focus:outline-none disabled:opacity-50"
-            />
-            <button
-              type="submit"
-              disabled={sending || isInputBlocked}
-              className="gta-bar-fill px-4 py-2 rounded-xl hover:brightness-110 disabled:opacity-40 text-white font-bold text-xs sm:text-sm inline-flex items-center gap-1.5 transition cursor-pointer shrink-0 tabular-nums"
-            >
-              <Send className="w-4 h-4" />
-              <span>
-                {sending
-                  ? t.sending
-                  : !isAdmin && slowSeconds > 0
-                    ? `${slowSeconds}${t.secShort}`
-                    : t.send}
-              </span>
-            </button>
-          </form>
-
-          {/* Chat Altı: X | batmancodex + WhatsApp & X'te Paylaş Butonları */}
-          <div
-            style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--card-border)' }}
-            className="px-3 py-2 border-t grid grid-cols-3 gap-1.5 shrink-0"
-          >
-            <a
-              href="https://x.com/batmancodex"
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{ backgroundColor: 'var(--card-inner)', borderColor: 'var(--card-border)' }}
-              className="inline-flex items-center justify-center gap-1 py-1.5 px-2 rounded-xl border text-[11px] font-bold hover:border-pink-500/50 transition truncate"
-            >
-              <svg className="w-3 h-3 text-pink-500 shrink-0" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-              </svg>
-              <span className="pw-text-gradient font-extrabold truncate">batmancodex</span>
-            </a>
-
-            <a
-              href={whatsappUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{ backgroundColor: 'var(--card-inner)', borderColor: 'var(--card-border)' }}
-              className="inline-flex items-center justify-center gap-1 py-1.5 px-2 rounded-xl border text-[11px] font-bold text-emerald-500 hover:border-emerald-500/50 transition truncate"
-            >
-              <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                <path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2 22l5.25-1.38c1.45.79 3.08 1.21 4.79 1.21 5.46 0 9.91-4.45 9.91-9.91S17.5 2 12.04 2zm5.8 14.02c-.24.68-1.41 1.3-1.95 1.38-.52.08-1.17.11-1.89-.12-.44-.14-1-.32-1.72-.63-3.03-1.31-5-4.37-5.15-4.57-.15-.2-1.23-1.64-1.23-3.13 0-1.49.78-2.22 1.06-2.52.28-.3.61-.38.81-.38h.59c.19 0 .44-.07.69.52.26.62.88 2.15.96 2.31.08.16.13.34.02.54-.1.2-.16.33-.31.51-.15.18-.32.4-.46.54-.15.15-.31.32-.13.62.18.3.79 1.31 1.7 2.12 1.17 1.04 2.15 1.36 2.46 1.51.3.15.48.13.66-.08.18-.2.76-.88.96-1.18.2-.3.41-.25.68-.15.28.1 1.75.83 2.05.98.3.15.5.22.58.35.08.13.08.74-.16 1.42z" />
-              </svg>
-              <span className="truncate">{t.shareWa}</span>
-            </a>
-
-            <a
-              href={xShareUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{ backgroundColor: 'var(--card-inner)', borderColor: 'var(--card-border)' }}
-              className="inline-flex items-center justify-center gap-1 py-1.5 px-2 rounded-xl border text-[11px] font-bold hover:border-pink-500/50 transition truncate"
-            >
-              <svg className="w-3 h-3 text-sky-500 shrink-0" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-              </svg>
-              <span className="truncate">{t.shareX}</span>
-            </a>
+              <button
+                type="button"
+                onClick={() => setShowEmoji((v) => !v)}
+                className="p-2 rounded-xl border shrink-0"
+                style={{ borderColor: 'var(--border-color)' }}
+              >
+                <Smile className="w-4 h-4" />
+              </button>
+              <input
+                type="text"
+                value={chatInput}
+                disabled={isUserBanned}
+                onChange={(e) => setChatInput(e.target.value)}
+                placeholder={isUserBanned ? t.bannedWarn : t.placeholder}
+                className="flex-1 min-w-0 text-xs px-3 py-2 rounded-xl border outline-none"
+                style={{
+                  backgroundColor: 'var(--bg-base)',
+                  color: 'var(--text-primary)',
+                  borderColor: 'var(--border-color)',
+                }}
+              />
+              <button
+                type="submit"
+                disabled={isUserBanned || (!isAdmin && (slowmodeLeft > 0 || muteLeft > 0))}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-purple-600 via-pink-500 to-orange-500 disabled:opacity-50 shrink-0"
+              >
+                {!isAdmin && (muteLeft > 0 || slowmodeLeft > 0) ? (
+                  <>
+                    <Clock className="w-3.5 h-3.5" />
+                    {muteLeft > 0 ? muteLeft : slowmodeLeft}s
+                  </>
+                ) : (
+                  <>
+                    <Send className="w-3.5 h-3.5" />
+                    {t.send}
+                  </>
+                )}
+              </button>
+            </form>
           </div>
+
+          {/* Alt Sosyal & Paylaşım Butonları */}
+          {!isMobileFullscreen && (
+            <div className="grid grid-cols-3 gap-2">
+              <a
+                href="https://x.com/batmancodex"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-xl border text-xs font-bold hover:border-pink-500 transition truncate"
+                style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)' }}
+              >
+                <span>𝕏 | batmancodex</span>
+              </a>
+              <a
+                href={`https://api.whatsapp.com/send?text=${encodeURIComponent(`${shareText} ${shareUrl}`)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-xl border text-xs font-bold text-emerald-500 hover:border-emerald-500 transition truncate"
+                style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)' }}
+              >
+                <span>{t.shareWa}</span>
+              </a>
+              <a
+                href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-xl border text-xs font-bold hover:border-sky-500 transition truncate"
+                style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)' }}
+              >
+                <span>{t.shareX}</span>
+              </a>
+            </div>
+          )}
         </aside>
       </main>
 
-      <footer
-        style={{ borderColor: 'var(--card-border)', color: 'var(--text-secondary)' }}
-        className="border-t py-4 px-4 text-center text-[11px]"
-      >
-        <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-center gap-2">
-          <ShieldCheck className="w-4 h-4 shrink-0" />
-          <span>{t.footerText}</span>
-        </div>
+      {/* ALT BİLGİ */}
+      <footer className="max-w-7xl mx-auto px-4 sm:px-6 py-6 text-center text-xs" style={{ color: 'var(--text-secondary)' }}>
+        <p>{t.disclaimer}</p>
       </footer>
+
+      {/* ADMIN GİRİŞ MODALI */}
+      {showAdminModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
+          <div
+            className="w-full max-w-xs rounded-2xl p-5 border shadow-xl space-y-3"
+            style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)' }}
+          >
+            <div className="flex items-center justify-between">
+              <h3 className="font-bold text-sm">{t.adminLoginTitle}</h3>
+              <button onClick={() => setShowAdminModal(false)}>
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {isAdmin ? (
+              <button
+                onClick={() => {
+                  setIsAdmin(false);
+                  setAdminPassword('');
+                  localStorage.removeItem('gta6takip_admin_pass');
+                  setShowAdminModal(false);
+                }}
+                className="w-full py-2 rounded-xl text-xs font-bold bg-red-500 text-white"
+              >
+                {t.logout}
+              </button>
+            ) : (
+              <form onSubmit={handleAdminLogin} className="space-y-3">
+                <input
+                  type="password"
+                  value={adminPassInput}
+                  onChange={(e) => setAdminPassInput(e.target.value)}
+                  placeholder={t.adminPassPlaceholder}
+                  className="w-full text-xs px-3 py-2 rounded-xl border outline-none"
+                  style={{
+                    backgroundColor: 'var(--bg-base)',
+                    color: 'var(--text-primary)',
+                    borderColor: 'var(--border-color)',
+                  }}
+                />
+                <button
+                  type="submit"
+                  className="w-full py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-purple-600 to-pink-500"
+                >
+                  {t.login}
+                </button>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
