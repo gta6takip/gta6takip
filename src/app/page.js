@@ -618,7 +618,7 @@ export default function HomePage() {
           </div>
 
           <div className="flex items-center gap-2 flex-wrap">
-            {/* TR | EN Bayraklı Dil Seçici */}
+            {/* TR | EN SVG Bayraklı Dil Seçici */}
             <div
               style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--card-border)' }}
               className="inline-flex items-center p-0.5 rounded-xl border"
@@ -626,21 +626,33 @@ export default function HomePage() {
               <button
                 type="button"
                 onClick={() => setLang('tr')}
-                className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
-                  lang === 'tr' ? 'gta-bar-fill text-white shadow-sm' : 'opacity-70 hover:opacity-100'
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
+                  lang === 'tr' ? 'gta-bar-fill text-white shadow-sm' : 'opacity-75 hover:opacity-100'
                 }`}
               >
-                <span>🇹🇷</span>
+                <svg className="w-4 h-3 rounded-[2px] shrink-0 shadow-sm" viewBox="0 0 30 20" aria-hidden="true">
+                  <rect width="30" height="20" fill="#E30A17" />
+                  <circle cx="11.5" cy="10" r="5" fill="#fff" />
+                  <circle cx="12.8" cy="10" r="4" fill="#E30A17" />
+                  <polygon points="16.5,10 19.2,9.1 17.5,11.4 17.5,8.6 19.2,10.9" fill="#fff" />
+                </svg>
                 <span>TR</span>
               </button>
               <button
                 type="button"
                 onClick={() => setLang('en')}
-                className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
-                  lang === 'en' ? 'gta-bar-fill text-white shadow-sm' : 'opacity-70 hover:opacity-100'
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
+                  lang === 'en' ? 'gta-bar-fill text-white shadow-sm' : 'opacity-75 hover:opacity-100'
                 }`}
               >
-                <span>🇺🇸</span>
+                <svg className="w-4 h-3 rounded-[2px] shrink-0 shadow-sm" viewBox="0 0 30 20" aria-hidden="true">
+                  <rect width="30" height="20" fill="#fff" />
+                  <rect y="0" width="30" height="2.8" fill="#B22234" />
+                  <rect y="5.7" width="30" height="2.8" fill="#B22234" />
+                  <rect y="11.4" width="30" height="2.8" fill="#B22234" />
+                  <rect y="17.1" width="30" height="2.9" fill="#B22234" />
+                  <rect width="13" height="11.4" fill="#3C3B6E" />
+                </svg>
                 <span>EN</span>
               </button>
             </div>
