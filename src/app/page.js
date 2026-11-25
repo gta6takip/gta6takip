@@ -16,10 +16,19 @@ import {
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
-const APP_VERSION = 'v1.0.3';
+const APP_VERSION = 'v1.0.4';
 
 const CHANGELOG = {
   tr: [
+    {
+      version: 'v1.0.4',
+      date: '25 Kasım 2026',
+      items: [
+        'Mobil üst bardaki logo/başlık sıkışması düzeltildi; mobilde iki ferah satır, masaüstünde tek satır görünüm sağlandı.',
+        'Anket her 10 saniyede bir sayfayı yenilemeden otomatik güncellenir hale getirildi.',
+        'Ankete IP bazlı tek oy kilidi eklendi (IP değişene kadar tekrar oy verilemez).',
+      ],
+    },
     {
       version: 'v1.0.3',
       date: '25 Kasım 2026',
@@ -56,6 +65,15 @@ const CHANGELOG = {
     },
   ],
   en: [
+    {
+      version: 'v1.0.4',
+      date: 'November 25, 2026',
+      items: [
+        'Fixed top navbar title truncation on mobile; uses two clean rows on small screens and one row on desktop.',
+        'Community poll now auto-refreshes every 10 seconds without reloading the page.',
+        'Added IP-based single-vote lock on the poll (one vote per IP until IP changes).',
+      ],
+    },
     {
       version: 'v1.0.3',
       date: 'November 25, 2026',
@@ -282,7 +300,7 @@ const WhatsAppLogoSVG = ({ className = 'w-4 h-4' }) => (
 );
 
 const Icon3DLogo = () => (
-  <svg viewBox="0 0 40 40" className="w-8 h-8 sm:w-9 sm:h-9 shrink-0 drop-shadow-[0_4px_10px_rgba(236,72,153,0.4)]" aria-hidden="true">
+  <svg viewBox="0 0 40 40" className="w-8 h-8 shrink-0 drop-shadow-[0_4px_10px_rgba(236,72,153,0.4)]" aria-hidden="true">
     <defs>
       <linearGradient id="pwLogo3d" x1="0%" y1="0%" x2="100%" y2="100%">
         <stop offset="0%" stopColor="#7c5cff" />
@@ -381,6 +399,7 @@ const TEXT = {
     pollYes: 'EVET',
     pollNo: 'HAYIR',
     pollVotes: 'oy',
+    pollLockedNote: 'Oyunuz kaydedildi (IP başına 1 oy)',
     filterAll: 'Tümü',
     filterOpen: 'Açık Kaynak',
     filterClosed: 'Kapalı Ekip',
@@ -415,6 +434,7 @@ const TEXT = {
     pollYes: 'YES',
     pollNo: 'NO',
     pollVotes: 'votes',
+    pollLockedNote: 'Vote recorded (1 vote per IP)',
     filterAll: 'All',
     filterOpen: 'Open Source',
     filterClosed: 'Closed Team',
@@ -446,9 +466,7 @@ export default function Home() {
   const [onlineCount, setOnlineCount] = useState(1);
   const [showChangelog, setShowChangelog] = useState(false);
 
-  // Anket durumları
-  const [voterId, setVoterId] = useState('');
-  const [pollData, setPollData] = useState({ yes: 0, no: 0, myVote: null });
+  const [pollData, setPollData] = useState({ yes: 0, no: 0, myVote: null, locked: false });
 
   const prevPctsRef = useRef({});
   const themeMenuRef = useRef(null);
@@ -464,18 +482,6 @@ export default function Home() {
       if (savedLang === 'tr' || savedLang === 'en') setLang(savedLang);
       const savedPcts = JSON.parse(localStorage.getItem('gta6takip_prev_pcts') || '{}');
       if (savedPcts && typeof savedPcts === 'object') prevPctsRef.current = savedPcts;
-
-      let vId = localStorage.getItem('gta6takip_voter_id');
-      if (!vId) {
-        vId = `v_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-        localStorage.setItem('gta6takip_voter_id', vId);
-      }
-      setVoterId(vId);
-
-      const cachedVote = localStorage.getItem('gta6takip_main_vote');
-      if (cachedVote === 'yes' || cachedVote === 'no') {
-        setPollData((prev) => ({ ...prev, myVote: cachedVote }));
-      }
     } catch {
       // ignore
     }
@@ -501,46 +507,46 @@ export default function Home() {
     }
   }, [themeId, activeTheme.isDark]);
 
+  // Anketi ilk yüklemede ve her 10 saniyede bir otomatik yenile
   const fetchPoll = useCallback(async () => {
     try {
-      const res = await fetch(`/api/poll?voterId=${encodeURIComponent(voterId)}`, { cache: 'no-store' });
+      const res = await fetch('/api/poll', { cache: 'no-store' });
       const data = await res.json();
       if (data.ok) {
-        setPollData((prev) => ({
-          yes: data.yes ?? prev.yes,
-          no: data.no ?? prev.no,
-          myVote: data.myVote || prev.myVote,
-        }));
+        setPollData({
+          yes: data.yes ?? 0,
+          no: data.no ?? 0,
+          myVote: data.myVote || null,
+          locked: Boolean(data.locked),
+        });
       }
     } catch {
       // ignore
     }
-  }, [voterId]);
+  }, []);
 
   useEffect(() => {
-    if (voterId) fetchPoll();
-  }, [voterId, fetchPoll]);
+    fetchPoll();
+    const pollTimer = setInterval(fetchPoll, 10000);
+    return () => clearInterval(pollTimer);
+  }, [fetchPoll]);
 
   const handlePollVote = async (vote) => {
-    setPollData((prev) => {
-      let { yes, no, myVote } = prev;
-      if (myVote === vote) return prev;
-      if (myVote === 'yes' && yes > 0) yes -= 1;
-      if (myVote === 'no' && no > 0) no -= 1;
-      if (vote === 'yes') yes += 1;
-      if (vote === 'no') no += 1;
-      return { yes, no, myVote: vote };
-    });
+    if (pollData.locked || pollData.myVote) return;
     try {
-      localStorage.setItem('gta6takip_main_vote', vote);
       const res = await fetch('/api/poll', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ vote, voterId }),
+        body: JSON.stringify({ vote }),
       });
       const data = await res.json();
-      if (data.ok) {
-        setPollData({ yes: data.yes, no: data.no, myVote: data.myVote });
+      if (typeof data.yes === 'number' && typeof data.no === 'number') {
+        setPollData({
+          yes: data.yes,
+          no: data.no,
+          myVote: data.myVote || vote,
+          locked: true,
+        });
       }
     } catch {
       // ignore
@@ -661,7 +667,7 @@ export default function Home() {
         backgroundImage: activeTheme.ambient,
       }}
     >
-      {/* ÜST SADE BAR (Mobil dostu Tema Açılır Menüsü ile) */}
+      {/* ÜST BAR: MOBİLDE 2 FERAH SATIR, MASAÜSTÜNDE TEK SATIR */}
       <nav
         className="sticky top-0 z-40 backdrop-blur-md border-b"
         style={{
@@ -669,35 +675,49 @@ export default function Home() {
           borderColor: activeTheme.border,
         }}
       >
-        <div className="max-w-5xl mx-auto px-3 sm:px-6 py-2.5 flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2 min-w-0">
-            <Icon3DLogo />
-            <span className="font-black text-sm sm:text-base tracking-tight truncate">{t.brand}</span>
-            <button
-              type="button"
-              onClick={() => setShowChangelog(true)}
-              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] sm:text-[11px] font-bold border transition hover:opacity-85 shrink-0"
-              style={{
-                backgroundColor: activeTheme.bgCard,
-                borderColor: activeTheme.border,
-                color: activeTheme.accent,
-              }}
-              title={t.updatesBtn}
-            >
-              <Sparkles className="w-3 h-3" />
-              <span>{APP_VERSION}</span>
-            </button>
-          </div>
+        <div className="max-w-5xl mx-auto px-3 sm:px-6 py-2.5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+          {/* 1. Satır (Mobilde Logo + GTA6TAKİP + v1.0.4 + Çevrimiçi) */}
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 shrink-0">
+              <Icon3DLogo />
+              <span className="font-black text-base tracking-tight whitespace-nowrap">{t.brand}</span>
+              <button
+                type="button"
+                onClick={() => setShowChangelog(true)}
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold border transition hover:opacity-85 shrink-0"
+                style={{
+                  backgroundColor: activeTheme.bgCard,
+                  borderColor: activeTheme.border,
+                  color: activeTheme.accent,
+                }}
+                title={t.updatesBtn}
+              >
+                <Sparkles className="w-3 h-3" />
+                <span>{APP_VERSION}</span>
+              </button>
+            </div>
 
-          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-            {/* Çevrimiçi */}
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-[11px] sm:text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/25">
+            <span className="sm:hidden inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/25 shrink-0">
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
               </span>
-              <span>{onlineCount}</span>
-              <span className="hidden sm:inline">{t.onlineBtn}</span>
+              <span>
+                {onlineCount} {t.onlineBtn}
+              </span>
+            </span>
+          </div>
+
+          {/* 2. Satır (Mobilde Kontroller / Masaüstünde Sağ Taraf) */}
+          <div className="flex items-center justify-between sm:justify-end gap-2">
+            <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/25 shrink-0">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+              </span>
+              <span>
+                {onlineCount} {t.onlineBtn}
+              </span>
             </span>
 
             {/* TEMA AÇILIR MENÜ BUTONU */}
@@ -705,18 +725,18 @@ export default function Home() {
               <button
                 type="button"
                 onClick={() => setThemeMenuOpen((v) => !v)}
-                className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-full border text-[11px] sm:text-xs font-semibold transition hover:opacity-85"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-semibold transition hover:opacity-85"
                 style={{ backgroundColor: activeTheme.bgCard, borderColor: activeTheme.border }}
               >
                 <span className="w-3 h-3 rounded-full shrink-0" style={{ background: activeTheme.dot }} />
-                <Palette className="w-3.5 h-3.5 hidden sm:inline" style={{ color: activeTheme.accent }} />
+                <Palette className="w-3.5 h-3.5" style={{ color: activeTheme.accent }} />
                 <span>{t.themeBtn}</span>
                 <ChevronDown className="w-3 h-3 opacity-70" />
               </button>
 
               {themeMenuOpen && (
                 <div
-                  className="absolute right-0 mt-2 w-44 rounded-2xl p-1.5 border shadow-2xl z-50 space-y-1"
+                  className="absolute left-0 sm:left-auto sm:right-0 mt-2 w-44 rounded-2xl p-1.5 border shadow-2xl z-50 space-y-1"
                   style={{ backgroundColor: activeTheme.bgCard, borderColor: activeTheme.border }}
                 >
                   {Object.values(THEMES).map((th) => {
@@ -747,50 +767,52 @@ export default function Home() {
               )}
             </div>
 
-            {/* TR | EN */}
-            <div
-              className="flex items-center rounded-full p-0.5 border"
-              style={{ backgroundColor: activeTheme.bgCard, borderColor: activeTheme.border }}
-            >
-              <button
-                onClick={() => {
-                  setLang('tr');
-                  localStorage.setItem('gta6takip_lang', 'tr');
-                }}
-                className={`flex items-center gap-1 px-2 py-1 rounded-full text-[11px] font-semibold transition ${
-                  lang === 'tr' ? 'text-white' : ''
-                }`}
-                style={lang === 'tr' ? { backgroundColor: activeTheme.accent } : undefined}
+            <div className="flex items-center gap-2">
+              {/* TR | EN */}
+              <div
+                className="flex items-center rounded-full p-0.5 border"
+                style={{ backgroundColor: activeTheme.bgCard, borderColor: activeTheme.border }}
               >
-                <FlagTR /> <span className="hidden sm:inline">TR</span>
-              </button>
+                <button
+                  onClick={() => {
+                    setLang('tr');
+                    localStorage.setItem('gta6takip_lang', 'tr');
+                  }}
+                  className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold transition ${
+                    lang === 'tr' ? 'text-white' : ''
+                  }`}
+                  style={lang === 'tr' ? { backgroundColor: activeTheme.accent } : undefined}
+                >
+                  <FlagTR /> TR
+                </button>
+                <button
+                  onClick={() => {
+                    setLang('en');
+                    localStorage.setItem('gta6takip_lang', 'en');
+                  }}
+                  className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold transition ${
+                    lang === 'en' ? 'text-white' : ''
+                  }`}
+                  style={lang === 'en' ? { backgroundColor: activeTheme.accent } : undefined}
+                >
+                  <FlagEN /> EN
+                </button>
+              </div>
+
+              {/* Yenile */}
               <button
-                onClick={() => {
-                  setLang('en');
-                  localStorage.setItem('gta6takip_lang', 'en');
-                }}
-                className={`flex items-center gap-1 px-2 py-1 rounded-full text-[11px] font-semibold transition ${
-                  lang === 'en' ? 'text-white' : ''
-                }`}
-                style={lang === 'en' ? { backgroundColor: activeTheme.accent } : undefined}
+                onClick={fetchSync}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-semibold transition hover:opacity-80"
+                style={{ backgroundColor: activeTheme.bgCard, borderColor: activeTheme.border }}
+                aria-label={t.refresh}
               >
-                <FlagEN /> <span className="hidden sm:inline">EN</span>
+                <RefreshCw
+                  className={`w-3.5 h-3.5 ${syncing ? 'animate-spin' : ''}`}
+                  style={syncing ? { color: activeTheme.accent } : undefined}
+                />
+                <span className="hidden sm:inline">{t.refresh}</span>
               </button>
             </div>
-
-            {/* Yenile */}
-            <button
-              onClick={fetchSync}
-              className="inline-flex items-center gap-1.5 p-2 sm:px-3 sm:py-1.5 rounded-full border text-xs font-semibold transition hover:opacity-80"
-              style={{ backgroundColor: activeTheme.bgCard, borderColor: activeTheme.border }}
-              aria-label={t.refresh}
-            >
-              <RefreshCw
-                className={`w-3.5 h-3.5 ${syncing ? 'animate-spin' : ''}`}
-                style={syncing ? { color: activeTheme.accent } : undefined}
-              />
-              <span className="hidden sm:inline">{t.refresh}</span>
-            </button>
           </div>
         </div>
       </nav>
@@ -896,7 +918,7 @@ export default function Home() {
           ))}
         </section>
 
-        {/* TOPLULUK ANKETİ: EVET x HAYIR */}
+        {/* TOPLULUK ANKETİ: EVET x HAYIR (IP KİLİTLİ + 10 SN OTOMATİK YENİLEME) */}
         <section
           className="rounded-2xl p-4 sm:p-5 border space-y-3"
           style={{ backgroundColor: activeTheme.bgCard, borderColor: activeTheme.border }}
@@ -912,11 +934,11 @@ export default function Home() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {/* EVET */}
             <button
               type="button"
+              disabled={pollData.locked || Boolean(pollData.myVote)}
               onClick={() => handlePollVote('yes')}
-              className="relative overflow-hidden rounded-xl p-3 border text-left transition hover:opacity-90"
+              className="relative overflow-hidden rounded-xl p-3 border text-left transition hover:opacity-90 disabled:cursor-default"
               style={{
                 backgroundColor: activeTheme.bgPage,
                 borderColor: pollData.myVote === 'yes' ? '#10b981' : activeTheme.border,
@@ -937,11 +959,11 @@ export default function Home() {
               </div>
             </button>
 
-            {/* HAYIR */}
             <button
               type="button"
+              disabled={pollData.locked || Boolean(pollData.myVote)}
               onClick={() => handlePollVote('no')}
-              className="relative overflow-hidden rounded-xl p-3 border text-left transition hover:opacity-90"
+              className="relative overflow-hidden rounded-xl p-3 border text-left transition hover:opacity-90 disabled:cursor-default"
               style={{
                 backgroundColor: activeTheme.bgPage,
                 borderColor: pollData.myVote === 'no' ? '#f43f5e' : activeTheme.border,
@@ -962,6 +984,12 @@ export default function Home() {
               </div>
             </button>
           </div>
+
+          {pollData.locked && (
+            <p className="text-[11px]" style={{ color: activeTheme.textMuted }}>
+              ✓ {t.pollLockedNote}
+            </p>
+          )}
         </section>
 
         {/* TEK SÜTUNLU LİDERLİK KARTLARI */}
