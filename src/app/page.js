@@ -18,7 +18,9 @@ import {
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
-const APP_VERSION = 'v1.0.11';
+const APP_VERSION = 'v1.0.13';
+const NIGHT_POLL_KEY = 'gta6takip_night_poll_v1';
+const NIGHT_POLL_END_MS = new Date('2026-11-26T06:00:00+03:00').getTime();
 
 const THEMES = {
   dark: {
@@ -147,6 +149,28 @@ const FALLBACK_NEWS = [
 
 const CHANGELOG = [
   {
+    version: 'v1.0.13',
+    dateTr: '26 Kasım 2026',
+    dateEn: 'November 26, 2026',
+    itemsTr: [
+      'Uçan gece kuşu askeri yalnızca 26 Kasım 2026 saat 06:00 (TSİ) tarihine kadar görünecek şekilde sınırlandı.',
+    ],
+    itemsEn: [
+      'Scoped the floating night-owl soldier widget to appear only until 06:00 AM TRT on Nov 26, 2026.',
+    ],
+  },
+  {
+    version: 'v1.0.12',
+    dateTr: '26 Kasım 2026',
+    dateEn: 'November 26, 2026',
+    itemsTr: [
+      'Siteye girdikten 7 saniye sonra sol altta uçan gece kuşu askeri ve tek oyluk anket ("Burdayız reis." / "Yatacam şimdi kral.") eklendi.',
+    ],
+    itemsEn: [
+      'Added the floating night-owl soldier widget after 7 seconds with a one-time persistent poll.',
+    ],
+  },
+  {
     version: 'v1.0.11',
     dateTr: '26 Kasım 2026',
     dateEn: 'November 26, 2026',
@@ -157,32 +181,6 @@ const CHANGELOG = [
     itemsEn: [
       'Added modern WhatsApp and X icons to the footer share buttons.',
       'Unified team progress into a single continuous bar with aligned 6-milestone stop nodes.',
-    ],
-  },
-  {
-    version: 'v1.0.10',
-    dateTr: '26 Kasım 2026',
-    dateEn: 'November 26, 2026',
-    itemsTr: [
-      'API veri eşleştirme katmanı güncellendi; ekip yüzdeleri, FPS ve Sparkline grafiği tam uyumlu hale getirildi.',
-    ],
-    itemsEn: [
-      'Updated API field mapping so team percentages, FPS, and Sparkline chart render accurately.',
-    ],
-  },
-  {
-    version: 'v1.0.9',
-    dateTr: '26 Kasım 2026',
-    dateEn: 'November 26, 2026',
-    itemsTr: [
-      'Genel İlerleme kartına 30 FPS Barajı hedef çubuğu ve Son 24s En Hızlı rozeti gömüldü.',
-      'İlk sızıntıdan bugüne (%0 → %79.5) yükselişi gösteren kompakt Sparkline grafik eklendi.',
-      'Listenin altına açılır-kapanır DMCA & Güvenlik Radarı (Leonida, ZETTROX ve sahte .exe uyarısı) eklendi.',
-    ],
-    itemsEn: [
-      'Embedded 30 FPS Milestone target bar and Top 24h Climber badge into the Overall Progress card.',
-      'Added a compact Sparkline chart tracking progress from the .exe leak to today (0% → 79.5%).',
-      'Added a collapsible DMCA & Security Radar below the leaderboard (Leonida, ZETTROX & fake .exe warning).',
     ],
   },
 ];
@@ -216,6 +214,18 @@ const IconX = () => (
 const IconWhatsApp = () => (
   <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 fill-current shrink-0 text-emerald-400" aria-hidden="true">
     <path d="M12.031 2c-5.516 0-9.969 4.453-9.969 9.969 0 1.766.469 3.484 1.344 5l-1.406 5.156 5.281-1.375c1.469.797 3.109 1.219 4.75 1.219 5.516 0 9.969-4.453 9.969-9.969S17.547 2 12.031 2zm5.813 14.125c-.25.703-1.438 1.344-2 1.422-.516.078-1.172.109-1.891-.125-.438-.141-1-.328-1.719-.641-3.016-1.297-4.984-4.328-5.141-4.531-.156-.203-1.234-1.641-1.234-3.125s.781-2.219 1.063-2.516c.281-.297.609-.375.813-.375.203 0 .406.016.578.016.188 0 .438-.078.688.516.25.609.859 2.094.938 2.25.078.156.125.344.031.547-.094.203-.156.328-.297.5-.141.172-.313.391-.438.516-.156.141-.313.297-.141.594.172.297.781 1.281 1.672 2.078 1.156 1.031 2.125 1.344 2.422 1.5.297.156.469.125.641-.078.172-.203.734-.859.938-1.156.203-.297.406-.25.672-.156.266.094 1.703.813 2 .953.297.156.484.219.563.344.078.125.078.719-.172 1.422z" />
+  </svg>
+);
+
+const FlyingSoldierSVG = () => (
+  <svg viewBox="0 0 64 64" className="w-11 h-11 shrink-0 animate-bounce" aria-hidden="true">
+    <path d="M12 28 L4 20 L14 22 Z" fill="#f59e0b" />
+    <path d="M52 28 L60 20 L50 22 Z" fill="#f59e0b" />
+    <rect x="20" y="26" width="24" height="22" rx="6" fill="#334155" stroke="#94a3b8" strokeWidth="1.5" />
+    <circle cx="32" cy="20" r="11" fill="#475569" stroke="#cbd5e1" strokeWidth="1.5" />
+    <rect x="24" y="16" width="16" height="6" rx="3" fill="#38bdf8" />
+    <path d="M26 48 L24 57" stroke="#f97316" strokeWidth="3" strokeLinecap="round" />
+    <path d="M38 48 L40 57" stroke="#f97316" strokeWidth="3" strokeLinecap="round" />
   </svg>
 );
 
@@ -287,6 +297,11 @@ export default function HomePage() {
   const [countdown, setCountdown] = useState(120);
   const [syncing, setSyncing] = useState(false);
   const [copied, setCopied] = useState(false);
+
+  const [soldierVisible, setSoldierVisible] = useState(false);
+  const [soldierDismissed, setSoldierDismissed] = useState(false);
+  const [nightVote, setNightVote] = useState(null);
+  const [nightCounts, setNightCounts] = useState({ stay: 14, sleep: 5 });
 
   const theme = THEMES[themeKey] || THEMES.dark;
 
@@ -372,6 +387,45 @@ export default function HomePage() {
   }, []);
 
   useEffect(() => {
+    try {
+      const saved = window.localStorage.getItem(NIGHT_POLL_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed?.choice === 'stay' || parsed?.choice === 'sleep') {
+          setNightVote(parsed.choice);
+          setNightCounts((prev) => ({
+            stay: prev.stay + (parsed.choice === 'stay' ? 1 : 0),
+            sleep: prev.sleep + (parsed.choice === 'sleep' ? 1 : 0),
+          }));
+        }
+      }
+    } catch {
+      // localStorage erişim hatası yoksayılır
+    }
+
+    if (Date.now() >= NIGHT_POLL_END_MS) {
+      return undefined;
+    }
+
+    const showTimer = setTimeout(() => {
+      if (Date.now() < NIGHT_POLL_END_MS) {
+        setSoldierVisible(true);
+      }
+    }, 7000);
+
+    const expireInterval = setInterval(() => {
+      if (Date.now() >= NIGHT_POLL_END_MS) {
+        setSoldierVisible(false);
+      }
+    }, 30000);
+
+    return () => {
+      clearTimeout(showTimer);
+      clearInterval(expireInterval);
+    };
+  }, []);
+
+  useEffect(() => {
     const timer = setInterval(() => {
       setCountdown((prev) => {
         if (prev <= 1) {
@@ -419,6 +473,23 @@ export default function HomePage() {
       if (channel) channel.unsubscribe();
     };
   }, []);
+
+  const handleNightVote = (choice) => {
+    if (nightVote || Date.now() >= NIGHT_POLL_END_MS) return;
+    setNightVote(choice);
+    setNightCounts((prev) => ({
+      ...prev,
+      [choice]: prev[choice] + 1,
+    }));
+    try {
+      window.localStorage.setItem(
+        NIGHT_POLL_KEY,
+        JSON.stringify({ choice, votedAt: new Date().toISOString() })
+      );
+    } catch {
+      // localStorage yazma hatası yoksayılır
+    }
+  };
 
   const leader = teams[0] || FALLBACK_TEAMS[0];
   const peakFps = useMemo(() => extractPeakFps(teams), [teams]);
@@ -791,7 +862,6 @@ export default function HomePage() {
                     )}
                   </div>
 
-                  {/* Tek Parça Kesintisiz İlerleme Çubuğu ve Hizalı 6 Durak Noktası */}
                   <div className="mt-3.5 space-y-2">
                     <div className="relative h-2.5 w-full rounded-full bg-zinc-700/35 overflow-hidden">
                       <div
@@ -921,6 +991,71 @@ export default function HomePage() {
           </p>
         </footer>
       </main>
+
+      {soldierVisible && !soldierDismissed && (
+        <aside
+          className={`fixed bottom-5 left-4 right-16 sm:right-auto sm:w-80 z-40 rounded-2xl border p-3.5 shadow-2xl backdrop-blur-md transition-all ${theme.card}`}
+        >
+          <button
+            type="button"
+            onClick={() => setSoldierDismissed(true)}
+            aria-label={lang === 'tr' ? 'Kapat' : 'Close'}
+            className={`absolute top-2.5 right-2.5 p-1 rounded-lg border opacity-75 hover:opacity-100 ${theme.subCard}`}
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+
+          <div className="flex items-start gap-2.5 pr-5">
+            <FlyingSoldierSVG />
+            <div className="space-y-1">
+              <p className="text-xs font-extrabold leading-snug">
+                {lang === 'tr'
+                  ? 'Hey gece kuşu, zabaaa gadar burda mıyık?'
+                  : 'Hey night owl, are we staying up till dawn?'}
+              </p>
+              <p className={`text-[10px] ${theme.muted}`}>
+                {nightVote
+                  ? lang === 'tr'
+                    ? 'Oyun kalıcı olarak kaydedildi.'
+                    : 'Your vote is locked in.'
+                  : lang === 'tr'
+                    ? '06:00’a kadar geçerli · Tek oy!'
+                    : 'Valid until 06:00 TRT · One vote!'}
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-1.5 mt-2.5">
+            <button
+              type="button"
+              disabled={Boolean(nightVote)}
+              onClick={() => handleNightVote('stay')}
+              className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl border text-xs font-semibold transition ${
+                nightVote === 'stay'
+                  ? theme.btnPrimary
+                  : `${theme.subCard} ${nightVote ? 'opacity-60 cursor-not-allowed' : 'hover:opacity-85'}`
+              }`}
+            >
+              <span>{lang === 'tr' ? 'Burdayız reis.' : 'Still here, chief.'}</span>
+              <span className="font-black">{nightCounts.stay}</span>
+            </button>
+
+            <button
+              type="button"
+              disabled={Boolean(nightVote)}
+              onClick={() => handleNightVote('sleep')}
+              className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl border text-xs font-semibold transition ${
+                nightVote === 'sleep'
+                  ? theme.btnPrimary
+                  : `${theme.subCard} ${nightVote ? 'opacity-60 cursor-not-allowed' : 'hover:opacity-85'}`
+              }`}
+            >
+              <span>{lang === 'tr' ? 'Yatacam şimdi kral.' : 'Heading to bed, king.'}</span>
+              <span className="font-black">{nightCounts.sleep}</span>
+            </button>
+          </div>
+        </aside>
+      )}
 
       {showBackTop && (
         <button
