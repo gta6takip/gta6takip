@@ -25,7 +25,7 @@ const CHANGELOG = {
       date: '25 Kasım 2026',
       items: [
         'Mobil üst bardaki logo/başlık sıkışması düzeltildi; mobilde iki ferah satır, masaüstünde tek satır görünüm sağlandı.',
-        'Anket her 10 saniyede bir sayfayı yenilemeden otomatik güncellenir hale getirildi.',
+        'Anket Supabase veritabanına bağlandı; her 10 saniyede bir otomatik güncellenir ve oylar kalıcı olarak saklanır.',
         'Ankete IP bazlı tek oy kilidi eklendi (IP değişene kadar tekrar oy verilemez).',
       ],
     },
@@ -34,7 +34,7 @@ const CHANGELOG = {
       date: '25 Kasım 2026',
       items: [
         'Üst bardaki yatay renk noktaları mobilde yer açmak için tek bir "Tema ▾" menü butonuna dönüştürüldü.',
-        '"Sizce oyun PC\'ye %100 portlanacak mı?" (EVET / HAYIR) canlı topluluk anketi ve anlık sonuç çubukları eklendi.',
+        '"Sizce oyun PC\'ye %100 portlanacak mı?" (EVET / HAYIR) canlı topluluk anketi eklendi.',
       ],
     },
     {
@@ -70,7 +70,7 @@ const CHANGELOG = {
       date: 'November 25, 2026',
       items: [
         'Fixed top navbar title truncation on mobile; uses two clean rows on small screens and one row on desktop.',
-        'Community poll now auto-refreshes every 10 seconds without reloading the page.',
+        'Connected community poll to Supabase database; auto-refreshes every 10s with persistent votes.',
         'Added IP-based single-vote lock on the poll (one vote per IP until IP changes).',
       ],
     },
@@ -79,7 +79,7 @@ const CHANGELOG = {
       date: 'November 25, 2026',
       items: [
         'Replaced horizontal theme dots in the top bar with a clean "Theme ▾" dropdown button for better mobile spacing.',
-        'Added live "Do you think the game will be 100% ported to PC?" (YES / NO) community poll with live result bars.',
+        'Added live "Do you think the game will be 100% ported to PC?" (YES / NO) community poll.',
       ],
     },
     {
@@ -507,17 +507,23 @@ export default function Home() {
     }
   }, [themeId, activeTheme.isDark]);
 
-  // Anketi ilk yüklemede ve her 10 saniyede bir otomatik yenile
   const fetchPoll = useCallback(async () => {
     try {
       const res = await fetch('/api/poll', { cache: 'no-store' });
       const data = await res.json();
       if (data.ok) {
-        setPollData({
-          yes: data.yes ?? 0,
-          no: data.no ?? 0,
-          myVote: data.myVote || null,
-          locked: Boolean(data.locked),
+        setPollData((prev) => {
+          const incomingTotal = (data.yes ?? 0) + (data.no ?? 0);
+          const prevTotal = (prev.yes ?? 0) + (prev.no ?? 0);
+          if (data.source === 'memory' && incomingTotal < prevTotal) {
+            return prev;
+          }
+          return {
+            yes: data.yes ?? 0,
+            no: data.no ?? 0,
+            myVote: data.myVote || prev.myVote || null,
+            locked: Boolean(data.locked || prev.locked),
+          };
         });
       }
     } catch {
@@ -676,7 +682,6 @@ export default function Home() {
         }}
       >
         <div className="max-w-5xl mx-auto px-3 sm:px-6 py-2.5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-          {/* 1. Satır (Mobilde Logo + GTA6TAKİP + v1.0.4 + Çevrimiçi) */}
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2 shrink-0">
               <Icon3DLogo />
@@ -708,7 +713,6 @@ export default function Home() {
             </span>
           </div>
 
-          {/* 2. Satır (Mobilde Kontroller / Masaüstünde Sağ Taraf) */}
           <div className="flex items-center justify-between sm:justify-end gap-2">
             <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/25 shrink-0">
               <span className="relative flex h-2 w-2">
@@ -720,7 +724,6 @@ export default function Home() {
               </span>
             </span>
 
-            {/* TEMA AÇILIR MENÜ BUTONU */}
             <div className="relative" ref={themeMenuRef}>
               <button
                 type="button"
@@ -768,7 +771,6 @@ export default function Home() {
             </div>
 
             <div className="flex items-center gap-2">
-              {/* TR | EN */}
               <div
                 className="flex items-center rounded-full p-0.5 border"
                 style={{ backgroundColor: activeTheme.bgCard, borderColor: activeTheme.border }}
@@ -799,7 +801,6 @@ export default function Home() {
                 </button>
               </div>
 
-              {/* Yenile */}
               <button
                 onClick={fetchSync}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-semibold transition hover:opacity-80"
@@ -918,7 +919,7 @@ export default function Home() {
           ))}
         </section>
 
-        {/* TOPLULUK ANKETİ: EVET x HAYIR (IP KİLİTLİ + 10 SN OTOMATİK YENİLEME) */}
+        {/* TOPLULUK ANKETİ: EVET x HAYIR (SUPABASE KALICI + IP KİLİTLİ + 10 SN YENİLEME) */}
         <section
           className="rounded-2xl p-4 sm:p-5 border space-y-3"
           style={{ backgroundColor: activeTheme.bgCard, borderColor: activeTheme.border }}
