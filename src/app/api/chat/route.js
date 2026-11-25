@@ -3,6 +3,9 @@ import { createClient } from '@supabase/supabase-js';
 
 export const dynamic = 'force-dynamic';
 
+// Son 45 saniyede aktif olan kullanıcıları takip eder
+const activeVisitors = new Map();
+
 function getSupabase() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -10,11 +13,29 @@ function getSupabase() {
   return createClient(url, key);
 }
 
-export async function GET() {
+export async function GET(req) {
   try {
+    const { searchParams } = new URL(req.url);
+    const sid = (searchParams.get('sid') || '').trim().slice(0, 40);
+    const nick = (searchParams.get('nick') || 'ViceMisafir').trim().slice(0, 24) || 'ViceMisafir';
+
+    const now = Date.now();
+    if (sid) {
+      activeVisitors.set(sid, { nick, lastSeen: now });
+    }
+    for (const [k, v] of activeVisitors.entries()) {
+      if (now - v.lastSeen > 45000) activeVisitors.delete(k);
+    }
+
+    const onlineUsers = Array.from(activeVisitors.values()).map((v) => v.nick);
+
     const supabase = getSupabase();
     if (!supabase) {
-      return NextResponse.json({ ok: false, error: 'Supabase env eksik' }, { status: 500 });
+      return NextResponse.json({
+        ok: false,
+        error: 'Supabase env eksik',
+        onlineUsers,
+      }, { status: 500 });
     }
 
     const [msgRes, banRes] = await Promise.all([
@@ -28,6 +49,7 @@ export async function GET() {
       bannedUsers: Array.isArray(banRes.data)
         ? banRes.data.map((b) => String(b.username || '').toLowerCase())
         : [],
+      onlineUsers: onlineUsers.length > 0 ? onlineUsers : [nick],
       error: msgRes.error ? msgRes.error.message : null,
     });
   } catch (err) {
