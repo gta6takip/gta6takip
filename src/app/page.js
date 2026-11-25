@@ -4,30 +4,44 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { RefreshCw, ExternalLink, Sparkles, X } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
-const APP_VERSION = 'v1.0.0';
+const APP_VERSION = 'v1.0.1';
 
 const CHANGELOG = {
   tr: [
     {
+      version: 'v1.0.1',
+      date: '25 Kasım 2026',
+      items: [
+        'Android ve dar mobil ekranlarda geliştirici isimlerinin "..." şeklinde kesilmesi düzeltildi.',
+        'Tamamen sade ve güvenli salt takip düzeni korundu.',
+      ],
+    },
+    {
       version: 'v1.0.0',
       date: '25 Kasım 2026',
       items: [
-        'PortWatch VI #race düzenine uyumlu sade ve modern tek sütunlu arayüz eklendi.',
+        'PortWatch VI #race düzenine uyumlu sade ve modern arayüz eklendi.',
         '2 standart (Koyu/Açık) + 3 GTA VI temalı (Vice Sunset, Leonida Neon, Ocean Drive) olmak üzere 5 tema desteği getirildi.',
-        'Zortos, vice-pc ve XValkyrie dahil 15 ekip için 120 saniyede bir otomatik veri akışı sağlandı.',
-        'TR / EN dil ayrımı %100 uyumlu hale getirildi ve alt WhatsApp / X SVG paylaşım butonları eklendi.',
+        'Zortos (resmi X bağlantısıyla), vice-pc ve XValkyrie dahil 15 ekip için 120 saniyede bir otomatik veri akışı sağlandı.',
       ],
     },
   ],
   en: [
     {
+      version: 'v1.0.1',
+      date: 'November 25, 2026',
+      items: [
+        'Fixed developer names truncating with "..." on narrow Android mobile screens.',
+        'Kept the clean, read-only leaderboard layout.',
+      ],
+    },
+    {
       version: 'v1.0.0',
       date: 'November 25, 2026',
       items: [
-        'Introduced clean single-column leaderboard layout inspired by PortWatch VI #race.',
+        'Introduced clean leaderboard layout inspired by PortWatch VI #race.',
         'Added 5 themes: 2 standard (Dark/Light) + 3 GTA VI themed (Vice Sunset, Leonida Neon, Ocean Drive).',
-        'Expanded automatic 120s live tracking to 15 teams including Zortos, vice-pc, and XValkyrie.',
-        'Completed 100% TR/EN localization and added themed WhatsApp & X SVG share buttons.',
+        'Expanded automatic 120s live tracking to 15 teams including Zortos (with official X link), vice-pc, and XValkyrie.',
       ],
     },
   ],
@@ -37,7 +51,6 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const supabase = supabaseUrl && supabaseAnonKey ? createClient(supabaseUrl, supabaseAnonKey) : null;
 
-// --- 5 TEMA (2 STANDART + 3 GTA VI TEMALI) ---
 const THEMES = {
   dark: {
     id: 'dark',
@@ -131,7 +144,6 @@ const THEMES = {
   },
 };
 
-// --- %100 DİL ÇEVİRİ YARDIMCISI (TR <-> EN) ---
 function localizeDynamicText(raw, lang) {
   if (!raw) return '';
   let text = String(raw).trim();
@@ -174,7 +186,6 @@ function localizeDynamicText(raw, lang) {
   return text;
 }
 
-// --- INLINE BAYRAK SVG'LERİ ---
 const FlagTR = () => (
   <svg viewBox="0 0 36 24" className="w-4 h-3 rounded-[2px] shrink-0" aria-hidden="true">
     <rect width="36" height="24" fill="#E30A17" />
@@ -192,7 +203,6 @@ const FlagEN = () => (
   </svg>
 );
 
-// --- SOSYAL SVG LOGOLAR ---
 const XLogoSVG = ({ className = 'w-4 h-4' }) => (
   <svg viewBox="0 0 24 24" className={`${className} shrink-0`} fill="currentColor" aria-hidden="true">
     <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
@@ -205,7 +215,6 @@ const WhatsAppLogoSVG = ({ className = 'w-4 h-4' }) => (
   </svg>
 );
 
-// --- SADE 3D SVG İKONLAR ---
 const Icon3DLogo = () => (
   <svg viewBox="0 0 40 40" className="w-9 h-9 shrink-0 drop-shadow-[0_4px_10px_rgba(236,72,153,0.4)]" aria-hidden="true">
     <defs>
@@ -235,7 +244,7 @@ const Icon3DTeamAvatar = ({ index, isOpen }) => {
   const [c1, c2] = gradients[index % gradients.length];
   const gid = `team-av-${index}`;
   return (
-    <svg viewBox="0 0 42 42" className="w-10 h-10 shrink-0 drop-shadow-[0_4px_8px_rgba(0,0,0,0.35)]" aria-hidden="true">
+    <svg viewBox="0 0 42 42" className="w-9 h-9 sm:w-10 sm:h-10 shrink-0 drop-shadow-[0_4px_8px_rgba(0,0,0,0.35)]" aria-hidden="true">
       <defs>
         <linearGradient id={gid} x1="0%" y1="0%" x2="100%" y2="100%">
           <stop offset="0%" stopColor={c1} />
@@ -479,7 +488,6 @@ export default function Home() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            {/* Çevrimiçi Butonu */}
             <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/25">
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
@@ -488,7 +496,6 @@ export default function Home() {
               {onlineCount} {t.onlineBtn}
             </span>
 
-            {/* 5 Tema Seçici (2 Standart + 3 GTA VI Temalı) */}
             <div
               className="flex items-center gap-1 rounded-full p-1 border"
               style={{ backgroundColor: activeTheme.bgCard, borderColor: activeTheme.border }}
@@ -512,7 +519,6 @@ export default function Home() {
               })}
             </div>
 
-            {/* TR | EN */}
             <div
               className="flex items-center rounded-full p-0.5 border"
               style={{ backgroundColor: activeTheme.bgCard, borderColor: activeTheme.border }}
@@ -543,7 +549,6 @@ export default function Home() {
               </button>
             </div>
 
-            {/* Yenile */}
             <button
               onClick={fetchSync}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-semibold transition hover:opacity-80"
@@ -641,15 +646,15 @@ export default function Home() {
               return (
                 <article
                   key={teamName || idx}
-                  className="rounded-2xl p-5 sm:p-6 border transition-colors"
+                  className="rounded-2xl p-4 sm:p-6 border transition-colors"
                   style={{ backgroundColor: activeTheme.bgCard, borderColor: activeTheme.border }}
                 >
-                  <div className="flex items-start justify-between gap-4 mb-3">
-                    <div className="flex items-center gap-3 min-w-0">
-                      {/* Sıralama Numarası + Işık Saçan Canlı Blog Göstergesi */}
-                      <div className="flex items-center gap-1.5 shrink-0">
+                  {/* ANDROID MOBİL UYUMLU BAŞLIK (İsimler asla "..." olmaz) */}
+                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 mb-3">
+                    <div className="flex items-start gap-2.5 sm:gap-3 min-w-0">
+                      <div className="flex items-center gap-1.5 shrink-0 pt-1">
                         <span
-                          className="text-2xl font-black w-6 text-center"
+                          className="text-xl sm:text-2xl font-black w-6 text-center"
                           style={{ color: rank <= 3 ? activeTheme.accent : activeTheme.textMuted }}
                         >
                           {rank}
@@ -673,9 +678,10 @@ export default function Home() {
                       </div>
 
                       <Icon3DTeamAvatar index={idx} isOpen={isOpen} />
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2">
-                          <h2 className="text-base sm:text-lg font-bold truncate">{teamName}</h2>
+
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h2 className="text-base sm:text-lg font-bold break-words leading-snug">{teamName}</h2>
                           {xUrl && (
                             <a
                               href={xUrl}
@@ -694,18 +700,18 @@ export default function Home() {
                             </a>
                           )}
                         </div>
-                        <p className="text-xs truncate" style={{ color: activeTheme.textMuted }}>
+                        <p className="text-xs break-all" style={{ color: activeTheme.textMuted }}>
                           {repoSlug}
                         </p>
                       </div>
                     </div>
 
-                    <div className="text-right shrink-0">
+                    <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-start gap-2 shrink-0 pl-8 sm:pl-0">
                       <div className="text-2xl sm:text-[28px] font-black leading-none tracking-tight">
                         {pctLabel}
                       </div>
                       {stage && (
-                        <div className="inline-flex items-center gap-1.5 text-xs mt-1.5" style={{ color: activeTheme.textMuted }}>
+                        <div className="inline-flex items-center gap-1.5 text-xs" style={{ color: activeTheme.textMuted }}>
                           <Icon3DGamepad />
                           <span>{stage}</span>
                         </div>
@@ -732,7 +738,6 @@ export default function Home() {
                     )}
                   </div>
 
-                  {/* 6 Parçalı İlerleme Çubuğu */}
                   <div className="grid grid-cols-6 gap-1.5 my-4">
                     {[0, 1, 2, 3, 4, 5].map((segIdx) => {
                       const segFill = Math.min(1, Math.max(0, filledSegments - segIdx)) * 100;
@@ -754,7 +759,6 @@ export default function Home() {
                     })}
                   </div>
 
-                  {/* Aşama Noktaları */}
                   <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 text-[11px] mb-3">
                     {MILESTONES[lang].map((mLabel, mIdx) => {
                       const reached = filledSegments >= mIdx + 0.5;
@@ -778,7 +782,6 @@ export default function Home() {
                     })}
                   </div>
 
-                  {/* Kısa Aşama Açıklaması + Bağlantı Butonu */}
                   <div
                     className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t"
                     style={{ borderColor: activeTheme.border }}
@@ -813,7 +816,7 @@ export default function Home() {
           </div>
         )}
 
-        {/* ALT SOSYAL & PAYLAŞIM ŞERİDİ (SVG LOGOLU) */}
+        {/* ALT SOSYAL & PAYLAŞIM ŞERİDİ */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-4">
           <a
             href="https://x.com/batmancodex"
@@ -870,11 +873,7 @@ export default function Home() {
                 <Sparkles className="w-4 h-4" style={{ color: activeTheme.accent }} />
                 <h3 className="font-extrabold text-sm">{t.updatesTitle}</h3>
               </div>
-              <button
-                type="button"
-                onClick={() => setShowChangelog(false)}
-                className="p-1 rounded-lg hover:opacity-75"
-              >
+              <button type="button" onClick={() => setShowChangelog(false)} className="p-1 rounded-lg hover:opacity-75">
                 <X className="w-4 h-4" />
               </button>
             </div>
