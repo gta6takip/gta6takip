@@ -12,13 +12,22 @@ import {
   Palette,
   ChevronDown,
   Check,
+  ArrowUp,
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
-const APP_VERSION = 'v1.0.7';
+const APP_VERSION = 'v1.0.8';
 
 const CHANGELOG = {
   tr: [
+    {
+      version: 'v1.0.8',
+      date: '26 Kasım 2026',
+      items: [
+        'Yeni lider darkworldhm yanına temayla uyumlu parlayan "YENİ" rozeti eklendi.',
+        'Aşağı kaydırıldığında sağ altta beliren temaya uyumlu "Yukarı Çık (↑)" butonu eklendi.',
+      ],
+    },
     {
       version: 'v1.0.7',
       date: '26 Kasım 2026',
@@ -69,6 +78,14 @@ const CHANGELOG = {
     },
   ],
   en: [
+    {
+      version: 'v1.0.8',
+      date: 'November 26, 2026',
+      items: [
+        'Added a glowing theme-matched "NEW" badge next to new leader darkworldhm.',
+        'Added a floating "Back to Top (↑)" button when scrolling down on mobile and desktop.',
+      ],
+    },
     {
       version: 'v1.0.7',
       date: 'November 26, 2026',
@@ -399,6 +416,8 @@ const TEXT = {
     onlineBtn: 'Çevrimiçi',
     themeBtn: 'Tema',
     liveBadge: 'CANLI',
+    newBadge: 'YENİ',
+    backToTop: 'Yukarı Çık',
     updatesBtn: 'Güncelleme Notları',
     updatesTitle: 'Güncelleme Notları',
     nextCheck: 'Sonraki kontrol',
@@ -429,6 +448,8 @@ const TEXT = {
     onlineBtn: 'Online',
     themeBtn: 'Theme',
     liveBadge: 'LIVE',
+    newBadge: 'NEW',
+    backToTop: 'Back to Top',
     updatesBtn: 'Release Notes',
     updatesTitle: 'Release Notes',
     nextCheck: 'Next check',
@@ -465,6 +486,7 @@ export default function Home() {
   const [syncing, setSyncing] = useState(false);
   const [onlineCount, setOnlineCount] = useState(1);
   const [showChangelog, setShowChangelog] = useState(false);
+  const [showScrollTop, setShowScrollTop] = useState(false);
 
   const prevPctsRef = useRef({});
   const themeMenuRef = useRef(null);
@@ -483,6 +505,14 @@ export default function Home() {
     } catch {
       // ignore
     }
+  }, []);
+
+  useEffect(() => {
+    const onScroll = () => {
+      setShowScrollTop(window.scrollY > 360);
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
   useEffect(() => {
@@ -885,6 +915,7 @@ export default function Home() {
               const pctLabel = lang === 'tr' ? `%${pct}` : `${pct}%`;
               const delta = deltas[teamName];
               const isOpen = Boolean(team.open_source ?? team.isOpenSource ?? team.is_open_source);
+              const isNewLeader = teamName.toLowerCase() === 'darkworldhm';
               const rawStage = lang === 'tr' ? team.stage_tr || team.stage : team.stage_en || team.stage;
               const rawFps = lang === 'tr' ? team.fps_tr || team.fps : team.fps_en || team.fps;
               const rawDesc =
@@ -943,6 +974,18 @@ export default function Home() {
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-2">
                           <h2 className="text-base sm:text-lg font-bold break-words leading-snug">{teamName}</h2>
+                          {isNewLeader && (
+                            <span
+                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black tracking-wider text-white animate-pulse shrink-0"
+                              style={{
+                                background: activeTheme.barGradient,
+                                boxShadow: `0 0 14px ${activeTheme.glow}`,
+                              }}
+                            >
+                              <Sparkles className="w-3 h-3" />
+                              <span>{t.newBadge}</span>
+                            </span>
+                          )}
                           {xUrl && (
                             <a
                               href={xUrl}
@@ -1125,6 +1168,23 @@ export default function Home() {
       <footer className="max-w-5xl mx-auto px-4 sm:px-6 py-6 text-center text-xs" style={{ color: activeTheme.textMuted }}>
         <p>{t.disclaimer}</p>
       </footer>
+
+      {/* MOBİL & PC YUKARI ÇIK BUTONU */}
+      {showScrollTop && (
+        <button
+          type="button"
+          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+          aria-label={t.backToTop}
+          title={t.backToTop}
+          className="fixed bottom-5 right-4 sm:right-6 z-40 w-10 h-10 rounded-full flex items-center justify-center text-white transition-transform hover:scale-110 active:scale-95"
+          style={{
+            background: activeTheme.barGradient,
+            boxShadow: `0 4px 18px ${activeTheme.glow}`,
+          }}
+        >
+          <ArrowUp className="w-4 h-4" />
+        </button>
+      )}
 
       {/* GÜNCELLEME NOTLARI PENCERESİ */}
       {showChangelog && (
