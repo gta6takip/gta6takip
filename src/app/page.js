@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
-const APP_VERSION = 'v1.0.16';
+const APP_VERSION = 'v1.0.17';
 
 const THEMES = {
   dark: {
@@ -149,6 +149,19 @@ const FALLBACK_NEWS = [
 
 const CHANGELOG = [
   {
+    version: 'v1.0.17',
+    dateTr: '26 Kasım 2026',
+    dateEn: 'November 26, 2026',
+    itemsTr: [
+      '30 FPS Barajı hesaplaması sadece oynanabilir (%50+) yapıları ölçecek şekilde düzeltildi (24 / 30 FPS).',
+      'Son Gelişmeler içindeki REKOR, AÇIK KAYNAK ve GÜNCEL rozetleri ışıklı ve canlı hale getirildi.',
+    ],
+    itemsEn: [
+      'Fixed 30 FPS Target calculation to track only playable (50%+) builds (24 / 30 FPS).',
+      'Added glowing live styling to RECORD, OPEN SOURCE, and LIVE tags in Latest Updates.',
+    ],
+  },
+  {
     version: 'v1.0.16',
     dateTr: '26 Kasım 2026',
     dateEn: 'November 26, 2026',
@@ -174,17 +187,6 @@ const CHANGELOG = [
     itemsEn: [
       'Added modern WhatsApp and X icons to the footer share buttons.',
       'Unified team progress into a single continuous bar with aligned 6-milestone stop nodes.',
-    ],
-  },
-  {
-    version: 'v1.0.10',
-    dateTr: '26 Kasım 2026',
-    dateEn: 'November 26, 2026',
-    itemsTr: [
-      'API veri eşleştirme katmanı güncellendi; ekip yüzdeleri, FPS ve Sparkline grafiği tam uyumlu hale getirildi.',
-    ],
-    itemsEn: [
-      'Updated API field mapping so team percentages, FPS, and Sparkline chart render accurately.',
     ],
   },
 ];
@@ -257,19 +259,33 @@ function localizeDynamicText(text, lang) {
 }
 
 function extractPeakFps(teams) {
-  let max = 24;
+  let max = 0;
   for (const t of teams) {
+    if (Number(t.progress) < 50) continue;
+    const lower = String(t.fps || '').toLowerCase();
+    if (lower.includes('men') || lower.includes('ara sahne') || lower.includes('cutscene')) continue;
     const matches = String(t.fps || '').match(/\d+/g);
     if (matches) {
       for (const m of matches) {
         const val = Number(m);
-        if (val > max && val <= 60 && !String(t.fps).toLowerCase().includes('men')) {
+        if (val > max && val <= 60) {
           max = val;
         }
       }
     }
   }
-  return max;
+  return max > 0 ? max : 24;
+}
+
+function getNewsBadgeStyle(tagRaw) {
+  const tag = String(tagRaw || '').toUpperCase();
+  if (tag.includes('REKOR') || tag.includes('RECORD')) {
+    return 'bg-amber-500/20 text-amber-300 border-amber-400/50 shadow-[0_0_12px_rgba(251,191,36,0.45)]';
+  }
+  if (tag.includes('AÇIK') || tag.includes('OPEN')) {
+    return 'bg-emerald-500/20 text-emerald-300 border-emerald-400/50 shadow-[0_0_12px_rgba(52,211,153,0.45)]';
+  }
+  return 'bg-red-500/20 text-red-300 border-red-400/50 shadow-[0_0_12px_rgba(248,113,113,0.5)] animate-pulse';
 }
 
 export default function HomePage() {
@@ -673,16 +689,24 @@ export default function HomePage() {
             {lang === 'tr' ? 'Son Gelişmeler' : 'Latest Updates'}
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
-            {news.slice(0, 3).map((item, idx) => (
-              <div key={idx} className={`rounded-xl border p-3 text-xs leading-relaxed ${theme.card}`}>
-                <span className={`inline-block px-2 py-0.5 rounded font-bold text-[10px] mb-1.5 border ${theme.pill}`}>
-                  {lang === 'tr' ? item.tagTr || 'GÜNCEL' : item.tagEn || 'LIVE'}
-                </span>
-                <p className={theme.muted}>
-                  {lang === 'tr' ? item.tr || item.text : item.en || localizeDynamicText(item.tr || item.text, 'en')}
-                </p>
-              </div>
-            ))}
+            {news.slice(0, 3).map((item, idx) => {
+              const badgeLabel = lang === 'tr' ? item.tagTr || 'GÜNCEL' : item.tagEn || 'LIVE';
+              return (
+                <div key={idx} className={`rounded-xl border p-3 text-xs leading-relaxed ${theme.card}`}>
+                  <span
+                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full font-black text-[10px] mb-1.5 border ${getNewsBadgeStyle(
+                      badgeLabel
+                    )}`}
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full bg-current" />
+                    {badgeLabel}
+                  </span>
+                  <p className={theme.muted}>
+                    {lang === 'tr' ? item.tr || item.text : item.en || localizeDynamicText(item.tr || item.text, 'en')}
+                  </p>
+                </div>
+              );
+            })}
           </div>
         </section>
 
