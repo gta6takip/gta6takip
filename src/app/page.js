@@ -24,6 +24,7 @@ const THEMES = {
     textMuted: '#9ca3af',
     trackBg: '#1c202a',
     accent: '#e85595',
+    glow: 'rgba(232, 85, 149, 0.65)',
     barGradient: 'linear-gradient(90deg, #7c5cff 0%, #ec4899 100%)',
     ambient: 'radial-gradient(ellipse 80% 35% at 50% 0%, rgba(168, 85, 247, 0.15), transparent)',
   },
@@ -41,6 +42,7 @@ const THEMES = {
     textMuted: '#64748b',
     trackBg: '#e2e8f0',
     accent: '#ec4899',
+    glow: 'rgba(236, 72, 153, 0.5)',
     barGradient: 'linear-gradient(90deg, #7c5cff 0%, #ec4899 100%)',
     ambient: 'radial-gradient(ellipse 80% 35% at 50% 0%, rgba(236, 72, 153, 0.08), transparent)',
   },
@@ -58,6 +60,7 @@ const THEMES = {
     textMuted: '#c4b5fd',
     trackBg: '#2e1647',
     accent: '#f472b6',
+    glow: 'rgba(244, 114, 182, 0.7)',
     barGradient: 'linear-gradient(90deg, #ec4899 0%, #f97316 100%)',
     ambient: 'radial-gradient(ellipse 85% 40% at 50% 0%, rgba(236, 72, 153, 0.22), transparent)',
   },
@@ -75,6 +78,7 @@ const THEMES = {
     textMuted: '#7dd3fc',
     trackBg: '#132d3b',
     accent: '#22d3ee',
+    glow: 'rgba(34, 211, 238, 0.7)',
     barGradient: 'linear-gradient(90deg, #06b6d4 0%, #f43f5e 100%)',
     ambient: 'radial-gradient(ellipse 85% 40% at 50% 0%, rgba(6, 182, 212, 0.20), transparent)',
   },
@@ -92,10 +96,69 @@ const THEMES = {
     textMuted: '#fda4af',
     trackBg: '#331d2c',
     accent: '#fbbf24',
+    glow: 'rgba(251, 191, 36, 0.7)',
     barGradient: 'linear-gradient(90deg, #f59e0b 0%, #fb7185 100%)',
     ambient: 'radial-gradient(ellipse 85% 40% at 50% 0%, rgba(245, 158, 11, 0.18), transparent)',
   },
 };
+
+// --- %100 DİL ÇEVİRİ YARDIMCISI (TR <-> EN) ---
+function localizeDynamicText(raw, lang) {
+  if (!raw) return '';
+  let text = String(raw).trim();
+
+  if (lang === 'en') {
+    const trToEn = [
+      [/\(Menü\)/gi, '(Menu)'],
+      [/Oynanabilir/gi, 'Playable'],
+      [/Ana Menü/gi, 'Main Menu'],
+      [/Oyun Dünyası/gi, 'In the World'],
+      [/İlk Kare/gi, 'First Frame'],
+      [/Exe Çalışıyor/gi, 'Exe Runs'],
+      [/Altyapı/gi, 'Groundwork'],
+      [/Kapalı Ekip/gi, 'Closed Team'],
+      [/Açık Kaynak/gi, 'Open Source'],
+      [/Tanılama Modu/gi, 'Diagnostic Mode'],
+    ];
+    for (const [re, rep] of trToEn) text = text.replace(re, rep);
+    return text;
+  }
+
+  // lang === 'tr'
+  const enToTr = [
+    [/upstream's status section left out/gi, 'kaynak projenin durum bölümü çıkarıldı'],
+    [/it named upstream's test machine/gi, 'kaynak test sistemi belirtilmişti'],
+    [/and a warning that is upstream's/gi, 've kaynak projeye ait uyarı ayrıştırıldı'],
+    [/Playable/gi, 'Oynanabilir'],
+    [/Main [Mm]enu/gi, 'Ana Menü'],
+    [/In the [Ww]orld/gi, 'Oyun Dünyası'],
+    [/First [Ff]rame/gi, 'İlk Kare'],
+    [/First [Aa]ct/gi, 'İlk Bölüm'],
+    [/Prologue [Cc]leared/gi, 'Giriş Bölümü Geçildi'],
+    [/Opening [Ss]cene/gi, 'Açılış Sahnesi'],
+    [/Prison [Ss]cene/gi, 'Hapishane Sahnesi'],
+    [/Private [Bb]uild/gi, 'Özel Sürüm'],
+    [/Diagnostic [Mm]ode/gi, 'Tanılama Modu'],
+    [/GDK Samples/gi, 'GDK Örnekleri'],
+    [/\(Menu\)/gi, '(Menü)'],
+    [/Merge pull request/gi, 'Çekme isteği birleştirildi'],
+    [/Update README\.md/gi, 'README.md güncellendi'],
+    [/Update /gi, 'Güncellendi: '],
+    [/Add /gi, 'Eklendi: '],
+    [/Fix /gi, 'Düzeltildi: '],
+    [/Remove /gi, 'Kaldırıldı: '],
+    [/Refactor /gi, 'Yeniden düzenlendi: '],
+    [/Support for /gi, 'Destek eklendi: '],
+    [/initial commit/gi, 'ilk sürüm kaydı'],
+    [/test machine/gi, 'test sistemi'],
+    [/warning/gi, 'uyarı'],
+    [/and /gi, 've '],
+    [/with /gi, 'ile '],
+    [/for /gi, 'için '],
+  ];
+  for (const [re, rep] of enToTr) text = text.replace(re, rep);
+  return text;
+}
 
 // --- INLINE BAYRAK SVG'LERİ ---
 const FlagTR = () => (
@@ -212,11 +275,13 @@ const MILESTONES = {
 
 const TEXT = {
   tr: {
+    brand: 'GTA6TAKİP',
     eyebrow: 'LİDERLİK TABLOSU',
     title: 'GTA VI Port Ekipleri',
     subtitle:
       'PortWatch VI verileri ve açık kaynak GitHub depoları, her 120 saniyede bir otomatik olarak güncellenir.',
     onlineBtn: 'Çevrimiçi',
+    liveBadge: 'CANLI',
     filterAll: 'Tümü',
     filterOpen: 'Açık Kaynak',
     filterClosed: 'Kapalı Ekip',
@@ -236,11 +301,13 @@ const TEXT = {
     loading: 'Veriler yükleniyor...',
   },
   en: {
+    brand: 'GTA6TAKIP',
     eyebrow: 'LEADERBOARD',
     title: 'GTA VI Port Teams',
     subtitle:
       'PortWatch VI race data and open-source GitHub repositories sync automatically every 120 seconds.',
     onlineBtn: 'Online',
+    liveBadge: 'LIVE',
     filterAll: 'All',
     filterOpen: 'Open Source',
     filterClosed: 'Closed Team',
@@ -257,7 +324,7 @@ const TEXT = {
     shareX: 'Share on X',
     disclaimer:
       'GTA6takip is a non-profit, hobbyist alternative to PortWatch. Data syncs automatically from portwatch-vi.xyz/#race and public GitHub repositories.',
-    loading: 'Loading race data...',
+    loading: 'Loading team progress...',
   },
 };
 
@@ -380,7 +447,7 @@ export default function Home() {
         <div className="max-w-5xl mx-auto px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2.5">
             <Icon3DLogo />
-            <span className="font-black text-base tracking-tight">GTA6TAKİP</span>
+            <span className="font-black text-base tracking-tight">{t.brand}</span>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
@@ -454,7 +521,10 @@ export default function Home() {
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-semibold transition hover:opacity-80"
               style={{ backgroundColor: activeTheme.bgCard, borderColor: activeTheme.border }}
             >
-              <RefreshCw className={`w-3.5 h-3.5 ${syncing ? 'animate-spin' : ''}`} style={syncing ? { color: activeTheme.accent } : undefined} />
+              <RefreshCw
+                className={`w-3.5 h-3.5 ${syncing ? 'animate-spin' : ''}`}
+                style={syncing ? { color: activeTheme.accent } : undefined}
+              />
               <span className="hidden sm:inline">{t.refresh}</span>
             </button>
           </div>
@@ -519,13 +589,19 @@ export default function Home() {
               const pct = Number(team.percentage ?? team.progress ?? team.pct ?? 0);
               const pctLabel = lang === 'tr' ? `%${pct}` : `${pct}%`;
               const isOpen = Boolean(team.open_source ?? team.isOpenSource ?? team.is_open_source);
-              const stage = lang === 'tr' ? team.stage_tr || team.stage : team.stage_en || team.stage;
-              const fps = lang === 'tr' ? team.fps_tr || team.fps : team.fps_en || team.fps;
-              const desc =
+              const rawStage = lang === 'tr' ? team.stage_tr || team.stage : team.stage_en || team.stage;
+              const rawFps = lang === 'tr' ? team.fps_tr || team.fps : team.fps_en || team.fps;
+              const rawDesc =
                 lang === 'tr'
                   ? team.desc_tr || team.description || team.desc
                   : team.desc_en || team.description || team.desc;
-              const commit = team.commit_msg || team.commitMessage || team.lastCommit;
+              const rawCommit = team.commit_msg || team.commitMessage || team.lastCommit;
+
+              const stage = localizeDynamicText(rawStage, lang);
+              const fps = localizeDynamicText(rawFps, lang);
+              const desc = localizeDynamicText(rawDesc, lang);
+              const commit = localizeDynamicText(rawCommit, lang);
+
               const repoUrl = team.url || team.repo_url || team.github_url;
               const repoSlug = repoUrl ? repoUrl.replace('https://github.com/', '').replace('https://', '') : 'portwatch-vi.xyz';
               const isExpanded = Boolean(expanded[rank - 1]);
@@ -538,13 +614,33 @@ export default function Home() {
                   style={{ backgroundColor: activeTheme.bgCard, borderColor: activeTheme.border }}
                 >
                   <div className="flex items-start justify-between gap-4 mb-3">
-                    <div className="flex items-center gap-3.5 min-w-0">
-                      <span
-                        className="text-2xl font-black w-7 text-center shrink-0"
-                        style={{ color: rank <= 3 ? activeTheme.accent : activeTheme.textMuted }}
-                      >
-                        {rank}
-                      </span>
+                    <div className="flex items-center gap-3 min-w-0">
+                      {/* Sıralama Numarası + Işık Saçan Canlı Blog Göstergesi */}
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <span
+                          className="text-2xl font-black w-6 text-center"
+                          style={{ color: rank <= 3 ? activeTheme.accent : activeTheme.textMuted }}
+                        >
+                          {rank}
+                        </span>
+                        <span
+                          className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-extrabold tracking-wider border"
+                          style={{
+                            color: rank <= 3 ? '#ffffff' : activeTheme.accent,
+                            background: rank <= 3 ? activeTheme.barGradient : 'transparent',
+                            borderColor: activeTheme.accent,
+                            boxShadow: rank <= 3 ? `0 0 12px ${activeTheme.glow}` : `0 0 6px ${activeTheme.glow}`,
+                          }}
+                          title={t.liveBadge}
+                        >
+                          <span
+                            className="w-1.5 h-1.5 rounded-full animate-ping"
+                            style={{ backgroundColor: rank <= 3 ? '#ffffff' : activeTheme.accent }}
+                          />
+                          {rank <= 3 && <span>{t.liveBadge}</span>}
+                        </span>
+                      </div>
+
                       <Icon3DTeamAvatar index={idx} isOpen={isOpen} />
                       <div className="min-w-0">
                         <h2 className="text-base sm:text-lg font-bold truncate">{team.name || team.title}</h2>
