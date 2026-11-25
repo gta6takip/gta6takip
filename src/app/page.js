@@ -14,7 +14,7 @@ const CHANGELOG = {
       items: [
         '120 saniyelik canlı geri sayım sayacı ("Sonraki kontrol") eklendi.',
         '"Son Gelişmeler" mini bülten bandı ve Test Edilen Ekran Kartları (FPS) özeti eklendi.',
-        'Yüzdesi artan ekipler için yeşil artış rozeti (▲ +%...) ve @batmancodex X takip çağrısı eklendi.',
+        'Yüzdesi artan ekipler için yeşil artış rozeti (▲ +%...) eklendi.',
       ],
     },
     {
@@ -42,7 +42,7 @@ const CHANGELOG = {
       items: [
         'Added live 120s countdown timer ("Next check").',
         'Added "Latest Updates" mini news strip and Tested GPUs (FPS) summary bar.',
-        'Added green progress delta badge (▲ +...%) and @batmancodex X follow banner.',
+        'Added green progress delta badge (▲ +...%) for advancing teams.',
       ],
     },
     {
@@ -348,8 +348,6 @@ const TEXT = {
     nextCheck: 'Sonraki kontrol',
     newsTitle: 'Son Gelişmeler',
     gpuTitle: 'Test Edilen Ekran Kartları',
-    followXTitle: 'Büyük kırılmalar olduğunda anında bildirim için X’ten takip et',
-    followXBtn: 'Takip Et',
     filterAll: 'Tümü',
     filterOpen: 'Açık Kaynak',
     filterClosed: 'Kapalı Ekip',
@@ -379,8 +377,6 @@ const TEXT = {
     nextCheck: 'Next check',
     newsTitle: 'Latest Updates',
     gpuTitle: 'Tested GPUs & FPS',
-    followXTitle: 'Follow on X for instant alerts when major breakthroughs happen',
-    followXBtn: 'Follow',
     filterAll: 'All',
     filterOpen: 'Open Source',
     filterClosed: 'Closed Team',
@@ -972,29 +968,8 @@ export default function Home() {
           </div>
         )}
 
-        {/* X TAKİP ÇAĞRISI */}
-        <div
-          className="rounded-2xl p-4 border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3"
-          style={{ backgroundColor: activeTheme.bgCard, borderColor: activeTheme.border }}
-        >
-          <div className="flex items-center gap-2.5 text-xs sm:text-sm font-medium">
-            <XLogoSVG className="w-4 h-4 shrink-0" />
-            <span>{t.followXTitle}</span>
-          </div>
-          <a
-            href="https://x.com/batmancodex"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white transition hover:opacity-90 shrink-0"
-            style={{ background: activeTheme.barGradient }}
-          >
-            <XLogoSVG className="w-3.5 h-3.5" />
-            <span>@batmancodex · {t.followXBtn}</span>
-          </a>
-        </div>
-
         {/* ALT SOSYAL & PAYLAŞIM ŞERİDİ */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-4">
           <a
             href="https://x.com/batmancodex"
             target="_blank"
