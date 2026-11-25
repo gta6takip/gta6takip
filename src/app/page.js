@@ -173,7 +173,6 @@ const TRANSLATIONS = {
     errSend: 'Gönderilemedi:',
     errUnexpected: 'Beklenmeyen hata:',
     errRead: 'Sohbet okuma hatası:',
-    errConn: 'Bağlantı hatası:',
     footerText:
       'GTA6takip bağımsız bir topluluk takip sitesidir; Rockstar Games veya Take-Two ile resmi bağlantısı yoktur.',
     stageLevel1: 'Boot / Exe',
@@ -236,7 +235,6 @@ const TRANSLATIONS = {
     errSend: 'Failed to send:',
     errUnexpected: 'Unexpected error:',
     errRead: 'Chat read error:',
-    errConn: 'Connection error:',
     footerText:
       'GTA6takip is an independent community tracker; not affiliated with Rockstar Games or Take-Two.',
     stageLevel1: 'Boot / Exe',
@@ -475,13 +473,25 @@ export default function HomePage() {
   const [adminPassInput, setAdminPassInput] = useState('');
   const [adminError, setAdminError] = useState('');
 
+  const sessionIdRef = useRef('');
+  const nickRef = useRef('ViceMisafir');
   const chatBottomRef = useRef(null);
   const t = TRANSLATIONS[lang] || TRANSLATIONS.tr;
 
   useEffect(() => {
     try {
+      let sid = sessionStorage.getItem('gta6takip_sid');
+      if (!sid) {
+        sid = Math.random().toString(36).slice(2) + Date.now().toString(36);
+        sessionStorage.setItem('gta6takip_sid', sid);
+      }
+      sessionIdRef.current = sid;
+
       const savedName = localStorage.getItem('gta6takip_nick');
-      if (savedName) setUsername(savedName);
+      if (savedName) {
+        setUsername(savedName);
+        nickRef.current = savedName;
+      }
 
       const savedTheme = localStorage.getItem('gta6takip_theme');
       if (savedTheme && THEMES.some((th) => th.id === savedTheme)) {
@@ -506,16 +516,19 @@ export default function HomePage() {
         setMuteSeconds(Math.ceil((muteUntil - Date.now()) / 1000));
       }
     } catch {
-      // ignore
+      sessionIdRef.current = Math.random().toString(36).slice(2);
     }
 
     fetchProjects();
     fetchChatState();
 
-    // Her 5 saniyede bir Vercel API üzerinden sohbeti tazele (hızlı ve kararlı)
     const chatPoll = setInterval(fetchChatState, 5000);
     return () => clearInterval(chatPoll);
   }, []);
+
+  useEffect(() => {
+    nickRef.current = username.trim().slice(0, 24) || 'ViceMisafir';
+  }, [username]);
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
@@ -549,11 +562,6 @@ export default function HomePage() {
     }, 1000);
     return () => clearInterval(timer);
   }, [muteSeconds]);
-
-  useEffect(() => {
-    const nick = username.trim().slice(0, 24) || 'ViceMisafir';
-    setOnlineUsers([nick]);
-  }, [username]);
 
   useEffect(() => {
     const countdown = setInterval(() => {
@@ -599,11 +607,16 @@ export default function HomePage() {
 
   async function fetchChatState() {
     try {
-      const res = await fetch('/api/chat', { cache: 'no-store' });
+      const sid = encodeURIComponent(sessionIdRef.current || '');
+      const nick = encodeURIComponent(nickRef.current || 'ViceMisafir');
+      const res = await fetch(`/api/chat?sid=${sid}&nick=${nick}`, { cache: 'no-store' });
       const json = await res.json();
       if (json.ok) {
         setMessages(Array.isArray(json.messages) ? json.messages : []);
         setBannedUsers(Array.isArray(json.bannedUsers) ? json.bannedUsers : []);
+        if (Array.isArray(json.onlineUsers) && json.onlineUsers.length > 0) {
+          setOnlineUsers(json.onlineUsers);
+        }
         if (json.error) setChatError(`${t.errRead} ${json.error}`);
       } else if (json.error) {
         setChatError(`${t.errRead} ${json.error}`);
@@ -944,7 +957,7 @@ export default function HomePage() {
                     </button>
                   </div>
                   <ul className="space-y-1.5 max-h-40 overflow-y-auto vice-scroll list-none p-0 m-0">
-                    {onlineUsers.map((nick, i) => (
+                    {(onlineUsers.length > 0 ? onlineUsers : [rawCurrentNick]).map((nick, i) => (
                       <li
                         key={`${nick}-${i}`}
                         style={{ backgroundColor: 'var(--card-inner)' }}
