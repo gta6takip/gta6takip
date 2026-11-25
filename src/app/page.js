@@ -36,6 +36,10 @@ const AVATARS = [
   { id: 'rocket', label: 'Port', bg: 'from-fuchsia-600 to-orange-400' },
 ];
 
+function formatPct(val, lang) {
+  return lang === 'en' ? `${val}%` : `%${val}`;
+}
+
 function AvatarSvg({ avatarId, size = 'sm' }) {
   const av = AVATARS.find((a) => a.id === avatarId) || AVATARS[0];
   const dim = size === 'sm' ? 'w-6 h-6' : 'w-7 h-7';
@@ -198,7 +202,7 @@ const TRANSLATIONS = {
     nicknamePlaceholder: 'Takma adını yaz...',
     chatEmptyTitle: 'Kanal aktif!',
     chatEmptyDesc: 'İlk mesajı yazıp toplulukla sohbet edebilirsin.',
-    messagePlaceholder: 'Mesaj yaz veya https:// link yapıştır...',
+    messagePlaceholder: 'Mesaj yaz...',
     send: 'Gönder',
     sending: 'Atılıyor...',
     errEmptyMsg: 'Lütfen önce bir mesaj veya link yaz.',
@@ -251,7 +255,7 @@ const TRANSLATIONS = {
     nicknamePlaceholder: 'Enter your nickname...',
     chatEmptyTitle: 'Channel is live!',
     chatEmptyDesc: 'Be the first to send a message in this channel.',
-    messagePlaceholder: 'Type a message or paste an https:// link...',
+    messagePlaceholder: 'Type a message...',
     send: 'Send',
     sending: 'Sending...',
     errEmptyMsg: 'Please enter a message or link first.',
@@ -431,6 +435,11 @@ function mergeChannelMessages(prevList, incomingList) {
     );
     if (!exists) merged.push(m);
   }
+  merged.sort((a, b) => {
+    const ta = a.created_at ? new Date(a.created_at).getTime() : 0;
+    const tb = b.created_at ? new Date(b.created_at).getTime() : 0;
+    return ta - tb;
+  });
   return merged.slice(-100);
 }
 
@@ -885,7 +894,7 @@ export default function HomePage() {
               <Trophy className="w-3.5 h-3.5 text-amber-500" />
               <span style={{ color: 'var(--text-secondary)' }}>{t.leader}</span>
               <span className="font-bold">{leaderName}</span>
-              <span className="font-black pw-text-gradient">%{topScore}</span>
+              <span className="font-black pw-text-gradient">{formatPct(topScore, lang)}</span>
             </div>
 
             <button
@@ -947,7 +956,7 @@ export default function HomePage() {
           <div className="flex items-center gap-2.5 bg-slate-950/45 backdrop-blur-md border border-white/15 rounded-2xl p-3 text-white shrink-0">
             <div className="px-2.5 text-center">
               <div className="text-[10px] uppercase tracking-wider text-purple-200/75">{t.peak}</div>
-              <div className="text-lg sm:text-xl font-extrabold text-amber-300">%{topScore}</div>
+              <div className="text-lg sm:text-xl font-extrabold text-amber-300">{formatPct(topScore, lang)}</div>
             </div>
             <div className="px-2.5 border-l border-white/15 text-center">
               <div className="text-[10px] uppercase tracking-wider text-purple-200/75">{t.next}</div>
@@ -970,7 +979,7 @@ export default function HomePage() {
             </span>
           </div>
 
-          <div className="lg:max-h-[calc(100vh-220px)] lg:overflow-y-auto vice-scroll lg:pr-1.5">
+          <div className="lg:max-h-[calc(100vh-230px)] lg:overflow-y-auto vice-scroll lg:pr-1.5">
             <ul className="flex flex-col gap-3 list-none p-0 m-0">
               {projects.map((proj, index) => {
                 const pct = Math.min(100, Math.max(0, Number(proj.percentage) || 0));
@@ -1010,7 +1019,7 @@ export default function HomePage() {
                       </div>
 
                       <span className="text-xl sm:text-2xl font-extrabold tabular-nums pw-text-gradient shrink-0">
-                        %{pct}
+                        {formatPct(pct, lang)}
                       </span>
                     </div>
 
@@ -1079,7 +1088,7 @@ export default function HomePage() {
         {/* Sağ: Discord Tarzı Çift Kanallı Sohbet */}
         <aside
           style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--card-border)' }}
-          className="lg:col-span-5 xl:col-span-4 rounded-2xl border overflow-hidden shadow-sm flex flex-col h-[580px] lg:sticky lg:top-[76px] lg:h-[calc(100vh-98px)]"
+          className="lg:col-span-5 xl:col-span-4 rounded-2xl border overflow-hidden shadow-sm flex flex-col h-[540px] lg:sticky lg:top-[88px] lg:h-[calc(100vh-110px)] lg:max-h-[680px] z-20"
         >
           <div
             style={{ backgroundColor: 'var(--card-inner)', borderColor: 'var(--card-border)' }}
@@ -1102,7 +1111,6 @@ export default function HomePage() {
             </span>
           </div>
 
-          {/* Discord Tarzı Ayrı Dil Kanalları (#tr-genel | #en-general) */}
           <div
             style={{ borderColor: 'var(--card-border)' }}
             className="px-3 py-2 border-b grid grid-cols-2 gap-1.5 shrink-0"
@@ -1145,7 +1153,6 @@ export default function HomePage() {
             </button>
           </div>
 
-          {/* Nickname + SVG Avatar Seçici */}
           <div
             style={{ borderColor: 'var(--card-border)' }}
             className="px-4 py-2.5 border-b flex items-center gap-2 shrink-0 relative"
