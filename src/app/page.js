@@ -16,10 +16,17 @@ import {
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
-const APP_VERSION = 'v1.0.4';
+const APP_VERSION = 'v1.0.5';
 
 const CHANGELOG = {
   tr: [
+    {
+      version: 'v1.0.5',
+      date: '25 Kasım 2026',
+      items: [
+        'Anket başlığındaki Stats (istatistik) simgesi temayla uyumlu, neon ışımalı ve parlayan görünüme güncellendi.',
+      ],
+    },
     {
       version: 'v1.0.4',
       date: '25 Kasım 2026',
@@ -65,6 +72,13 @@ const CHANGELOG = {
     },
   ],
   en: [
+    {
+      version: 'v1.0.5',
+      date: 'November 25, 2026',
+      items: [
+        'Updated the poll Stats icon with a theme-matched glowing neon highlight.',
+      ],
+    },
     {
       version: 'v1.0.4',
       date: 'November 25, 2026',
@@ -919,14 +933,22 @@ export default function Home() {
           ))}
         </section>
 
-        {/* TOPLULUK ANKETİ: EVET x HAYIR (SUPABASE KALICI + IP KİLİTLİ + 10 SN YENİLEME) */}
+        {/* TOPLULUK ANKETİ (PARLAYAN TEMA UYUMLU STATS SİMGESİ İLE) */}
         <section
           className="rounded-2xl p-4 sm:p-5 border space-y-3"
           style={{ backgroundColor: activeTheme.bgCard, borderColor: activeTheme.border }}
         >
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <div className="flex items-center gap-2 text-xs sm:text-sm font-bold">
-              <BarChart3 className="w-4 h-4 shrink-0" style={{ color: activeTheme.accent }} />
+            <div className="flex items-center gap-2.5 text-xs sm:text-sm font-bold">
+              <span
+                className="w-7 h-7 rounded-xl flex items-center justify-center text-white shrink-0 animate-pulse"
+                style={{
+                  background: activeTheme.barGradient,
+                  boxShadow: `0 0 16px ${activeTheme.glow}`,
+                }}
+              >
+                <BarChart3 className="w-4 h-4" />
+              </span>
               <span>{t.pollQuestion}</span>
             </div>
             <span className="text-[11px] font-semibold" style={{ color: activeTheme.textMuted }}>
