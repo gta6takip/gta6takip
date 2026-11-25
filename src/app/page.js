@@ -9,7 +9,6 @@ import {
   Cpu,
   RefreshCw,
   ShieldCheck,
-  ShieldAlert,
   Sparkles,
   Link as LinkIcon,
   User,
@@ -18,9 +17,6 @@ import {
   Clock,
   Palette,
   Smile,
-  Trash2,
-  Ban,
-  LogOut,
 } from 'lucide-react';
 
 const THEMES = [
@@ -169,10 +165,10 @@ const TRANSLATIONS = {
     sending: 'Atılıyor...',
     errEmptyMsg: 'Lütfen önce bir mesaj veya link yaz.',
     errMuted: 'Küfür/uygunsuz ifade tespit edildi. Kalan engel süresi:',
-    errBanned: 'Bu kullanıcı adı yönetici tarafından banlandı.',
     errSend: 'Gönderilemedi:',
     errUnexpected: 'Beklenmeyen hata:',
     errRead: 'Sohbet okuma hatası:',
+    errConn: 'Bağlantı hatası:',
     footerText:
       'GTA6takip bağımsız bir topluluk takip sitesidir; Rockstar Games veya Take-Two ile resmi bağlantısı yoktur.',
     stageLevel1: 'Boot / Exe',
@@ -180,16 +176,6 @@ const TRANSLATIONS = {
     stageLevel3: 'Oyun İçi',
     stageLevel4: 'Akıcı FPS',
     stageTooltip: 'Aşama Seviyesi',
-    adminTitle: 'Admin Paneli',
-    adminUser: 'Kullanıcı',
-    adminPass: 'Şifre',
-    adminLogin: 'Giriş',
-    adminWrong: 'Kullanıcı adı veya şifre hatalı.',
-    adminLogout: 'Çıkış',
-    banBtn: 'Banla',
-    delBtn: 'Sil',
-    bannedListTitle: 'Banlı Kullanıcılar',
-    unbanBtn: 'Kaldır',
   },
   en: {
     headerSubtitle: '120s Auto Progress Tracker & Live Community Chat',
@@ -231,10 +217,10 @@ const TRANSLATIONS = {
     sending: 'Sending...',
     errEmptyMsg: 'Please enter a message or link first.',
     errMuted: 'Profanity detected. You are muted for:',
-    errBanned: 'This nickname has been banned by an admin.',
     errSend: 'Failed to send:',
     errUnexpected: 'Unexpected error:',
     errRead: 'Chat read error:',
+    errConn: 'Connection error:',
     footerText:
       'GTA6takip is an independent community tracker; not affiliated with Rockstar Games or Take-Two.',
     stageLevel1: 'Boot / Exe',
@@ -242,16 +228,6 @@ const TRANSLATIONS = {
     stageLevel3: 'In-Game',
     stageLevel4: 'Smooth FPS',
     stageTooltip: 'Stage Level',
-    adminTitle: 'Admin Panel',
-    adminUser: 'Username',
-    adminPass: 'Password',
-    adminLogin: 'Login',
-    adminWrong: 'Invalid username or password.',
-    adminLogout: 'Logout',
-    banBtn: 'Ban',
-    delBtn: 'Delete',
-    bannedListTitle: 'Banned Users',
-    unbanBtn: 'Unban',
   },
 };
 
@@ -451,7 +427,6 @@ function formatUpdateTime(dateStr, t, lang) {
 export default function HomePage() {
   const [projects, setProjects] = useState(FALLBACK_PROJECTS);
   const [messages, setMessages] = useState([]);
-  const [bannedUsers, setBannedUsers] = useState([]);
   const [username, setUsername] = useState('');
   const [newMessage, setNewMessage] = useState('');
   const [chatError, setChatError] = useState('');
@@ -466,32 +441,14 @@ export default function HomePage() {
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [muteSeconds, setMuteSeconds] = useState(0);
-
-  const [showAdminBox, setShowAdminBox] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [adminUserInput, setAdminUserInput] = useState('');
-  const [adminPassInput, setAdminPassInput] = useState('');
-  const [adminError, setAdminError] = useState('');
-
-  const sessionIdRef = useRef('');
-  const nickRef = useRef('ViceMisafir');
   const chatBottomRef = useRef(null);
+
   const t = TRANSLATIONS[lang] || TRANSLATIONS.tr;
 
   useEffect(() => {
     try {
-      let sid = sessionStorage.getItem('gta6takip_sid');
-      if (!sid) {
-        sid = Math.random().toString(36).slice(2) + Date.now().toString(36);
-        sessionStorage.setItem('gta6takip_sid', sid);
-      }
-      sessionIdRef.current = sid;
-
       const savedName = localStorage.getItem('gta6takip_nick');
-      if (savedName) {
-        setUsername(savedName);
-        nickRef.current = savedName;
-      }
+      if (savedName) setUsername(savedName);
 
       const savedTheme = localStorage.getItem('gta6takip_theme');
       if (savedTheme && THEMES.some((th) => th.id === savedTheme)) {
@@ -508,27 +465,47 @@ export default function HomePage() {
         setAvatar(savedAvatar);
       }
 
-      const savedAdmin = localStorage.getItem('gta6takip_is_admin');
-      if (savedAdmin === '1') setIsAdmin(true);
-
       const muteUntil = Number(localStorage.getItem('gta6takip_mute_until') || 0);
       if (muteUntil > Date.now()) {
         setMuteSeconds(Math.ceil((muteUntil - Date.now()) / 1000));
       }
     } catch {
-      sessionIdRef.current = Math.random().toString(36).slice(2);
+      // ignore
     }
 
     fetchProjects();
-    fetchChatState();
+    fetchMessages();
 
-    const chatPoll = setInterval(fetchChatState, 5000);
-    return () => clearInterval(chatPoll);
+    const projectChannel = supabase
+      .channel('projects-realtime')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'projects' },
+        () => fetchProjects()
+      )
+      .subscribe();
+
+    const chatChannel = supabase
+      .channel('chat-realtime')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'chat_messages' },
+        (payload) => {
+          if (payload?.new) {
+            setMessages((prev) => {
+              const exists = prev.some((m) => m.id === payload.new.id);
+              return exists ? prev : [...prev, payload.new];
+            });
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(projectChannel);
+      supabase.removeChannel(chatChannel);
+    };
   }, []);
-
-  useEffect(() => {
-    nickRef.current = username.trim().slice(0, 24) || 'ViceMisafir';
-  }, [username]);
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
@@ -562,6 +539,34 @@ export default function HomePage() {
     }, 1000);
     return () => clearInterval(timer);
   }, [muteSeconds]);
+
+  useEffect(() => {
+    const currentNick = username.trim().slice(0, 24) || 'ViceMisafir';
+    const presenceChannel = supabase.channel('gta6takip-online-room', {
+      config: {
+        presence: { key: currentNick },
+      },
+    });
+
+    presenceChannel
+      .on('presence', { event: 'sync' }, () => {
+        const state = presenceChannel.presenceState();
+        const names = Object.keys(state);
+        setOnlineUsers(names.length > 0 ? names : [currentNick]);
+      })
+      .subscribe(async (status) => {
+        if (status === 'SUBSCRIBED') {
+          await presenceChannel.track({
+            user: currentNick,
+            online_at: new Date().toISOString(),
+          });
+        }
+      });
+
+    return () => {
+      supabase.removeChannel(presenceChannel);
+    };
+  }, [username]);
 
   useEffect(() => {
     const countdown = setInterval(() => {
@@ -605,119 +610,20 @@ export default function HomePage() {
     }
   }
 
-  async function fetchChatState() {
+  async function fetchMessages() {
     try {
-      const sid = encodeURIComponent(sessionIdRef.current || '');
-      const nick = encodeURIComponent(nickRef.current || 'ViceMisafir');
-      const res = await fetch(`/api/chat?sid=${sid}&nick=${nick}`, { cache: 'no-store' });
-      const json = await res.json();
-      if (json.ok) {
-        setMessages(Array.isArray(json.messages) ? json.messages : []);
-        setBannedUsers(Array.isArray(json.bannedUsers) ? json.bannedUsers : []);
-        if (Array.isArray(json.onlineUsers) && json.onlineUsers.length > 0) {
-          setOnlineUsers(json.onlineUsers);
-        }
-        if (json.error) setChatError(`${t.errRead} ${json.error}`);
-      } else if (json.error) {
-        setChatError(`${t.errRead} ${json.error}`);
+      const { data, error } = await supabase
+        .from('chat_messages')
+        .select('*')
+        .order('id', { ascending: true })
+        .limit(100);
+      if (!error && Array.isArray(data)) {
+        setMessages(data);
+      } else if (error) {
+        setChatError(`${t.errRead} ${error.message}`);
       }
-    } catch {
-      // sessiz geç
-    }
-  }
-
-  function handleAdminLogin(e) {
-    e.preventDefault();
-    setAdminError('');
-    if (adminUserInput.trim() === 'admin' && adminPassInput.trim() === '657210') {
-      setIsAdmin(true);
-      setAdminUserInput('');
-      setAdminPassInput('');
-      try {
-        localStorage.setItem('gta6takip_is_admin', '1');
-      } catch {
-        // ignore
-      }
-    } else {
-      setAdminError(t.adminWrong);
-    }
-  }
-
-  function handleAdminLogout() {
-    setIsAdmin(false);
-    setAdminError('');
-    setShowAdminBox(false);
-    try {
-      localStorage.removeItem('gta6takip_is_admin');
-    } catch {
-      // ignore
-    }
-  }
-
-  async function handleDeleteMessage(msgId) {
-    if (!isAdmin || !msgId) return;
-    setAdminError('');
-    try {
-      const res = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'delete', id: msgId, adminPass: '657210' }),
-      });
-      const json = await res.json();
-      if (!json.ok) {
-        setAdminError(json.error || 'Silinemedi');
-        setShowAdminBox(true);
-        return;
-      }
-      setMessages((prev) => prev.filter((m) => m.id !== msgId));
     } catch (err) {
-      setAdminError(err?.message || 'Silme hatası');
-    }
-  }
-
-  async function handleBanUser(targetName) {
-    if (!isAdmin || !targetName) return;
-    setAdminError('');
-    const cleanTarget = targetName.trim().toLowerCase();
-    try {
-      const res = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'ban', username: targetName, adminPass: '657210' }),
-      });
-      const json = await res.json();
-      if (!json.ok) {
-        setAdminError(json.error || 'Banlanamadı');
-        setShowAdminBox(true);
-        return;
-      }
-      setBannedUsers((prev) => (prev.includes(cleanTarget) ? prev : [...prev, cleanTarget]));
-      setMessages((prev) =>
-        prev.filter((m) => String(m.username || '').trim().toLowerCase() !== cleanTarget)
-      );
-    } catch (err) {
-      setAdminError(err?.message || 'Banlama hatası');
-    }
-  }
-
-  async function handleUnbanUser(targetName) {
-    if (!isAdmin || !targetName) return;
-    setAdminError('');
-    const cleanTarget = targetName.trim().toLowerCase();
-    try {
-      const res = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'unban', username: targetName, adminPass: '657210' }),
-      });
-      const json = await res.json();
-      if (!json.ok) {
-        setAdminError(json.error || 'Kaldırılamadı');
-        return;
-      }
-      setBannedUsers((prev) => prev.filter((u) => u !== cleanTarget));
-    } catch (err) {
-      setAdminError(err?.message || 'Ban kaldırma hatası');
+      setChatError(`${t.errConn} ${err?.message || '?'}`);
     }
   }
 
@@ -728,7 +634,20 @@ export default function HomePage() {
 
     try {
       await fetch('/api/sync').catch(() => {});
-      await fetchProjects();
+
+      const { error } = await supabase
+        .from('projects')
+        .update({ updated_at: nowIso })
+        .not('name', 'is', null);
+
+      if (!error) {
+        await fetchProjects();
+      } else {
+        setProjects((prev) =>
+          prev.map((item) => ({ ...item, updated_at: nowIso }))
+        );
+      }
+
       setSecondsLeft(120);
     } catch {
       setProjects((prev) =>
@@ -740,17 +659,9 @@ export default function HomePage() {
     }
   }
 
-  const rawCurrentNick = username.trim().slice(0, 24) || 'ViceMisafir';
-  const isCurrentUserBanned = bannedUsers.includes(rawCurrentNick.toLowerCase());
-
   async function handleSendMessage(e) {
     if (e && e.preventDefault) e.preventDefault();
     setChatError('');
-
-    if (isCurrentUserBanned) {
-      setChatError(t.errBanned);
-      return;
-    }
 
     if (muteSeconds > 0) {
       setChatError(`${t.errMuted} ${muteSeconds}${t.secShort}`);
@@ -758,12 +669,14 @@ export default function HomePage() {
     }
 
     const cleanMsg = newMessage.trim();
+    const rawNick = username.trim().slice(0, 24) || 'ViceMisafir';
+
     if (!cleanMsg) {
       setChatError(t.errEmptyMsg);
       return;
     }
 
-    if (containsProfanity(cleanMsg) || containsProfanity(rawCurrentNick)) {
+    if (containsProfanity(cleanMsg) || containsProfanity(rawNick)) {
       const muteDurationSec = 60;
       const until = Date.now() + muteDurationSec * 1000;
       setMuteSeconds(muteDurationSec);
@@ -780,40 +693,39 @@ export default function HomePage() {
     if (sending) return;
 
     setSending(true);
-    setNewMessage('');
-    setShowEmojiPicker(false);
-
     try {
-      localStorage.setItem('gta6takip_nick', rawCurrentNick);
+      localStorage.setItem('gta6takip_nick', rawNick);
     } catch {
       // ignore
     }
 
-    const safeNick = censorText(rawCurrentNick);
-    const safeMsg = censorText(cleanMsg.slice(0, 500));
-
     try {
-      const res = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'send', username: safeNick, message: safeMsg }),
-      });
-      const json = await res.json();
+      const { data, error } = await supabase
+        .from('chat_messages')
+        .insert([
+          {
+            username: censorText(rawNick),
+            message: censorText(cleanMsg.slice(0, 500)),
+          },
+        ])
+        .select();
 
-      if (!json.ok) {
-        setChatError(`${t.errSend} ${json.error || '?'}`);
-        setNewMessage(cleanMsg);
-      } else if (json.message) {
-        setMessages((prev) => {
-          const exists = prev.some((m) => m.id === json.message.id);
-          return exists ? prev : [...prev, json.message];
-        });
+      if (error) {
+        setChatError(`${t.errSend} ${error.message}`);
       } else {
-        await fetchChatState();
+        setNewMessage('');
+        setShowEmojiPicker(false);
+        if (Array.isArray(data) && data.length > 0) {
+          setMessages((prev) => {
+            const exists = prev.some((m) => m.id === data[0].id);
+            return exists ? prev : [...prev, data[0]];
+          });
+        } else {
+          await fetchMessages();
+        }
       }
     } catch (err) {
       setChatError(`${t.errUnexpected} ${err?.message || '?'}`);
-      setNewMessage(cleanMsg);
     } finally {
       setSending(false);
     }
@@ -826,9 +738,6 @@ export default function HomePage() {
 
   const leaderName = projects[0]?.name || 'omonkey';
   const onlineCount = Math.max(1, onlineUsers.length);
-  const visibleMessages = messages.filter(
-    (m) => !bannedUsers.includes(String(m.username || '').trim().toLowerCase())
-  );
 
   return (
     <div
@@ -957,7 +866,7 @@ export default function HomePage() {
                     </button>
                   </div>
                   <ul className="space-y-1.5 max-h-40 overflow-y-auto vice-scroll list-none p-0 m-0">
-                    {(onlineUsers.length > 0 ? onlineUsers : [rawCurrentNick]).map((nick, i) => (
+                    {onlineUsers.map((nick, i) => (
                       <li
                         key={`${nick}-${i}`}
                         style={{ backgroundColor: 'var(--card-inner)' }}
@@ -1181,102 +1090,11 @@ export default function HomePage() {
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-1.5 shrink-0">
-              <button
-                type="button"
-                onClick={() => setShowAdminBox((prev) => !prev)}
-                title={t.adminTitle}
-                className={`p-1.5 rounded-lg border text-xs transition cursor-pointer ${
-                  isAdmin
-                    ? 'bg-amber-500/20 border-amber-500/40 text-amber-500'
-                    : 'bg-slate-500/10 border-slate-500/20 opacity-70 hover:opacity-100'
-                }`}
-              >
-                <ShieldAlert className="w-3.5 h-3.5" />
-              </button>
-              <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-emerald-600 bg-emerald-500/15 border border-emerald-500/25 px-2.5 py-0.5 rounded-full">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                {t.live}
-              </span>
-            </div>
+            <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-emerald-600 bg-emerald-500/15 border border-emerald-500/25 px-2.5 py-0.5 rounded-full shrink-0">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              {t.live}
+            </span>
           </div>
-
-          {showAdminBox && (
-            <div
-              style={{ backgroundColor: 'var(--card-inner)', borderColor: 'var(--card-border)' }}
-              className="px-4 py-3 border-b space-y-2 shrink-0"
-            >
-              {!isAdmin ? (
-                <form onSubmit={handleAdminLogin} className="space-y-2">
-                  <div className="flex items-center justify-between text-xs font-bold">
-                    <span>{t.adminTitle}</span>
-                    {adminError && <span className="text-rose-500 text-[11px]">{adminError}</span>}
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <input
-                      type="text"
-                      value={adminUserInput}
-                      onChange={(e) => setAdminUserInput(e.target.value)}
-                      placeholder={t.adminUser}
-                      style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--card-border)', color: 'var(--text-primary)' }}
-                      className="w-1/3 rounded-lg border px-2.5 py-1 text-xs focus:outline-none"
-                    />
-                    <input
-                      type="password"
-                      value={adminPassInput}
-                      onChange={(e) => setAdminPassInput(e.target.value)}
-                      placeholder={t.adminPass}
-                      style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--card-border)', color: 'var(--text-primary)' }}
-                      className="w-1/3 rounded-lg border px-2.5 py-1 text-xs focus:outline-none"
-                    />
-                    <button
-                      type="submit"
-                      className="w-1/3 gta-bar-fill text-white rounded-lg py-1 text-xs font-bold cursor-pointer"
-                    >
-                      {t.adminLogin}
-                    </button>
-                  </div>
-                </form>
-              ) : (
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-extrabold text-amber-500">
-                      ✓ {t.adminTitle} ({t.bannedListTitle}: {bannedUsers.length})
-                    </span>
-                    <button
-                      type="button"
-                      onClick={handleAdminLogout}
-                      className="inline-flex items-center gap-1 text-[11px] text-rose-500 font-bold hover:underline cursor-pointer"
-                    >
-                      <LogOut className="w-3 h-3" />
-                      {t.adminLogout}
-                    </button>
-                  </div>
-                  {adminError && <p className="text-[11px] text-rose-500 font-medium">{adminError}</p>}
-                  {bannedUsers.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5 max-h-20 overflow-y-auto">
-                      {bannedUsers.map((bu) => (
-                        <span
-                          key={bu}
-                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] bg-rose-500/15 text-rose-500 border border-rose-500/25"
-                        >
-                          <span>{bu}</span>
-                          <button
-                            type="button"
-                            onClick={() => handleUnbanUser(bu)}
-                            className="font-bold hover:underline cursor-pointer"
-                            title={t.unbanBtn}
-                          >
-                            ×
-                          </button>
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
 
           {/* Nickname + SVG Avatar Seçici */}
           <div
@@ -1344,7 +1162,7 @@ export default function HomePage() {
           </div>
 
           <div className="flex-1 overflow-y-auto vice-scroll p-4 space-y-2.5">
-            {visibleMessages.length === 0 ? (
+            {messages.length === 0 ? (
               <div
                 style={{ color: 'var(--text-secondary)' }}
                 className="h-full flex flex-col items-center justify-center text-center text-xs space-y-1.5 px-4"
@@ -1353,7 +1171,7 @@ export default function HomePage() {
                 <p>{t.chatEmptyDesc}</p>
               </div>
             ) : (
-              visibleMessages.map((msg, idx) => {
+              messages.map((msg, idx) => {
                 const msgAvatar = getAvatarForUser(msg.username, username, avatar);
                 return (
                   <div
@@ -1368,39 +1186,17 @@ export default function HomePage() {
                           {censorText(msg.username)}
                         </span>
                       </div>
-                      <div className="flex items-center gap-2 shrink-0">
-                        {isAdmin && (
-                          <div className="flex items-center gap-1">
-                            <button
-                              type="button"
-                              onClick={() => handleDeleteMessage(msg.id)}
-                              title={t.delBtn}
-                              className="p-1 rounded hover:bg-rose-500/15 text-rose-500 cursor-pointer"
-                            >
-                              <Trash2 className="w-3 h-3" />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleBanUser(msg.username)}
-                              title={t.banBtn}
-                              className="p-1 rounded hover:bg-rose-500/15 text-rose-500 cursor-pointer"
-                            >
-                              <Ban className="w-3 h-3" />
-                            </button>
-                          </div>
-                        )}
-                        <span style={{ color: 'var(--text-secondary)' }} className="text-[10px]">
-                          {msg.created_at
-                            ? new Date(msg.created_at).toLocaleTimeString(
-                                lang === 'en' ? 'en-US' : 'tr-TR',
-                                {
-                                  hour: '2-digit',
-                                  minute: '2-digit',
-                                }
-                              )
-                            : ''}
-                        </span>
-                      </div>
+                      <span style={{ color: 'var(--text-secondary)' }} className="text-[10px] shrink-0">
+                        {msg.created_at
+                          ? new Date(msg.created_at).toLocaleTimeString(
+                              lang === 'en' ? 'en-US' : 'tr-TR',
+                              {
+                                hour: '2-digit',
+                                minute: '2-digit',
+                              }
+                            )
+                          : ''}
+                      </span>
                     </div>
                     <p className="text-xs sm:text-sm leading-relaxed break-words pl-8">
                       {renderMessageWithLinks(msg.message)}
@@ -1412,13 +1208,9 @@ export default function HomePage() {
             <div ref={chatBottomRef} />
           </div>
 
-          {(chatError || muteSeconds > 0 || isCurrentUserBanned) && (
+          {(chatError || muteSeconds > 0) && (
             <div className="px-4 py-2 bg-rose-500/15 border-t border-rose-500/30 text-xs text-rose-500 font-semibold">
-              {isCurrentUserBanned
-                ? t.errBanned
-                : muteSeconds > 0
-                  ? `${t.errMuted} ${muteSeconds}${t.secShort}`
-                  : chatError}
+              {muteSeconds > 0 ? `${t.errMuted} ${muteSeconds}${t.secShort}` : chatError}
             </div>
           )}
 
@@ -1451,7 +1243,7 @@ export default function HomePage() {
             <button
               type="button"
               onClick={() => setShowEmojiPicker((prev) => !prev)}
-              disabled={muteSeconds > 0 || isCurrentUserBanned}
+              disabled={muteSeconds > 0}
               style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--card-border)', color: 'var(--text-secondary)' }}
               className="p-2 rounded-xl border hover:text-pink-500 transition cursor-pointer shrink-0 disabled:opacity-40"
               title="Emoji"
@@ -1462,15 +1254,11 @@ export default function HomePage() {
             <input
               type="text"
               value={newMessage}
-              disabled={muteSeconds > 0 || isCurrentUserBanned}
+              disabled={muteSeconds > 0}
               onChange={(e) => setNewMessage(e.target.value)}
               maxLength={500}
               placeholder={
-                isCurrentUserBanned
-                  ? t.errBanned
-                  : muteSeconds > 0
-                    ? `${t.errMuted} ${muteSeconds}${t.secShort}`
-                    : t.messagePlaceholder
+                muteSeconds > 0 ? `${t.errMuted} ${muteSeconds}${t.secShort}` : t.messagePlaceholder
               }
               style={{
                 backgroundColor: 'var(--card-bg)',
@@ -1481,7 +1269,7 @@ export default function HomePage() {
             />
             <button
               type="submit"
-              disabled={sending || muteSeconds > 0 || isCurrentUserBanned}
+              disabled={sending || muteSeconds > 0}
               className="gta-bar-fill px-4 py-2 rounded-xl hover:brightness-110 disabled:opacity-40 text-white font-bold text-xs sm:text-sm inline-flex items-center gap-1.5 transition cursor-pointer shrink-0"
             >
               <Send className="w-4 h-4" />
