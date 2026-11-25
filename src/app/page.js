@@ -290,16 +290,7 @@ export default function HomePage() {
       // ignore
     }
 
-    fetchProjects();
-
-    const projectChannel = supabase
-      .channel('projects-realtime')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'projects' },
-        () => fetchProjects()
-      )
-      .subscribe();
+    handleAutoSync();
 
     let visitorId = '';
     try {
@@ -353,7 +344,6 @@ export default function HomePage() {
       window.removeEventListener('pagehide', handleLeave);
       window.removeEventListener('beforeunload', handleLeave);
       handleLeave();
-      supabase.removeChannel(projectChannel);
     };
   }, []);
 
@@ -388,56 +378,22 @@ export default function HomePage() {
     return () => clearInterval(countdown);
   }, []);
 
-  async function fetchProjects() {
-    try {
-      const { data, error } = await supabase
-        .from('projects')
-        .select('*')
-        .order('percentage', { ascending: false });
-
-      if (!error && Array.isArray(data) && data.length > 0) {
-        const cleaned = data.map((item, idx) => ({
-          ...item,
-          id: item.id || idx + 1,
-          name: item.name || FALLBACK_PROJECTS[idx]?.name || `Ekip ${idx + 1}`,
-          percentage:
-            typeof item.percentage === 'number'
-              ? item.percentage
-              : FALLBACK_PROJECTS[idx]?.percentage || 0,
-        }));
-        setProjects(cleaned);
-      }
-    } catch {
-      setProjects(FALLBACK_PROJECTS);
-    }
-  }
-
   async function handleAutoSync() {
     if (syncing) return;
     setSyncing(true);
     const nowIso = new Date().toISOString();
 
     try {
-      await fetch('/api/sync').catch(() => {});
-
-      const { error } = await supabase
-        .from('projects')
-        .update({ updated_at: nowIso })
-        .not('name', 'is', null);
-
-      if (!error) {
-        await fetchProjects();
+      const res = await fetch('/api/sync', { cache: 'no-store' });
+      const json = await res.json();
+      if (json?.ok && Array.isArray(json.projects) && json.projects.length > 0) {
+        setProjects(json.projects);
       } else {
-        setProjects((prev) =>
-          prev.map((item) => ({ ...item, updated_at: nowIso }))
-        );
+        setProjects((prev) => prev.map((item) => ({ ...item, updated_at: nowIso })));
       }
-
       setSecondsLeft(120);
     } catch {
-      setProjects((prev) =>
-        prev.map((item) => ({ ...item, updated_at: nowIso }))
-      );
+      setProjects((prev) => prev.map((item) => ({ ...item, updated_at: nowIso })));
       setSecondsLeft(120);
     } finally {
       setSyncing(false);
