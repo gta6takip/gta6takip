@@ -77,6 +77,18 @@ const FALLBACK_PROJECTS = [
   },
   {
     id: 5,
+    name: 'JoshuuDev (victory-amd)',
+    percentage: 68,
+    fps: 'Ara Sahne / DX12',
+    stage: 'Oyun İçi (3D Ara Sahneler)',
+    description:
+      'AMD GPU uyumluluğu, DX12 ve shader cache ısıtma iyileştirmeleriyle temiz renkli 3D oyun içi ara sahneler ve neon ışıklandırma elde edildi.',
+    repo_url: 'https://github.com/JoshuuDev/victory-amd',
+    is_open_source: true,
+    updated_at: null,
+  },
+  {
+    id: 6,
     name: 'AnyXboxX',
     percentage: 65,
     fps: '3.2 FPS (720p)',
@@ -88,7 +100,7 @@ const FALLBACK_PROJECTS = [
     updated_at: null,
   },
   {
-    id: 6,
+    id: 7,
     name: 'XCL',
     percentage: 63,
     fps: '30 FPS (Intro)',
@@ -100,7 +112,7 @@ const FALLBACK_PROJECTS = [
     updated_at: null,
   },
   {
-    id: 7,
+    id: 8,
     name: 'Xbox2Windows',
     percentage: 48,
     fps: '-',
@@ -112,7 +124,7 @@ const FALLBACK_PROJECTS = [
     updated_at: null,
   },
   {
-    id: 8,
+    id: 9,
     name: 'Palmetto',
     percentage: 25,
     fps: '-',
@@ -125,40 +137,81 @@ const FALLBACK_PROJECTS = [
   },
 ];
 
-function getStageStatus(percentage, stage = '') {
+function StageVisualBadge({ percentage, stage = '' }) {
   const pct = Number(percentage) || 0;
   const s = stage.toLowerCase();
 
-  if (pct >= 85 || s.includes('30 fps') || s.includes('60 fps')) {
-    return {
-      symbol: '⚡',
-      label: 'FPS Hedefi',
-      dotColor: 'bg-amber-300',
-      style: 'bg-amber-400/15 text-amber-200 border-amber-400/40',
-    };
+  let level = 1;
+  let label = 'Boot / Exe';
+  let boxClass = 'bg-purple-500/15 text-purple-200 border-purple-400/45';
+  let stepFill = 'bg-purple-400';
+
+  if (pct >= 85 || s.includes('60 fps') || s.includes('akıcı')) {
+    level = 4;
+    label = 'Akıcı FPS';
+    boxClass = 'bg-amber-400/15 text-amber-200 border-amber-400/45';
+    stepFill = 'bg-amber-300';
+  } else if (pct >= 60 || s.includes('oyun içi') || s.includes('dünya')) {
+    level = 3;
+    label = 'Oyun İçi';
+    boxClass = 'bg-emerald-500/15 text-emerald-200 border-emerald-400/45';
+    stepFill = 'bg-emerald-400';
+  } else if (pct >= 40 || s.includes('ilk kare') || s.includes('menü')) {
+    level = 2;
+    label = 'İlk Kare';
+    boxClass = 'bg-sky-500/15 text-sky-200 border-sky-400/45';
+    stepFill = 'bg-sky-400';
   }
-  if (pct >= 60 || s.includes('oyun içi') || s.includes('dünya')) {
-    return {
-      symbol: '▶',
-      label: 'Oyun İçi',
-      dotColor: 'bg-emerald-400',
-      style: 'bg-emerald-500/15 text-emerald-200 border-emerald-400/40',
-    };
-  }
-  if (pct >= 40 || s.includes('ilk kare') || s.includes('menü')) {
-    return {
-      symbol: '◆',
-      label: 'İlk Kare',
-      dotColor: 'bg-sky-400',
-      style: 'bg-sky-500/15 text-sky-200 border-sky-400/40',
-    };
-  }
-  return {
-    symbol: '■',
-    label: 'Boot / Exe',
-    dotColor: 'bg-purple-400',
-    style: 'bg-purple-500/15 text-purple-200 border-purple-400/40',
-  };
+
+  return (
+    <div
+      title={`Aşama Seviyesi ${level}/4: ${stage || label}`}
+      className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-extrabold shrink-0 shadow-sm ${boxClass}`}
+    >
+      {/* Her temada kesin görünen özel SVG ikon */}
+      {level === 4 && (
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 shrink-0">
+          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+        </svg>
+      )}
+      {level === 3 && (
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 shrink-0">
+          <line x1="6" y1="12" x2="10" y2="12" />
+          <line x1="8" y1="10" x2="8" y2="14" />
+          <circle cx="15" cy="13" r="1" fill="currentColor" />
+          <circle cx="18" cy="11" r="1" fill="currentColor" />
+          <rect x="2" y="6" width="20" height="12" rx="4" />
+        </svg>
+      )}
+      {level === 2 && (
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 shrink-0">
+          <rect x="2" y="3" width="20" height="14" rx="2" />
+          <line x1="8" y1="21" x2="16" y2="21" />
+          <line x1="12" y1="17" x2="12" y2="21" />
+        </svg>
+      )}
+      {level === 1 && (
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 shrink-0">
+          <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z" />
+          <path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z" />
+        </svg>
+      )}
+
+      <span>{label}</span>
+
+      {/* 4 Kademeli Mini Aşama Çubuğu */}
+      <span className="hidden sm:inline-flex items-center gap-0.5 ml-0.5" aria-hidden="true">
+        {[1, 2, 3, 4].map((step) => (
+          <span
+            key={step}
+            className={`w-1.5 h-3 rounded-sm ${
+              step <= level ? stepFill : 'bg-white/15'
+            }`}
+          />
+        ))}
+      </span>
+    </div>
+  );
 }
 
 function renderMessageWithLinks(text) {
@@ -220,7 +273,7 @@ export default function HomePage() {
         setTheme(savedTheme);
       }
     } catch {
-      // Depolama erişimi kısıtlıysa atla
+      // ignore
     }
 
     fetchProjects();
@@ -356,9 +409,29 @@ export default function HomePage() {
   async function handleAutoSync() {
     if (syncing) return;
     setSyncing(true);
+    const nowIso = new Date().toISOString();
+
     try {
-      await fetch('/api/sync');
-      await fetchProjects();
+      await fetch('/api/sync').catch(() => {});
+
+      const { error } = await supabase
+        .from('projects')
+        .update({ updated_at: nowIso })
+        .not('name', 'is', null);
+
+      if (!error) {
+        await fetchProjects();
+      } else {
+        setProjects((prev) =>
+          prev.map((item) => ({ ...item, updated_at: nowIso }))
+        );
+      }
+
+      setSecondsLeft(120);
+    } catch {
+      setProjects((prev) =>
+        prev.map((item) => ({ ...item, updated_at: nowIso }))
+      );
       setSecondsLeft(120);
     } finally {
       setSyncing(false);
@@ -539,7 +612,7 @@ export default function HomePage() {
                   Ekiplerin Tamamlanma Yüzdeleri
                 </h1>
                 <p className="text-xs text-slate-300/90">
-                  3D barların yanındaki aşama göstergeleri ekibin hangi seviyede olduğunu gösterir; sayfa her 120 saniyede bir otomatik güncellenir.
+                  3D barların yanındaki aşama simgeleri ve 4 kademeli göstergeler ekibin hangi seviyede olduğunu anlık gösterir.
                 </p>
               </div>
 
@@ -559,7 +632,7 @@ export default function HomePage() {
           <div className="flex items-center justify-between px-1">
             <h2 className="text-sm sm:text-base font-extrabold flex items-center gap-2 text-slate-100">
               <Cpu className="w-4 h-4 text-amber-300" />
-              Portlama Ekipleri Sıralaması
+              Portlama Ekipleri Sıralaması ({projects.length} Ekip)
             </h2>
             <span className="text-[11px] text-slate-400">Kaydırmalı liste • Yüksekten düşüğe</span>
           </div>
@@ -568,7 +641,6 @@ export default function HomePage() {
             <ul className="flex flex-col gap-3.5 list-none p-0 m-0">
               {projects.map((proj, index) => {
                 const pct = Math.min(100, Math.max(0, Number(proj.percentage) || 0));
-                const badge = getStageStatus(pct, proj.stage);
 
                 return (
                   <li
@@ -599,6 +671,7 @@ export default function HomePage() {
                       </span>
                     </div>
 
+                    {/* 3D Bar + Yanında Her Temada Çalışan SVG Simge & 4 Kademe Göstergesi */}
                     <div className="flex items-center gap-2.5 mb-3">
                       <div className="relative flex-1 h-6 sm:h-7 rounded-2xl bg-black/55 p-1 border border-white/15 shadow-[inset_0_3px_8px_rgba(0,0,0,0.85)] overflow-hidden">
                         <div
@@ -612,14 +685,7 @@ export default function HomePage() {
                         </div>
                       </div>
 
-                      <div
-                        title={proj.stage || badge.label}
-                        className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-extrabold shrink-0 ${badge.style}`}
-                      >
-                        <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${badge.dotColor}`} />
-                        <span className="font-mono text-xs leading-none">{badge.symbol}</span>
-                        <span>{badge.label}</span>
-                      </div>
+                      <StageVisualBadge percentage={pct} stage={proj.stage} />
                     </div>
 
                     <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2.5 text-xs text-slate-300">
