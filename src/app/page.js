@@ -15,10 +15,18 @@ import {
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
-const APP_VERSION = 'v1.0.6';
+const APP_VERSION = 'v1.0.7';
 
 const CHANGELOG = {
   tr: [
+    {
+      version: 'v1.0.7',
+      date: '26 Kasım 2026',
+      items: [
+        'Yeni genel lider darkworldhm (%79.5 · 15-24 FPS rekoru) ve açık kaynak projeler Five Star Recomp & keylime (%30) eklendi.',
+        'Test Edilen Ekran Kartları özetine RTX 50 Serisi (24 FPS) eklendi.',
+      ],
+    },
     {
       version: 'v1.0.6',
       date: '25 Kasım 2026',
@@ -62,6 +70,14 @@ const CHANGELOG = {
   ],
   en: [
     {
+      version: 'v1.0.7',
+      date: 'November 26, 2026',
+      items: [
+        'Added new overall leader darkworldhm (79.5% · 15-24 FPS record) plus Five Star Recomp & keylime (30%).',
+        'Added RTX 50 Series (15-24 FPS) to the Tested GPUs summary bar.',
+      ],
+    },
+    {
       version: 'v1.0.6',
       date: 'November 25, 2026',
       items: [
@@ -104,18 +120,19 @@ const CHANGELOG = {
 
 const DEFAULT_NEWS = {
   tr: [
-    { tag: 'LİDER', text: 'Doomsday %78.7 ile genel lider; açık kaynakta DexNom (%78) önde.' },
-    { tag: 'GÜNCEL', text: 'Belobug %77.7 seviyesine ulaştı; yeni girişimler canlı takip ediliyor.' },
-    { tag: 'DURUM', text: 'ZETTROX deposu GitHub’dan silindi ve yarıştan çıktı; Zortos bağımsız takipte.' },
+    { tag: 'REKOR', text: 'darkworldhm %79.5 ile genel lider; serbest dolaşımda 24 FPS tepe değerine ulaştı.' },
+    { tag: 'AÇIK KAYNAK', text: 'DexNom (%78) açık kaynak lideri; Five Star Recomp ve keylime (%30) eklendi.' },
+    { tag: 'GÜNCEL', text: "PortWatch üzerinde toplam 37 girişim takip ediliyor; 15'i oyunu başlatabiliyor." },
   ],
   en: [
-    { tag: 'LEADER', text: 'Doomsday leads overall at 78.7%; DexNom (78%) leads open source.' },
-    { tag: 'LIVE', text: 'Belobug reached 77.7%; new efforts are tracked automatically.' },
-    { tag: 'STATUS', text: 'ZETTROX repo was removed from GitHub and left the race; Zortos remains tracked.' },
+    { tag: 'RECORD', text: 'darkworldhm leads overall at 79.5%, peaking at 24 FPS in free roam.' },
+    { tag: 'OPEN SOURCE', text: 'DexNom (78%) leads open source; Five Star Recomp & keylime (30%) added.' },
+    { tag: 'LIVE', text: '37 total efforts are tracked on PortWatch, with 15 able to boot GTA VI.' },
   ],
 };
 
 const TESTED_GPUS = [
+  { gpu: 'RTX 50 Serisi', fps: '15-24 FPS', team: 'darkworldhm' },
   { gpu: 'RX 7900 XTX', fps: '3 FPS', team: 'DexNom' },
   { gpu: 'RX 9070 XT', fps: '4 FPS', team: 'Belobug' },
   { gpu: 'RTX 5060 Ti', fps: '4 FPS', team: 'Uilian' },
@@ -226,6 +243,7 @@ function localizeDynamicText(raw, lang) {
   if (lang === 'en') {
     const trToEn = [
       [/\(Menü\)/gi, '(Menu)'],
+      [/Serisi/gi, 'Series'],
       [/Oynanabilir/gi, 'Playable'],
       [/Ana Menü/gi, 'Main Menu'],
       [/Oyun Dünyası/gi, 'In the World'],
@@ -843,7 +861,7 @@ export default function Home() {
               className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold border"
               style={{ backgroundColor: activeTheme.bgPage, borderColor: activeTheme.border }}
             >
-              <span>{item.gpu}</span>
+              <span>{localizeDynamicText(item.gpu, lang)}</span>
               <span style={{ color: activeTheme.accent }}>{item.fps}</span>
               <span style={{ color: activeTheme.textMuted }}>({item.team})</span>
             </span>
