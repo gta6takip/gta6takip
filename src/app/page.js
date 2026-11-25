@@ -1,13 +1,33 @@
 'use client';
 
 import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { RefreshCw, ExternalLink, Sparkles, X, TrendingUp, Cpu, Radio } from 'lucide-react';
+import {
+  RefreshCw,
+  ExternalLink,
+  Sparkles,
+  X,
+  TrendingUp,
+  Cpu,
+  Radio,
+  Palette,
+  ChevronDown,
+  Check,
+  BarChart3,
+} from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
-const APP_VERSION = 'v1.0.2';
+const APP_VERSION = 'v1.0.3';
 
 const CHANGELOG = {
   tr: [
+    {
+      version: 'v1.0.3',
+      date: '25 Kasım 2026',
+      items: [
+        'Üst bardaki yatay renk noktaları mobilde yer açmak için tek bir "Tema ▾" menü butonuna dönüştürüldü.',
+        '"Sizce oyun PC\'ye %100 portlanacak mı?" (EVET / HAYIR) canlı topluluk anketi ve anlık sonuç çubukları eklendi.',
+      ],
+    },
     {
       version: 'v1.0.2',
       date: '25 Kasım 2026',
@@ -36,6 +56,14 @@ const CHANGELOG = {
     },
   ],
   en: [
+    {
+      version: 'v1.0.3',
+      date: 'November 25, 2026',
+      items: [
+        'Replaced horizontal theme dots in the top bar with a clean "Theme ▾" dropdown button for better mobile spacing.',
+        'Added live "Do you think the game will be 100% ported to PC?" (YES / NO) community poll with live result bars.',
+      ],
+    },
     {
       version: 'v1.0.2',
       date: 'November 25, 2026',
@@ -112,7 +140,7 @@ const THEMES = {
     id: 'light',
     labelTr: 'Açık',
     labelEn: 'Light',
-    dot: '#e2e8f0',
+    dot: '#cbd5e1',
     isDark: false,
     bgPage: '#f4f6fa',
     bgNav: 'rgba(244,246,250,0.86)',
@@ -254,7 +282,7 @@ const WhatsAppLogoSVG = ({ className = 'w-4 h-4' }) => (
 );
 
 const Icon3DLogo = () => (
-  <svg viewBox="0 0 40 40" className="w-9 h-9 shrink-0 drop-shadow-[0_4px_10px_rgba(236,72,153,0.4)]" aria-hidden="true">
+  <svg viewBox="0 0 40 40" className="w-8 h-8 sm:w-9 sm:h-9 shrink-0 drop-shadow-[0_4px_10px_rgba(236,72,153,0.4)]" aria-hidden="true">
     <defs>
       <linearGradient id="pwLogo3d" x1="0%" y1="0%" x2="100%" y2="100%">
         <stop offset="0%" stopColor="#7c5cff" />
@@ -342,12 +370,17 @@ const TEXT = {
     subtitle:
       'PortWatch VI verileri ve açık kaynak GitHub depoları, her 120 saniyede bir otomatik olarak güncellenir.',
     onlineBtn: 'Çevrimiçi',
+    themeBtn: 'Tema',
     liveBadge: 'CANLI',
     updatesBtn: 'Güncelleme Notları',
     updatesTitle: 'Güncelleme Notları',
     nextCheck: 'Sonraki kontrol',
     newsTitle: 'Son Gelişmeler',
     gpuTitle: 'Test Edilen Ekran Kartları',
+    pollQuestion: "Sizce oyun PC'ye %100 portlanacak mı?",
+    pollYes: 'EVET',
+    pollNo: 'HAYIR',
+    pollVotes: 'oy',
     filterAll: 'Tümü',
     filterOpen: 'Açık Kaynak',
     filterClosed: 'Kapalı Ekip',
@@ -371,12 +404,17 @@ const TEXT = {
     subtitle:
       'PortWatch VI race data and open-source GitHub repositories sync automatically every 120 seconds.',
     onlineBtn: 'Online',
+    themeBtn: 'Theme',
     liveBadge: 'LIVE',
     updatesBtn: 'Release Notes',
     updatesTitle: 'Release Notes',
     nextCheck: 'Next check',
     newsTitle: 'Latest Updates',
     gpuTitle: 'Tested GPUs & FPS',
+    pollQuestion: 'Do you think the game will be 100% ported to PC?',
+    pollYes: 'YES',
+    pollNo: 'NO',
+    pollVotes: 'votes',
     filterAll: 'All',
     filterOpen: 'Open Source',
     filterClosed: 'Closed Team',
@@ -398,6 +436,7 @@ const TEXT = {
 export default function Home() {
   const [lang, setLang] = useState('tr');
   const [themeId, setThemeId] = useState('dark');
+  const [themeMenuOpen, setThemeMenuOpen] = useState(false);
   const [teams, setTeams] = useState([]);
   const [deltas, setDeltas] = useState({});
   const [filter, setFilter] = useState('all');
@@ -406,7 +445,13 @@ export default function Home() {
   const [syncing, setSyncing] = useState(false);
   const [onlineCount, setOnlineCount] = useState(1);
   const [showChangelog, setShowChangelog] = useState(false);
+
+  // Anket durumları
+  const [voterId, setVoterId] = useState('');
+  const [pollData, setPollData] = useState({ yes: 0, no: 0, myVote: null });
+
   const prevPctsRef = useRef({});
+  const themeMenuRef = useRef(null);
 
   const t = TEXT[lang];
   const activeTheme = THEMES[themeId] || THEMES.dark;
@@ -419,9 +464,31 @@ export default function Home() {
       if (savedLang === 'tr' || savedLang === 'en') setLang(savedLang);
       const savedPcts = JSON.parse(localStorage.getItem('gta6takip_prev_pcts') || '{}');
       if (savedPcts && typeof savedPcts === 'object') prevPctsRef.current = savedPcts;
+
+      let vId = localStorage.getItem('gta6takip_voter_id');
+      if (!vId) {
+        vId = `v_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+        localStorage.setItem('gta6takip_voter_id', vId);
+      }
+      setVoterId(vId);
+
+      const cachedVote = localStorage.getItem('gta6takip_main_vote');
+      if (cachedVote === 'yes' || cachedVote === 'no') {
+        setPollData((prev) => ({ ...prev, myVote: cachedVote }));
+      }
     } catch {
       // ignore
     }
+  }, []);
+
+  useEffect(() => {
+    const handleOutsideClick = (e) => {
+      if (themeMenuRef.current && !themeMenuRef.current.contains(e.target)) {
+        setThemeMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
   }, []);
 
   useEffect(() => {
@@ -433,6 +500,52 @@ export default function Home() {
       // ignore
     }
   }, [themeId, activeTheme.isDark]);
+
+  const fetchPoll = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/poll?voterId=${encodeURIComponent(voterId)}`, { cache: 'no-store' });
+      const data = await res.json();
+      if (data.ok) {
+        setPollData((prev) => ({
+          yes: data.yes ?? prev.yes,
+          no: data.no ?? prev.no,
+          myVote: data.myVote || prev.myVote,
+        }));
+      }
+    } catch {
+      // ignore
+    }
+  }, [voterId]);
+
+  useEffect(() => {
+    if (voterId) fetchPoll();
+  }, [voterId, fetchPoll]);
+
+  const handlePollVote = async (vote) => {
+    setPollData((prev) => {
+      let { yes, no, myVote } = prev;
+      if (myVote === vote) return prev;
+      if (myVote === 'yes' && yes > 0) yes -= 1;
+      if (myVote === 'no' && no > 0) no -= 1;
+      if (vote === 'yes') yes += 1;
+      if (vote === 'no') no += 1;
+      return { yes, no, myVote: vote };
+    });
+    try {
+      localStorage.setItem('gta6takip_main_vote', vote);
+      const res = await fetch('/api/poll', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ vote, voterId }),
+      });
+      const data = await res.json();
+      if (data.ok) {
+        setPollData({ yes: data.yes, no: data.no, myVote: data.myVote });
+      }
+    } catch {
+      // ignore
+    }
+  };
 
   const fetchSync = useCallback(async () => {
     setSyncing(true);
@@ -535,6 +648,10 @@ export default function Home() {
     countdown % 60
   ).padStart(2, '0')}`;
 
+  const totalPollVotes = pollData.yes + pollData.no;
+  const yesPct = totalPollVotes > 0 ? Math.round((pollData.yes / totalPollVotes) * 100) : 0;
+  const noPct = totalPollVotes > 0 ? 100 - yesPct : 0;
+
   return (
     <div
       className="min-h-screen transition-colors duration-300"
@@ -544,7 +661,7 @@ export default function Home() {
         backgroundImage: activeTheme.ambient,
       }}
     >
-      {/* ÜST SADE BAR */}
+      {/* ÜST SADE BAR (Mobil dostu Tema Açılır Menüsü ile) */}
       <nav
         className="sticky top-0 z-40 backdrop-blur-md border-b"
         style={{
@@ -552,14 +669,14 @@ export default function Home() {
           borderColor: activeTheme.border,
         }}
       >
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-2.5">
-          <div className="flex items-center gap-2">
+        <div className="max-w-5xl mx-auto px-3 sm:px-6 py-2.5 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 min-w-0">
             <Icon3DLogo />
-            <span className="font-black text-base tracking-tight">{t.brand}</span>
+            <span className="font-black text-sm sm:text-base tracking-tight truncate">{t.brand}</span>
             <button
               type="button"
               onClick={() => setShowChangelog(true)}
-              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold border transition hover:opacity-85"
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] sm:text-[11px] font-bold border transition hover:opacity-85 shrink-0"
               style={{
                 backgroundColor: activeTheme.bgCard,
                 borderColor: activeTheme.border,
@@ -572,38 +689,65 @@ export default function Home() {
             </button>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/25">
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+            {/* Çevrimiçi */}
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-[11px] sm:text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/25">
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
               </span>
-              {onlineCount} {t.onlineBtn}
+              <span>{onlineCount}</span>
+              <span className="hidden sm:inline">{t.onlineBtn}</span>
             </span>
 
-            <div
-              className="flex items-center gap-1 rounded-full p-1 border"
-              style={{ backgroundColor: activeTheme.bgCard, borderColor: activeTheme.border }}
-              title="Tema / Theme"
-            >
-              {Object.values(THEMES).map((th) => {
-                const selected = th.id === themeId;
-                return (
-                  <button
-                    key={th.id}
-                    type="button"
-                    onClick={() => setThemeId(th.id)}
-                    title={lang === 'tr' ? th.labelTr : th.labelEn}
-                    aria-label={th.labelEn}
-                    className={`w-4 h-4 sm:w-5 sm:h-5 rounded-full transition-transform ${
-                      selected ? 'scale-110 ring-2 ring-offset-1 ring-pink-500' : 'opacity-70 hover:opacity-100'
-                    }`}
-                    style={{ background: th.dot }}
-                  />
-                );
-              })}
+            {/* TEMA AÇILIR MENÜ BUTONU */}
+            <div className="relative" ref={themeMenuRef}>
+              <button
+                type="button"
+                onClick={() => setThemeMenuOpen((v) => !v)}
+                className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-full border text-[11px] sm:text-xs font-semibold transition hover:opacity-85"
+                style={{ backgroundColor: activeTheme.bgCard, borderColor: activeTheme.border }}
+              >
+                <span className="w-3 h-3 rounded-full shrink-0" style={{ background: activeTheme.dot }} />
+                <Palette className="w-3.5 h-3.5 hidden sm:inline" style={{ color: activeTheme.accent }} />
+                <span>{t.themeBtn}</span>
+                <ChevronDown className="w-3 h-3 opacity-70" />
+              </button>
+
+              {themeMenuOpen && (
+                <div
+                  className="absolute right-0 mt-2 w-44 rounded-2xl p-1.5 border shadow-2xl z-50 space-y-1"
+                  style={{ backgroundColor: activeTheme.bgCard, borderColor: activeTheme.border }}
+                >
+                  {Object.values(THEMES).map((th) => {
+                    const selected = th.id === themeId;
+                    return (
+                      <button
+                        key={th.id}
+                        type="button"
+                        onClick={() => {
+                          setThemeId(th.id);
+                          setThemeMenuOpen(false);
+                        }}
+                        className="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-xl text-xs font-semibold transition hover:opacity-85"
+                        style={{
+                          backgroundColor: selected ? activeTheme.trackBg : 'transparent',
+                          color: activeTheme.textPrimary,
+                        }}
+                      >
+                        <span className="flex items-center gap-2">
+                          <span className="w-3.5 h-3.5 rounded-full shrink-0" style={{ background: th.dot }} />
+                          <span>{lang === 'tr' ? th.labelTr : th.labelEn}</span>
+                        </span>
+                        {selected && <Check className="w-3.5 h-3.5" style={{ color: activeTheme.accent }} />}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
+            {/* TR | EN */}
             <div
               className="flex items-center rounded-full p-0.5 border"
               style={{ backgroundColor: activeTheme.bgCard, borderColor: activeTheme.border }}
@@ -613,31 +757,33 @@ export default function Home() {
                   setLang('tr');
                   localStorage.setItem('gta6takip_lang', 'tr');
                 }}
-                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold transition ${
+                className={`flex items-center gap-1 px-2 py-1 rounded-full text-[11px] font-semibold transition ${
                   lang === 'tr' ? 'text-white' : ''
                 }`}
                 style={lang === 'tr' ? { backgroundColor: activeTheme.accent } : undefined}
               >
-                <FlagTR /> TR
+                <FlagTR /> <span className="hidden sm:inline">TR</span>
               </button>
               <button
                 onClick={() => {
                   setLang('en');
                   localStorage.setItem('gta6takip_lang', 'en');
                 }}
-                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold transition ${
+                className={`flex items-center gap-1 px-2 py-1 rounded-full text-[11px] font-semibold transition ${
                   lang === 'en' ? 'text-white' : ''
                 }`}
                 style={lang === 'en' ? { backgroundColor: activeTheme.accent } : undefined}
               >
-                <FlagEN /> EN
+                <FlagEN /> <span className="hidden sm:inline">EN</span>
               </button>
             </div>
 
+            {/* Yenile */}
             <button
               onClick={fetchSync}
-              className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-full border text-xs font-semibold transition hover:opacity-80"
+              className="inline-flex items-center gap-1.5 p-2 sm:px-3 sm:py-1.5 rounded-full border text-xs font-semibold transition hover:opacity-80"
               style={{ backgroundColor: activeTheme.bgCard, borderColor: activeTheme.border }}
+              aria-label={t.refresh}
             >
               <RefreshCw
                 className={`w-3.5 h-3.5 ${syncing ? 'animate-spin' : ''}`}
@@ -750,6 +896,74 @@ export default function Home() {
           ))}
         </section>
 
+        {/* TOPLULUK ANKETİ: EVET x HAYIR */}
+        <section
+          className="rounded-2xl p-4 sm:p-5 border space-y-3"
+          style={{ backgroundColor: activeTheme.bgCard, borderColor: activeTheme.border }}
+        >
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-2 text-xs sm:text-sm font-bold">
+              <BarChart3 className="w-4 h-4 shrink-0" style={{ color: activeTheme.accent }} />
+              <span>{t.pollQuestion}</span>
+            </div>
+            <span className="text-[11px] font-semibold" style={{ color: activeTheme.textMuted }}>
+              {totalPollVotes} {t.pollVotes}
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {/* EVET */}
+            <button
+              type="button"
+              onClick={() => handlePollVote('yes')}
+              className="relative overflow-hidden rounded-xl p-3 border text-left transition hover:opacity-90"
+              style={{
+                backgroundColor: activeTheme.bgPage,
+                borderColor: pollData.myVote === 'yes' ? '#10b981' : activeTheme.border,
+              }}
+            >
+              <div
+                className="absolute inset-y-0 left-0 bg-emerald-500/15 transition-all duration-500"
+                style={{ width: `${yesPct}%` }}
+              />
+              <div className="relative flex items-center justify-between gap-2 text-xs font-bold">
+                <span className="flex items-center gap-1.5 text-emerald-400">
+                  {pollData.myVote === 'yes' && <Check className="w-3.5 h-3.5" />}
+                  {t.pollYes}
+                </span>
+                <span>
+                  {lang === 'tr' ? `%${yesPct}` : `${yesPct}%`} · {pollData.yes} {t.pollVotes}
+                </span>
+              </div>
+            </button>
+
+            {/* HAYIR */}
+            <button
+              type="button"
+              onClick={() => handlePollVote('no')}
+              className="relative overflow-hidden rounded-xl p-3 border text-left transition hover:opacity-90"
+              style={{
+                backgroundColor: activeTheme.bgPage,
+                borderColor: pollData.myVote === 'no' ? '#f43f5e' : activeTheme.border,
+              }}
+            >
+              <div
+                className="absolute inset-y-0 left-0 bg-rose-500/15 transition-all duration-500"
+                style={{ width: `${noPct}%` }}
+              />
+              <div className="relative flex items-center justify-between gap-2 text-xs font-bold">
+                <span className="flex items-center gap-1.5 text-rose-400">
+                  {pollData.myVote === 'no' && <Check className="w-3.5 h-3.5" />}
+                  {t.pollNo}
+                </span>
+                <span>
+                  {lang === 'tr' ? `%${noPct}` : `${noPct}%`} · {pollData.no} {t.pollVotes}
+                </span>
+              </div>
+            </button>
+          </div>
+        </section>
+
         {/* TEK SÜTUNLU LİDERLİK KARTLARI */}
         {filteredTeams.length === 0 ? (
           <div
@@ -793,7 +1007,6 @@ export default function Home() {
                   className="rounded-2xl p-4 sm:p-6 border transition-colors"
                   style={{ backgroundColor: activeTheme.bgCard, borderColor: activeTheme.border }}
                 >
-                  {/* ANDROID MOBİL UYUMLU BAŞLIK */}
                   <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 mb-3">
                     <div className="flex items-start gap-2.5 sm:gap-3 min-w-0">
                       <div className="flex items-center gap-1.5 shrink-0 pt-1">
@@ -969,7 +1182,7 @@ export default function Home() {
         )}
 
         {/* ALT SOSYAL & PAYLAŞIM ŞERİDİ */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
           <a
             href="https://x.com/batmancodex"
             target="_blank"
