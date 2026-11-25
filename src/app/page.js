@@ -15,13 +15,12 @@ import {
   X,
   Check,
   Share2,
-  BarChart2,
+  Lock,
+  Code2,
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
-const APP_VERSION = 'v1.0.15';
-const NIGHT_POLL_KEY = 'gta6takip_night_poll_v1';
-const NIGHT_POLL_END_MS = new Date('2026-11-26T06:00:00+03:00').getTime();
+const APP_VERSION = 'v1.0.16';
 
 const THEMES = {
   dark: {
@@ -150,36 +149,42 @@ const FALLBACK_NEWS = [
 
 const CHANGELOG = [
   {
-    version: 'v1.0.15',
+    version: 'v1.0.16',
     dateTr: '26 Kasım 2026',
     dateEn: 'November 26, 2026',
     itemsTr: [
-      'Gece kuşu anketi gerçek Supabase veritabanına (night_poll) bağlandı; tüm ziyaretçilerin oyları canlı güncellenir.',
+      'Uçan asker ve anket widgetı kaldırıldı.',
+      'CANLI rozeti ışıklı ve hafif yanıp sönen efekt ile güncellendi.',
+      'Açık Kaynak ve Kapalı Ekip etiketlerinin yanına simgeler eklendi.',
     ],
     itemsEn: [
-      'Connected the night-owl poll to live Supabase storage (night_poll) for real-time shared counts.',
+      'Removed the floating soldier poll widget.',
+      'Updated the LIVE badge with a soft pulsing glow effect.',
+      'Added icons next to Open Source and Private Build badges.',
     ],
   },
   {
-    version: 'v1.0.14',
+    version: 'v1.0.11',
     dateTr: '26 Kasım 2026',
     dateEn: 'November 26, 2026',
     itemsTr: [
-      'Uçan gece kuşu askeri penceresine yüzdelik dağılımı gösteren "Sonuçları Gör" butonu eklendi.',
+      'Alt paylaşım butonlarına modern WhatsApp ve X simgeleri eklendi.',
+      'Ekip ilerleme çubuğu tek parça kesintisiz bar haline getirildi; 6 durak noktası alta hizalandı.',
     ],
     itemsEn: [
-      'Added a "See Results" toggle with percentage breakdown bars to the night-owl soldier widget.',
+      'Added modern WhatsApp and X icons to the footer share buttons.',
+      'Unified team progress into a single continuous bar with aligned 6-milestone stop nodes.',
     ],
   },
   {
-    version: 'v1.0.13',
+    version: 'v1.0.10',
     dateTr: '26 Kasım 2026',
     dateEn: 'November 26, 2026',
     itemsTr: [
-      'Uçan gece kuşu askeri yalnızca 26 Kasım 2026 saat 06:00 (TSİ) tarihine kadar görünecek şekilde sınırlandı.',
+      'API veri eşleştirme katmanı güncellendi; ekip yüzdeleri, FPS ve Sparkline grafiği tam uyumlu hale getirildi.',
     ],
     itemsEn: [
-      'Scoped the floating night-owl soldier widget to appear only until 06:00 AM TRT on Nov 26, 2026.',
+      'Updated API field mapping so team percentages, FPS, and Sparkline chart render accurately.',
     ],
   },
 ];
@@ -213,18 +218,6 @@ const IconX = () => (
 const IconWhatsApp = () => (
   <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 fill-current shrink-0 text-emerald-400" aria-hidden="true">
     <path d="M12.031 2c-5.516 0-9.969 4.453-9.969 9.969 0 1.766.469 3.484 1.344 5l-1.406 5.156 5.281-1.375c1.469.797 3.109 1.219 4.75 1.219 5.516 0 9.969-4.453 9.969-9.969S17.547 2 12.031 2zm5.813 14.125c-.25.703-1.438 1.344-2 1.422-.516.078-1.172.109-1.891-.125-.438-.141-1-.328-1.719-.641-3.016-1.297-4.984-4.328-5.141-4.531-.156-.203-1.234-1.641-1.234-3.125s.781-2.219 1.063-2.516c.281-.297.609-.375.813-.375.203 0 .406.016.578.016.188 0 .438-.078.688.516.25.609.859 2.094.938 2.25.078.156.125.344.031.547-.094.203-.156.328-.297.5-.141.172-.313.391-.438.516-.156.141-.313.297-.141.594.172.297.781 1.281 1.672 2.078 1.156 1.031 2.125 1.344 2.422 1.5.297.156.469.125.641-.078.172-.203.734-.859.938-1.156.203-.297.406-.25.672-.156.266.094 1.703.813 2 .953.297.156.484.219.563.344.078.125.078.719-.172 1.422z" />
-  </svg>
-);
-
-const FlyingSoldierSVG = () => (
-  <svg viewBox="0 0 64 64" className="w-11 h-11 shrink-0 animate-bounce" aria-hidden="true">
-    <path d="M12 28 L4 20 L14 22 Z" fill="#f59e0b" />
-    <path d="M52 28 L60 20 L50 22 Z" fill="#f59e0b" />
-    <rect x="20" y="26" width="24" height="22" rx="6" fill="#334155" stroke="#94a3b8" strokeWidth="1.5" />
-    <circle cx="32" cy="20" r="11" fill="#475569" stroke="#cbd5e1" strokeWidth="1.5" />
-    <rect x="24" y="16" width="16" height="6" rx="3" fill="#38bdf8" />
-    <path d="M26 48 L24 57" stroke="#f97316" strokeWidth="3" strokeLinecap="round" />
-    <path d="M38 48 L40 57" stroke="#f97316" strokeWidth="3" strokeLinecap="round" />
   </svg>
 );
 
@@ -296,13 +289,6 @@ export default function HomePage() {
   const [countdown, setCountdown] = useState(120);
   const [syncing, setSyncing] = useState(false);
   const [copied, setCopied] = useState(false);
-
-  const [soldierVisible, setSoldierVisible] = useState(false);
-  const [soldierDismissed, setSoldierDismissed] = useState(false);
-  const [nightVote, setNightVote] = useState(null);
-  const [nightCounts, setNightCounts] = useState({ stay: 1, sleep: 0 });
-  const [showNightResults, setShowNightResults] = useState(false);
-  const [votingBusy, setVotingBusy] = useState(false);
 
   const theme = THEMES[themeKey] || THEMES.dark;
 
@@ -399,88 +385,6 @@ export default function HomePage() {
   }, []);
 
   useEffect(() => {
-    try {
-      const saved = window.localStorage.getItem(NIGHT_POLL_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (parsed?.choice === 'stay' || parsed?.choice === 'sleep') {
-          setNightVote(parsed.choice);
-        }
-      }
-    } catch {
-      // localStorage erişim hatası yoksayılır
-    }
-
-    if (Date.now() >= NIGHT_POLL_END_MS) {
-      return undefined;
-    }
-
-    const showTimer = setTimeout(() => {
-      if (Date.now() < NIGHT_POLL_END_MS) {
-        setSoldierVisible(true);
-      }
-    }, 7000);
-
-    const expireInterval = setInterval(() => {
-      if (Date.now() >= NIGHT_POLL_END_MS) {
-        setSoldierVisible(false);
-      }
-    }, 30000);
-
-    return () => {
-      clearTimeout(showTimer);
-      clearInterval(expireInterval);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!supabaseClient) return undefined;
-
-    const loadNightPoll = async () => {
-      try {
-        const { data } = await supabaseClient
-          .from('night_poll')
-          .select('stay_count, sleep_count')
-          .eq('id', 'tonight')
-          .single();
-        if (data) {
-          setNightCounts({
-            stay: Number(data.stay_count ?? 1),
-            sleep: Number(data.sleep_count ?? 0),
-          });
-        }
-      } catch {
-        // Supabase okuma hatası yoksayılır
-      }
-    };
-
-    loadNightPoll();
-
-    const pollChannel = supabaseClient
-      .channel('night_poll_live')
-      .on(
-        'postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'night_poll', filter: 'id=eq.tonight' },
-        (payload) => {
-          if (payload?.new) {
-            setNightCounts({
-              stay: Number(payload.new.stay_count ?? 1),
-              sleep: Number(payload.new.sleep_count ?? 0),
-            });
-          }
-        }
-      )
-      .subscribe();
-
-    const refreshInterval = setInterval(loadNightPoll, 15000);
-
-    return () => {
-      clearInterval(refreshInterval);
-      pollChannel.unsubscribe();
-    };
-  }, [supabaseClient]);
-
-  useEffect(() => {
     const timer = setInterval(() => {
       setCountdown((prev) => {
         if (prev <= 1) {
@@ -525,67 +429,6 @@ export default function HomePage() {
       if (channel) channel.unsubscribe();
     };
   }, [supabaseClient]);
-
-  const handleNightVote = async (choice) => {
-    if (nightVote || votingBusy || Date.now() >= NIGHT_POLL_END_MS) return;
-    setVotingBusy(true);
-    setNightVote(choice);
-    setShowNightResults(true);
-
-    try {
-      window.localStorage.setItem(
-        NIGHT_POLL_KEY,
-        JSON.stringify({ choice, votedAt: new Date().toISOString() })
-      );
-    } catch {
-      // localStorage yazma hatası yoksayılır
-    }
-
-    if (supabaseClient) {
-      try {
-        const { data: latest } = await supabaseClient
-          .from('night_poll')
-          .select('stay_count, sleep_count')
-          .eq('id', 'tonight')
-          .single();
-
-        const nextStay = Number(latest?.stay_count ?? nightCounts.stay) + (choice === 'stay' ? 1 : 0);
-        const nextSleep = Number(latest?.sleep_count ?? nightCounts.sleep) + (choice === 'sleep' ? 1 : 0);
-
-        const { data: updated } = await supabaseClient
-          .from('night_poll')
-          .update({ stay_count: nextStay, sleep_count: nextSleep })
-          .eq('id', 'tonight')
-          .select('stay_count, sleep_count')
-          .single();
-
-        if (updated) {
-          setNightCounts({
-            stay: Number(updated.stay_count),
-            sleep: Number(updated.sleep_count),
-          });
-        } else {
-          setNightCounts({ stay: nextStay, sleep: nextSleep });
-        }
-      } catch {
-        setNightCounts((prev) => ({
-          ...prev,
-          [choice]: prev[choice] + 1,
-        }));
-      }
-    } else {
-      setNightCounts((prev) => ({
-        ...prev,
-        [choice]: prev[choice] + 1,
-      }));
-    }
-
-    setVotingBusy(false);
-  };
-
-  const totalNightVotes = nightCounts.stay + nightCounts.sleep;
-  const stayPct = totalNightVotes > 0 ? Math.round((nightCounts.stay / totalNightVotes) * 100) : 0;
-  const sleepPct = totalNightVotes > 0 ? 100 - stayPct : 0;
 
   const leader = teams[0] || FALLBACK_TEAMS[0];
   const peakFps = useMemo(() => extractPeakFps(teams), [teams]);
@@ -905,20 +748,27 @@ export default function HomePage() {
                       )}
 
                       {isTop3 && (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-500/15 text-red-400 border border-red-500/30">
-                          <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse" />
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-black tracking-wider bg-red-500/20 text-red-300 border border-red-400/50 shadow-[0_0_12px_rgba(248,113,113,0.55)] animate-pulse">
+                          <span className="w-1.5 h-1.5 rounded-full bg-red-400 shadow-[0_0_6px_rgba(248,113,113,0.9)]" />
                           {lang === 'tr' ? 'CANLI' : 'LIVE'}
                         </span>
                       )}
 
-                      <span className={`px-2 py-0.5 rounded-md text-[11px] font-semibold border ${theme.pill}`}>
-                        {team.type === 'private'
-                          ? lang === 'tr'
-                            ? 'Kapalı Ekip'
-                            : 'Private Build'
-                          : lang === 'tr'
-                            ? 'Açık Kaynak'
-                            : 'Open Source'}
+                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold border ${theme.pill}`}>
+                        {team.type === 'private' ? (
+                          <Lock className="w-3 h-3 opacity-80" />
+                        ) : (
+                          <Code2 className="w-3 h-3 opacity-80" />
+                        )}
+                        <span>
+                          {team.type === 'private'
+                            ? lang === 'tr'
+                              ? 'Kapalı Ekip'
+                              : 'Private Build'
+                            : lang === 'tr'
+                              ? 'Açık Kaynak'
+                              : 'Open Source'}
+                        </span>
                       </span>
 
                       {team.delta && (
@@ -1087,122 +937,6 @@ export default function HomePage() {
           </p>
         </footer>
       </main>
-
-      {soldierVisible && !soldierDismissed && (
-        <aside
-          className={`fixed bottom-5 left-4 right-16 sm:right-auto sm:w-80 z-40 rounded-2xl border p-3.5 shadow-2xl backdrop-blur-md transition-all ${theme.card}`}
-        >
-          <button
-            type="button"
-            onClick={() => setSoldierDismissed(true)}
-            aria-label={lang === 'tr' ? 'Kapat' : 'Close'}
-            className={`absolute top-2.5 right-2.5 p-1 rounded-lg border opacity-75 hover:opacity-100 ${theme.subCard}`}
-          >
-            <X className="w-3.5 h-3.5" />
-          </button>
-
-          <div className="flex items-start gap-2.5 pr-5">
-            <FlyingSoldierSVG />
-            <div className="space-y-1">
-              <p className="text-xs font-extrabold leading-snug">
-                {lang === 'tr'
-                  ? 'Hey gece kuşu, zabaaa gadar burda mıyık?'
-                  : 'Hey night owl, are we staying up till dawn?'}
-              </p>
-              <p className={`text-[10px] ${theme.muted}`}>
-                {nightVote
-                  ? lang === 'tr'
-                    ? 'Oyun kalıcı olarak kaydedildi.'
-                    : 'Your vote is locked in.'
-                  : lang === 'tr'
-                    ? '06:00’a kadar geçerli · Canlı ortak anket!'
-                    : 'Valid until 06:00 TRT · Live shared poll!'}
-              </p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 gap-1.5 mt-2.5">
-            <button
-              type="button"
-              disabled={Boolean(nightVote) || votingBusy}
-              onClick={() => handleNightVote('stay')}
-              className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl border text-xs font-semibold transition ${
-                nightVote === 'stay'
-                  ? theme.btnPrimary
-                  : `${theme.subCard} ${nightVote ? 'opacity-60 cursor-not-allowed' : 'hover:opacity-85'}`
-              }`}
-            >
-              <span>{lang === 'tr' ? 'Burdayız reis.' : 'Still here, chief.'}</span>
-              <span className="font-black">{nightCounts.stay}</span>
-            </button>
-
-            <button
-              type="button"
-              disabled={Boolean(nightVote) || votingBusy}
-              onClick={() => handleNightVote('sleep')}
-              className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl border text-xs font-semibold transition ${
-                nightVote === 'sleep'
-                  ? theme.btnPrimary
-                  : `${theme.subCard} ${nightVote ? 'opacity-60 cursor-not-allowed' : 'hover:opacity-85'}`
-              }`}
-            >
-              <span>{lang === 'tr' ? 'Yatacam şimdi kral.' : 'Heading to bed, king.'}</span>
-              <span className="font-black">{nightCounts.sleep}</span>
-            </button>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => setShowNightResults((v) => !v)}
-            className={`w-full mt-2 inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-[11px] font-semibold transition hover:opacity-90 ${theme.subCard}`}
-          >
-            <BarChart2 className={`w-3.5 h-3.5 ${theme.accentText}`} />
-            <span>
-              {showNightResults
-                ? lang === 'tr'
-                  ? 'Sonuçları Gizle'
-                  : 'Hide Results'
-                : lang === 'tr'
-                  ? 'Anket Sonucunu Gör'
-                  : 'See Poll Results'}
-            </span>
-          </button>
-
-          {showNightResults && (
-            <div className={`mt-2 p-2.5 rounded-xl border space-y-2 text-[11px] ${theme.subCard}`}>
-              <div className="space-y-1">
-                <div className="flex justify-between font-semibold">
-                  <span>{lang === 'tr' ? 'Burdayız reis.' : 'Still here, chief.'}</span>
-                  <span className={theme.accentText}>%{stayPct} ({nightCounts.stay})</span>
-                </div>
-                <div className="h-1.5 rounded-full bg-zinc-700/40 overflow-hidden">
-                  <div
-                    className={`h-full rounded-full bg-gradient-to-r ${theme.accentGradient}`}
-                    style={{ width: `${stayPct}%` }}
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <div className="flex justify-between font-semibold">
-                  <span>{lang === 'tr' ? 'Yatacam şimdi kral.' : 'Heading to bed, king.'}</span>
-                  <span>%{sleepPct} ({nightCounts.sleep})</span>
-                </div>
-                <div className="h-1.5 rounded-full bg-zinc-700/40 overflow-hidden">
-                  <div
-                    className="h-full rounded-full bg-zinc-400"
-                    style={{ width: `${sleepPct}%` }}
-                  />
-                </div>
-              </div>
-
-              <div className={`text-[10px] text-right ${theme.muted}`}>
-                {lang === 'tr' ? `Toplam: ${totalNightVotes} oy` : `Total: ${totalNightVotes} votes`}
-              </div>
-            </div>
-          )}
-        </aside>
-      )}
 
       {showBackTop && (
         <button
