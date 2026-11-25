@@ -140,24 +140,24 @@ function StageVisualBadge({ percentage, stage = '' }) {
 
   let level = 1;
   let label = 'Boot / Exe';
-  let boxClass = 'bg-purple-500/15 text-purple-400 border-purple-500/30';
-  let stepFill = 'bg-purple-400';
+  let boxClass = 'bg-purple-500/15 text-purple-500 border-purple-500/30';
+  let stepFill = 'bg-purple-500';
 
   if (pct >= 85 || s.includes('60 fps') || s.includes('akıcı')) {
     level = 4;
     label = 'Akıcı FPS';
-    boxClass = 'bg-amber-500/15 text-amber-400 border-amber-500/30';
-    stepFill = 'bg-amber-400';
+    boxClass = 'bg-amber-500/15 text-amber-500 border-amber-500/30';
+    stepFill = 'bg-amber-500';
   } else if (pct >= 60 || s.includes('oyun içi') || s.includes('dünya')) {
     level = 3;
     label = 'Oyun İçi';
-    boxClass = 'bg-emerald-500/15 text-emerald-500 border-emerald-500/30';
-    stepFill = 'bg-emerald-400';
+    boxClass = 'bg-emerald-500/15 text-emerald-600 border-emerald-500/30';
+    stepFill = 'bg-emerald-500';
   } else if (pct >= 40 || s.includes('ilk kare') || s.includes('menü')) {
     level = 2;
     label = 'İlk Kare';
-    boxClass = 'bg-sky-500/15 text-sky-400 border-sky-500/30';
-    stepFill = 'bg-sky-400';
+    boxClass = 'bg-sky-500/15 text-sky-500 border-sky-500/30';
+    stepFill = 'bg-sky-500';
   }
 
   return (
@@ -171,7 +171,7 @@ function StageVisualBadge({ percentage, stage = '' }) {
           <span
             key={step}
             className={`w-1.5 h-2.5 rounded-sm ${
-              step <= level ? stepFill : 'bg-slate-500/25'
+              step <= level ? stepFill : 'bg-slate-400/30'
             }`}
           />
         ))}
@@ -193,7 +193,7 @@ function renderMessageWithLinks(text) {
           href={part}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-1 text-pink-500 underline decoration-pink-500/50 hover:text-orange-400 break-all font-medium"
+          className="inline-flex items-center gap-1 text-pink-500 underline decoration-pink-500/50 hover:text-orange-500 break-all font-medium"
         >
           <LinkIcon className="w-3.5 h-3.5 shrink-0" />
           {part}
@@ -464,7 +464,10 @@ export default function HomePage() {
   const onlineCount = Math.max(1, onlineUsers.length);
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div
+      style={{ backgroundColor: 'var(--bg-base)', color: 'var(--text-primary)' }}
+      className="min-h-screen flex flex-col transition-colors duration-200"
+    >
       {/* Üst Çubuk */}
       <header
         style={{ backgroundColor: 'var(--header-bg)', borderColor: 'var(--card-border)' }}
@@ -503,6 +506,7 @@ export default function HomePage() {
                 aria-label="Tema Seç"
                 value={theme}
                 onChange={(e) => setTheme(e.target.value)}
+                style={{ color: 'var(--text-primary)' }}
                 className="bg-transparent text-xs font-semibold focus:outline-none cursor-pointer"
               >
                 {THEMES.map((t) => (
@@ -517,7 +521,7 @@ export default function HomePage() {
               <button
                 type="button"
                 onClick={() => setShowOnlinePanel((prev) => !prev)}
-                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-500/15 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-500 transition cursor-pointer"
+                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-500/15 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-600 transition cursor-pointer"
               >
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                 <Users className="w-3.5 h-3.5" />
@@ -565,7 +569,7 @@ export default function HomePage() {
               style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--card-border)' }}
               className="hidden xl:flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs"
             >
-              <Trophy className="w-3.5 h-3.5 text-amber-400" />
+              <Trophy className="w-3.5 h-3.5 text-amber-500" />
               <span style={{ color: 'var(--text-secondary)' }}>Lider:</span>
               <span className="font-bold">{leaderName}</span>
               <span className="font-black pw-text-gradient">%{topScore}</span>
@@ -575,7 +579,7 @@ export default function HomePage() {
               type="button"
               onClick={handleAutoSync}
               disabled={syncing}
-              style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--card-border)' }}
+              style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--card-border)', color: 'var(--text-primary)' }}
               className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold border hover:opacity-90 transition cursor-pointer"
             >
               <RefreshCw
@@ -679,8 +683,8 @@ export default function HomePage() {
                         <span
                           className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wide shrink-0 border ${
                             proj.is_open_source
-                              ? 'bg-emerald-500/15 text-emerald-500 border-emerald-500/25'
-                              : 'bg-pink-500/15 text-pink-500 border-pink-500/25'
+                              ? 'bg-emerald-500/15 text-emerald-600 border-emerald-500/25'
+                              : 'bg-pink-500/15 text-pink-600 border-pink-500/25'
                           }`}
                         >
                           {proj.is_open_source ? 'Açık Kaynak' : 'Kapalı Ekip'}
@@ -769,7 +773,7 @@ export default function HomePage() {
                 </p>
               </div>
             </div>
-            <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-emerald-500 bg-emerald-500/15 border border-emerald-500/25 px-2.5 py-0.5 rounded-full shrink-0">
+            <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-emerald-600 bg-emerald-500/15 border border-emerald-500/25 px-2.5 py-0.5 rounded-full shrink-0">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
               Canlı
             </span>
@@ -843,7 +847,7 @@ export default function HomePage() {
           </div>
 
           {chatError && (
-            <div className="px-4 py-2 bg-rose-500/15 border-t border-rose-500/30 text-xs text-rose-400">
+            <div className="px-4 py-2 bg-rose-500/15 border-t border-rose-500/30 text-xs text-rose-500">
               {chatError}
             </div>
           )}
@@ -864,7 +868,11 @@ export default function HomePage() {
               }}
               maxLength={500}
               placeholder="Mesaj yaz veya https:// link yapıştır..."
-              style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--card-border)' }}
+              style={{
+                backgroundColor: 'var(--card-bg)',
+                borderColor: 'var(--card-border)',
+                color: 'var(--text-primary)',
+              }}
               className="flex-1 min-w-0 rounded-xl border px-3 py-2 text-xs sm:text-sm placeholder:text-slate-400 focus:outline-none"
             />
             <button
