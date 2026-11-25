@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
-const APP_VERSION = 'v1.0.10';
+const APP_VERSION = 'v1.0.11';
 
 const THEMES = {
   dark: {
@@ -147,6 +147,19 @@ const FALLBACK_NEWS = [
 
 const CHANGELOG = [
   {
+    version: 'v1.0.11',
+    dateTr: '26 Kasım 2026',
+    dateEn: 'November 26, 2026',
+    itemsTr: [
+      'Alt paylaşım butonlarına modern WhatsApp ve X simgeleri eklendi.',
+      'Ekip ilerleme çubuğu tek parça kesintisiz bar haline getirildi; 6 durak noktası alta hizalandı.',
+    ],
+    itemsEn: [
+      'Added modern WhatsApp and X icons to the footer share buttons.',
+      'Unified team progress into a single continuous bar with aligned 6-milestone stop nodes.',
+    ],
+  },
+  {
     version: 'v1.0.10',
     dateTr: '26 Kasım 2026',
     dateEn: 'November 26, 2026',
@@ -172,19 +185,6 @@ const CHANGELOG = [
       'Added a collapsible DMCA & Security Radar below the leaderboard (Leonida, ZETTROX & fake .exe warning).',
     ],
   },
-  {
-    version: 'v1.0.8',
-    dateTr: '26 Kasım 2026',
-    dateEn: 'November 26, 2026',
-    itemsTr: [
-      'Yeni lider darkworldhm yanına temaya uyumlu parlayan "YENİ" rozeti eklendi.',
-      'Mobil ve masaüstü için aşağı kaydırınca çıkan "Yukarı Çık (↑)" butonu eklendi.',
-    ],
-    itemsEn: [
-      'Added a glowing theme-matched "NEW" badge next to new leader darkworldhm.',
-      'Added a floating "Back to Top (↑)" button when scrolling down on mobile and desktop.',
-    ],
-  },
 ];
 
 const FlagTR = () => (
@@ -204,6 +204,18 @@ const FlagUS = () => (
     <rect y="10" width="24" height="2" fill="#FFFFFF" />
     <rect y="14" width="24" height="2" fill="#FFFFFF" />
     <rect width="10" height="9" fill="#3C3B6E" />
+  </svg>
+);
+
+const IconX = () => (
+  <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 fill-current shrink-0" aria-hidden="true">
+    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+  </svg>
+);
+
+const IconWhatsApp = () => (
+  <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 fill-current shrink-0 text-emerald-400" aria-hidden="true">
+    <path d="M12.031 2c-5.516 0-9.969 4.453-9.969 9.969 0 1.766.469 3.484 1.344 5l-1.406 5.156 5.281-1.375c1.469.797 3.109 1.219 4.75 1.219 5.516 0 9.969-4.453 9.969-9.969S17.547 2 12.031 2zm5.813 14.125c-.25.703-1.438 1.344-2 1.422-.516.078-1.172.109-1.891-.125-.438-.141-1-.328-1.719-.641-3.016-1.297-4.984-4.328-5.141-4.531-.156-.203-1.234-1.641-1.234-3.125s.781-2.219 1.063-2.516c.281-.297.609-.375.813-.375.203 0 .406.016.578.016.188 0 .438-.078.688.516.25.609.859 2.094.938 2.25.078.156.125.344.031.547-.094.203-.156.328-.297.5-.141.172-.313.391-.438.516-.156.141-.313.297-.141.594.172.297.781 1.281 1.672 2.078 1.156 1.031 2.125 1.344 2.422 1.5.297.156.469.125.641-.078.172-.203.734-.859.938-1.156.203-.297.406-.25.672-.156.266.094 1.703.813 2 .953.297.156.484.219.563.344.078.125.078.719-.172 1.422z" />
   </svg>
 );
 
@@ -694,6 +706,7 @@ export default function HomePage() {
               const rank = idx + 1;
               const isTop3 = rank <= 3;
               const isNewLeader = rank === 1 && (team.isNew || team.name.toLowerCase() === 'darkworldhm');
+              const barWidth = Math.min(100, Math.max(2, team.progress));
 
               return (
                 <article
@@ -778,24 +791,35 @@ export default function HomePage() {
                     )}
                   </div>
 
-                  <div className="grid grid-cols-6 gap-1.5 mt-3">
-                    {MILESTONES.map((m) => {
-                      const reached = team.progress >= m.min;
-                      return (
-                        <div key={m.key} className="space-y-1">
-                          <div
-                            className={`h-2 rounded-full transition-all ${
-                              reached
-                                ? `bg-gradient-to-r ${theme.accentGradient}`
-                                : 'bg-zinc-700/40'
-                            }`}
-                          />
-                          <p className={`text-[10px] leading-tight truncate ${reached ? 'font-semibold' : theme.muted}`}>
-                            {m[lang]}
-                          </p>
-                        </div>
-                      );
-                    })}
+                  {/* Tek Parça Kesintisiz İlerleme Çubuğu ve Hizalı 6 Durak Noktası */}
+                  <div className="mt-3.5 space-y-2">
+                    <div className="relative h-2.5 w-full rounded-full bg-zinc-700/35 overflow-hidden">
+                      <div
+                        className={`h-full rounded-full bg-gradient-to-r ${theme.accentGradient} transition-all duration-500`}
+                        style={{ width: `${barWidth}%` }}
+                      />
+                    </div>
+                    <div className="grid grid-cols-6 gap-1">
+                      {MILESTONES.map((m) => {
+                        const reached = team.progress >= m.min;
+                        return (
+                          <div key={m.key} className="flex items-center gap-1 min-w-0">
+                            <span
+                              className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                                reached ? theme.accentBg : 'bg-zinc-600/50'
+                              }`}
+                            />
+                            <span
+                              className={`text-[10px] leading-tight truncate ${
+                                reached ? 'font-semibold opacity-95' : theme.muted
+                              }`}
+                            >
+                              {m[lang]}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                 </article>
               );
@@ -858,33 +882,35 @@ export default function HomePage() {
               href="https://x.com/batmancodex"
               target="_blank"
               rel="noopener noreferrer"
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border font-semibold ${theme.card}`}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border font-semibold transition hover:opacity-85 ${theme.card}`}
             >
+              <IconX />
               <span>@batmancodex</span>
-              <ExternalLink className="w-3 h-3" />
             </a>
             <a
               href="https://wa.me/?text=GTA%20VI%20PC%20Port%20Takip%3A%20https%3A%2F%2Fgta6takip.vercel.app%2F"
               target="_blank"
               rel="noopener noreferrer"
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border font-semibold ${theme.card}`}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border font-semibold transition hover:opacity-85 ${theme.card}`}
             >
-              WhatsApp
+              <IconWhatsApp />
+              <span>{lang === 'tr' ? "WhatsApp'ta Paylaş" : 'Share on WhatsApp'}</span>
             </a>
             <a
               href="https://x.com/intent/tweet?text=GTA%20VI%20PC%20Port%20Takip&url=https%3A%2F%2Fgta6takip.vercel.app%2F"
               target="_blank"
               rel="noopener noreferrer"
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border font-semibold ${theme.card}`}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border font-semibold transition hover:opacity-85 ${theme.card}`}
             >
-              {lang === 'tr' ? "X'te Paylaş" : 'Share on X'}
+              <IconX />
+              <span>{lang === 'tr' ? "X'te Paylaş" : 'Share on X'}</span>
             </a>
             <button
               type="button"
               onClick={handleCopyLink}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border font-semibold ${theme.card}`}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border font-semibold transition hover:opacity-85 ${theme.card}`}
             >
-              <Share2 className="w-3 h-3" />
+              <Share2 className={`w-3.5 h-3.5 ${theme.accentText}`} />
               <span>{copied ? (lang === 'tr' ? 'Kopyalandı' : 'Copied') : (lang === 'tr' ? 'Linki Kopyala' : 'Copy Link')}</span>
             </button>
           </div>
