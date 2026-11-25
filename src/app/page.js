@@ -12,7 +12,6 @@ import {
   Palette,
   ChevronDown,
   Check,
-  BarChart3,
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
@@ -24,7 +23,7 @@ const CHANGELOG = {
       version: 'v1.0.5',
       date: '25 Kasım 2026',
       items: [
-        'Anket başlığındaki Stats (istatistik) simgesi temayla uyumlu, neon ışımalı ve parlayan görünüme güncellendi.',
+        'Anket bölümü kaldırıldı, sade ve hızlı takip düzeni korundu.',
       ],
     },
     {
@@ -32,8 +31,6 @@ const CHANGELOG = {
       date: '25 Kasım 2026',
       items: [
         'Mobil üst bardaki logo/başlık sıkışması düzeltildi; mobilde iki ferah satır, masaüstünde tek satır görünüm sağlandı.',
-        'Anket Supabase veritabanına bağlandı; her 10 saniyede bir otomatik güncellenir ve oylar kalıcı olarak saklanır.',
-        'Ankete IP bazlı tek oy kilidi eklendi (IP değişene kadar tekrar oy verilemez).',
       ],
     },
     {
@@ -41,7 +38,6 @@ const CHANGELOG = {
       date: '25 Kasım 2026',
       items: [
         'Üst bardaki yatay renk noktaları mobilde yer açmak için tek bir "Tema ▾" menü butonuna dönüştürüldü.',
-        '"Sizce oyun PC\'ye %100 portlanacak mı?" (EVET / HAYIR) canlı topluluk anketi eklendi.',
       ],
     },
     {
@@ -58,7 +54,6 @@ const CHANGELOG = {
       date: '25 Kasım 2026',
       items: [
         'Android ve dar mobil ekranlarda geliştirici isimlerinin "..." şeklinde kesilmesi düzeltildi.',
-        'Tamamen sade ve güvenli salt takip düzeni korundu.',
       ],
     },
     {
@@ -76,7 +71,7 @@ const CHANGELOG = {
       version: 'v1.0.5',
       date: 'November 25, 2026',
       items: [
-        'Updated the poll Stats icon with a theme-matched glowing neon highlight.',
+        'Removed the poll section to keep the leaderboard clean and fast.',
       ],
     },
     {
@@ -84,8 +79,6 @@ const CHANGELOG = {
       date: 'November 25, 2026',
       items: [
         'Fixed top navbar title truncation on mobile; uses two clean rows on small screens and one row on desktop.',
-        'Connected community poll to Supabase database; auto-refreshes every 10s with persistent votes.',
-        'Added IP-based single-vote lock on the poll (one vote per IP until IP changes).',
       ],
     },
     {
@@ -93,7 +86,6 @@ const CHANGELOG = {
       date: 'November 25, 2026',
       items: [
         'Replaced horizontal theme dots in the top bar with a clean "Theme ▾" dropdown button for better mobile spacing.',
-        'Added live "Do you think the game will be 100% ported to PC?" (YES / NO) community poll.',
       ],
     },
     {
@@ -110,7 +102,6 @@ const CHANGELOG = {
       date: 'November 25, 2026',
       items: [
         'Fixed developer names truncating with "..." on narrow Android mobile screens.',
-        'Kept the clean, read-only leaderboard layout.',
       ],
     },
     {
@@ -409,11 +400,6 @@ const TEXT = {
     nextCheck: 'Sonraki kontrol',
     newsTitle: 'Son Gelişmeler',
     gpuTitle: 'Test Edilen Ekran Kartları',
-    pollQuestion: "Sizce oyun PC'ye %100 portlanacak mı?",
-    pollYes: 'EVET',
-    pollNo: 'HAYIR',
-    pollVotes: 'oy',
-    pollLockedNote: 'Oyunuz kaydedildi (IP başına 1 oy)',
     filterAll: 'Tümü',
     filterOpen: 'Açık Kaynak',
     filterClosed: 'Kapalı Ekip',
@@ -444,11 +430,6 @@ const TEXT = {
     nextCheck: 'Next check',
     newsTitle: 'Latest Updates',
     gpuTitle: 'Tested GPUs & FPS',
-    pollQuestion: 'Do you think the game will be 100% ported to PC?',
-    pollYes: 'YES',
-    pollNo: 'NO',
-    pollVotes: 'votes',
-    pollLockedNote: 'Vote recorded (1 vote per IP)',
     filterAll: 'All',
     filterOpen: 'Open Source',
     filterClosed: 'Closed Team',
@@ -479,8 +460,6 @@ export default function Home() {
   const [syncing, setSyncing] = useState(false);
   const [onlineCount, setOnlineCount] = useState(1);
   const [showChangelog, setShowChangelog] = useState(false);
-
-  const [pollData, setPollData] = useState({ yes: 0, no: 0, myVote: null, locked: false });
 
   const prevPctsRef = useRef({});
   const themeMenuRef = useRef(null);
@@ -520,58 +499,6 @@ export default function Home() {
       // ignore
     }
   }, [themeId, activeTheme.isDark]);
-
-  const fetchPoll = useCallback(async () => {
-    try {
-      const res = await fetch('/api/poll', { cache: 'no-store' });
-      const data = await res.json();
-      if (data.ok) {
-        setPollData((prev) => {
-          const incomingTotal = (data.yes ?? 0) + (data.no ?? 0);
-          const prevTotal = (prev.yes ?? 0) + (prev.no ?? 0);
-          if (data.source === 'memory' && incomingTotal < prevTotal) {
-            return prev;
-          }
-          return {
-            yes: data.yes ?? 0,
-            no: data.no ?? 0,
-            myVote: data.myVote || prev.myVote || null,
-            locked: Boolean(data.locked || prev.locked),
-          };
-        });
-      }
-    } catch {
-      // ignore
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchPoll();
-    const pollTimer = setInterval(fetchPoll, 10000);
-    return () => clearInterval(pollTimer);
-  }, [fetchPoll]);
-
-  const handlePollVote = async (vote) => {
-    if (pollData.locked || pollData.myVote) return;
-    try {
-      const res = await fetch('/api/poll', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ vote }),
-      });
-      const data = await res.json();
-      if (typeof data.yes === 'number' && typeof data.no === 'number') {
-        setPollData({
-          yes: data.yes,
-          no: data.no,
-          myVote: data.myVote || vote,
-          locked: true,
-        });
-      }
-    } catch {
-      // ignore
-    }
-  };
 
   const fetchSync = useCallback(async () => {
     setSyncing(true);
@@ -673,10 +600,6 @@ export default function Home() {
   const countdownStr = `${String(Math.floor(countdown / 60)).padStart(2, '0')}:${String(
     countdown % 60
   ).padStart(2, '0')}`;
-
-  const totalPollVotes = pollData.yes + pollData.no;
-  const yesPct = totalPollVotes > 0 ? Math.round((pollData.yes / totalPollVotes) * 100) : 0;
-  const noPct = totalPollVotes > 0 ? 100 - yesPct : 0;
 
   return (
     <div
@@ -931,88 +854,6 @@ export default function Home() {
               <span style={{ color: activeTheme.textMuted }}>({item.team})</span>
             </span>
           ))}
-        </section>
-
-        {/* TOPLULUK ANKETİ (PARLAYAN TEMA UYUMLU STATS SİMGESİ İLE) */}
-        <section
-          className="rounded-2xl p-4 sm:p-5 border space-y-3"
-          style={{ backgroundColor: activeTheme.bgCard, borderColor: activeTheme.border }}
-        >
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div className="flex items-center gap-2.5 text-xs sm:text-sm font-bold">
-              <span
-                className="w-7 h-7 rounded-xl flex items-center justify-center text-white shrink-0 animate-pulse"
-                style={{
-                  background: activeTheme.barGradient,
-                  boxShadow: `0 0 16px ${activeTheme.glow}`,
-                }}
-              >
-                <BarChart3 className="w-4 h-4" />
-              </span>
-              <span>{t.pollQuestion}</span>
-            </div>
-            <span className="text-[11px] font-semibold" style={{ color: activeTheme.textMuted }}>
-              {totalPollVotes} {t.pollVotes}
-            </span>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <button
-              type="button"
-              disabled={pollData.locked || Boolean(pollData.myVote)}
-              onClick={() => handlePollVote('yes')}
-              className="relative overflow-hidden rounded-xl p-3 border text-left transition hover:opacity-90 disabled:cursor-default"
-              style={{
-                backgroundColor: activeTheme.bgPage,
-                borderColor: pollData.myVote === 'yes' ? '#10b981' : activeTheme.border,
-              }}
-            >
-              <div
-                className="absolute inset-y-0 left-0 bg-emerald-500/15 transition-all duration-500"
-                style={{ width: `${yesPct}%` }}
-              />
-              <div className="relative flex items-center justify-between gap-2 text-xs font-bold">
-                <span className="flex items-center gap-1.5 text-emerald-400">
-                  {pollData.myVote === 'yes' && <Check className="w-3.5 h-3.5" />}
-                  {t.pollYes}
-                </span>
-                <span>
-                  {lang === 'tr' ? `%${yesPct}` : `${yesPct}%`} · {pollData.yes} {t.pollVotes}
-                </span>
-              </div>
-            </button>
-
-            <button
-              type="button"
-              disabled={pollData.locked || Boolean(pollData.myVote)}
-              onClick={() => handlePollVote('no')}
-              className="relative overflow-hidden rounded-xl p-3 border text-left transition hover:opacity-90 disabled:cursor-default"
-              style={{
-                backgroundColor: activeTheme.bgPage,
-                borderColor: pollData.myVote === 'no' ? '#f43f5e' : activeTheme.border,
-              }}
-            >
-              <div
-                className="absolute inset-y-0 left-0 bg-rose-500/15 transition-all duration-500"
-                style={{ width: `${noPct}%` }}
-              />
-              <div className="relative flex items-center justify-between gap-2 text-xs font-bold">
-                <span className="flex items-center gap-1.5 text-rose-400">
-                  {pollData.myVote === 'no' && <Check className="w-3.5 h-3.5" />}
-                  {t.pollNo}
-                </span>
-                <span>
-                  {lang === 'tr' ? `%${noPct}` : `${noPct}%`} · {pollData.no} {t.pollVotes}
-                </span>
-              </div>
-            </button>
-          </div>
-
-          {pollData.locked && (
-            <p className="text-[11px]" style={{ color: activeTheme.textMuted }}>
-              ✓ {t.pollLockedNote}
-            </p>
-          )}
         </section>
 
         {/* TEK SÜTUNLU LİDERLİK KARTLARI */}
