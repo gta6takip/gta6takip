@@ -1,8 +1,37 @@
 'use client';
 
 import React, { useEffect, useState, useCallback } from 'react';
-import { RefreshCw, ExternalLink } from 'lucide-react';
+import { RefreshCw, ExternalLink, Sparkles, X } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
+
+const APP_VERSION = 'v1.0.0';
+
+const CHANGELOG = {
+  tr: [
+    {
+      version: 'v1.0.0',
+      date: '25 Kasım 2026',
+      items: [
+        'PortWatch VI #race düzenine uyumlu sade ve modern tek sütunlu arayüz eklendi.',
+        '2 standart (Koyu/Açık) + 3 GTA VI temalı (Vice Sunset, Leonida Neon, Ocean Drive) olmak üzere 5 tema desteği getirildi.',
+        'Zortos, vice-pc ve XValkyrie dahil 15 ekip için 120 saniyede bir otomatik veri akışı sağlandı.',
+        'TR / EN dil ayrımı %100 uyumlu hale getirildi ve alt WhatsApp / X SVG paylaşım butonları eklendi.',
+      ],
+    },
+  ],
+  en: [
+    {
+      version: 'v1.0.0',
+      date: 'November 25, 2026',
+      items: [
+        'Introduced clean single-column leaderboard layout inspired by PortWatch VI #race.',
+        'Added 5 themes: 2 standard (Dark/Light) + 3 GTA VI themed (Vice Sunset, Leonida Neon, Ocean Drive).',
+        'Expanded automatic 120s live tracking to 15 teams including Zortos, vice-pc, and XValkyrie.',
+        'Completed 100% TR/EN localization and added themed WhatsApp & X SVG share buttons.',
+      ],
+    },
+  ],
+};
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
@@ -267,6 +296,8 @@ const TEXT = {
       'PortWatch VI verileri ve açık kaynak GitHub depoları, her 120 saniyede bir otomatik olarak güncellenir.',
     onlineBtn: 'Çevrimiçi',
     liveBadge: 'CANLI',
+    updatesBtn: 'Güncelleme Notları',
+    updatesTitle: 'Güncelleme Notları',
     filterAll: 'Tümü',
     filterOpen: 'Açık Kaynak',
     filterClosed: 'Kapalı Ekip',
@@ -276,6 +307,7 @@ const TEXT = {
     refresh: 'Yenile',
     viewRepo: 'GitHub',
     viewPortwatch: 'PortWatch',
+    viewSource: 'Kaynak',
     shareWa: "WhatsApp'ta Paylaş",
     shareX: "X'te Paylaş",
     disclaimer:
@@ -290,6 +322,8 @@ const TEXT = {
       'PortWatch VI race data and open-source GitHub repositories sync automatically every 120 seconds.',
     onlineBtn: 'Online',
     liveBadge: 'LIVE',
+    updatesBtn: 'Release Notes',
+    updatesTitle: 'Release Notes',
     filterAll: 'All',
     filterOpen: 'Open Source',
     filterClosed: 'Closed Team',
@@ -299,6 +333,7 @@ const TEXT = {
     refresh: 'Refresh',
     viewRepo: 'GitHub',
     viewPortwatch: 'PortWatch',
+    viewSource: 'Source',
     shareWa: 'Share on WhatsApp',
     shareX: 'Share on X',
     disclaimer:
@@ -315,6 +350,7 @@ export default function Home() {
   const [lastUpdated, setLastUpdated] = useState('--:--:--');
   const [syncing, setSyncing] = useState(false);
   const [onlineCount, setOnlineCount] = useState(1);
+  const [showChangelog, setShowChangelog] = useState(false);
 
   const t = TEXT[lang];
   const activeTheme = THEMES[themeId] || THEMES.dark;
@@ -426,6 +462,20 @@ export default function Home() {
           <div className="flex items-center gap-2.5">
             <Icon3DLogo />
             <span className="font-black text-base tracking-tight">{t.brand}</span>
+            <button
+              type="button"
+              onClick={() => setShowChangelog(true)}
+              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold border transition hover:opacity-85"
+              style={{
+                backgroundColor: activeTheme.bgCard,
+                borderColor: activeTheme.border,
+                color: activeTheme.accent,
+              }}
+              title={t.updatesBtn}
+            >
+              <Sparkles className="w-3 h-3" />
+              <span>{APP_VERSION}</span>
+            </button>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
@@ -564,6 +614,7 @@ export default function Home() {
           <div className="space-y-4">
             {filteredTeams.map((team, idx) => {
               const rank = teams.indexOf(team) + 1 || idx + 1;
+              const teamName = team.name || team.title || '';
               const pct = Number(team.percentage ?? team.progress ?? team.pct ?? 0);
               const pctLabel = lang === 'tr' ? `%${pct}` : `${pct}%`;
               const isOpen = Boolean(team.open_source ?? team.isOpenSource ?? team.is_open_source);
@@ -579,12 +630,17 @@ export default function Home() {
               const desc = localizeDynamicText(rawDesc, lang);
 
               const repoUrl = team.url || team.repo_url || team.github_url;
-              const repoSlug = repoUrl ? repoUrl.replace('https://github.com/', '').replace('https://', '') : 'portwatch-vi.xyz';
+              const xUrl = team.x_url || (teamName.toLowerCase() === 'zortos' ? 'https://x.com/Zortosdev' : null);
+              const repoSlug = repoUrl
+                ? repoUrl.replace('https://github.com/', '').replace('https://', '').split('/')[0] === 'portwatch-vi.xyz'
+                  ? 'portwatch-vi.xyz'
+                  : repoUrl.replace('https://github.com/', '').replace('https://', '').slice(0, 42)
+                : 'portwatch-vi.xyz';
               const filledSegments = Math.min(6, Math.max(0, (pct / 100) * 6));
 
               return (
                 <article
-                  key={team.name || idx}
+                  key={teamName || idx}
                   className="rounded-2xl p-5 sm:p-6 border transition-colors"
                   style={{ backgroundColor: activeTheme.bgCard, borderColor: activeTheme.border }}
                 >
@@ -618,7 +674,26 @@ export default function Home() {
 
                       <Icon3DTeamAvatar index={idx} isOpen={isOpen} />
                       <div className="min-w-0">
-                        <h2 className="text-base sm:text-lg font-bold truncate">{team.name || team.title}</h2>
+                        <div className="flex items-center gap-2">
+                          <h2 className="text-base sm:text-lg font-bold truncate">{teamName}</h2>
+                          {xUrl && (
+                            <a
+                              href={xUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center justify-center w-6 h-6 rounded-lg border transition hover:opacity-80 shrink-0"
+                              style={{
+                                backgroundColor: activeTheme.trackBg,
+                                borderColor: activeTheme.border,
+                                color: activeTheme.textPrimary,
+                              }}
+                              title={`${teamName} X`}
+                              aria-label={`${teamName} X`}
+                            >
+                              <XLogoSVG className="w-3 h-3" />
+                            </a>
+                          )}
+                        </div>
                         <p className="text-xs truncate" style={{ color: activeTheme.textMuted }}>
                           {repoSlug}
                         </p>
@@ -721,7 +796,13 @@ export default function Home() {
                           activeTheme.isDark ? 'bg-white text-[#0b0d12]' : 'bg-slate-900 text-white'
                         }`}
                       >
-                        <span>{isOpen ? t.viewRepo : t.viewPortwatch}</span>
+                        <span>
+                          {isOpen
+                            ? t.viewRepo
+                            : repoUrl.includes('portwatch')
+                            ? t.viewPortwatch
+                            : t.viewSource}
+                        </span>
                         <ExternalLink className="w-3 h-3" />
                       </a>
                     )}
@@ -772,6 +853,63 @@ export default function Home() {
       <footer className="max-w-5xl mx-auto px-4 sm:px-6 py-6 text-center text-xs" style={{ color: activeTheme.textMuted }}>
         <p>{t.disclaimer}</p>
       </footer>
+
+      {/* GÜNCELLEME NOTLARI PENCERESİ */}
+      {showChangelog && (
+        <div
+          className="fixed inset-0 z-50 bg-black/65 backdrop-blur-sm flex items-center justify-center p-4"
+          onClick={() => setShowChangelog(false)}
+        >
+          <div
+            className="w-full max-w-md rounded-2xl p-5 border shadow-2xl space-y-4"
+            style={{ backgroundColor: activeTheme.bgCard, borderColor: activeTheme.border }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b pb-3" style={{ borderColor: activeTheme.border }}>
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4" style={{ color: activeTheme.accent }} />
+                <h3 className="font-extrabold text-sm">{t.updatesTitle}</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowChangelog(false)}
+                className="p-1 rounded-lg hover:opacity-75"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-1">
+              {CHANGELOG[lang].map((entry) => (
+                <div key={entry.version} className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span
+                      className="px-2.5 py-0.5 rounded-full text-xs font-black text-white"
+                      style={{ background: activeTheme.barGradient }}
+                    >
+                      {entry.version}
+                    </span>
+                    <span className="text-[11px]" style={{ color: activeTheme.textMuted }}>
+                      {entry.date}
+                    </span>
+                  </div>
+                  <ul className="space-y-1.5 text-xs leading-relaxed" style={{ color: activeTheme.textMuted }}>
+                    {entry.items.map((item, i) => (
+                      <li key={i} className="flex items-start gap-2">
+                        <span
+                          className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0"
+                          style={{ backgroundColor: activeTheme.accent }}
+                        />
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
