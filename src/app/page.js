@@ -1,12 +1,101 @@
 'use client';
 
 import React, { useEffect, useState, useCallback } from 'react';
-import { Sun, Moon, RefreshCw, ExternalLink, ChevronDown, ChevronUp } from 'lucide-react';
+import { RefreshCw, ExternalLink, ChevronDown, ChevronUp } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const supabase = supabaseUrl && supabaseAnonKey ? createClient(supabaseUrl, supabaseAnonKey) : null;
+
+// --- 5 TEMA (2 STANDART + 3 GTA VI TEMALI) ---
+const THEMES = {
+  dark: {
+    id: 'dark',
+    labelTr: 'Koyu',
+    labelEn: 'Dark',
+    dot: '#7c5cff',
+    isDark: true,
+    bgPage: '#0b0d12',
+    bgNav: 'rgba(11,13,18,0.84)',
+    bgCard: '#11141b',
+    border: 'rgba(255,255,255,0.08)',
+    textPrimary: '#f3f4f6',
+    textMuted: '#9ca3af',
+    trackBg: '#1c202a',
+    accent: '#e85595',
+    barGradient: 'linear-gradient(90deg, #7c5cff 0%, #ec4899 100%)',
+    ambient: 'radial-gradient(ellipse 80% 35% at 50% 0%, rgba(168, 85, 247, 0.15), transparent)',
+  },
+  light: {
+    id: 'light',
+    labelTr: 'Açık',
+    labelEn: 'Light',
+    dot: '#e2e8f0',
+    isDark: false,
+    bgPage: '#f4f6fa',
+    bgNav: 'rgba(244,246,250,0.86)',
+    bgCard: '#ffffff',
+    border: 'rgba(15,23,42,0.08)',
+    textPrimary: '#0f172a',
+    textMuted: '#64748b',
+    trackBg: '#e2e8f0',
+    accent: '#ec4899',
+    barGradient: 'linear-gradient(90deg, #7c5cff 0%, #ec4899 100%)',
+    ambient: 'radial-gradient(ellipse 80% 35% at 50% 0%, rgba(236, 72, 153, 0.08), transparent)',
+  },
+  'vice-sunset': {
+    id: 'vice-sunset',
+    labelTr: 'Vice Sunset',
+    labelEn: 'Vice Sunset',
+    dot: 'linear-gradient(135deg, #ec4899, #f97316)',
+    isDark: true,
+    bgPage: '#13081e',
+    bgNav: 'rgba(19,8,30,0.86)',
+    bgCard: '#1d0e2d',
+    border: 'rgba(236,72,153,0.18)',
+    textPrimary: '#fdf2f8',
+    textMuted: '#c4b5fd',
+    trackBg: '#2e1647',
+    accent: '#f472b6',
+    barGradient: 'linear-gradient(90deg, #ec4899 0%, #f97316 100%)',
+    ambient: 'radial-gradient(ellipse 85% 40% at 50% 0%, rgba(236, 72, 153, 0.22), transparent)',
+  },
+  'leonida-neon': {
+    id: 'leonida-neon',
+    labelTr: 'Leonida Neon',
+    labelEn: 'Leonida Neon',
+    dot: 'linear-gradient(135deg, #06b6d4, #f43f5e)',
+    isDark: true,
+    bgPage: '#06131a',
+    bgNav: 'rgba(6,19,26,0.86)',
+    bgCard: '#0c1d27',
+    border: 'rgba(6,182,212,0.18)',
+    textPrimary: '#ecfeff',
+    textMuted: '#7dd3fc',
+    trackBg: '#132d3b',
+    accent: '#22d3ee',
+    barGradient: 'linear-gradient(90deg, #06b6d4 0%, #f43f5e 100%)',
+    ambient: 'radial-gradient(ellipse 85% 40% at 50% 0%, rgba(6, 182, 212, 0.20), transparent)',
+  },
+  'ocean-drive': {
+    id: 'ocean-drive',
+    labelTr: 'Ocean Drive',
+    labelEn: 'Ocean Drive',
+    dot: 'linear-gradient(135deg, #f59e0b, #fb7185)',
+    isDark: true,
+    bgPage: '#150d13',
+    bgNav: 'rgba(21,13,19,0.86)',
+    bgCard: '#21141d',
+    border: 'rgba(245,158,11,0.18)',
+    textPrimary: '#fffbeb',
+    textMuted: '#fda4af',
+    trackBg: '#331d2c',
+    accent: '#fbbf24',
+    barGradient: 'linear-gradient(90deg, #f59e0b 0%, #fb7185 100%)',
+    ambient: 'radial-gradient(ellipse 85% 40% at 50% 0%, rgba(245, 158, 11, 0.18), transparent)',
+  },
+};
 
 // --- INLINE BAYRAK SVG'LERİ ---
 const FlagTR = () => (
@@ -23,6 +112,19 @@ const FlagEN = () => (
     <rect width="36" height="24" fill="#B22234" />
     <path d="M0,3.7h36M0,7.4h36M0,11.1h36M0,14.8h36M0,18.5h36M0,22.2h36" stroke="#FFFFFF" strokeWidth="1.85" />
     <rect width="15.5" height="13" fill="#3C3B6E" />
+  </svg>
+);
+
+// --- SOSYAL SVG LOGOLAR ---
+const XLogoSVG = ({ className = 'w-4 h-4' }) => (
+  <svg viewBox="0 0 24 24" className={`${className} shrink-0`} fill="currentColor" aria-hidden="true">
+    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+  </svg>
+);
+
+const WhatsAppLogoSVG = ({ className = 'w-4 h-4' }) => (
+  <svg viewBox="0 0 24 24" className={`${className} shrink-0`} fill="currentColor" aria-hidden="true">
+    <path d="M12.031 2c-5.516 0-9.969 4.453-9.969 9.969 0 1.766.453 3.484 1.328 5l-1.391 5.078 5.203-1.359c1.469.797 3.125 1.219 4.828 1.219 5.516 0 9.969-4.453 9.969-9.969S17.547 2 12.031 2zm5.813 14.125c-.25.703-1.438 1.344-2 1.422-.516.078-1.172.109-1.891-.125-.438-.141-1-.328-1.719-.641-3.016-1.297-4.984-4.328-5.141-4.531-.141-.203-1.219-1.625-1.219-3.094 0-1.469.766-2.188 1.047-2.484.281-.297.609-.375.813-.375.203 0 .406.016.578.016.188 0 .438-.078.688.516.25.609.859 2.094.938 2.25.078.156.125.344.031.547-.109.203-.156.344-.313.516-.156.188-.328.406-.469.547-.156.156-.313.328-.141.625.188.297.813 1.344 1.75 2.172 1.203 1.078 2.219 1.406 2.516 1.563.297.156.469.125.641-.078.172-.203.75-.875.953-1.172.203-.297.406-.25.672-.156.281.094 1.766.828 2.063.984.297.141.5.219.578.344.078.125.078.719-.172 1.422z" />
   </svg>
 );
 
@@ -111,9 +213,9 @@ const MILESTONES = {
 const TEXT = {
   tr: {
     eyebrow: 'LİDERLİK TABLOSU',
-    title: 'Yarış',
+    title: 'GTA VI Port Ekipleri',
     subtitle:
-      'PortWatch VI verileri ve açık kaynak GitHub depoları her 120 saniyede bir otomatik olarak güncellenir.',
+      'PortWatch VI verileri ve açık kaynak GitHub depoları, her 120 saniyede bir otomatik olarak güncellenir.',
     onlineBtn: 'Çevrimiçi',
     filterAll: 'Tümü',
     filterOpen: 'Açık Kaynak',
@@ -135,7 +237,7 @@ const TEXT = {
   },
   en: {
     eyebrow: 'LEADERBOARD',
-    title: 'The race',
+    title: 'GTA VI Port Teams',
     subtitle:
       'PortWatch VI race data and open-source GitHub repositories sync automatically every 120 seconds.',
     onlineBtn: 'Online',
@@ -161,7 +263,7 @@ const TEXT = {
 
 export default function Home() {
   const [lang, setLang] = useState('tr');
-  const [theme, setTheme] = useState('dark');
+  const [themeId, setThemeId] = useState('dark');
   const [teams, setTeams] = useState([]);
   const [filter, setFilter] = useState('all');
   const [expanded, setExpanded] = useState({ 0: true, 1: true, 2: true });
@@ -170,12 +272,12 @@ export default function Home() {
   const [onlineCount, setOnlineCount] = useState(1);
 
   const t = TEXT[lang];
-  const isDark = theme === 'dark';
+  const activeTheme = THEMES[themeId] || THEMES.dark;
 
   useEffect(() => {
     try {
       const savedTheme = localStorage.getItem('gta6takip_theme');
-      if (savedTheme === 'dark' || savedTheme === 'light') setTheme(savedTheme);
+      if (savedTheme && THEMES[savedTheme]) setThemeId(savedTheme);
       const savedLang = localStorage.getItem('gta6takip_lang');
       if (savedLang === 'tr' || savedLang === 'en') setLang(savedLang);
     } catch {
@@ -184,14 +286,14 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    document.documentElement.classList.toggle('portwatch-dark', isDark);
-    document.documentElement.classList.toggle('portwatch-light', !isDark);
+    document.documentElement.classList.toggle('portwatch-dark', activeTheme.isDark);
+    document.documentElement.classList.toggle('portwatch-light', !activeTheme.isDark);
     try {
-      localStorage.setItem('gta6takip_theme', theme);
+      localStorage.setItem('gta6takip_theme', themeId);
     } catch {
       // ignore
     }
-  }, [theme, isDark]);
+  }, [themeId, activeTheme.isDark]);
 
   const fetchSync = useCallback(async () => {
     setSyncing(true);
@@ -254,34 +356,25 @@ export default function Home() {
 
   const shareText =
     lang === 'tr'
-      ? 'GTA VI PC Port geliştirme yarışını canlı takip ediyorum! 🚀'
-      : 'Tracking the GTA VI PC Port race live! 🚀';
+      ? 'GTA VI PC Port geliştirme ekiplerini canlı takip ediyorum! 🚀'
+      : 'Tracking the GTA VI PC Port teams live! 🚀';
   const shareUrl = 'https://gta6takip.vercel.app/';
-
-  const bgPage = isDark ? '#0b0d12' : '#f4f6fa';
-  const bgCard = isDark ? '#11141b' : '#ffffff';
-  const borderCol = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(15,23,42,0.08)';
-  const textPrimary = isDark ? '#f3f4f6' : '#0f172a';
-  const textMuted = isDark ? '#9ca3af' : '#64748b';
-  const trackBg = isDark ? '#1c202a' : '#e2e8f0';
 
   return (
     <div
-      className="min-h-screen transition-colors duration-200"
+      className="min-h-screen transition-colors duration-300"
       style={{
-        backgroundColor: bgPage,
-        color: textPrimary,
-        backgroundImage: isDark
-          ? 'radial-gradient(ellipse 80% 35% at 50% 0%, rgba(168, 85, 247, 0.14), transparent)'
-          : 'radial-gradient(ellipse 80% 35% at 50% 0%, rgba(236, 72, 153, 0.08), transparent)',
+        backgroundColor: activeTheme.bgPage,
+        color: activeTheme.textPrimary,
+        backgroundImage: activeTheme.ambient,
       }}
     >
       {/* ÜST SADE BAR */}
       <nav
         className="sticky top-0 z-40 backdrop-blur-md border-b"
         style={{
-          backgroundColor: isDark ? 'rgba(11,13,18,0.82)' : 'rgba(244,246,250,0.85)',
-          borderColor: borderCol,
+          backgroundColor: activeTheme.bgNav,
+          borderColor: activeTheme.border,
         }}
       >
         <div className="max-w-5xl mx-auto px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3">
@@ -300,10 +393,34 @@ export default function Home() {
               {onlineCount} {t.onlineBtn}
             </span>
 
+            {/* 5 Tema Seçici (2 Standart + 3 GTA VI Temalı) */}
+            <div
+              className="flex items-center gap-1 rounded-full p-1 border"
+              style={{ backgroundColor: activeTheme.bgCard, borderColor: activeTheme.border }}
+              title="Tema / Theme"
+            >
+              {Object.values(THEMES).map((th) => {
+                const selected = th.id === themeId;
+                return (
+                  <button
+                    key={th.id}
+                    type="button"
+                    onClick={() => setThemeId(th.id)}
+                    title={lang === 'tr' ? th.labelTr : th.labelEn}
+                    aria-label={th.labelEn}
+                    className={`w-5 h-5 rounded-full transition-transform ${
+                      selected ? 'scale-110 ring-2 ring-offset-1 ring-pink-500' : 'opacity-70 hover:opacity-100'
+                    }`}
+                    style={{ background: th.dot }}
+                  />
+                );
+              })}
+            </div>
+
             {/* TR | EN */}
             <div
               className="flex items-center rounded-full p-0.5 border"
-              style={{ backgroundColor: bgCard, borderColor: borderCol }}
+              style={{ backgroundColor: activeTheme.bgCard, borderColor: activeTheme.border }}
             >
               <button
                 onClick={() => {
@@ -311,8 +428,9 @@ export default function Home() {
                   localStorage.setItem('gta6takip_lang', 'tr');
                 }}
                 className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold transition ${
-                  lang === 'tr' ? 'bg-pink-500 text-white' : ''
+                  lang === 'tr' ? 'text-white' : ''
                 }`}
+                style={lang === 'tr' ? { backgroundColor: activeTheme.accent } : undefined}
               >
                 <FlagTR /> TR
               </button>
@@ -322,57 +440,46 @@ export default function Home() {
                   localStorage.setItem('gta6takip_lang', 'en');
                 }}
                 className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold transition ${
-                  lang === 'en' ? 'bg-pink-500 text-white' : ''
+                  lang === 'en' ? 'text-white' : ''
                 }`}
+                style={lang === 'en' ? { backgroundColor: activeTheme.accent } : undefined}
               >
                 <FlagEN /> EN
               </button>
             </div>
 
-            {/* Tema */}
-            <button
-              onClick={() => setTheme(isDark ? 'light' : 'dark')}
-              className="p-2 rounded-full border transition hover:opacity-80"
-              style={{ backgroundColor: bgCard, borderColor: borderCol }}
-              aria-label="Toggle theme"
-            >
-              {isDark ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4" />}
-            </button>
-
             {/* Yenile */}
             <button
               onClick={fetchSync}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-semibold transition hover:opacity-80"
-              style={{ backgroundColor: bgCard, borderColor: borderCol }}
+              style={{ backgroundColor: activeTheme.bgCard, borderColor: activeTheme.border }}
             >
-              <RefreshCw className={`w-3.5 h-3.5 ${syncing ? 'animate-spin text-pink-500' : ''}`} />
+              <RefreshCw className={`w-3.5 h-3.5 ${syncing ? 'animate-spin' : ''}`} style={syncing ? { color: activeTheme.accent } : undefined} />
               <span className="hidden sm:inline">{t.refresh}</span>
             </button>
           </div>
         </div>
       </nav>
 
-      {/* ANA KONTEYNER (PORTWATCH #RACE DÜZENİ) */}
+      {/* ANA KONTEYNER */}
       <main className="max-w-5xl mx-auto px-4 sm:px-6 py-8 sm:py-10 space-y-6">
-        {/* Başlık & Filtre Satırı */}
         <header className="flex flex-col md:flex-row md:items-end justify-between gap-5">
           <div className="max-w-xl">
             <div
               className="text-[11px] font-bold uppercase tracking-[0.18em] mb-1.5"
-              style={{ color: textMuted }}
+              style={{ color: activeTheme.textMuted }}
             >
               {t.eyebrow}
             </div>
             <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight mb-2">{t.title}</h1>
-            <p className="text-sm leading-relaxed" style={{ color: textMuted }}>
-              {t.subtitle} ({t.lastSync}: <span style={{ color: textPrimary }}>{lastUpdated}</span>)
+            <p className="text-sm leading-relaxed" style={{ color: activeTheme.textMuted }}>
+              {t.subtitle} ({t.lastSync}: <span style={{ color: activeTheme.textPrimary }}>{lastUpdated}</span>)
             </p>
           </div>
 
-          {/* Segmented Filter Pill */}
           <div
             className="inline-flex items-center p-1 rounded-xl border self-start md:self-auto"
-            style={{ backgroundColor: bgCard, borderColor: borderCol }}
+            style={{ backgroundColor: activeTheme.bgCard, borderColor: activeTheme.border }}
           >
             {[
               { id: 'all', label: t.filterAll },
@@ -383,13 +490,13 @@ export default function Home() {
                 key={tab.id}
                 onClick={() => setFilter(tab.id)}
                 className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
-                  filter === tab.id
-                    ? isDark
-                      ? 'bg-[#1f2430] text-white'
-                      : 'bg-slate-900 text-white'
-                    : ''
+                  filter === tab.id ? 'text-white' : ''
                 }`}
-                style={filter !== tab.id ? { color: textMuted } : undefined}
+                style={
+                  filter === tab.id
+                    ? { background: activeTheme.barGradient }
+                    : { color: activeTheme.textMuted }
+                }
               >
                 {tab.label}
               </button>
@@ -401,7 +508,7 @@ export default function Home() {
         {filteredTeams.length === 0 ? (
           <div
             className="rounded-2xl p-10 border text-center text-sm"
-            style={{ backgroundColor: bgCard, borderColor: borderCol, color: textMuted }}
+            style={{ backgroundColor: activeTheme.bgCard, borderColor: activeTheme.border, color: activeTheme.textMuted }}
           >
             {t.loading}
           </div>
@@ -422,29 +529,26 @@ export default function Home() {
               const repoUrl = team.url || team.repo_url || team.github_url;
               const repoSlug = repoUrl ? repoUrl.replace('https://github.com/', '').replace('https://', '') : 'portwatch-vi.xyz';
               const isExpanded = Boolean(expanded[rank - 1]);
-
-              // 6 parçalı PortWatch çubuk hesabı
               const filledSegments = Math.min(6, Math.max(0, (pct / 100) * 6));
 
               return (
                 <article
                   key={team.name || idx}
                   className="rounded-2xl p-5 sm:p-6 border transition-colors"
-                  style={{ backgroundColor: bgCard, borderColor: borderCol }}
+                  style={{ backgroundColor: activeTheme.bgCard, borderColor: activeTheme.border }}
                 >
-                  {/* Band 1: Üst Satır */}
                   <div className="flex items-start justify-between gap-4 mb-3">
                     <div className="flex items-center gap-3.5 min-w-0">
                       <span
                         className="text-2xl font-black w-7 text-center shrink-0"
-                        style={{ color: rank <= 3 ? '#e85595' : textMuted }}
+                        style={{ color: rank <= 3 ? activeTheme.accent : activeTheme.textMuted }}
                       >
                         {rank}
                       </span>
                       <Icon3DTeamAvatar index={idx} isOpen={isOpen} />
                       <div className="min-w-0">
                         <h2 className="text-base sm:text-lg font-bold truncate">{team.name || team.title}</h2>
-                        <p className="text-xs truncate" style={{ color: textMuted }}>
+                        <p className="text-xs truncate" style={{ color: activeTheme.textMuted }}>
                           {repoSlug}
                         </p>
                       </div>
@@ -455,7 +559,7 @@ export default function Home() {
                         {pctLabel}
                       </div>
                       {stage && (
-                        <div className="inline-flex items-center gap-1.5 text-xs mt-1.5" style={{ color: textMuted }}>
+                        <div className="inline-flex items-center gap-1.5 text-xs mt-1.5" style={{ color: activeTheme.textMuted }}>
                           <Icon3DGamepad />
                           <span>{stage}</span>
                         </div>
@@ -463,7 +567,6 @@ export default function Home() {
                     </div>
                   </div>
 
-                  {/* Band 2: Sade Etiketler */}
                   <div className="flex flex-wrap items-center gap-2 mb-3">
                     <span
                       className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-full ${
@@ -475,7 +578,7 @@ export default function Home() {
                     {fps && (
                       <span
                         className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-0.5 rounded-full"
-                        style={{ backgroundColor: trackBg, color: textPrimary }}
+                        style={{ backgroundColor: activeTheme.trackBg, color: activeTheme.textPrimary }}
                       >
                         <Icon3DMonitor />
                         {fps}
@@ -483,7 +586,7 @@ export default function Home() {
                     )}
                   </div>
 
-                  {/* Band 3: 6 Parçalı PortWatch İlerleme Çubuğu */}
+                  {/* 6 Parçalı İlerleme Çubuğu */}
                   <div className="grid grid-cols-6 gap-1.5 my-4">
                     {[0, 1, 2, 3, 4, 5].map((segIdx) => {
                       const segFill = Math.min(1, Math.max(0, filledSegments - segIdx)) * 100;
@@ -491,13 +594,13 @@ export default function Home() {
                         <div
                           key={segIdx}
                           className="h-2 rounded-full overflow-hidden"
-                          style={{ backgroundColor: trackBg }}
+                          style={{ backgroundColor: activeTheme.trackBg }}
                         >
                           <div
                             className="h-full rounded-full transition-all duration-700"
                             style={{
                               width: `${segFill}%`,
-                              background: 'linear-gradient(90deg, #7c5cff 0%, #ec4899 100%)',
+                              background: activeTheme.barGradient,
                             }}
                           />
                         </div>
@@ -513,9 +616,15 @@ export default function Home() {
                         <div key={mLabel} className="flex items-center gap-1.5 truncate">
                           <span
                             className="w-1.5 h-1.5 rounded-full shrink-0"
-                            style={{ backgroundColor: reached ? '#ec4899' : textMuted, opacity: reached ? 1 : 0.4 }}
+                            style={{
+                              backgroundColor: reached ? activeTheme.accent : activeTheme.textMuted,
+                              opacity: reached ? 1 : 0.4,
+                            }}
                           />
-                          <span className="truncate" style={{ color: reached ? textPrimary : textMuted }}>
+                          <span
+                            className="truncate"
+                            style={{ color: reached ? activeTheme.textPrimary : activeTheme.textMuted }}
+                          >
                             {mLabel}
                           </span>
                         </div>
@@ -523,31 +632,29 @@ export default function Home() {
                     })}
                   </div>
 
-                  {/* Detay Açılır Alan */}
                   {isExpanded && (commit || desc) && (
                     <div
                       className="text-xs leading-relaxed py-3 border-t"
-                      style={{ color: textMuted, borderColor: borderCol }}
+                      style={{ color: activeTheme.textMuted, borderColor: activeTheme.border }}
                     >
                       {desc && <p className="mb-1">{desc}</p>}
                       {commit && (
                         <p>
-                          <strong style={{ color: textPrimary }}>{t.latestCommit}:</strong> {commit}
+                          <strong style={{ color: activeTheme.textPrimary }}>{t.latestCommit}:</strong> {commit}
                         </p>
                       )}
                     </div>
                   )}
 
-                  {/* Alt Aksiyon Satırı */}
                   <div
                     className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t"
-                    style={{ borderColor: borderCol }}
+                    style={{ borderColor: activeTheme.border }}
                   >
                     <button
                       type="button"
                       onClick={() => setExpanded((prev) => ({ ...prev, [rank - 1]: !isExpanded }))}
                       className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border text-xs font-semibold transition hover:opacity-80"
-                      style={{ borderColor: borderCol, color: textPrimary }}
+                      style={{ borderColor: activeTheme.border, color: activeTheme.textPrimary }}
                     >
                       {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
                       {isExpanded ? t.hideDetails : t.details}
@@ -559,7 +666,7 @@ export default function Home() {
                         target="_blank"
                         rel="noopener noreferrer"
                         className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold transition hover:opacity-90 ${
-                          isDark ? 'bg-white text-[#0b0d12]' : 'bg-slate-900 text-white'
+                          activeTheme.isDark ? 'bg-white text-[#0b0d12]' : 'bg-slate-900 text-white'
                         }`}
                       >
                         <span>{isOpen ? t.viewRepo : t.viewPortwatch}</span>
@@ -573,39 +680,44 @@ export default function Home() {
           </div>
         )}
 
-        {/* ALT SOSYAL & PAYLAŞIM ŞERİDİ */}
+        {/* ALT SOSYAL & PAYLAŞIM ŞERİDİ (SVG LOGOLU) */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-4">
           <a
             href="https://x.com/batmancodex"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl border text-xs font-semibold transition hover:opacity-80"
-            style={{ backgroundColor: bgCard, borderColor: borderCol }}
+            className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl border text-xs font-bold transition hover:opacity-85"
+            style={{ backgroundColor: activeTheme.bgCard, borderColor: activeTheme.border }}
           >
-            <span>𝕏 | batmancodex</span>
+            <XLogoSVG className="w-3.5 h-3.5" />
+            <span>| batmancodex</span>
           </a>
+
           <a
             href={`https://api.whatsapp.com/send?text=${encodeURIComponent(`${shareText} ${shareUrl}`)}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl border text-xs font-semibold text-emerald-400 transition hover:opacity-80"
-            style={{ backgroundColor: bgCard, borderColor: borderCol }}
+            className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl border text-xs font-bold text-emerald-400 transition hover:opacity-85"
+            style={{ backgroundColor: activeTheme.bgCard, borderColor: activeTheme.border }}
           >
+            <WhatsAppLogoSVG className="w-4 h-4 text-emerald-400" />
             <span>{t.shareWa}</span>
           </a>
+
           <a
             href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl border text-xs font-semibold transition hover:opacity-80"
-            style={{ backgroundColor: bgCard, borderColor: borderCol }}
+            className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl border text-xs font-bold transition hover:opacity-85"
+            style={{ backgroundColor: activeTheme.bgCard, borderColor: activeTheme.border }}
           >
+            <XLogoSVG className="w-3.5 h-3.5" />
             <span>{t.shareX}</span>
           </a>
         </div>
       </main>
 
-      <footer className="max-w-5xl mx-auto px-4 sm:px-6 py-6 text-center text-xs" style={{ color: textMuted }}>
+      <footer className="max-w-5xl mx-auto px-4 sm:px-6 py-6 text-center text-xs" style={{ color: activeTheme.textMuted }}>
         <p>{t.disclaimer}</p>
       </footer>
     </div>
