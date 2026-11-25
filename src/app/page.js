@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
-const APP_VERSION = 'v1.0.9';
+const APP_VERSION = 'v1.0.10';
 
 const THEMES = {
   dark: {
@@ -147,6 +147,17 @@ const FALLBACK_NEWS = [
 
 const CHANGELOG = [
   {
+    version: 'v1.0.10',
+    dateTr: '26 Kasım 2026',
+    dateEn: 'November 26, 2026',
+    itemsTr: [
+      'API veri eşleştirme katmanı güncellendi; ekip yüzdeleri, FPS ve Sparkline grafiği tam uyumlu hale getirildi.',
+    ],
+    itemsEn: [
+      'Updated API field mapping so team percentages, FPS, and Sparkline chart render accurately.',
+    ],
+  },
+  {
     version: 'v1.0.9',
     dateTr: '26 Kasım 2026',
     dateEn: 'November 26, 2026',
@@ -172,19 +183,6 @@ const CHANGELOG = [
     itemsEn: [
       'Added a glowing theme-matched "NEW" badge next to new leader darkworldhm.',
       'Added a floating "Back to Top (↑)" button when scrolling down on mobile and desktop.',
-    ],
-  },
-  {
-    version: 'v1.0.7',
-    dateTr: '26 Kasım 2026',
-    dateEn: 'November 26, 2026',
-    itemsTr: [
-      'Genel lider darkworldhm (%79.5 · 15-24 FPS) ile Five Star Recomp & keylime (%30) eklendi.',
-      "Test Edilen GPU'lar alanına RTX 50 Serisi (15-24 FPS) eklendi.",
-    ],
-    itemsEn: [
-      'Added overall leader darkworldhm (79.5% · 15-24 FPS) plus Five Star Recomp & keylime (30%).',
-      'Added RTX 50 Series (15-24 FPS) to the Tested GPUs summary bar.',
     ],
   },
 ];
@@ -294,18 +292,45 @@ export default function HomePage() {
           : null;
 
       if (rawTeams && rawTeams.length > 0) {
-        const normalized = rawTeams.map((item) => ({
-          name: item.name || item.title || 'Unknown',
-          progress: Number(item.progress ?? item.score ?? 0),
-          fps: item.fps || item.performance || '—',
-          gpu: item.gpu || item.hardware || '',
-          type: item.type === 'private' || item.isPrivate ? 'private' : 'open',
-          stage: item.stage || item.milestone || '',
-          delta: item.delta || '',
-          url: item.url || item.link || 'https://portwatch-vi.xyz/#race',
-          isNew: item.isNew || String(item.name).toLowerCase() === 'darkworldhm',
-          isZortos: item.isZortos || String(item.name).toLowerCase() === 'zortos',
-        }));
+        const normalized = rawTeams.map((item) => {
+          const itemName = item.name || item.title || 'Unknown';
+          const fallback = FALLBACK_TEAMS.find(
+            (f) => f.name.toLowerCase() === String(itemName).toLowerCase()
+          );
+
+          const rawPct =
+            item.progress ??
+            item.pct ??
+            item.percent ??
+            item.percentage ??
+            item.score ??
+            item.value;
+          const parsedPct = Number(String(rawPct ?? '').replace('%', '').trim());
+          const finalProgress =
+            !Number.isNaN(parsedPct) && parsedPct > 0
+              ? parsedPct
+              : fallback?.progress ?? 0;
+
+          const isPrivate =
+            item.type === 'private' ||
+            item.isPrivate === true ||
+            item.openSource === false ||
+            item.isOpen === false ||
+            (fallback ? fallback.type === 'private' : false);
+
+          return {
+            name: itemName,
+            progress: finalProgress,
+            fps: item.fps || item.fpsText || item.perf || item.performance || fallback?.fps || '—',
+            gpu: item.gpu || item.hardware || item.device || fallback?.gpu || '',
+            type: isPrivate ? 'private' : 'open',
+            stage: item.stage || item.stageText || item.milestone || item.status || fallback?.stage || '',
+            delta: item.delta || item.change || item.diff || fallback?.delta || '',
+            url: item.url || item.link || item.repoUrl || item.github || fallback?.url || 'https://portwatch-vi.xyz/#race',
+            isNew: item.isNew || String(itemName).toLowerCase() === 'darkworldhm',
+            isZortos: item.isZortos || String(itemName).toLowerCase() === 'zortos',
+          };
+        });
         normalized.sort((a, b) => b.progress - a.progress);
         setTeams(normalized);
       }
@@ -423,7 +448,6 @@ export default function HomePage() {
 
   return (
     <div className={`min-h-screen transition-colors duration-300 ${theme.bg}`}>
-      {/* Üst Navbar (Mobilde 2 satır, Masaüstünde tek satır) */}
       <header className={`sticky top-0 z-40 border-b backdrop-blur-md ${theme.card}`}>
         <div className="max-w-4xl mx-auto px-3 sm:px-5 py-2.5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
           <div className="flex items-center justify-between gap-2">
@@ -455,7 +479,6 @@ export default function HomePage() {
               {onlineCount} {lang === 'tr' ? 'Çevrimiçi' : 'Online'}
             </span>
 
-            {/* Dil Seçici */}
             <div className={`inline-flex rounded-lg border p-0.5 ${theme.subCard}`}>
               <button
                 type="button"
@@ -479,7 +502,6 @@ export default function HomePage() {
               </button>
             </div>
 
-            {/* Tema Dropdown */}
             <div className="relative">
               <button
                 type="button"
@@ -515,7 +537,6 @@ export default function HomePage() {
               )}
             </div>
 
-            {/* Yenile + Sayaç */}
             <button
               type="button"
               onClick={fetchSyncData}
@@ -530,7 +551,6 @@ export default function HomePage() {
       </header>
 
       <main className="max-w-4xl mx-auto px-3 sm:px-5 py-5 space-y-5">
-        {/* Genel İlerleme + Gömülü Rozetler + Sparkline */}
         <section className={`rounded-2xl border p-4 sm:p-5 ${theme.card}`}>
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="space-y-2 flex-1">
@@ -554,16 +574,13 @@ export default function HomePage() {
                 </span>
               </div>
 
-              {/* Hız & Hedef Mini Rozet Şeridi (Tek satır / wrap uyumlu) */}
               <div className="flex items-center gap-2 flex-wrap pt-1">
                 <div className={`inline-flex items-center gap-2 px-2.5 py-1 rounded-lg border text-xs ${theme.subCard}`}>
                   <Target className={`w-3.5 h-3.5 ${theme.accentText}`} />
                   <span className="font-semibold">
                     {lang === 'tr' ? '30 FPS Barajı:' : '30 FPS Target:'}
                   </span>
-                  <span className="font-bold">
-                    {peakFps} / 30 FPS
-                  </span>
+                  <span className="font-bold">{peakFps} / 30 FPS</span>
                   <div className="w-14 h-1.5 rounded-full bg-zinc-700/60 overflow-hidden">
                     <div
                       className={`h-full rounded-full bg-gradient-to-r ${theme.accentGradient}`}
@@ -585,7 +602,6 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* Kompakt Günlük İlerleme Sparkline Grafiği */}
             <div className={`rounded-xl border p-3 md:w-60 shrink-0 ${theme.subCard}`}>
               <div className="flex items-center justify-between text-[11px] font-semibold mb-1">
                 <span className={`inline-flex items-center gap-1 ${theme.muted}`}>
@@ -611,14 +627,13 @@ export default function HomePage() {
                   points={sparkPoints.line}
                 />
                 {sparkPoints.pts.map((p, idx) => (
-                  <g key={p.label}>
-                    <circle
-                      cx={p.x}
-                      cy={p.y}
-                      r={idx === sparkPoints.pts.length - 1 ? 4 : 2.5}
-                      fill={theme.sparkStroke}
-                    />
-                  </g>
+                  <circle
+                    key={p.label}
+                    cx={p.x}
+                    cy={p.y}
+                    r={idx === sparkPoints.pts.length - 1 ? 4 : 2.5}
+                    fill={theme.sparkStroke}
+                  />
                 ))}
               </svg>
               <div className={`flex justify-between text-[10px] mt-0.5 ${theme.muted}`}>
@@ -631,7 +646,6 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* Son Gelişmeler */}
         <section className="space-y-2.5">
           <h2 className="text-sm font-bold uppercase tracking-wider opacity-80">
             {lang === 'tr' ? 'Son Gelişmeler' : 'Latest Updates'}
@@ -650,7 +664,6 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* Test Edilen GPU'lar */}
         <section className={`rounded-xl border p-3.5 ${theme.card}`}>
           <div className="flex items-center gap-2 flex-wrap text-xs">
             <span className="font-bold opacity-85">
@@ -666,7 +679,6 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* Liderlik Tablosu */}
         <section className="space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-bold uppercase tracking-wider opacity-80">
@@ -752,7 +764,6 @@ export default function HomePage() {
                     </div>
                   </div>
 
-                  {/* Alt Bilgi Hapları */}
                   <div className="flex items-center gap-2 flex-wrap mt-2.5 text-xs">
                     <span className={`px-2 py-0.5 rounded-md border font-semibold ${theme.pill}`}>
                       {localizeDynamicText(team.fps, lang)}
@@ -767,7 +778,6 @@ export default function HomePage() {
                     )}
                   </div>
 
-                  {/* 6 Segmentli İlerleme Çubuğu */}
                   <div className="grid grid-cols-6 gap-1.5 mt-3">
                     {MILESTONES.map((m) => {
                       const reached = team.progress >= m.min;
@@ -793,7 +803,6 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* DMCA & Sahte Dosya Güvenlik Radarı (Listenin altında kompakt kutu) */}
         <section className={`rounded-2xl border overflow-hidden ${theme.card}`}>
           <button
             type="button"
@@ -843,7 +852,6 @@ export default function HomePage() {
           )}
         </section>
 
-        {/* Alt Paylaşım & Yasal Not */}
         <footer className={`pt-2 pb-10 space-y-4 text-center text-xs ${theme.muted}`}>
           <div className="flex items-center justify-center gap-2 flex-wrap">
             <a
@@ -888,7 +896,6 @@ export default function HomePage() {
         </footer>
       </main>
 
-      {/* Sağ Alt Yüzen Yukarı Çık Butonu */}
       {showBackTop && (
         <button
           type="button"
@@ -900,7 +907,6 @@ export default function HomePage() {
         </button>
       )}
 
-      {/* Sürüm Notları Modalı */}
       {changelogOpen && (
         <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
           <div className={`w-full max-w-lg rounded-2xl border p-5 space-y-4 max-h-[85vh] overflow-y-auto ${theme.card}`}>
