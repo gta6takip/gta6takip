@@ -21,7 +21,7 @@ const THEMES = [
 
 const TRANSLATIONS = {
   tr: {
-    headerSubtitle: '120sn Otomatik İlerleme Takibi',
+    headerSubtitle: '120sn Otomatik İlerleme Takibi (PortWatch VI)',
     themeLabel: 'Tema Seç',
     online: 'Çevrimiçi',
     activeConnections: 'Aktif Ziyaretçiler',
@@ -33,7 +33,7 @@ const TRANSLATIONS = {
     heroBadge: 'Her 120 Saniyede Otomatik Tarama',
     heroTitle: 'Ekiplerin Tamamlanma Yüzdeleri',
     heroSubtitle:
-      'GTA VI PC portlama ekiplerinin güncel ilerleme oranları, aşamaları ve performans durumları.',
+      'PortWatch VI verileri ve GitHub commit akışlarıyla otomatik güncellenen PC port takip paneli.',
     peak: 'Zirve',
     next: 'Sonraki',
     leaderboardTitle: 'Portlama Ekipleri Sıralaması',
@@ -45,20 +45,20 @@ const TRANSLATIONS = {
     developing: 'Geliştirme',
     noFps: 'FPS bilgisi yok',
     lastUpdate: 'Son Güncelleme Saati:',
-    notSynced: 'Henüz senkronize edilmedi',
+    notSynced: 'Senkronize ediliyor...',
     unknownTime: 'Bilinmiyor',
     source: 'Kaynak',
     footerText:
       'GTA6takip bağımsız bir topluluk takip sitesidir; Rockstar Games veya Take-Two ile resmi bağlantısı yoktur.',
-    stageLevel1: 'Boot / Exe',
-    stageLevel2: 'İlk Kare',
-    stageLevel3: 'Oyun İçi',
-    stageLevel4: 'Akıcı FPS',
+    stageLevel1: 'Groundwork',
+    stageLevel2: 'First Frame / Menu',
+    stageLevel3: 'In the World',
+    stageLevel4: 'Playable',
     stageTooltip: 'Aşama Seviyesi',
     visitorPrefix: 'Ziyaretçi',
   },
   en: {
-    headerSubtitle: '120s Auto Progress Tracker',
+    headerSubtitle: '120s Auto Progress Tracker (PortWatch VI)',
     themeLabel: 'Select Theme',
     online: 'Online',
     activeConnections: 'Active Visitors',
@@ -70,7 +70,7 @@ const TRANSLATIONS = {
     heroBadge: 'Auto Scan Every 120 Seconds',
     heroTitle: 'Team Completion Progress',
     heroSubtitle:
-      'Live completion percentages, milestones, and performance status for GTA VI PC port teams.',
+      'Live PC port tracker automatically synced with PortWatch VI and GitHub commits.',
     peak: 'Peak',
     next: 'Next',
     leaderboardTitle: 'Porting Teams Leaderboard',
@@ -82,15 +82,15 @@ const TRANSLATIONS = {
     developing: 'In Development',
     noFps: 'No FPS data',
     lastUpdate: 'Last Updated:',
-    notSynced: 'Not synced yet',
+    notSynced: 'Syncing...',
     unknownTime: 'Unknown',
     source: 'Source',
     footerText:
       'GTA6takip is an independent community tracker; not affiliated with Rockstar Games or Take-Two.',
-    stageLevel1: 'Boot / Exe',
-    stageLevel2: 'First Frame',
-    stageLevel3: 'In-Game',
-    stageLevel4: 'Smooth FPS',
+    stageLevel1: 'Groundwork',
+    stageLevel2: 'First Frame / Menu',
+    stageLevel3: 'In the World',
+    stageLevel4: 'Playable',
     stageTooltip: 'Stage Level',
     visitorPrefix: 'Visitor',
   },
@@ -99,110 +99,35 @@ const TRANSLATIONS = {
 const FALLBACK_PROJECTS = [
   {
     id: 1,
-    name: 'omonkey',
-    percentage: 79,
-    fps: '~5 FPS',
-    stage: 'Oyun İçi (Hapishane)',
-    description:
-      'Lucia hapishane sahnesinde shader yüklemesi ve karakter hareketi sağlandı; Rumble üzerinde canlı yayınlanıyor.',
-    repo_url: 'https://t.me/omonkey6',
-    is_open_source: false,
+    name: 'Belobug',
+    percentage: 77.4,
+    fps: '3 FPS (RX 9070 XT)',
+    stage: 'Playable • First act',
+    description: 'AMD Radeon için VIctory fork\'u; açık dünya dokuları ve görevler oynanabilir durumda.',
+    repo_url: 'https://github.com/Belobug/VIctory-Belobug-AMD',
+    is_open_source: true,
     updated_at: null,
   },
   {
     id: 2,
-    name: 'Hyphen (fxceless)',
-    percentage: 78,
-    fps: '3 FPS (RTX 4090)',
-    stage: 'Oyun İçi (3D Render)',
-    description:
-      'VIctory + XCL birleşimiyle en gelişmiş 3D grafik renderı ve erken raytracing ışıklandırması elde edildi.',
-    repo_url: 'https://github.com/fxceless/victory-gta6',
+    name: 'ZETTROX',
+    percentage: 64.2,
+    fps: '2 FPS (NVIDIA)',
+    stage: 'Playable • Prologue cleared',
+    description: 'Lucia prologue bölümünü geçip Jason\'ın ilk görevi "Gone Fishing" aşamasına ulaştı.',
+    repo_url: 'https://github.com/Zettrox/ztrx',
     is_open_source: true,
     updated_at: null,
   },
   {
     id: 3,
-    name: 'CGBJ',
-    percentage: 72,
-    fps: 'Bilinmiyor',
-    stage: 'Oyun İçi (Prologue)',
-    description:
-      'Açılış ara sahnesi ("Nine Months Ago") ve oyun içi telefon arayüzü çalıştırıldı; gizli kolektif olarak ilerliyor.',
-    repo_url: 'https://gta6recomp.com/repo',
+    name: 'suri',
+    percentage: 61,
+    fps: '3 FPS',
+    stage: 'Playable • Kapalı Derleme',
+    description: 'Kapalı ekip: victory-fork tabanlı özel derleme, perakende sürüme yakın ışıklandırma.',
+    repo_url: 'https://portwatch-vi.xyz/#race',
     is_open_source: false,
-    updated_at: null,
-  },
-  {
-    id: 4,
-    name: 'VIctory',
-    percentage: 70,
-    fps: '30 FPS (Menü)',
-    stage: 'Oyun İçi (Siyah Ekran)',
-    description:
-      'Açık kaynaklı ana uyumluluk katmanı; menülerde 30 FPS çalışıyor, 3D oyun içi shader desteği geliştiriliyor.',
-    repo_url: 'https://github.com/Marvisak/VIctory',
-    is_open_source: true,
-    updated_at: null,
-  },
-  {
-    id: 5,
-    name: 'JoshuuDev (victory-amd)',
-    percentage: 68,
-    fps: 'Ara Sahne / DX12',
-    stage: 'Oyun İçi (3D Ara Sahneler)',
-    description:
-      'AMD GPU uyumluluğu, DX12 ve shader cache ısıtma iyileştirmeleriyle temiz renkli 3D oyun içi ara sahneler ve neon ışıklandırma elde edildi.',
-    repo_url: 'https://github.com/JoshuuDev/victory-amd',
-    is_open_source: true,
-    updated_at: null,
-  },
-  {
-    id: 6,
-    name: 'AnyXboxX',
-    percentage: 65,
-    fps: '3.2 FPS (720p)',
-    stage: 'Oyun İçi (Eğitim)',
-    description:
-      'Kontrol edilebilir karakter ve hareket eğitim ekranı açıldı; kalan untranslated shader sayısı azaltılıyor.',
-    repo_url: 'https://github.com/LooperSalty/AnyXboxX',
-    is_open_source: true,
-    updated_at: null,
-  },
-  {
-    id: 7,
-    name: 'XCL',
-    percentage: 63,
-    fps: '30 FPS (Intro)',
-    stage: 'Dünya Yükleme',
-    description:
-      'Wine benzeri uyumluluk katmanı; binlerce shader işlendi, oyun dünyasında yayalar ve araçlar spawn oluyor.',
-    repo_url: 'https://github.com/ivall/xcl',
-    is_open_source: true,
-    updated_at: null,
-  },
-  {
-    id: 8,
-    name: 'Xbox2Windows',
-    percentage: 48,
-    fps: '-',
-    stage: 'İlk Kare (First Frame)',
-    description:
-      'Statik yeniden derleme ve shader çözümleme hattı ile ilk kare görüntüsüne ulaşıldı.',
-    repo_url: 'https://github.com/R0Y00/Xbox2Windows',
-    is_open_source: true,
-    updated_at: null,
-  },
-  {
-    id: 9,
-    name: 'Palmetto',
-    percentage: 25,
-    fps: '-',
-    stage: 'Exe Başlatma (Boot)',
-    description:
-      'Düşük seviyeli bellek eşleme ve .exe yükleme altyapısı geliştiriliyor.',
-    repo_url: 'https://github.com/luizwidmer/palmetto',
-    is_open_source: true,
     updated_at: null,
   },
 ];
@@ -216,17 +141,17 @@ function StageVisualBadge({ percentage, stage = '', t }) {
   let boxClass = 'bg-purple-500/15 text-purple-500 border-purple-500/30';
   let stepFill = 'bg-purple-500';
 
-  if (pct >= 85 || s.includes('60 fps') || s.includes('akıcı')) {
+  if (pct >= 50 || s.includes('playable') || s.includes('akıcı')) {
     level = 4;
     label = t.stageLevel4;
-    boxClass = 'bg-amber-500/15 text-amber-500 border-amber-500/30';
-    stepFill = 'bg-amber-500';
-  } else if (pct >= 60 || s.includes('oyun içi') || s.includes('dünya')) {
-    level = 3;
-    label = t.stageLevel3;
     boxClass = 'bg-emerald-500/15 text-emerald-600 border-emerald-500/30';
     stepFill = 'bg-emerald-500';
-  } else if (pct >= 40 || s.includes('ilk kare') || s.includes('menü')) {
+  } else if (pct >= 40 || s.includes('world') || s.includes('oyun içi')) {
+    level = 3;
+    label = t.stageLevel3;
+    boxClass = 'bg-amber-500/15 text-amber-500 border-amber-500/30';
+    stepFill = 'bg-amber-500';
+  } else if (pct >= 20 || s.includes('menu') || s.includes('frame')) {
     level = 2;
     label = t.stageLevel2;
     boxClass = 'bg-sky-500/15 text-sky-500 border-sky-500/30';
@@ -403,9 +328,9 @@ export default function HomePage() {
   const topScore =
     projects.length > 0
       ? Math.max(...projects.map((p) => Number(p.percentage) || 0))
-      : 79;
+      : 77.4;
 
-  const leaderName = projects[0]?.name || 'omonkey';
+  const leaderName = projects[0]?.name || 'Belobug';
   const onlineCount = Math.max(1, onlineUsers.length);
 
   return (
