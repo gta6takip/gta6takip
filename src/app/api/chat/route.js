@@ -5,24 +5,8 @@ export const dynamic = 'force-dynamic';
 
 if (!globalThis.__gta6ChatStore) {
   globalThis.__gta6ChatStore = {
-    tr: [
-      {
-        id: 'init-tr-1',
-        channel: 'tr',
-        username: 'ViceMod',
-        message: 'GTA6takip Türkçe sohbet kanalına hoş geldiniz!',
-        created_at: new Date().toISOString(),
-      },
-    ],
-    en: [
-      {
-        id: 'init-en-1',
-        channel: 'en',
-        username: 'ViceMod',
-        message: 'Welcome to the GTA6takip English chat channel!',
-        created_at: new Date().toISOString(),
-      },
-    ],
+    tr: [],
+    en: [],
   };
 }
 
@@ -36,17 +20,17 @@ function getSupabase() {
 export async function GET(req) {
   const { searchParams } = new URL(req.url);
   const channel = searchParams.get('channel') === 'en' ? 'en' : 'tr';
-  const store = globalThis.__gta6ChatStore[channel] || [];
+  let dbMessages = null;
 
   try {
     const supabase = getSupabase();
     if (supabase) {
       const res = await Promise.race([
-        supabase.from('chat_messages').select('*').order('id', { ascending: true }).limit(80),
-        new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 2200)),
+        supabase.from('chat_messages').select('*').order('id', { ascending: true }).limit(100),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 6000)),
       ]);
       if (res && !res.error && Array.isArray(res.data)) {
-        const filtered = res.data
+        dbMessages = res.data
           .filter((m) => {
             const msg = String(m.message || '');
             if (channel === 'en') return msg.startsWith('[EN] ');
@@ -57,19 +41,31 @@ export async function GET(req) {
             channel,
             message: String(m.message || '').replace(/^\[(TR|EN)\]\s*/, ''),
           }));
-        if (filtered.length > 0) {
-          globalThis.__gta6ChatStore[channel] = filtered;
-        }
       }
     }
   } catch {
-    // Supabase yavaş/unhealthy ise bellek içi hızlı kanalla devam et
+    // ignore
   }
+
+  const mem = globalThis.__gta6ChatStore[channel] || [];
+  const merged = dbMessages !== null ? [...dbMessages] : [...mem];
+
+  // Bellek içi son mesajları ID/içerik çakışması olmadan koru
+  for (const m of mem) {
+    const exists = merged.some(
+      (d) =>
+        String(d.id) === String(m.id) ||
+        (d.username === m.username && d.message === m.message)
+    );
+    if (!exists) merged.push(m);
+  }
+
+  globalThis.__gta6ChatStore[channel] = merged.slice(-100);
 
   return NextResponse.json({
     ok: true,
     channel,
-    messages: globalThis.__gta6ChatStore[channel] || store,
+    messages: globalThis.__gta6ChatStore[channel],
   });
 }
 
@@ -84,7 +80,7 @@ export async function POST(req) {
       return NextResponse.json({ ok: false, error: 'Empty message' }, { status: 400 });
     }
 
-    const newMsg = {
+    let savedMsg = {
       id: `${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
       channel,
       username,
@@ -92,25 +88,32 @@ export async function POST(req) {
       created_at: new Date().toISOString(),
     };
 
-    const list = globalThis.__gta6ChatStore[channel] || [];
-    list.push(newMsg);
-    if (list.length > 100) list.shift();
-    globalThis.__gta6ChatStore[channel] = list;
-
     try {
       const supabase = getSupabase();
       if (supabase) {
         const taggedMsg = `[${channel.toUpperCase()}] ${message}`;
-        await Promise.race([
-          supabase.from('chat_messages').insert([{ username, message: taggedMsg }]),
-          new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 2200)),
+        const res = await Promise.race([
+          supabase.from('chat_messages').insert([{ username, message: taggedMsg }]).select(),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 6000)),
         ]);
+        if (res && !res.error && Array.isArray(res.data) && res.data[0]) {
+          savedMsg = {
+            ...res.data[0],
+            channel,
+            message,
+          };
+        }
       }
     } catch {
-      // Supabase erişilemese bile bellek içi akış anında çalışır
+      // Supabase erişilemezse bellek içi kaydı kullan
     }
 
-    return NextResponse.json({ ok: true, message: newMsg });
+    const list = globalThis.__gta6ChatStore[channel] || [];
+    list.push(savedMsg);
+    if (list.length > 100) list.shift();
+    globalThis.__gta6ChatStore[channel] = list;
+
+    return NextResponse.json({ ok: true, message: savedMsg });
   } catch (err) {
     return NextResponse.json({ ok: false, error: err?.message || 'Error' }, { status: 500 });
   }
