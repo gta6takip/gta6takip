@@ -9,6 +9,7 @@ import {
   Cpu,
   RefreshCw,
   ShieldCheck,
+  ShieldAlert,
   Sparkles,
   Link as LinkIcon,
   User,
@@ -17,6 +18,9 @@ import {
   Clock,
   Palette,
   Smile,
+  Trash2,
+  Ban,
+  LogOut,
 } from 'lucide-react';
 
 const THEMES = [
@@ -96,13 +100,12 @@ function getAvatarForUser(name, myNick, myAvatar) {
   return AVATARS[Math.abs(hash) % AVATARS.length].id;
 }
 
-// Türkçe ve İngilizce küfür/hakaret filtresi (hem geçmiş hem yeni mesajlar için)
 const BAD_WORDS = [
-  'amk', 'aq', 'mk', 'mq', 'amq', 'orospu', 'orspu', 'oç', 'oc', 'piç', 'pic',
-  'siktir', 'sikim', 'sikeyim', 'sikerim', 'sikik', 'sikiş', 'yarrak', 'yarak',
-  'taşak', 'tasak', 'göt', 'gotveren', 'götveren', 'pezevenk', 'kahpe', 'kaltak',
-  'puşt', 'pust', 'ibne', 'gavat', 'şerefsiz', 'serefsiz', 'haysiyetsiz',
-  'gerizekalı', 'salak', 'aptal', 'mal', 'ananı', 'anani', 'bacını', 'bacini',
+  'amk', 'aq', 'mk', 'mq', 'amq', 'amcık', 'amcik', 'orospu', 'orspu', 'oç', 'oc',
+  'piç', 'pic', 'siktir', 'sikim', 'sikeyim', 'sikerim', 'sikik', 'sikiş', 'sik',
+  'yarrak', 'yarak', 'taşak', 'tasak', 'göt', 'gotveren', 'götveren', 'pezevenk',
+  'kahpe', 'kaltak', 'puşt', 'pust', 'ibne', 'gavat', 'şerefsiz', 'serefsiz',
+  'haysiyetsiz', 'gerizekalı', 'salak', 'aptal', 'ananı', 'anani', 'bacını', 'bacini',
   'fuck', 'fucking', 'fucker', 'motherfucker', 'mf', 'shit', 'bullshit', 'bitch',
   'asshole', 'dick', 'cock', 'pussy', 'cunt', 'bastard', 'slut', 'whore',
   'faggot', 'retard', 'nigger', 'nigga', 'stfu', 'wtf',
@@ -168,6 +171,7 @@ const TRANSLATIONS = {
     sending: 'Atılıyor...',
     errEmptyMsg: 'Lütfen önce bir mesaj veya link yaz.',
     errMuted: 'Küfür/uygunsuz ifade tespit edildi. Kalan engel süresi:',
+    errBanned: 'Bu kullanıcı adı yönetici tarafından banlandı.',
     errSend: 'Gönderilemedi:',
     errUnexpected: 'Beklenmeyen hata:',
     errRead: 'Sohbet okuma hatası:',
@@ -179,6 +183,16 @@ const TRANSLATIONS = {
     stageLevel3: 'Oyun İçi',
     stageLevel4: 'Akıcı FPS',
     stageTooltip: 'Aşama Seviyesi',
+    adminTitle: 'Admin Paneli',
+    adminUser: 'Kullanıcı',
+    adminPass: 'Şifre',
+    adminLogin: 'Giriş',
+    adminWrong: 'Kullanıcı adı veya şifre hatalı.',
+    adminLogout: 'Çıkış',
+    banBtn: 'Banla',
+    delBtn: 'Sil',
+    bannedListTitle: 'Banlı Kullanıcılar',
+    unbanBtn: 'Kaldır',
   },
   en: {
     headerSubtitle: '120s Auto Progress Tracker & Live Community Chat',
@@ -220,6 +234,7 @@ const TRANSLATIONS = {
     sending: 'Sending...',
     errEmptyMsg: 'Please enter a message or link first.',
     errMuted: 'Profanity detected. You are muted for:',
+    errBanned: 'This nickname has been banned by an admin.',
     errSend: 'Failed to send:',
     errUnexpected: 'Unexpected error:',
     errRead: 'Chat read error:',
@@ -231,6 +246,16 @@ const TRANSLATIONS = {
     stageLevel3: 'In-Game',
     stageLevel4: 'Smooth FPS',
     stageTooltip: 'Stage Level',
+    adminTitle: 'Admin Panel',
+    adminUser: 'Username',
+    adminPass: 'Password',
+    adminLogin: 'Login',
+    adminWrong: 'Invalid username or password.',
+    adminLogout: 'Logout',
+    banBtn: 'Ban',
+    delBtn: 'Delete',
+    bannedListTitle: 'Banned Users',
+    unbanBtn: 'Unban',
   },
 };
 
@@ -430,6 +455,7 @@ function formatUpdateTime(dateStr, t, lang) {
 export default function HomePage() {
   const [projects, setProjects] = useState(FALLBACK_PROJECTS);
   const [messages, setMessages] = useState([]);
+  const [bannedUsers, setBannedUsers] = useState([]);
   const [username, setUsername] = useState('');
   const [newMessage, setNewMessage] = useState('');
   const [chatError, setChatError] = useState('');
@@ -444,8 +470,15 @@ export default function HomePage() {
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [muteSeconds, setMuteSeconds] = useState(0);
-  const chatBottomRef = useRef(null);
 
+  // Admin paneli durumları
+  const [showAdminBox, setShowAdminBox] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [adminUserInput, setAdminUserInput] = useState('');
+  const [adminPassInput, setAdminPassInput] = useState('');
+  const [adminError, setAdminError] = useState('');
+
+  const chatBottomRef = useRef(null);
   const t = TRANSLATIONS[lang] || TRANSLATIONS.tr;
 
   useEffect(() => {
@@ -468,6 +501,9 @@ export default function HomePage() {
         setAvatar(savedAvatar);
       }
 
+      const savedAdmin = localStorage.getItem('gta6takip_is_admin');
+      if (savedAdmin === '1') setIsAdmin(true);
+
       const muteUntil = Number(localStorage.getItem('gta6takip_mute_until') || 0);
       if (muteUntil > Date.now()) {
         setMuteSeconds(Math.ceil((muteUntil - Date.now()) / 1000));
@@ -478,6 +514,7 @@ export default function HomePage() {
 
     fetchProjects();
     fetchMessages();
+    fetchBannedUsers();
 
     const projectChannel = supabase
       .channel('projects-realtime')
@@ -492,21 +529,33 @@ export default function HomePage() {
       .channel('chat-realtime')
       .on(
         'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'chat_messages' },
+        { event: '*', schema: 'public', table: 'chat_messages' },
         (payload) => {
-          if (payload?.new) {
+          if (payload.eventType === 'INSERT' && payload?.new) {
             setMessages((prev) => {
               const exists = prev.some((m) => m.id === payload.new.id);
               return exists ? prev : [...prev, payload.new];
             });
+          } else if (payload.eventType === 'DELETE') {
+            fetchMessages();
           }
         }
+      )
+      .subscribe();
+
+    const banChannel = supabase
+      .channel('ban-realtime')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'banned_users' },
+        () => fetchBannedUsers()
       )
       .subscribe();
 
     return () => {
       supabase.removeChannel(projectChannel);
       supabase.removeChannel(chatChannel);
+      supabase.removeChannel(banChannel);
     };
   }, []);
 
@@ -630,6 +679,68 @@ export default function HomePage() {
     }
   }
 
+  async function fetchBannedUsers() {
+    try {
+      const { data, error } = await supabase.from('banned_users').select('username');
+      if (!error && Array.isArray(data)) {
+        setBannedUsers(data.map((b) => String(b.username || '').toLowerCase()));
+      }
+    } catch {
+      // banned_users tablosu henüz açılmadıysa sessizce geç
+    }
+  }
+
+  function handleAdminLogin(e) {
+    e.preventDefault();
+    setAdminError('');
+    if (adminUserInput.trim() === 'admin' && adminPassInput.trim() === '657210') {
+      setIsAdmin(true);
+      setAdminUserInput('');
+      setAdminPassInput('');
+      try {
+        localStorage.setItem('gta6takip_is_admin', '1');
+      } catch {
+        // ignore
+      }
+    } else {
+      setAdminError(t.adminWrong);
+    }
+  }
+
+  function handleAdminLogout() {
+    setIsAdmin(false);
+    setShowAdminBox(false);
+    try {
+      localStorage.removeItem('gta6takip_is_admin');
+    } catch {
+      // ignore
+    }
+  }
+
+  async function handleDeleteMessage(msgId) {
+    if (!isAdmin || !msgId) return;
+    await supabase.from('chat_messages').delete().eq('id', msgId);
+    setMessages((prev) => prev.filter((m) => m.id !== msgId));
+  }
+
+  async function handleBanUser(targetName) {
+    if (!isAdmin || !targetName) return;
+    const cleanTarget = targetName.trim().toLowerCase();
+    await supabase.from('banned_users').upsert([{ username: cleanTarget }], { onConflict: 'username' });
+    await supabase.from('chat_messages').delete().ilike('username', targetName.trim());
+    setBannedUsers((prev) => (prev.includes(cleanTarget) ? prev : [...prev, cleanTarget]));
+    setMessages((prev) =>
+      prev.filter((m) => String(m.username || '').trim().toLowerCase() !== cleanTarget)
+    );
+  }
+
+  async function handleUnbanUser(targetName) {
+    if (!isAdmin || !targetName) return;
+    const cleanTarget = targetName.trim().toLowerCase();
+    await supabase.from('banned_users').delete().eq('username', cleanTarget);
+    setBannedUsers((prev) => prev.filter((u) => u !== cleanTarget));
+  }
+
   async function handleAutoSync() {
     if (syncing) return;
     setSyncing(true);
@@ -662,9 +773,17 @@ export default function HomePage() {
     }
   }
 
+  const rawCurrentNick = username.trim().slice(0, 24) || 'ViceMisafir';
+  const isCurrentUserBanned = bannedUsers.includes(rawCurrentNick.toLowerCase());
+
   async function handleSendMessage(e) {
     if (e && e.preventDefault) e.preventDefault();
     setChatError('');
+
+    if (isCurrentUserBanned) {
+      setChatError(t.errBanned);
+      return;
+    }
 
     if (muteSeconds > 0) {
       setChatError(`${t.errMuted} ${muteSeconds}${t.secShort}`);
@@ -672,14 +791,13 @@ export default function HomePage() {
     }
 
     const cleanMsg = newMessage.trim();
-    const rawNick = username.trim().slice(0, 24) || 'ViceMisafir';
 
     if (!cleanMsg) {
       setChatError(t.errEmptyMsg);
       return;
     }
 
-    if (containsProfanity(cleanMsg) || containsProfanity(rawNick)) {
+    if (containsProfanity(cleanMsg) || containsProfanity(rawCurrentNick)) {
       const muteDurationSec = 60;
       const until = Date.now() + muteDurationSec * 1000;
       setMuteSeconds(muteDurationSec);
@@ -697,7 +815,7 @@ export default function HomePage() {
 
     setSending(true);
     try {
-      localStorage.setItem('gta6takip_nick', rawNick);
+      localStorage.setItem('gta6takip_nick', rawCurrentNick);
     } catch {
       // ignore
     }
@@ -707,7 +825,7 @@ export default function HomePage() {
         .from('chat_messages')
         .insert([
           {
-            username: censorText(rawNick),
+            username: censorText(rawCurrentNick),
             message: censorText(cleanMsg.slice(0, 500)),
           },
         ])
@@ -741,6 +859,9 @@ export default function HomePage() {
 
   const leaderName = projects[0]?.name || 'omonkey';
   const onlineCount = Math.max(1, onlineUsers.length);
+  const visibleMessages = messages.filter(
+    (m) => !bannedUsers.includes(String(m.username || '').trim().toLowerCase())
+  );
 
   return (
     <div
@@ -1094,11 +1215,102 @@ export default function HomePage() {
                 </p>
               </div>
             </div>
-            <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-emerald-600 bg-emerald-500/15 border border-emerald-500/25 px-2.5 py-0.5 rounded-full shrink-0">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              {t.live}
-            </span>
+            <div className="flex items-center gap-1.5 shrink-0">
+              <button
+                type="button"
+                onClick={() => setShowAdminBox((prev) => !prev)}
+                title={t.adminTitle}
+                className={`p-1.5 rounded-lg border text-xs transition cursor-pointer ${
+                  isAdmin
+                    ? 'bg-amber-500/20 border-amber-500/40 text-amber-500'
+                    : 'bg-slate-500/10 border-slate-500/20 opacity-70 hover:opacity-100'
+                }`}
+              >
+                <ShieldAlert className="w-3.5 h-3.5" />
+              </button>
+              <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-emerald-600 bg-emerald-500/15 border border-emerald-500/25 px-2.5 py-0.5 rounded-full">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                {t.live}
+              </span>
+            </div>
           </div>
+
+          {/* Admin Giriş / Yönetim Kutusu */}
+          {showAdminBox && (
+            <div
+              style={{ backgroundColor: 'var(--card-inner)', borderColor: 'var(--card-border)' }}
+              className="px-4 py-3 border-b space-y-2 shrink-0"
+            >
+              {!isAdmin ? (
+                <form onSubmit={handleAdminLogin} className="space-y-2">
+                  <div className="flex items-center justify-between text-xs font-bold">
+                    <span>{t.adminTitle}</span>
+                    {adminError && <span className="text-rose-500 text-[11px]">{adminError}</span>}
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <input
+                      type="text"
+                      value={adminUserInput}
+                      onChange={(e) => setAdminUserInput(e.target.value)}
+                      placeholder={t.adminUser}
+                      style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--card-border)', color: 'var(--text-primary)' }}
+                      className="w-1/3 rounded-lg border px-2.5 py-1 text-xs focus:outline-none"
+                    />
+                    <input
+                      type="password"
+                      value={adminPassInput}
+                      onChange={(e) => setAdminPassInput(e.target.value)}
+                      placeholder={t.adminPass}
+                      style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--card-border)', color: 'var(--text-primary)' }}
+                      className="w-1/3 rounded-lg border px-2.5 py-1 text-xs focus:outline-none"
+                    />
+                    <button
+                      type="submit"
+                      className="w-1/3 gta-bar-fill text-white rounded-lg py-1 text-xs font-bold cursor-pointer"
+                    >
+                      {t.adminLogin}
+                    </button>
+                  </div>
+                </form>
+              ) : (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-extrabold text-amber-500">
+                      ✓ {t.adminTitle} ({t.bannedListTitle}: {bannedUsers.length})
+                    </span>
+                    <button
+                      type="button"
+                      onClick={handleAdminLogout}
+                      className="inline-flex items-center gap-1 text-[11px] text-rose-500 font-bold hover:underline cursor-pointer"
+                    >
+                      <LogOut className="w-3 h-3" />
+                      {t.adminLogout}
+                    </button>
+                  </div>
+                  {bannedUsers.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 max-h-20 overflow-y-auto">
+                      {bannedUsers.map((bu) => (
+                        <span
+                          key={bu}
+                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] bg-rose-500/15 text-rose-500 border border-rose-500/25"
+                        >
+                          <span>{bu}</span>
+                          <button
+                            type="button"
+                            onClick={() => handleUnbanUser(bu)}
+                            className="font-bold hover:underline cursor-pointer"
+                            title={t.unbanBtn}
+                          >
+                            ×
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Nickname + SVG Avatar Seçici */}
           <div
@@ -1108,7 +1320,7 @@ export default function HomePage() {
             <button
               type="button"
               onClick={() => setShowAvatarPicker((prev) => !prev)}
-              title="Avatar Seç"
+              title="Avatar"
               className="rounded-lg hover:scale-105 transition cursor-pointer shrink-0"
             >
               <AvatarSvg avatarId={avatar} size="md" />
@@ -1166,7 +1378,7 @@ export default function HomePage() {
           </div>
 
           <div className="flex-1 overflow-y-auto vice-scroll p-4 space-y-2.5">
-            {messages.length === 0 ? (
+            {visibleMessages.length === 0 ? (
               <div
                 style={{ color: 'var(--text-secondary)' }}
                 className="h-full flex flex-col items-center justify-center text-center text-xs space-y-1.5 px-4"
@@ -1175,7 +1387,7 @@ export default function HomePage() {
                 <p>{t.chatEmptyDesc}</p>
               </div>
             ) : (
-              messages.map((msg, idx) => {
+              visibleMessages.map((msg, idx) => {
                 const msgAvatar = getAvatarForUser(msg.username, username, avatar);
                 return (
                   <div
@@ -1190,17 +1402,39 @@ export default function HomePage() {
                           {censorText(msg.username)}
                         </span>
                       </div>
-                      <span style={{ color: 'var(--text-secondary)' }} className="text-[10px] shrink-0">
-                        {msg.created_at
-                          ? new Date(msg.created_at).toLocaleTimeString(
-                              lang === 'en' ? 'en-US' : 'tr-TR',
-                              {
-                                hour: '2-digit',
-                                minute: '2-digit',
-                              }
-                            )
-                          : ''}
-                      </span>
+                      <div className="flex items-center gap-2 shrink-0">
+                        {isAdmin && (
+                          <div className="flex items-center gap-1">
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteMessage(msg.id)}
+                              title={t.delBtn}
+                              className="p-1 rounded hover:bg-rose-500/15 text-rose-500 cursor-pointer"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleBanUser(msg.username)}
+                              title={t.banBtn}
+                              className="p-1 rounded hover:bg-rose-500/15 text-rose-500 cursor-pointer"
+                            >
+                              <Ban className="w-3 h-3" />
+                            </button>
+                          </div>
+                        )}
+                        <span style={{ color: 'var(--text-secondary)' }} className="text-[10px]">
+                          {msg.created_at
+                            ? new Date(msg.created_at).toLocaleTimeString(
+                                lang === 'en' ? 'en-US' : 'tr-TR',
+                                {
+                                  hour: '2-digit',
+                                  minute: '2-digit',
+                                }
+                              )
+                            : ''}
+                        </span>
+                      </div>
                     </div>
                     <p className="text-xs sm:text-sm leading-relaxed break-words pl-8">
                       {renderMessageWithLinks(msg.message)}
@@ -1212,9 +1446,13 @@ export default function HomePage() {
             <div ref={chatBottomRef} />
           </div>
 
-          {(chatError || muteSeconds > 0) && (
+          {(chatError || muteSeconds > 0 || isCurrentUserBanned) && (
             <div className="px-4 py-2 bg-rose-500/15 border-t border-rose-500/30 text-xs text-rose-500 font-semibold">
-              {muteSeconds > 0 ? `${t.errMuted} ${muteSeconds}${t.secShort}` : chatError}
+              {isCurrentUserBanned
+                ? t.errBanned
+                : muteSeconds > 0
+                  ? `${t.errMuted} ${muteSeconds}${t.secShort}`
+                  : chatError}
             </div>
           )}
 
@@ -1247,7 +1485,7 @@ export default function HomePage() {
             <button
               type="button"
               onClick={() => setShowEmojiPicker((prev) => !prev)}
-              disabled={muteSeconds > 0}
+              disabled={muteSeconds > 0 || isCurrentUserBanned}
               style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--card-border)', color: 'var(--text-secondary)' }}
               className="p-2 rounded-xl border hover:text-pink-500 transition cursor-pointer shrink-0 disabled:opacity-40"
               title="Emoji"
@@ -1258,7 +1496,7 @@ export default function HomePage() {
             <input
               type="text"
               value={newMessage}
-              disabled={muteSeconds > 0}
+              disabled={muteSeconds > 0 || isCurrentUserBanned}
               onChange={(e) => setNewMessage(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
@@ -1267,7 +1505,11 @@ export default function HomePage() {
               }}
               maxLength={500}
               placeholder={
-                muteSeconds > 0 ? `${t.errMuted} ${muteSeconds}${t.secShort}` : t.messagePlaceholder
+                isCurrentUserBanned
+                  ? t.errBanned
+                  : muteSeconds > 0
+                    ? `${t.errMuted} ${muteSeconds}${t.secShort}`
+                    : t.messagePlaceholder
               }
               style={{
                 backgroundColor: 'var(--card-bg)',
@@ -1278,7 +1520,7 @@ export default function HomePage() {
             />
             <button
               type="submit"
-              disabled={sending || muteSeconds > 0}
+              disabled={sending || muteSeconds > 0 || isCurrentUserBanned}
               className="gta-bar-fill px-4 py-2 rounded-xl hover:brightness-110 disabled:opacity-40 text-white font-bold text-xs sm:text-sm inline-flex items-center gap-1.5 transition cursor-pointer shrink-0"
             >
               <Send className="w-4 h-4" />
