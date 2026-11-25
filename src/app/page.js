@@ -15,125 +15,111 @@ import {
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
-const APP_VERSION = 'v1.0.5';
+const APP_VERSION = 'v1.0.6';
 
 const CHANGELOG = {
   tr: [
     {
-      version: 'v1.0.5',
+      version: 'v1.0.6',
       date: '25 Kasım 2026',
       items: [
-        'Anket bölümü kaldırıldı, sade ve hızlı takip düzeni korundu.',
+        'Yeni liderler Doomsday (%78.7) ve DexNom (%78) eklendi; Belobug %77.7 olarak güncellendi, silinen ZETTROX çıkarıldı.',
+        'Son Gelişmeler kutusu /api/sync üzerinden 120 saniyede bir otomatik güncellenecek hale getirildi.',
       ],
+    },
+    {
+      version: 'v1.0.5',
+      date: '25 Kasım 2026',
+      items: ['Anket bölümü kaldırıldı, sade ve hızlı takip düzeni korundu.'],
     },
     {
       version: 'v1.0.4',
       date: '25 Kasım 2026',
-      items: [
-        'Mobil üst bardaki logo/başlık sıkışması düzeltildi; mobilde iki ferah satır, masaüstünde tek satır görünüm sağlandı.',
-      ],
+      items: ['Mobil üst bardaki logo/başlık sıkışması düzeltildi; mobilde iki ferah satır görünüm sağlandı.'],
     },
     {
       version: 'v1.0.3',
       date: '25 Kasım 2026',
-      items: [
-        'Üst bardaki yatay renk noktaları mobilde yer açmak için tek bir "Tema ▾" menü butonuna dönüştürüldü.',
-      ],
+      items: ['Üst bardaki yatay renk noktaları tek bir "Tema ▾" menü butonuna dönüştürüldü.'],
     },
     {
       version: 'v1.0.2',
       date: '25 Kasım 2026',
       items: [
-        '120 saniyelik canlı geri sayım sayacı ("Sonraki kontrol") eklendi.',
-        '"Son Gelişmeler" mini bülten bandı ve Test Edilen Ekran Kartları (FPS) özeti eklendi.',
-        'Yüzdesi artan ekipler için yeşil artış rozeti (▲ +%...) eklendi.',
+        '120 saniyelik canlı geri sayım sayacı, Son Gelişmeler bandı, Test Edilen GPU özeti ve artış rozeti eklendi.',
       ],
     },
     {
       version: 'v1.0.1',
       date: '25 Kasım 2026',
-      items: [
-        'Android ve dar mobil ekranlarda geliştirici isimlerinin "..." şeklinde kesilmesi düzeltildi.',
-      ],
+      items: ['Android ve dar mobil ekranlarda geliştirici isimlerinin "..." şeklinde kesilmesi düzeltildi.'],
     },
     {
       version: 'v1.0.0',
       date: '25 Kasım 2026',
-      items: [
-        'PortWatch VI #race düzenine uyumlu sade ve modern arayüz eklendi.',
-        '2 standart (Koyu/Açık) + 3 GTA VI temalı olmak üzere 5 tema desteği getirildi.',
-        'Zortos, vice-pc ve XValkyrie dahil 15 ekip için 120 saniyede bir otomatik veri akışı sağlandı.',
-      ],
+      items: ['PortWatch VI #race düzenine uyumlu sade arayüz ve 5 tema desteği getirildi.'],
     },
   ],
   en: [
     {
-      version: 'v1.0.5',
+      version: 'v1.0.6',
       date: 'November 25, 2026',
       items: [
-        'Removed the poll section to keep the leaderboard clean and fast.',
+        'Added new leaders Doomsday (78.7%) and DexNom (78%); updated Belobug to 77.7% and removed nuked ZETTROX.',
+        'Latest Updates strip now refreshes automatically every 120s from /api/sync.',
       ],
+    },
+    {
+      version: 'v1.0.5',
+      date: 'November 25, 2026',
+      items: ['Removed the poll section to keep the leaderboard clean and fast.'],
     },
     {
       version: 'v1.0.4',
       date: 'November 25, 2026',
-      items: [
-        'Fixed top navbar title truncation on mobile; uses two clean rows on small screens and one row on desktop.',
-      ],
+      items: ['Fixed top navbar title truncation on mobile; uses two clean rows on small screens.'],
     },
     {
       version: 'v1.0.3',
       date: 'November 25, 2026',
-      items: [
-        'Replaced horizontal theme dots in the top bar with a clean "Theme ▾" dropdown button for better mobile spacing.',
-      ],
+      items: ['Replaced horizontal theme dots in the top bar with a clean "Theme ▾" dropdown button.'],
     },
     {
       version: 'v1.0.2',
       date: 'November 25, 2026',
-      items: [
-        'Added live 120s countdown timer ("Next check").',
-        'Added "Latest Updates" mini news strip and Tested GPUs (FPS) summary bar.',
-        'Added green progress delta badge (▲ +...%) for advancing teams.',
-      ],
+      items: ['Added 120s countdown timer, Latest Updates strip, Tested GPUs bar, and delta badges.'],
     },
     {
       version: 'v1.0.1',
       date: 'November 25, 2026',
-      items: [
-        'Fixed developer names truncating with "..." on narrow Android mobile screens.',
-      ],
+      items: ['Fixed developer names truncating with "..." on narrow Android mobile screens.'],
     },
     {
       version: 'v1.0.0',
       date: 'November 25, 2026',
-      items: [
-        'Introduced clean leaderboard layout inspired by PortWatch VI #race.',
-        'Added 5 themes: 2 standard (Dark/Light) + 3 GTA VI themed (Vice Sunset, Leonida Neon, Ocean Drive).',
-        'Expanded automatic 120s live tracking to 15 teams including Zortos, vice-pc, and XValkyrie.',
-      ],
+      items: ['Introduced clean leaderboard layout inspired by PortWatch VI #race with 5 themes.'],
     },
   ],
 };
 
-const NEWS_FEED = {
+const DEFAULT_NEWS = {
   tr: [
-    { tag: 'LİDER', text: 'Belobug AMD sürümü %77.4 ile ilk bölüm oynanışında liderliğini koruyor.' },
-    { tag: 'YENİ', text: 'Zortos PC başlatma duyurusu yaptı; vice-pc ve XValkyrie takibe eklendi.' },
-    { tag: 'NOT', text: 'Leonida projesi Take-Two DMCA bildirimi sonrası GitHub’dan kaldırıldı.' },
+    { tag: 'LİDER', text: 'Doomsday %78.7 ile genel lider; açık kaynakta DexNom (%78) önde.' },
+    { tag: 'GÜNCEL', text: 'Belobug %77.7 seviyesine ulaştı; yeni girişimler canlı takip ediliyor.' },
+    { tag: 'DURUM', text: 'ZETTROX deposu GitHub’dan silindi ve yarıştan çıktı; Zortos bağımsız takipte.' },
   ],
   en: [
-    { tag: 'LEADER', text: 'Belobug AMD build leads at 77.4% with First Act playable.' },
-    { tag: 'NEW', text: 'Zortos reported PC boot; vice-pc and XValkyrie added to live tracking.' },
-    { tag: 'NOTE', text: 'Leonida was taken down from GitHub following a Take-Two DMCA notice.' },
+    { tag: 'LEADER', text: 'Doomsday leads overall at 78.7%; DexNom (78%) leads open source.' },
+    { tag: 'LIVE', text: 'Belobug reached 77.7%; new efforts are tracked automatically.' },
+    { tag: 'STATUS', text: 'ZETTROX repo was removed from GitHub and left the race; Zortos remains tracked.' },
   ],
 };
 
 const TESTED_GPUS = [
-  { gpu: 'RX 9070 XT', fps: '3 FPS', team: 'Belobug' },
+  { gpu: 'RX 7900 XTX', fps: '3 FPS', team: 'DexNom' },
+  { gpu: 'RX 9070 XT', fps: '4 FPS', team: 'Belobug' },
   { gpu: 'RTX 5060 Ti', fps: '4 FPS', team: 'Uilian' },
   { gpu: 'RTX 4070', fps: '3 FPS', team: 'hyphennn' },
-  { gpu: 'NVIDIA', fps: '2 FPS', team: 'ZETTROX' },
 ];
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -453,6 +439,7 @@ export default function Home() {
   const [themeId, setThemeId] = useState('dark');
   const [themeMenuOpen, setThemeMenuOpen] = useState(false);
   const [teams, setTeams] = useState([]);
+  const [liveNews, setLiveNews] = useState(DEFAULT_NEWS);
   const [deltas, setDeltas] = useState({});
   const [filter, setFilter] = useState('all');
   const [lastUpdated, setLastUpdated] = useState('--:--:--');
@@ -541,6 +528,11 @@ export default function Home() {
         }
         setTeams(rawList);
       }
+
+      if (data.news && (Array.isArray(data.news.tr) || Array.isArray(data.news.en))) {
+        setLiveNews(data.news);
+      }
+
       setLastUpdated(new Date().toLocaleTimeString(lang === 'tr' ? 'tr-TR' : 'en-US'));
       setCountdown(120);
     } catch {
@@ -600,6 +592,8 @@ export default function Home() {
   const countdownStr = `${String(Math.floor(countdown / 60)).padStart(2, '0')}:${String(
     countdown % 60
   ).padStart(2, '0')}`;
+
+  const activeNews = (liveNews && liveNews[lang]) || DEFAULT_NEWS[lang];
 
   return (
     <div
@@ -806,7 +800,7 @@ export default function Home() {
           </div>
         </header>
 
-        {/* SON GELİŞMELER MİNİ BÜLTEN */}
+        {/* OTOMATİK SON GELİŞMELER MİNİ BÜLTENİ */}
         <section
           className="rounded-2xl p-4 border space-y-2.5"
           style={{ backgroundColor: activeTheme.bgCard, borderColor: activeTheme.border }}
@@ -816,7 +810,7 @@ export default function Home() {
             <span>{t.newsTitle}</span>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
-            {NEWS_FEED[lang].map((item, i) => (
+            {activeNews.map((item, i) => (
               <div
                 key={i}
                 className="rounded-xl p-2.5 border text-xs leading-relaxed"
