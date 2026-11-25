@@ -9,6 +9,7 @@ import {
   Cpu,
   RefreshCw,
   ShieldCheck,
+  ShieldAlert,
   Sparkles,
   Link as LinkIcon,
   User,
@@ -18,6 +19,7 @@ import {
   Palette,
   Monitor,
   Smile,
+  LogOut,
 } from 'lucide-react';
 
 const THEMES = [
@@ -203,10 +205,12 @@ const TRANSLATIONS = {
     chatEmptyTitle: 'Kanal aktif!',
     chatEmptyDesc: 'İlk mesajı yazıp toplulukla sohbet edebilirsin.',
     messagePlaceholder: 'Mesaj yaz...',
+    slowPlaceholder: 'Yeni mesaj için bekleyin:',
     send: 'Gönder',
     sending: 'Atılıyor...',
     errEmptyMsg: 'Lütfen önce bir mesaj veya link yaz.',
     errMuted: 'Küfür tespit edildi! 60sn ban yediniz. Kalan süre:',
+    errSlow: 'Spam koruması: 60 saniyede 1 mesaj atabilirsiniz. Kalan:',
     errSend: 'Gönderilemedi:',
     footerText:
       'GTA6takip, PortWatch projesinin kâr gütmeyen, hobi amaçlı alternatifidir. Rockstar Games veya Take-Two Interactive ile resmi bir bağlantısı yoktur.',
@@ -216,6 +220,13 @@ const TRANSLATIONS = {
     stageLevel4: 'Oynanabilir',
     stageTooltip: 'Aşama Seviyesi',
     visitorPrefix: 'Ziyaretçi',
+    adminTitle: 'Admin Girişi',
+    adminUser: 'Kullanıcı',
+    adminPass: 'Şifre',
+    adminLogin: 'Giriş',
+    adminWrong: 'Hatalı bilgi.',
+    adminActive: 'Admin Aktif',
+    adminLogout: 'Çıkış',
   },
   en: {
     headerSubtitle: '120s Auto Progress Tracker (PortWatch VI)',
@@ -256,10 +267,12 @@ const TRANSLATIONS = {
     chatEmptyTitle: 'Channel is live!',
     chatEmptyDesc: 'Be the first to send a message in this channel.',
     messagePlaceholder: 'Type a message...',
+    slowPlaceholder: 'Next message in:',
     send: 'Send',
     sending: 'Sending...',
     errEmptyMsg: 'Please enter a message or link first.',
     errMuted: 'Profanity detected! You are banned for 60s. Remaining:',
+    errSlow: 'Slowmode: 1 message per 60 seconds. Remaining:',
     errSend: 'Failed to send:',
     footerText:
       'GTA6takip is a non-profit, hobbyist alternative to the PortWatch project. Not affiliated with Rockstar Games or Take-Two Interactive.',
@@ -269,6 +282,13 @@ const TRANSLATIONS = {
     stageLevel4: 'Playable',
     stageTooltip: 'Stage Level',
     visitorPrefix: 'Visitor',
+    adminTitle: 'Admin Login',
+    adminUser: 'Username',
+    adminPass: 'Password',
+    adminLogin: 'Login',
+    adminWrong: 'Invalid credentials.',
+    adminActive: 'Admin Active',
+    adminLogout: 'Logout',
   },
 };
 
@@ -462,6 +482,13 @@ export default function HomePage() {
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [muteSeconds, setMuteSeconds] = useState(0);
+  const [slowSeconds, setSlowSeconds] = useState(0);
+
+  const [showAdminBox, setShowAdminBox] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [adminUser, setAdminUser] = useState('');
+  const [adminPass, setAdminPass] = useState('');
+  const [adminErr, setAdminErr] = useState('');
 
   const chatChannelRef = useRef('tr');
   const chatBottomRef = useRef(null);
@@ -490,9 +517,17 @@ export default function HomePage() {
         setAvatar(savedAvatar);
       }
 
+      const savedAdmin = localStorage.getItem('gta6takip_is_admin');
+      if (savedAdmin === '1') setIsAdmin(true);
+
       const muteUntil = Number(localStorage.getItem('gta6takip_mute_until') || 0);
       if (muteUntil > Date.now()) {
         setMuteSeconds(Math.ceil((muteUntil - Date.now()) / 1000));
+      }
+
+      const slowUntil = Number(localStorage.getItem('gta6takip_slow_until') || 0);
+      if (slowUntil > Date.now()) {
+        setSlowSeconds(Math.ceil((slowUntil - Date.now()) / 1000));
       }
     } catch {
       // ignore
@@ -595,6 +630,14 @@ export default function HomePage() {
   }, [muteSeconds]);
 
   useEffect(() => {
+    if (slowSeconds <= 0) return undefined;
+    const timer = setInterval(() => {
+      setSlowSeconds((prev) => (prev <= 1 ? 0 : prev - 1));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [slowSeconds]);
+
+  useEffect(() => {
     const countdown = setInterval(() => {
       setSecondsLeft((prev) => {
         if (prev <= 1) {
@@ -623,6 +666,35 @@ export default function HomePage() {
     setChatChannel(nextChannel);
     chatChannelRef.current = nextChannel;
     fetchChatMessages(nextChannel);
+  }
+
+  function handleAdminLogin(e) {
+    e.preventDefault();
+    setAdminErr('');
+    if (adminUser.trim() === 'admin' && adminPass.trim() === '657210') {
+      setIsAdmin(true);
+      setAdminUser('');
+      setAdminPass('');
+      setShowAdminBox(false);
+      setSlowSeconds(0);
+      try {
+        localStorage.setItem('gta6takip_is_admin', '1');
+      } catch {
+        // ignore
+      }
+    } else {
+      setAdminErr(t.adminWrong);
+    }
+  }
+
+  function handleAdminLogout() {
+    setIsAdmin(false);
+    setShowAdminBox(false);
+    try {
+      localStorage.removeItem('gta6takip_is_admin');
+    } catch {
+      // ignore
+    }
   }
 
   async function fetchChatMessages(ch) {
@@ -671,15 +743,20 @@ export default function HomePage() {
       return;
     }
 
+    if (!isAdmin && slowSeconds > 0) {
+      setChatError(`${t.errSlow} ${slowSeconds}${t.secShort}`);
+      return;
+    }
+
     const cleanMsg = newMessage.trim();
-    const rawNick = username.trim().slice(0, 24) || 'ViceMisafir';
+    const rawNick = username.trim().slice(0, 24) || (isAdmin ? 'Admin' : 'ViceMisafir');
 
     if (!cleanMsg) {
       setChatError(t.errEmptyMsg);
       return;
     }
 
-    if (containsProfanity(cleanMsg) || containsProfanity(rawNick)) {
+    if (!isAdmin && (containsProfanity(cleanMsg) || containsProfanity(rawNick))) {
       const muteDurationSec = 60;
       const until = Date.now() + muteDurationSec * 1000;
       setMuteSeconds(muteDurationSec);
@@ -706,8 +783,9 @@ export default function HomePage() {
       // ignore
     }
 
-    const safeNick = censorText(rawNick);
-    const safeMsg = censorText(cleanMsg.slice(0, 500));
+    const safeNick = isAdmin ? rawNick : censorText(rawNick);
+    const cleanedBody = isAdmin ? cleanMsg.slice(0, 480) : censorText(cleanMsg.slice(0, 500));
+    const payloadMessage = isAdmin ? `[ADMIN] ${cleanedBody}` : cleanedBody;
 
     try {
       const res = await fetch('/api/chat', {
@@ -716,18 +794,29 @@ export default function HomePage() {
         body: JSON.stringify({
           channel: targetCh,
           username: safeNick,
-          message: safeMsg,
+          message: payloadMessage,
         }),
       });
       const json = await res.json();
       if (!json.ok) {
         setChatError(`${t.errSend} ${json.error || '?'}`);
         setNewMessage(cleanMsg);
-      } else if (json.message) {
-        setMessagesByChannel((prev) => ({
-          ...prev,
-          [targetCh]: mergeChannelMessages(prev[targetCh] || [], [json.message]),
-        }));
+      } else {
+        if (json.message) {
+          setMessagesByChannel((prev) => ({
+            ...prev,
+            [targetCh]: mergeChannelMessages(prev[targetCh] || [], [json.message]),
+          }));
+        }
+        if (!isAdmin) {
+          const slowDurationSec = 60;
+          setSlowSeconds(slowDurationSec);
+          try {
+            localStorage.setItem('gta6takip_slow_until', String(Date.now() + slowDurationSec * 1000));
+          } catch {
+            // ignore
+          }
+        }
       }
     } catch (err) {
       setChatError(`${t.errSend} ${err?.message || '?'}`);
@@ -744,6 +833,7 @@ export default function HomePage() {
 
   const leaderName = projects[0]?.name || 'Belobug';
   const onlineCount = Math.max(1, onlineUsers.length);
+  const isInputBlocked = muteSeconds > 0 || (!isAdmin && slowSeconds > 0);
 
   return (
     <div
@@ -1105,12 +1195,74 @@ export default function HomePage() {
                 </p>
               </div>
             </div>
-            <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-emerald-600 bg-emerald-500/15 border border-emerald-500/25 px-2.5 py-0.5 rounded-full shrink-0">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              {t.live}
-            </span>
+            <div className="flex items-center gap-1.5 shrink-0">
+              <button
+                type="button"
+                onClick={() => setShowAdminBox((prev) => !prev)}
+                title={t.adminTitle}
+                className={`p-1.5 rounded-lg border text-xs transition cursor-pointer ${
+                  isAdmin
+                    ? 'bg-amber-500/20 border-amber-500/40 text-amber-500'
+                    : 'bg-slate-500/10 border-slate-500/20 opacity-70 hover:opacity-100'
+                }`}
+              >
+                <ShieldAlert className="w-3.5 h-3.5" />
+              </button>
+              <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-emerald-600 bg-emerald-500/15 border border-emerald-500/25 px-2.5 py-0.5 rounded-full">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                {t.live}
+              </span>
+            </div>
           </div>
 
+          {showAdminBox && (
+            <div
+              style={{ backgroundColor: 'var(--card-inner)', borderColor: 'var(--card-border)' }}
+              className="px-3.5 py-2.5 border-b shrink-0"
+            >
+              {!isAdmin ? (
+                <form onSubmit={handleAdminLogin} className="flex items-center gap-1.5">
+                  <input
+                    type="text"
+                    value={adminUser}
+                    onChange={(e) => setAdminUser(e.target.value)}
+                    placeholder={t.adminUser}
+                    style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--card-border)', color: 'var(--text-primary)' }}
+                    className="w-1/3 rounded-lg border px-2 py-1 text-xs focus:outline-none"
+                  />
+                  <input
+                    type="password"
+                    value={adminPass}
+                    onChange={(e) => setAdminPass(e.target.value)}
+                    placeholder={t.adminPass}
+                    style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--card-border)', color: 'var(--text-primary)' }}
+                    className="w-1/3 rounded-lg border px-2 py-1 text-xs focus:outline-none"
+                  />
+                  <button
+                    type="submit"
+                    className="w-1/3 gta-bar-fill text-white rounded-lg py-1 text-xs font-bold cursor-pointer"
+                  >
+                    {t.adminLogin}
+                  </button>
+                </form>
+              ) : (
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-extrabold text-amber-500">✓ {t.adminActive}</span>
+                  <button
+                    type="button"
+                    onClick={handleAdminLogout}
+                    className="inline-flex items-center gap-1 text-rose-500 font-bold hover:underline cursor-pointer"
+                  >
+                    <LogOut className="w-3 h-3" />
+                    {t.adminLogout}
+                  </button>
+                </div>
+              )}
+              {adminErr && <p className="text-[11px] text-rose-500 mt-1">{adminErr}</p>}
+            </div>
+          )}
+
+          {/* Discord Tarzı Ayrı Dil Kanalları (#tr-genel | #en-general) */}
           <div
             style={{ borderColor: 'var(--card-border)' }}
             className="px-3 py-2 border-b grid grid-cols-2 gap-1.5 shrink-0"
@@ -1228,19 +1380,40 @@ export default function HomePage() {
               </div>
             ) : (
               currentMessages.map((msg, idx) => {
+                const rawMsgText = String(msg.message || '');
+                const isAdminMsg = rawMsgText.startsWith('[ADMIN] ');
+                const displayMsgText = isAdminMsg ? rawMsgText.replace(/^\[ADMIN\]\s*/, '') : rawMsgText;
                 const msgAvatar = getAvatarForUser(msg.username, username, avatar);
+
                 return (
                   <div
                     key={msg.id || idx}
-                    style={{ backgroundColor: 'var(--card-inner)', borderColor: 'var(--card-border)' }}
-                    className="rounded-xl border p-3 space-y-1"
+                    style={
+                      isAdminMsg
+                        ? undefined
+                        : { backgroundColor: 'var(--card-inner)', borderColor: 'var(--card-border)' }
+                    }
+                    className={`rounded-xl border p-3 space-y-1 ${
+                      isAdminMsg
+                        ? 'bg-gradient-to-r from-purple-600/20 via-pink-500/20 to-amber-500/20 border-pink-500/50 shadow-sm'
+                        : ''
+                    }`}
                   >
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2 min-w-0">
                         <AvatarSvg avatarId={msgAvatar} size="sm" />
-                        <span className="text-xs font-extrabold text-pink-500 truncate">
-                          {censorText(msg.username)}
+                        <span
+                          className={`text-xs font-extrabold truncate ${
+                            isAdminMsg ? 'pw-text-gradient' : 'text-pink-500'
+                          }`}
+                        >
+                          {isAdminMsg ? msg.username : censorText(msg.username)}
                         </span>
+                        {isAdminMsg && (
+                          <span className="px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider gta-bar-fill text-white shrink-0">
+                            ADMIN
+                          </span>
+                        )}
                       </div>
                       <span style={{ color: 'var(--text-secondary)' }} className="text-[10px] shrink-0">
                         {msg.created_at
@@ -1254,8 +1427,12 @@ export default function HomePage() {
                           : ''}
                       </span>
                     </div>
-                    <p className="text-xs sm:text-sm leading-relaxed break-words pl-8">
-                      {renderMessageWithLinks(msg.message)}
+                    <p
+                      className={`text-xs sm:text-sm leading-relaxed break-words pl-8 ${
+                        isAdminMsg ? 'font-medium' : ''
+                      }`}
+                    >
+                      {isAdminMsg ? displayMsgText : renderMessageWithLinks(displayMsgText)}
                     </p>
                   </div>
                 );
@@ -1299,7 +1476,7 @@ export default function HomePage() {
             <button
               type="button"
               onClick={() => setShowEmojiPicker((prev) => !prev)}
-              disabled={muteSeconds > 0}
+              disabled={isInputBlocked}
               style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--card-border)', color: 'var(--text-secondary)' }}
               className="p-2 rounded-xl border hover:text-pink-500 transition cursor-pointer shrink-0 disabled:opacity-40"
               title="Emoji"
@@ -1310,11 +1487,15 @@ export default function HomePage() {
             <input
               type="text"
               value={newMessage}
-              disabled={muteSeconds > 0}
+              disabled={isInputBlocked}
               onChange={(e) => setNewMessage(e.target.value)}
               maxLength={500}
               placeholder={
-                muteSeconds > 0 ? `${t.errMuted} ${muteSeconds}${t.secShort}` : t.messagePlaceholder
+                muteSeconds > 0
+                  ? `${t.errMuted} ${muteSeconds}${t.secShort}`
+                  : !isAdmin && slowSeconds > 0
+                    ? `${t.slowPlaceholder} ${slowSeconds}${t.secShort}`
+                    : t.messagePlaceholder
               }
               style={{
                 backgroundColor: 'var(--card-bg)',
@@ -1325,11 +1506,17 @@ export default function HomePage() {
             />
             <button
               type="submit"
-              disabled={sending || muteSeconds > 0}
-              className="gta-bar-fill px-4 py-2 rounded-xl hover:brightness-110 disabled:opacity-40 text-white font-bold text-xs sm:text-sm inline-flex items-center gap-1.5 transition cursor-pointer shrink-0"
+              disabled={sending || isInputBlocked}
+              className="gta-bar-fill px-4 py-2 rounded-xl hover:brightness-110 disabled:opacity-40 text-white font-bold text-xs sm:text-sm inline-flex items-center gap-1.5 transition cursor-pointer shrink-0 tabular-nums"
             >
               <Send className="w-4 h-4" />
-              <span>{sending ? t.sending : t.send}</span>
+              <span>
+                {sending
+                  ? t.sending
+                  : !isAdmin && slowSeconds > 0
+                    ? `${slowSeconds}${t.secShort}`
+                    : t.send}
+              </span>
             </button>
           </form>
         </aside>
