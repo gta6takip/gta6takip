@@ -12,9 +12,12 @@ const MAX_NICK_LENGTH = 20;
 const PIN_MAX_FAILS = 5;
 const PIN_LOCK_MS = 15 * 60 * 1000;
 const ALLOWED_REACTIONS = ['🔥', '👍', '😂'];
+const REACT_WINDOW_MS = 60 * 1000;
+const REACT_MAX_PER_WINDOW = 20;
 
 const ipCooldownMap = new Map();
 const pinFailMap = new Map();
+const reactionRateMap = new Map();
 
 function cleanupMaps(now) {
   if (ipCooldownMap.size > 500) {
@@ -28,6 +31,13 @@ function cleanupMaps(now) {
     for (const [key, entry] of pinFailMap.entries()) {
       if (now > (entry.blockedUntil || 0) && now - (entry.lastFailAt || 0) > PIN_LOCK_MS) {
         pinFailMap.delete(key);
+      }
+    }
+  }
+  if (reactionRateMap.size > 500) {
+    for (const [key, entry] of reactionRateMap.entries()) {
+      if (now - (entry.windowStart || 0) > REACT_WINDOW_MS * 2) {
+        reactionRateMap.delete(key);
       }
     }
   }
@@ -74,6 +84,19 @@ function recordPinFailure(ipHash, now) {
 
 function clearPinFailure(ipHash) {
   pinFailMap.delete(ipHash);
+}
+
+function checkReactionRateLimit(ipHash, now) {
+  const prev = reactionRateMap.get(ipHash);
+  if (!prev || now - prev.windowStart > REACT_WINDOW_MS) {
+    reactionRateMap.set(ipHash, { windowStart: now, count: 1 });
+    return true;
+  }
+  if (prev.count >= REACT_MAX_PER_WINDOW) {
+    return false;
+  }
+  prev.count += 1;
+  return true;
 }
 
 function getSupabaseConfig() {
@@ -675,7 +698,7 @@ export async function POST(request) {
   }
 }
 
-// Sabitlenmiş duyuru (action='pin') ve mini emoji tepkisi (action='react')
+// Sabitlenmiş duyuru (action='pin') ve hız sınırlı mini emoji tepkisi (action='react')
 export async function PATCH(request) {
   try {
     const cfg = getSupabaseConfig();
@@ -746,6 +769,13 @@ export async function PATCH(request) {
     }
 
     if (body.action === 'react') {
+      if (!checkReactionRateLimit(ipHash, now)) {
+        return NextResponse.json(
+          { error: 'Çok hızlı tepki veriyorsun, biraz bekle.' },
+          { status: 429 }
+        );
+      }
+
       const messageId = Number(body.messageId);
       const emoji = typeof body.emoji === 'string' ? body.emoji.trim() : '';
       const delta = body.delta === -1 ? -1 : 1;
