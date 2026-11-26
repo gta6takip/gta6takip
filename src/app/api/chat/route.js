@@ -149,9 +149,15 @@ const EXACT_WORD_BAD = new Set([
   'shit', 'dick', 'cock', 'pussy', 'porn', 'porno', 'sex', 'seks', 'nude', 'fck', 'fuk',
 ]);
 
-const RESERVED_NICKS = [
-  'admin', 'administrator', 'mod', 'moderator', 'yonetici', 'sistem', 'system',
-  'kurucu', 'owner', 'root', 'staff', 'yetkili', 'destek', 'support', 'gta6takip', 'official', 'resmi',
+const RESERVED_EXACT_NICKS = new Set([
+  'admin', 'administrator', 'administratör', 'mod', 'moderator', 'moderatör',
+  'yonetici', 'yönetici', 'sistem', 'system', 'kurucu', 'owner', 'root',
+  'staff', 'yetkili', 'destek', 'support', 'gta6takip', 'official', 'resmi',
+]);
+
+const RESERVED_SUBSTRINGS = [
+  'admin', 'administrator', 'moderator', 'yonetici', 'yetkili',
+  'kurucu', 'gta6takip', 'official', 'resmi', 'staff', 'sistem', 'system',
 ];
 
 function containsProfanity(raw) {
@@ -181,7 +187,21 @@ function containsProfanity(raw) {
 
 function isReservedNickname(rawNick) {
   const squashed = normalizeText(rawNick).replace(/[^a-z0-9]/g, '');
-  return RESERVED_NICKS.some((r) => squashed === r || squashed.includes('admin') || squashed.includes('yonetici'));
+  const collapsed = collapseRepeats(squashed);
+  if (RESERVED_EXACT_NICKS.has(squashed) || RESERVED_EXACT_NICKS.has(collapsed)) return true;
+  return RESERVED_SUBSTRINGS.some((sub) => squashed.includes(sub) || collapsed.includes(sub));
+}
+
+function isBatmanCodexImpersonation(rawNick) {
+  const squashed = normalizeText(rawNick).replace(/[^a-z0-9]/g, '');
+  const collapsed = collapseRepeats(squashed);
+  const looksLikeBatman =
+    squashed.includes('batmancodex') ||
+    collapsed.includes('batmancodex') ||
+    squashed.includes('batmancode') ||
+    collapsed.includes('batmancode');
+  const isExactAdmin = rawNick.trim().toLowerCase() === 'batmancodex';
+  return { isExactAdmin, isImpersonation: looksLikeBatman && !isExactAdmin };
 }
 
 export async function GET(request) {
@@ -232,47 +252,6 @@ export async function POST(request) {
     const ipHash = hashIp(ip, cfg.salt);
     const clientId = sanitizeClientId(body.clientId);
 
-    // 1. Kalıcı ban kontrolü (IP hash veya tarayıcı kimliği)
-    const banFilter = clientId
-      ? `or=(ip_hash.eq.${encodeURIComponent(ipHash)},client_id.eq.${encodeURIComponent(clientId)})`
-      : `ip_hash=eq.${encodeURIComponent(ipHash)}`;
-
-    const banRes = await fetch(
-      `${cfg.url}/rest/v1/chat_bans?select=id&${banFilter}&limit=1`,
-      { headers: cfg.headers, cache: 'no-store' }
-    );
-    if (banRes.ok) {
-      const banList = await banRes.json().catch(() => []);
-      if (Array.isArray(banList) && banList.length > 0) {
-        return NextResponse.json(
-          {
-            error: isEn
-              ? 'You have been permanently banned from chat for violating the rules.'
-              : 'Sohbet kurallarını ihlal ettiğin için mesaj gönderme yetkin kalıcı olarak kapatıldı.',
-          },
-          { status: 403 }
-        );
-      }
-    }
-
-    // 2. 30 saniyelik hız sınırı
-    const now = Date.now();
-    cleanupCooldownMap(now);
-
-    const lastSentAt = ipCooldownMap.get(ip);
-    if (lastSentAt && now - lastSentAt < COOLDOWN_MS) {
-      const retryAfter = Math.max(1, Math.ceil((COOLDOWN_MS - (now - lastSentAt)) / 1000));
-      return NextResponse.json(
-        {
-          error: isEn
-            ? `1 message per 30 seconds. Please wait ${retryAfter}s.`
-            : `30 saniyede en fazla 1 mesaj gönderebilirsin. Lütfen ${retryAfter} saniye bekle.`,
-          retryAfter,
-        },
-        { status: 429 }
-      );
-    }
-
     const rawNick = typeof body.nickname === 'string' ? stripInvisible(body.nickname) : '';
     const rawMsg = typeof body.message === 'string' ? stripInvisible(body.message) : '';
     const rawReplyToId = body.replyToId != null ? String(body.replyToId).trim() : null;
@@ -288,12 +267,52 @@ export async function POST(request) {
       );
     }
 
-    if (isReservedNickname(rawNick)) {
+    // Admin / batmancodex koruma ve taklit engeli
+    const batmanCheck = isBatmanCodexImpersonation(rawNick);
+    if (batmanCheck.isImpersonation) {
       return NextResponse.json(
         {
           error: isEn
-            ? 'This nickname is reserved. Please pick another one.'
-            : 'Bu takma ad kullanılamaz. Lütfen başka bir isim seç.',
+            ? 'Impersonating the site admin nickname is not allowed.'
+            : 'Kurucu kullanıcı adını taklit eden isimler kullanılamaz.',
+        },
+        { status: 403 }
+      );
+    }
+
+    let isVerifiedAdmin = false;
+    if (batmanCheck.isExactAdmin) {
+      const configuredPin = (process.env.ADMIN_CHAT_PIN || '').trim();
+      const providedPin = typeof body.adminPin === 'string' ? body.adminPin.trim() : '';
+      if (!configuredPin) {
+        return NextResponse.json(
+          {
+            error: isEn
+              ? 'Admin verification PIN is not configured on the server.'
+              : 'batmancodex koruması aktif. Vercel Environment Variables içine ADMIN_CHAT_PIN eklemelisin.',
+          },
+          { status: 403 }
+        );
+      }
+      if (!providedPin || providedPin !== configuredPin) {
+        return NextResponse.json(
+          {
+            error: isEn
+              ? 'The nickname "batmancodex" is reserved for the site admin.'
+              : 'batmancodex kullanıcı adı kurucuya özeldir. Doğru Admin PIN olmadan kullanılamaz.',
+          },
+          { status: 403 }
+        );
+      }
+      isVerifiedAdmin = true;
+    }
+
+    if (!isVerifiedAdmin && isReservedNickname(rawNick)) {
+      return NextResponse.json(
+        {
+          error: isEn
+            ? 'This nickname is reserved and cannot be used.'
+            : 'ADMIN, mod veya yönetici benzeri isimler kesinlikle kullanılamaz.',
         },
         { status: 400 }
       );
@@ -308,6 +327,51 @@ export async function POST(request) {
         },
         { status: 400 }
       );
+    }
+
+    // Kalıcı ban kontrolü (admin hariç)
+    if (!isVerifiedAdmin) {
+      const banFilter = clientId
+        ? `or=(ip_hash.eq.${encodeURIComponent(ipHash)},client_id.eq.${encodeURIComponent(clientId)})`
+        : `ip_hash=eq.${encodeURIComponent(ipHash)}`;
+
+      const banRes = await fetch(
+        `${cfg.url}/rest/v1/chat_bans?select=id&${banFilter}&limit=1`,
+        { headers: cfg.headers, cache: 'no-store' }
+      );
+      if (banRes.ok) {
+        const banList = await banRes.json().catch(() => []);
+        if (Array.isArray(banList) && banList.length > 0) {
+          return NextResponse.json(
+            {
+              error: isEn
+                ? 'You have been permanently banned from chat for violating the rules.'
+                : 'Sohbet kurallarını ihlal ettiğin için mesaj gönderme yetkin kalıcı olarak kapatıldı.',
+            },
+            { status: 403 }
+          );
+        }
+      }
+    }
+
+    // 30 saniyelik hız sınırı (doğrulanmış admin muaf)
+    const now = Date.now();
+    cleanupCooldownMap(now);
+
+    if (!isVerifiedAdmin) {
+      const lastSentAt = ipCooldownMap.get(ip);
+      if (lastSentAt && now - lastSentAt < COOLDOWN_MS) {
+        const retryAfter = Math.max(1, Math.ceil((COOLDOWN_MS - (now - lastSentAt)) / 1000));
+        return NextResponse.json(
+          {
+            error: isEn
+              ? `1 message per 30 seconds. Please wait ${retryAfter}s.`
+              : `30 saniyede en fazla 1 mesaj gönderebilirsin. Lütfen ${retryAfter} saniye bekle.`,
+            retryAfter,
+          },
+          { status: 429 }
+        );
+      }
     }
 
     if (rawMsg.length < 1) {
@@ -351,7 +415,7 @@ export async function POST(request) {
     }
 
     const insertPayload = {
-      nickname: rawNick,
+      nickname: isVerifiedAdmin ? 'batmancodex' : rawNick,
       message: rawMsg,
       room,
       ip_hash: ipHash,
@@ -401,12 +465,14 @@ export async function POST(request) {
     const insertedArr = await insertRes.json().catch(() => []);
     const inserted = Array.isArray(insertedArr) ? insertedArr[0] : insertedArr;
 
-    ipCooldownMap.set(ip, now);
+    if (!isVerifiedAdmin) {
+      ipCooldownMap.set(ip, now);
+    }
 
     return NextResponse.json(
       {
         message: inserted,
-        cooldownSeconds: COOLDOWN_SECONDS,
+        cooldownSeconds: isVerifiedAdmin ? 0 : COOLDOWN_SECONDS,
       },
       { status: 201 }
     );
