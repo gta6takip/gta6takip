@@ -69,14 +69,6 @@ function buildFpsLabel(effort) {
   return 'Ön Aşama';
 }
 
-function isRecentlyCreated(effort) {
-  const created = effort?.stats?.createdAt || effort?.assessedAt;
-  if (!created) return false;
-  const ts = Date.parse(created);
-  if (Number.isNaN(ts)) return false;
-  return Date.now() - ts < 36 * 60 * 60 * 1000;
-}
-
 function buildTurkishSummary(effort, progress, fps, gpu) {
   const g = effort?.gta || {};
   const storyPct = Math.round((Number(g.story) || 0) * 100);
@@ -156,18 +148,14 @@ export async function GET() {
         url,
         repo: effort.repo || undefined,
         tier: effort.tier || 'watchlist',
+        updatedAt: effort.stats?.pushedAt || effort.assessedAt || tracker.updated || '',
         summaryTr: buildTurkishSummary(effort, progress, fps, gpu),
         summaryEn: effort.summary || `${effort.name} leads at ${progress}% (${fps}, ${gpu}).`,
-        isNew: effort.tier === 'tracked' && isRecentlyCreated(effort),
         isZortos: String(effort.name || '').toLowerCase() === 'zortos',
       };
     })
     .filter((t) => t.tier === 'tracked' || t.progress >= 2.5)
     .sort((a, b) => b.progress - a.progress);
-
-  if (mappedTeams[0]) {
-    mappedTeams[0].isNew = false;
-  }
 
   const top3 = mappedTeams.slice(0, 3);
   const top3Avg =
