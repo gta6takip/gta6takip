@@ -224,10 +224,25 @@ export async function GET(request) {
     const { searchParams } = new URL(request.url);
     const room = normalizeRoom(searchParams.get('room'));
 
-    const res = await fetch(
-      `${cfg.url}/rest/v1/chat_messages?select=id,nickname,message,created_at,reply_to_id,reply_to_nick,reply_to_text,room&room=eq.${room}&order=created_at.desc&limit=50`,
+    let res = await fetch(
+      `${cfg.url}/rest/v1/chat_messages?select=id,nickname,message,created_at,reply_to_id,reply_to_nick,reply_to_text,room,role&room=eq.${room}&order=created_at.desc&limit=50`,
       { headers: cfg.headers, cache: 'no-store' }
     );
+
+    if (!res.ok) {
+      const errText = await res.text().catch(() => '');
+      if (errText.includes('role')) {
+        res = await fetch(
+          `${cfg.url}/rest/v1/chat_messages?select=id,nickname,message,created_at,reply_to_id,reply_to_nick,reply_to_text,room&room=eq.${room}&order=created_at.desc&limit=50`,
+          { headers: cfg.headers, cache: 'no-store' }
+        );
+      } else {
+        return NextResponse.json(
+          { error: `Mesajlar yüklenemedi: ${errText.slice(0, 120)}`, messages: [] },
+          { status: 500 }
+        );
+      }
+    }
 
     if (!res.ok) {
       const errText = await res.text().catch(() => '');
@@ -412,12 +427,15 @@ export async function POST(request) {
       );
     }
 
+    const msgRole = isVerifiedAdmin ? 'admin' : staffRole === 'mod' ? 'mod' : 'user';
+
     const insertPayload = {
       nickname: isVerifiedAdmin ? 'batmancodex' : rawNick,
       message: rawMsg,
       room,
       ip_hash: ipHash,
       client_id: clientId,
+      role: msgRole,
     };
 
     if (rawReplyToId) {
@@ -439,8 +457,8 @@ export async function POST(request) {
       }
     }
 
-    const insertRes = await fetch(
-      `${cfg.url}/rest/v1/chat_messages?select=id,nickname,message,created_at,reply_to_id,reply_to_nick,reply_to_text,room`,
+    let insertRes = await fetch(
+      `${cfg.url}/rest/v1/chat_messages?select=id,nickname,message,created_at,reply_to_id,reply_to_nick,reply_to_text,room,role`,
       {
         method: 'POST',
         headers: {
@@ -454,6 +472,31 @@ export async function POST(request) {
     if (!insertRes.ok) {
       const errJson = await insertRes.json().catch(() => null);
       const detail = errJson?.message || errJson?.hint || `HTTP ${insertRes.status}`;
+      if (String(detail).includes('role')) {
+        const fallbackPayload = { ...insertPayload };
+        delete fallbackPayload.role;
+        insertRes = await fetch(
+          `${cfg.url}/rest/v1/chat_messages?select=id,nickname,message,created_at,reply_to_id,reply_to_nick,reply_to_text,room`,
+          {
+            method: 'POST',
+            headers: {
+              ...cfg.headers,
+              Prefer: 'return=representation',
+            },
+            body: JSON.stringify(fallbackPayload),
+          }
+        );
+      } else {
+        return NextResponse.json(
+          { error: `Mesaj kaydedilemedi (${detail})` },
+          { status: 500 }
+        );
+      }
+    }
+
+    if (!insertRes.ok) {
+      const errJson = await insertRes.json().catch(() => null);
+      const detail = errJson?.message || errJson?.hint || `HTTP ${insertRes.status}`;
       return NextResponse.json(
         { error: `Mesaj kaydedilemedi (${detail})` },
         { status: 500 }
@@ -462,6 +505,9 @@ export async function POST(request) {
 
     const insertedArr = await insertRes.json().catch(() => []);
     const inserted = Array.isArray(insertedArr) ? insertedArr[0] : insertedArr;
+    if (inserted && !inserted.role) {
+      inserted.role = msgRole;
+    }
 
     if (!isStaff) {
       ipCooldownMap.set(ip, now);
@@ -479,7 +525,7 @@ export async function POST(request) {
   }
 }
 
-// Admin veya Moderatör için tek tıkla kalıcı IP ban + mesaj silme
+// Admin veya Moderatör için: action='clear' (sadece mesaj sil) veya action='ban' (kalıcı ban + mesaj sil)
 export async function DELETE(request) {
   try {
     const cfg = getSupabaseConfig();
@@ -495,7 +541,7 @@ export async function DELETE(request) {
     const role = getStaffRole(body.staffPin);
     if (!role) {
       return NextResponse.json(
-        { error: 'Yetkili PIN hatalı! Ban işlemi reddedildi.' },
+        { error: 'Yetkili PIN hatalı! İşlem reddedildi.' },
         { status: 403 }
       );
     }
@@ -503,6 +549,53 @@ export async function DELETE(request) {
     const messageId = Number(body.messageId);
     if (!Number.isInteger(messageId) || messageId <= 0) {
       return NextResponse.json({ error: 'Geçersiz mesaj ID.' }, { status: 400 });
+    }
+
+    const action = body.action === 'clear' ? 'clear' : 'ban';
+
+    if (action === 'clear') {
+      if (role === 'mod') {
+        const checkRes = await fetch(
+          `${cfg.url}/rest/v1/chat_messages?select=id,nickname&id=eq.${encodeURIComponent(messageId)}&limit=1`,
+          { headers: cfg.headers, cache: 'no-store' }
+        );
+        if (checkRes.ok) {
+          const checkArr = await checkRes.json().catch(() => []);
+          const target = Array.isArray(checkArr) ? checkArr[0] : null;
+          if (target && String(target.nickname || '').trim().toLowerCase() === 'batmancodex') {
+            return NextResponse.json(
+              { error: 'Kurucu mesajı silinemez.' },
+              { status: 403 }
+            );
+          }
+        }
+      }
+
+      const delRes = await fetch(
+        `${cfg.url}/rest/v1/chat_messages?id=eq.${encodeURIComponent(messageId)}`,
+        {
+          method: 'DELETE',
+          headers: cfg.headers,
+        }
+      );
+
+      if (!delRes.ok) {
+        const errText = await delRes.text().catch(() => '');
+        return NextResponse.json(
+          { error: `Mesaj silinemedi: ${errText.slice(0, 120)}` },
+          { status: 500 }
+        );
+      }
+
+      return NextResponse.json(
+        {
+          ok: true,
+          action: 'clear',
+          result: 'Mesaj temizlendi (kullanıcı banlanmadı).',
+          deletedId: messageId,
+        },
+        { status: 200 }
+      );
     }
 
     const reason =
@@ -531,10 +624,10 @@ export async function DELETE(request) {
 
     const resultText = await rpcRes.json().catch(() => 'İşlem tamamlandı.');
     return NextResponse.json(
-      { ok: true, result: resultText, deletedId: messageId },
+      { ok: true, action: 'ban', result: resultText, deletedId: messageId },
       { status: 200 }
     );
   } catch {
-    return NextResponse.json({ error: 'Ban işlemi sırasında hata oluştu.' }, { status: 500 });
+    return NextResponse.json({ error: 'İşlem sırasında hata oluştu.' }, { status: 500 });
   }
 }
