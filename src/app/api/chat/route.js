@@ -2,13 +2,13 @@ import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
 
-const COOLDOWN_SECONDS = 60;
+const COOLDOWN_SECONDS = 30;
 const COOLDOWN_MS = COOLDOWN_SECONDS * 1000;
 const MAX_MESSAGE_LENGTH = 280;
 const MIN_NICK_LENGTH = 2;
 const MAX_NICK_LENGTH = 20;
 
-// Sunucu tarafı IP bazlı 60 saniye hız sınırı
+// Sunucu tarafı IP bazlı 30 saniye hız sınırı
 const ipCooldownMap = new Map();
 
 function cleanupCooldownMap(now) {
@@ -225,8 +225,8 @@ export async function POST(request) {
       return NextResponse.json(
         {
           error: isEn
-            ? `1 message per 60 seconds. Please wait ${retryAfter}s.`
-            : `60 saniyede en fazla 1 mesaj gönderebilirsin. Lütfen ${retryAfter} saniye bekle.`,
+            ? `1 message per 30 seconds. Please wait ${retryAfter}s.`
+            : `30 saniyede en fazla 1 mesaj gönderebilirsin. Lütfen ${retryAfter} saniye bekle.`,
           retryAfter,
         },
         { status: 429 }
