@@ -24,7 +24,7 @@ import {
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
-const APP_VERSION = 'v1.0.28';
+const APP_VERSION = 'v1.0.29';
 
 const THEMES = {
   vice: {
@@ -169,14 +169,25 @@ const FALLBACK_NEWS = [
 
 const CHANGELOG = [
   {
+    version: 'v1.0.29',
+    dateTr: '26 Kasım 2026',
+    dateEn: 'November 26, 2026',
+    itemsTr: [
+      '"Tavsiye / Fikir" butonu daha görünür olan sol alt köşeye taşındı ve ara sıra zıplayıp titreyen animasyon eklendi.',
+    ],
+    itemsEn: [
+      'Moved the "Feedback / Idea" button to a floating bottom-left position with a periodic hop-and-wiggle animation.',
+    ],
+  },
+  {
     version: 'v1.0.28',
     dateTr: '26 Kasım 2026',
     dateEn: 'November 26, 2026',
     itemsTr: [
-      'Alt menüye tema uyumlu "Tavsiye / Fikir" butonu ve e-posta bildirim kutucuğu eklendi.',
+      'Tema uyumlu "Tavsiye / Fikir" butonu ve e-posta bildirim kutucuğu eklendi.',
     ],
     itemsEn: [
-      'Added a theme-matched "Feedback / Idea" button and modal in the footer.',
+      'Added a theme-matched "Feedback / Idea" button and modal.',
     ],
   },
   {
@@ -188,19 +199,6 @@ const CHANGELOG = [
     ],
     itemsEn: [
       'Removed the external news feed box under LATEST UPDATES to restore the cleaner layout.',
-    ],
-  },
-  {
-    version: 'v1.0.25',
-    dateTr: '26 Kasım 2026',
-    dateEn: 'November 26, 2026',
-    itemsTr: [
-      'Mobil arayüz iyileştirildi: ilk 10 ekip + Tümünü Göster butonu, kategori filtreleri ve 2 satırlı kesilmeyen aşama etiketleri eklendi (masaüstü düzeni korundu).',
-      'Kart başlıklarında yüzde ve Kaynak butonu mobilde sağ üste sabitlendi; Canlı Veri rozeti hizası ve REKOR kartındaki çift parantez düzeltildi.',
-    ],
-    itemsEn: [
-      'Improved mobile UX: added Top 10 + Show All toggle, category filters, and 2-row milestone labels on mobile without changing desktop layout.',
-      'Pinned percentage & Source button to top-right on mobile cards, aligned Live FAQ badge, and cleaned nested parentheses in news cards.',
     ],
   },
 ];
@@ -628,6 +626,16 @@ export default function HomePage() {
 
   return (
     <div className={`min-h-screen transition-colors duration-300 ${theme.bg}`}>
+      <style>{`
+        @keyframes feedbackNudge {
+          0%, 76%, 100% { transform: translateY(0) rotate(0deg); }
+          80% { transform: translateY(-7px) rotate(-2.5deg); }
+          85% { transform: translateY(0) rotate(2.5deg); }
+          90% { transform: translateY(-4px) rotate(-1.5deg); }
+          95% { transform: translateY(0) rotate(0deg); }
+        }
+      `}</style>
+
       <header className={`sticky top-0 z-40 border-b backdrop-blur-md ${theme.card}`}>
         <div className="max-w-4xl mx-auto px-3 sm:px-5 py-2 sm:py-2.5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
           <div className="flex items-center justify-between gap-2">
@@ -1208,19 +1216,8 @@ export default function HomePage() {
           )}
         </section>
 
-        <footer className={`pt-2 pb-10 space-y-4 text-center text-xs ${theme.muted}`}>
+        <footer className={`pt-2 pb-16 space-y-4 text-center text-xs ${theme.muted}`}>
           <div className="flex items-center justify-center gap-2 flex-wrap">
-            <button
-              type="button"
-              onClick={() => {
-                setFeedbackStatus('idle');
-                setFeedbackOpen(true);
-              }}
-              className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl font-bold transition ${theme.btnPrimary}`}
-            >
-              <MessageSquarePlus className="w-3.5 h-3.5" />
-              <span>{lang === 'tr' ? 'Tavsiye / Fikir' : 'Feedback / Idea'}</span>
-            </button>
             <a
               href="https://x.com/batmancodex"
               target="_blank"
@@ -1264,6 +1261,19 @@ export default function HomePage() {
           </p>
         </footer>
       </main>
+
+      <button
+        type="button"
+        onClick={() => {
+          setFeedbackStatus('idle');
+          setFeedbackOpen(true);
+        }}
+        style={{ animation: 'feedbackNudge 4s ease-in-out infinite' }}
+        className={`fixed bottom-5 left-4 z-40 inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-full shadow-lg text-xs font-extrabold transition hover:scale-105 ${theme.btnPrimary}`}
+      >
+        <MessageSquarePlus className="w-4 h-4" />
+        <span>{lang === 'tr' ? 'Tavsiye / Fikir' : 'Feedback / Idea'}</span>
+      </button>
 
       {showBackTop && (
         <button
