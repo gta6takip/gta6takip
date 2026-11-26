@@ -22,7 +22,7 @@ import {
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
-const APP_VERSION = 'v1.0.21';
+const APP_VERSION = 'v1.0.22';
 
 const THEMES = {
   dark: {
@@ -166,6 +166,17 @@ const FALLBACK_NEWS = [
 
 const CHANGELOG = [
   {
+    version: 'v1.0.22',
+    dateTr: '26 Kasım 2026',
+    dateEn: 'November 26, 2026',
+    itemsTr: [
+      'Merak Edilen Sorular içindeki "Şimdi son durum tam olarak nedir?" cevabı ilk 3 ekibin aşamalarını sade dille özetleyen canlı PortWatch akışına bağlandı.',
+    ],
+    itemsEn: [
+      'Expanded the FAQ "Current Status" answer with plain-language progress summaries of the top 3 teams driven live by PortWatch data.',
+    ],
+  },
+  {
     version: 'v1.0.21',
     dateTr: '26 Kasım 2026',
     dateEn: 'November 26, 2026',
@@ -187,19 +198,6 @@ const CHANGELOG = [
     itemsEn: [
       'Added a responsive "Stage Summary" note inside the #1 leader card (CGBJ 89.8%) for mobile and desktop.',
       'Synced baseline list to 23 teams with CGBJ leading at 89.8%.',
-    ],
-  },
-  {
-    version: 'v1.0.19',
-    dateTr: '26 Kasım 2026',
-    dateEn: 'November 26, 2026',
-    itemsTr: [
-      'Projeyi bitirmeye en yakın ve en çok hype alan #1 sıradaki ekibin yanına parlayan 🔥 HOT rozeti eklendi.',
-      'NotNozy ve otomatik eklenen yeni ekiplerin yanında YENİ rozeti görünür hale getirildi.',
-    ],
-    itemsEn: [
-      'Added a glowing 🔥 HOT badge to the #1 closest and most-hyped team.',
-      'Enabled the glowing NEW badge for NotNozy and newly discovered teams.',
     ],
   },
 ];
@@ -475,7 +473,13 @@ export default function HomePage() {
   }, [supabaseClient]);
 
   const leader = teams[0] || FALLBACK_TEAMS[0];
+  const secondTeam = teams[1] || FALLBACK_TEAMS[1];
+  const thirdTeam = teams[2] || FALLBACK_TEAMS[2];
   const openLeader = teams.find((t) => t.type === 'open') || leader;
+  const playableCount = useMemo(
+    () => teams.filter((t) => Number(t.progress) >= 50).length,
+    [teams]
+  );
   const peakFps = useMemo(() => extractPeakFps(teams), [teams]);
   const fpsPct = Math.min(100, Math.round((peakFps / 30) * 100));
 
@@ -490,8 +494,9 @@ export default function HomePage() {
         ? `The closest build (${leader.name} · ${leader.progress}%) is nearing completion, though there is no fixed ETA for a bug-free full playthrough.`
         : `The closest build (${leader.name} · ${leader.progress}%, peak ${peakFps} FPS) is progressing fast, but there is no firm ETA for a full 30+ FPS release. Rockstar's official PC version is rumored for early 2027.`;
 
-    const statusTr = `PortWatch üzerinde şu an ${totalEfforts} girişim takip ediliyor ve ${bootingCount}'si oyunu başlatabiliyor. Genel lider ${leader.name} (%${leader.progress} · ${localizeDynamicText(leader.fps, 'tr')}), açık kaynak lideri ise ${openLeader.name} (%${openLeader.progress}). İlk 3 ortalaması %${top3Avg}.`;
-    const statusEn = `${totalEfforts} efforts are currently tracked on PortWatch, with ${bootingCount} booting GTA VI. Overall leader is ${leader.name} (${leader.progress}% · ${localizeDynamicText(leader.fps, 'en')}), and ${openLeader.name} (${openLeader.progress}%) leads open source. Top-3 average is ${top3Avg}%.`;
+    const statusTr = `PortWatch üzerinden gelen son canlı verilere göre ${totalEfforts} girişimden ${bootingCount}'si oyunu başlatabiliyor ve ${playableCount} ekip "Oynanabilir" barajını geçmiş durumda. Zirvedeki #1 ${leader.name} (%${leader.progress}), açılış ve ilk yarı görevlerini geçip ${localizeDynamicText(leader.fps, 'tr')} civarı akıcı görüntü alarak videosunu paylaştı. Hemen arkasında #2 ${secondTeam.name} (%${secondTeam.progress} · ${localizeDynamicText(secondTeam.fps, 'tr')}) ve #3 ${thirdTeam.name} (%${thirdTeam.progress} · ${localizeDynamicText(thirdTeam.fps, 'tr')}) canlı yayınlarla ilerliyor. Kodu herkese açık tarafta ise ${openLeader.name} (%${openLeader.progress} · ${localizeDynamicText(openLeader.fps, 'tr')}) sesli ve uzun süre çökmeden oynanabilen yapıyla önde. Kısacası oyun siyah ekrandan çıkıp görev oynanabilen seviyeye geldi; geriye optimizasyon ve herkesin indirebileceği kararlı bir sürüm kaldı.`;
+
+    const statusEn = `According to live PortWatch data, ${bootingCount} out of ${totalEfforts} tracked efforts can boot GTA VI and ${playableCount} teams have crossed the "Playable" milestone. At the top, #1 ${leader.name} (${leader.progress}%) has cleared the intro into mid-story missions at ${localizeDynamicText(leader.fps, 'en')} with shared footage. Right behind, #2 ${secondTeam.name} (${secondTeam.progress}% · ${localizeDynamicText(secondTeam.fps, 'en')}) and #3 ${thirdTeam.name} (${thirdTeam.progress}% · ${localizeDynamicText(thirdTeam.fps, 'en')}) are pushing ahead on live streams. On the open-source side, ${openLeader.name} (${openLeader.progress}% · ${localizeDynamicText(openLeader.fps, 'en')}) leads with working audio and long crash-free sessions. In short, the game has moved past black screens into real mission gameplay—now it's about optimization and a stable public build.`;
 
     return [
       {
@@ -523,7 +528,7 @@ export default function HomePage() {
         live: true,
       },
     ];
-  }, [leader, openLeader, peakFps, totalEfforts, bootingCount, top3Avg]);
+  }, [leader, secondTeam, thirdTeam, openLeader, playableCount, peakFps, totalEfforts, bootingCount]);
 
   const fastestTeam = useMemo(() => {
     let best = leader;
@@ -970,7 +975,6 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* Merak Edilen Sorular Köşesi */}
         <section className={`rounded-2xl border p-4 space-y-2.5 ${theme.card}`}>
           <div className="flex items-center gap-2">
             <HelpCircle className={`w-4 h-4 ${theme.accentText} shrink-0`} />
