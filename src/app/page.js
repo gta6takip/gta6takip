@@ -27,7 +27,7 @@ import {
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
-const APP_VERSION = 'v1.0.37';
+const APP_VERSION = 'v1.0.38';
 const CHAT_COOLDOWN_SEC = 60;
 const CHAT_COOLDOWN_KEY = 'gta6takip_chat_cooldown_until';
 
@@ -163,6 +163,17 @@ const FALLBACK_NEWS = [
 
 const CHANGELOG = [
   {
+    version: 'v1.0.38',
+    dateTr: '26 Kasım 2026',
+    dateEn: 'November 26, 2026',
+    itemsTr: [
+      'Çevrimiçi menüsündeki ülke bayrakları anında görünecek şekilde iyileştirildi; İngilizce dil modundaki yüzde biçimleri (91.3%, 80%) düzeltildi.',
+    ],
+    itemsEn: [
+      'Fixed instant flag rendering in the Online countries popover and standardized English percentage formatting (91.3%, 80%).',
+    ],
+  },
+  {
     version: 'v1.0.37',
     dateTr: '26 Kasım 2026',
     dateEn: 'November 26, 2026',
@@ -195,17 +206,6 @@ const CHANGELOG = [
       'Locked all live team update timestamps to Turkey time (TRT / Europe/Istanbul).',
     ],
   },
-  {
-    version: 'v1.0.34',
-    dateTr: '26 Kasım 2026',
-    dateEn: 'November 26, 2026',
-    itemsTr: [
-      'Ekip kartlarındaki "YENİ" ibareleri kaldırıldı; her ekibin altına canlı "Son güncelleme" bilgisi eklendi.',
-    ],
-    itemsEn: [
-      'Removed "NEW" badges from team cards and added live "Last updated" timestamps.',
-    ],
-  },
 ];
 
 const COUNTRY_FALLBACK_NAMES = {
@@ -223,9 +223,34 @@ const COUNTRY_FALLBACK_NAMES = {
   CA: { tr: 'Kanada', en: 'Canada' },
 };
 
+const FlagTR = ({ className = 'w-4 h-3 rounded-[2px] shrink-0' }) => (
+  <svg viewBox="0 0 24 16" className={className} aria-hidden="true">
+    <rect width="24" height="16" fill="#E30A17" />
+    <circle cx="9.5" cy="8" r="4.2" fill="#FFFFFF" />
+    <circle cx="10.6" cy="8" r="3.4" fill="#E30A17" />
+    <polygon points="15.2,8 13.7,8.5 14.3,7 13.3,5.8 14.8,5.9" fill="#FFFFFF" />
+  </svg>
+);
+
+const FlagUS = ({ className = 'w-4 h-3 rounded-[2px] shrink-0' }) => (
+  <svg viewBox="0 0 24 16" className={className} aria-hidden="true">
+    <rect width="24" height="16" fill="#B22234" />
+    <rect y="2" width="24" height="2" fill="#FFFFFF" />
+    <rect y="6" width="24" height="2" fill="#FFFFFF" />
+    <rect y="10" width="24" height="2" fill="#FFFFFF" />
+    <rect y="14" width="24" height="2" fill="#FFFFFF" />
+    <rect width="10" height="9" fill="#3C3B6E" />
+  </svg>
+);
+
 const CountryFlag = ({ code }) => {
+  const [imgFailed, setImgFailed] = useState(false);
   const cc = String(code || '').trim().toLowerCase();
-  if (!/^[a-z]{2}$/.test(cc)) {
+
+  if (cc === 'tr') return <FlagTR className="w-5 h-3.5 rounded-[2px] shrink-0 shadow-sm" />;
+  if (cc === 'us') return <FlagUS className="w-5 h-3.5 rounded-[2px] shrink-0 shadow-sm" />;
+
+  if (!/^[a-z]{2}$/.test(cc) || imgFailed) {
     return <Globe className="w-4 h-4 opacity-75 shrink-0" aria-hidden="true" />;
   }
   return (
@@ -235,7 +260,8 @@ const CountryFlag = ({ code }) => {
       alt={cc.toUpperCase()}
       width={20}
       height={14}
-      loading="lazy"
+      loading="eager"
+      onError={() => setImgFailed(true)}
       className="w-5 h-3.5 rounded-[2px] object-cover shrink-0 shadow-sm"
     />
   );
@@ -312,26 +338,6 @@ function formatChatTime(iso) {
   });
 }
 
-const FlagTR = () => (
-  <svg viewBox="0 0 24 16" className="w-4 h-3 rounded-[2px] shrink-0" aria-hidden="true">
-    <rect width="24" height="16" fill="#E30A17" />
-    <circle cx="9.5" cy="8" r="4.2" fill="#FFFFFF" />
-    <circle cx="10.6" cy="8" r="3.4" fill="#E30A17" />
-    <polygon points="15.2,8 13.7,8.5 14.3,7 13.3,5.8 14.8,5.9" fill="#FFFFFF" />
-  </svg>
-);
-
-const FlagUS = () => (
-  <svg viewBox="0 0 24 16" className="w-4 h-3 rounded-[2px] shrink-0" aria-hidden="true">
-    <rect width="24" height="16" fill="#B22234" />
-    <rect y="2" width="24" height="2" fill="#FFFFFF" />
-    <rect y="6" width="24" height="2" fill="#FFFFFF" />
-    <rect y="10" width="24" height="2" fill="#FFFFFF" />
-    <rect y="14" width="24" height="2" fill="#FFFFFF" />
-    <rect width="10" height="9" fill="#3C3B6E" />
-  </svg>
-);
-
 const IconX = () => (
   <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 fill-current shrink-0" aria-hidden="true">
     <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
@@ -394,7 +400,8 @@ function localizeDynamicText(text, lang) {
     .replace(/Rumble Yayını/gi, 'Rumble Stream')
     .replace(/Açık Kaynak/gi, 'Open Source')
     .replace(/PortWatch Canlı/gi, 'PortWatch Live')
-    .replace(/4K İstem/gi, '4K Prompt');
+    .replace(/4K İstem/gi, '4K Prompt')
+    .replace(/%(\d+(?:[.,]\d+)?)/g, '$1%');
 }
 
 function cleanNestedParens(text) {
@@ -1228,7 +1235,7 @@ export default function HomePage() {
                   </span>
                   <span className="font-bold">{fastestTeam.name}</span>
                   <span className={isLight ? 'text-emerald-700 font-bold' : 'text-emerald-400 font-bold'}>
-                    %{fastestTeam.progress}
+                    {lang === 'tr' ? `%${fastestTeam.progress}` : `${fastestTeam.progress}%`}
                   </span>
                 </div>
               </div>
