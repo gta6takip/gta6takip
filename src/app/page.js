@@ -43,6 +43,7 @@ import {
 import { createClient } from '@supabase/supabase-js';
 
 const APP_VERSION = 'v1.1.0';
+const INITIAL_TEAMS_LIMIT = 5;
 const CHAT_COOLDOWN_SEC = 30;
 const CHAT_COOLDOWN_KEY = 'gta6takip_chat_cooldown_until';
 const CHAT_SOUND_KEY = 'gta6takip_chat_sound';
@@ -289,12 +290,12 @@ const CHANGELOG = [
     dateEn: 'November 27, 2026',
     itemsTr: [
       'Arayüz Cilası: Aktif Ekipler başlık ve arama çubuğu sıfır kaymalı 2 satırlı düzene alındı; tek tıkla "Kompakt / Detaylı" görünüm geçişi eklendi.',
-      'Masaüstü ve mobilde varsayılan İlk 10 ekip + "Tüm Ekipleri Göster" butonuyla Canlı Sohbete erişim kolaylaştırıldı.',
+      'Masaüstü ve mobilde varsayılan İlk 5 ekip + "Tüm Ekipleri Göster" butonuyla Canlı Sohbete ve SSS bölümüne erişim çok daha rahat hale getirildi.',
       'Ekip kartlarındaki ikincil etiketler sadeleştirildi ve üst özet kartına nefes alanı eklendi.',
     ],
     itemsEn: [
       'UI Polish: Moved Active Efforts header, search, and filters to a rock-solid 2-row layout and added a Compact / Detailed view toggle.',
-      'Defaulted both desktop and mobile to Top 10 teams with a "Show All Teams" toggle for quicker access to Live Chat.',
+      'Defaulted both desktop and mobile to Top 5 teams with a "Show All Teams" toggle for quicker access to Live Chat and FAQ.',
       'Softened secondary badge borders on team cards and improved top hero card spacing.',
     ],
   },
@@ -1419,7 +1420,7 @@ export default function HomePage() {
 
   const visibleTeams = useMemo(() => {
     if (showAllTeams || teamSearch.trim().length > 0) return filteredTeams;
-    return filteredTeams.slice(0, 10);
+    return filteredTeams.slice(0, INITIAL_TEAMS_LIMIT);
   }, [filteredTeams, showAllTeams, teamSearch]);
 
   const openCount = useMemo(
@@ -2254,7 +2255,7 @@ export default function HomePage() {
             )}
           </div>
 
-          {filteredTeams.length > 10 && teamSearch.trim().length === 0 && (
+          {filteredTeams.length > INITIAL_TEAMS_LIMIT && teamSearch.trim().length === 0 && (
             <div className="pt-1">
               <button
                 type="button"
@@ -2263,15 +2264,15 @@ export default function HomePage() {
               >
                 {showAllTeams ? (
                   <>
-                    <span>{lang === 'tr' ? 'İlk 10 Ekibi Göster' : 'Show Top 10 Only'}</span>
+                    <span>{lang === 'tr' ? 'İlk 5 Ekibi Göster' : 'Show Top 5 Only'}</span>
                     <ChevronUp className="w-4 h-4" />
                   </>
                 ) : (
                   <>
                     <span>
                       {lang === 'tr'
-                        ? `Tüm Ekipleri Göster (${filteredTeams.length - 10} ekip daha)`
-                        : `Show All Teams (${filteredTeams.length - 10} more)`}
+                        ? `Tüm Ekipleri Göster (${filteredTeams.length - INITIAL_TEAMS_LIMIT} ekip daha)`
+                        : `Show All Teams (${filteredTeams.length - INITIAL_TEAMS_LIMIT} more)`}
                     </span>
                     <ChevronDown className="w-4 h-4" />
                   </>
