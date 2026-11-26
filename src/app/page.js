@@ -1,912 +1,582 @@
 'use client';
 
-import React, { useState, useEffect, useMemo, useRef } from 'react';
-import {
-  RefreshCw,
-  ExternalLink,
-  ArrowUp,
-  ShieldAlert,
-  ChevronDown,
-  ChevronUp,
-  Flame,
-  Target,
-  TrendingUp,
-  X,
-  Check,
-  Share2,
-  Lock,
-  Code2,
-  Info,
-  HelpCircle,
-  MessageSquarePlus,
-  MessageCircle,
-  Send,
-  Globe,
-  Clock,
-} from 'lucide-react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { createClient } from '@supabase/supabase-js';
 
-const APP_VERSION = 'v1.0.36';
+const APP_VERSION = 'v1.0.37';
+const CHAT_COOLDOWN_SEC = 60;
+const CHAT_COOLDOWN_KEY = 'gta6takip_chat_cooldown_until';
+const CHAT_NICK_KEY = 'gta6takip_nick';
 
-const THEMES = {
-  vice: {
+// Supabase (sadece okuma + Realtime presence/chat için anon key)
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+const supabase =
+  supabaseUrl && supabaseAnonKey ? createClient(supabaseUrl, supabaseAnonKey) : null;
+
+// 5 Tema — Sıra: Vice Sunset (varsayılan) -> Açık -> Koyu -> Leonida Neon -> Ocean Drive
+const THEMES = [
+  {
     id: 'vice',
-    label: { tr: 'Vice Sunset', en: 'Vice Sunset' },
-    dot: '#ec4899',
-    bg: 'bg-[#140b1e] text-pink-50',
-    card: 'bg-[#1e112d]/95 border-pink-500/25',
-    menuBg: 'bg-[#1e112d] border-pink-500/35',
-    subCard: 'bg-[#170c24] border-pink-500/20',
-    muted: 'text-pink-200/70',
+    labelTr: 'Vice Sunset',
+    labelEn: 'Vice Sunset',
+    dot: 'bg-gradient-to-r from-pink-500 to-amber-400',
+    bg: 'bg-[#12091c] text-slate-100',
+    header: 'bg-[#180d26]/95 border-pink-500/25',
+    card: 'bg-[#1e1030]/90 border-pink-500/20',
+    cardSoft: 'bg-[#26143d]/85 border-pink-400/20',
+    dropdown: 'bg-[#1c0f2e] border-pink-500/35 text-slate-100 shadow-2xl',
+    input: 'bg-[#130920] border-pink-500/30 text-slate-100 placeholder-slate-400',
     accentText: 'text-pink-400',
-    accentBg: 'bg-pink-500',
-    accentGradient: 'from-pink-500 via-fuchsia-400 to-amber-400',
-    btnPrimary: 'bg-gradient-to-r from-pink-500 to-amber-400 text-zinc-950 hover:brightness-110',
-    pill: 'bg-pink-950/60 text-pink-200 border-pink-500/30',
-    sparkStroke: '#f472b6',
-    sparkStop: 'rgba(244, 114, 182, 0.32)',
+    accentBg: 'bg-gradient-to-r from-pink-500 to-amber-500 text-white',
+    badgeOpen: 'bg-emerald-500/20 text-emerald-300 border-emerald-400/35',
+    badgeClosed: 'bg-amber-500/20 text-amber-300 border-amber-400/35',
+    badgeVerified: 'bg-sky-500/20 text-sky-300 border-sky-400/35',
+    muted: 'text-slate-300/80',
+    pill: 'bg-[#2a1742] border-pink-500/30 text-slate-100 hover:bg-[#351d52]',
+    progressTrack: 'bg-white/10',
+    progressBar: 'bg-gradient-to-r from-pink-500 via-fuchsia-400 to-amber-400',
+    chatBubble: 'bg-[#26143d] border-pink-500/20',
+    replyBox: 'bg-[#160b26] border-l-2 border-pink-400',
   },
-  light: {
+  {
     id: 'light',
-    label: { tr: 'Açık', en: 'Light' },
-    dot: '#ea580c',
-    bg: 'bg-zinc-50 text-zinc-900',
-    card: 'bg-white border-zinc-200 shadow-sm',
-    menuBg: 'bg-white border-zinc-200',
-    subCard: 'bg-zinc-100/80 border-zinc-200',
-    muted: 'text-zinc-600',
-    accentText: 'text-orange-600',
-    accentBg: 'bg-orange-600',
-    accentGradient: 'from-orange-600 via-amber-500 to-yellow-500',
-    btnPrimary: 'bg-gradient-to-r from-orange-600 to-amber-500 text-white hover:brightness-105',
-    pill: 'bg-zinc-100 text-zinc-700 border-zinc-300',
-    sparkStroke: '#ea580c',
-    sparkStop: 'rgba(234, 88, 12, 0.22)',
+    labelTr: 'Açık',
+    labelEn: 'Light',
+    dot: 'bg-gradient-to-r from-sky-500 to-indigo-500',
+    bg: 'bg-slate-50 text-slate-900',
+    header: 'bg-white/95 border-slate-200',
+    card: 'bg-white border-slate-200 shadow-sm',
+    cardSoft: 'bg-slate-100/90 border-slate-200',
+    dropdown: 'bg-white border-slate-300 text-slate-900 shadow-2xl',
+    input: 'bg-white border-slate-300 text-slate-900 placeholder-slate-500',
+    accentText: 'text-indigo-600',
+    accentBg: 'bg-indigo-600 hover:bg-indigo-700 text-white',
+    badgeOpen: 'bg-emerald-100 text-emerald-900 border-emerald-400',
+    badgeClosed: 'bg-amber-100 text-amber-900 border-amber-400',
+    badgeVerified: 'bg-sky-100 text-sky-900 border-sky-400',
+    muted: 'text-slate-600',
+    pill: 'bg-slate-100 border-slate-300 text-slate-800 hover:bg-slate-200',
+    progressTrack: 'bg-slate-200',
+    progressBar: 'bg-gradient-to-r from-indigo-600 to-sky-500',
+    chatBubble: 'bg-slate-100 border-slate-200',
+    replyBox: 'bg-white border-l-2 border-indigo-500',
   },
-  dark: {
+  {
     id: 'dark',
-    label: { tr: 'Koyu', en: 'Dark' },
-    dot: '#f97316',
-    bg: 'bg-[#0b0d12] text-zinc-100',
-    card: 'bg-[#131722] border-zinc-800/90',
-    menuBg: 'bg-[#131722] border-zinc-700',
-    subCard: 'bg-[#0f131c] border-zinc-800/80',
-    muted: 'text-zinc-400',
-    accentText: 'text-orange-400',
-    accentBg: 'bg-orange-500',
-    accentGradient: 'from-orange-500 via-amber-400 to-yellow-400',
-    btnPrimary: 'bg-gradient-to-r from-orange-500 to-amber-500 text-zinc-950 hover:brightness-110',
-    pill: 'bg-zinc-800/80 text-zinc-300 border-zinc-700/70',
-    sparkStroke: '#fb923c',
-    sparkStop: 'rgba(251, 146, 60, 0.32)',
-  },
-  leonida: {
-    id: 'leonida',
-    label: { tr: 'Leonida Neon', en: 'Leonida Neon' },
-    dot: '#22d3ee',
-    bg: 'bg-[#07111a] text-cyan-50',
-    card: 'bg-[#0d1b28] border-cyan-500/25',
-    menuBg: 'bg-[#0d1b28] border-cyan-500/35',
-    subCard: 'bg-[#09141f] border-cyan-500/20',
-    muted: 'text-cyan-200/70',
-    accentText: 'text-cyan-400',
-    accentBg: 'bg-cyan-400',
-    accentGradient: 'from-cyan-400 via-teal-300 to-emerald-400',
-    btnPrimary: 'bg-gradient-to-r from-cyan-400 to-emerald-400 text-zinc-950 hover:brightness-110',
-    pill: 'bg-cyan-950/60 text-cyan-200 border-cyan-500/30',
-    sparkStroke: '#22d3ee',
-    sparkStop: 'rgba(34, 211, 238, 0.30)',
-  },
-  ocean: {
-    id: 'ocean',
-    label: { tr: 'Ocean Drive', en: 'Ocean Drive' },
-    dot: '#60a5fa',
-    bg: 'bg-[#090f1d] text-slate-100',
-    card: 'bg-[#10192d] border-blue-500/25',
-    menuBg: 'bg-[#10192d] border-blue-500/35',
-    subCard: 'bg-[#0c1324] border-blue-500/20',
+    labelTr: 'Koyu',
+    labelEn: 'Dark',
+    dot: 'bg-gradient-to-r from-zinc-500 to-slate-300',
+    bg: 'bg-[#0b0d12] text-slate-100',
+    header: 'bg-[#11141c]/95 border-slate-800',
+    card: 'bg-[#141822] border-slate-800',
+    cardSoft: 'bg-[#1a202e] border-slate-700/70',
+    dropdown: 'bg-[#141822] border-slate-700 text-slate-100 shadow-2xl',
+    input: 'bg-[#0e1118] border-slate-700 text-slate-100 placeholder-slate-400',
+    accentText: 'text-sky-400',
+    accentBg: 'bg-sky-600 hover:bg-sky-500 text-white',
+    badgeOpen: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/35',
+    badgeClosed: 'bg-amber-500/20 text-amber-300 border-amber-500/35',
+    badgeVerified: 'bg-sky-500/20 text-sky-300 border-sky-500/35',
     muted: 'text-slate-400',
-    accentText: 'text-blue-400',
-    accentBg: 'bg-blue-500',
-    accentGradient: 'from-blue-400 via-indigo-400 to-violet-400',
-    btnPrimary: 'bg-gradient-to-r from-blue-400 to-violet-400 text-zinc-950 hover:brightness-110',
-    pill: 'bg-blue-950/60 text-blue-200 border-blue-500/30',
-    sparkStroke: '#60a5fa',
-    sparkStop: 'rgba(96, 165, 250, 0.30)',
-  },
-};
-
-const MILESTONES = [
-  { key: 'groundwork', min: 1, tr: 'Altyapı', en: 'Groundwork' },
-  { key: 'exe', min: 10, tr: 'Exe Çalışıyor', en: 'Exe runs' },
-  { key: 'frame', min: 20, tr: 'İlk Kare', en: 'First frame' },
-  { key: 'menu', min: 30, tr: 'Ana Menü', en: 'Main menu' },
-  { key: 'world', min: 40, tr: 'Oyun Dünyası', en: 'In the world' },
-  { key: 'playable', min: 50, tr: 'Oynanabilir', en: 'Playable' },
-];
-
-const FALLBACK_TEAMS = [
-  {
-    name: 'Belobug',
-    progress: 91.3,
-    fps: '22 FPS',
-    gpu: 'AMD',
-    type: 'open',
-    stage: 'Oynanabilir • Hikâye %80',
-    updatedAt: '2026-11-26T00:57:17Z',
-    url: 'https://github.com/Belobug/VIctory-Belobug-AMD',
-    summaryTr: 'Belobug şu an %91.3 ile genel lider · 22 FPS · AMD (hikâye ilerlemesi %80, görüntü kalitesi %80). Açık kaynak (Belobug/VIctory-Belobug-AMD).',
-    summaryEn: 'Belobug leads at 91.3% (22 FPS, AMD, 80% story, 80% rendering) as an open-source VIctory fork on GitHub.',
-  },
-  { name: 'CGBJ', progress: 89.6, fps: '25 FPS', gpu: 'Özel Yapı', type: 'private', stage: 'Oynanabilir • Hikâye %80', updatedAt: '2026-11-26', url: 'https://portwatch-vi.xyz/#race' },
-  { name: 'NotNozy', progress: 87.1, fps: '16 FPS', gpu: 'AMD', type: 'private', stage: 'Oynanabilir • Hikâye %80', updatedAt: '2026-11-26', url: 'https://portwatch-vi.xyz/#race' },
-  { name: 'darkworldhm', progress: 84.8, fps: '15 FPS', gpu: 'NVIDIA', type: 'private', stage: 'Oynanabilir • İlk Perde', updatedAt: '2026-11-26', url: 'https://portwatch-vi.xyz/#race' },
-  { name: 'Doomsday', progress: 82.1, fps: '4 FPS', gpu: 'AMD / NVIDIA', type: 'private', stage: 'Oynanabilir • İlk Perde', updatedAt: '2026-11-26', url: 'https://portwatch-vi.xyz/#race' },
-  { name: 'AvatarManz', progress: 81.8, fps: '16 FPS', gpu: 'AMD', type: 'open', stage: 'Oynanabilir • İlk Perde', updatedAt: '2026-11-26', url: 'https://github.com/avatarmanz/VIctory-7900XTX' },
-  { name: 'DexNom', progress: 77.4, fps: '3 FPS', gpu: 'AMD', type: 'open', stage: 'Oynanabilir • İlk Perde', updatedAt: '2026-11-25', url: 'https://github.com/DexNom/VIctory' },
-  { name: 'suri', progress: 73.8, fps: '3 FPS', gpu: 'Özel Yapı', type: 'private', stage: 'Oynanabilir • İlk Perde', updatedAt: '2026-11-25', url: 'https://portwatch-vi.xyz/#race' },
-  { name: 'Kelvaroq', progress: 68.8, fps: '10 FPS', gpu: 'NVIDIA', type: 'open', stage: 'Oynanabilir', updatedAt: '2026-11-26', url: 'https://github.com/stellarr-studio/kelvaroq' },
-  { name: 'hyphennn', progress: 59.8, fps: '3 FPS', gpu: 'NVIDIA', type: 'open', stage: 'Oynanabilir', updatedAt: '2026-11-25', url: 'https://github.com/fxceless/victory-fork' },
-  { name: 'Uilian', progress: 59.6, fps: '4 FPS', gpu: 'NVIDIA', type: 'open', stage: 'Oynanabilir', updatedAt: '2026-11-25', url: 'https://github.com/uiliannn/VItoriaBr' },
-  { name: 'VIctory', progress: 50.3, fps: '1 FPS', gpu: 'AMD', type: 'open', stage: 'Oynanabilir', updatedAt: '2026-11-26', url: 'https://github.com/Marvisak/VIctory' },
-  { name: 'XCL', progress: 35.0, fps: 'Ana Menü', gpu: 'AMD / NVIDIA', type: 'open', stage: 'Ana Menü', updatedAt: '2026-11-25', url: 'https://github.com/xcl-dev/xcl' },
-];
-
-const FALLBACK_NEWS = [
-  { tagTr: 'REKOR', tagEn: 'RECORD', tr: 'Belobug %91.3 ile yeni genel lider (22 FPS · AMD)!', en: 'Belobug leads overall at 91.3% (22 FPS · AMD)!' },
-  { tagTr: 'AÇIK KAYNAK', tagEn: 'OPEN SOURCE', tr: 'Açık kaynak lideri Belobug (%91.3); AvatarManz (%81.8) ve DexNom (%77.4) takipte.', en: 'Belobug (91.3%) leads open source; AvatarManz (81.8%) & DexNom (77.4%) follow.' },
-  { tagTr: 'GÜNCEL', tagEn: 'LIVE', tr: 'PortWatch üzerinde 40 girişim takip ediliyor; 18 proje oyunu başlatabiliyor (İlk 3 ort. %89.3).', en: '40 total efforts tracked on PortWatch, with 18 booting GTA VI (Top-3 avg 89.3%).' },
-];
-
-const CHANGELOG = [
-  {
-    version: 'v1.0.36',
-    dateTr: '26 Kasım 2026',
-    dateEn: 'November 26, 2026',
-    itemsTr: [
-      'Sunucu taraflı gelişmiş küfür/link filtresi ve spam korumalı açılır-kapanır "Canlı Sohbet" kutusu eklendi (tarayıcıdan doğrudan yazma kapalı).',
-    ],
-    itemsEn: [
-      'Added a collapsible "Live Chat" box protected by server-side profanity/link filtering, spam rate limiting, and locked Supabase RLS.',
-    ],
+    pill: 'bg-[#1b2130] border-slate-700 text-slate-100 hover:bg-[#232b3e]',
+    progressTrack: 'bg-slate-800',
+    progressBar: 'bg-gradient-to-r from-sky-500 to-cyan-400',
+    chatBubble: 'bg-[#1a202e] border-slate-700/70',
+    replyBox: 'bg-[#10141e] border-l-2 border-sky-400',
   },
   {
-    version: 'v1.0.35',
-    dateTr: '26 Kasım 2026',
-    dateEn: 'November 26, 2026',
-    itemsTr: [
-      'Tüm ekip güncelleme saatleri otomatik olarak sabit Türkiye saatine (TSİ / Europe/Istanbul) uyarlandı.',
-    ],
-    itemsEn: [
-      'Locked all live team update timestamps to Turkey time (TRT / Europe/Istanbul).',
-    ],
+    id: 'neon',
+    labelTr: 'Leonida Neon',
+    labelEn: 'Leonida Neon',
+    dot: 'bg-gradient-to-r from-fuchsia-500 to-cyan-400',
+    bg: 'bg-[#090614] text-fuchsia-50',
+    header: 'bg-[#100a21]/95 border-fuchsia-500/30',
+    card: 'bg-[#140d29] border-fuchsia-500/25',
+    cardSoft: 'bg-[#1c1238] border-cyan-400/25',
+    dropdown: 'bg-[#140d29] border-fuchsia-500/40 text-fuchsia-50 shadow-2xl',
+    input: 'bg-[#0d081c] border-fuchsia-500/35 text-fuchsia-50 placeholder-fuchsia-300/50',
+    accentText: 'text-cyan-400',
+    accentBg: 'bg-gradient-to-r from-fuchsia-600 to-cyan-500 text-white',
+    badgeOpen: 'bg-emerald-500/20 text-emerald-300 border-emerald-400/40',
+    badgeClosed: 'bg-amber-500/20 text-amber-300 border-amber-400/40',
+    badgeVerified: 'bg-cyan-500/20 text-cyan-300 border-cyan-400/40',
+    muted: 'text-fuchsia-200/75',
+    pill: 'bg-[#1e133b] border-fuchsia-500/35 text-fuchsia-50 hover:bg-[#291a4f]',
+    progressTrack: 'bg-white/10',
+    progressBar: 'bg-gradient-to-r from-fuchsia-500 to-cyan-400',
+    chatBubble: 'bg-[#1c1238] border-fuchsia-500/25',
+    replyBox: 'bg-[#100924] border-l-2 border-cyan-400',
   },
   {
-    version: 'v1.0.34',
-    dateTr: '26 Kasım 2026',
-    dateEn: 'November 26, 2026',
-    itemsTr: [
-      'Ekip kartlarındaki "YENİ" ibareleri kaldırıldı; her ekibin altına canlı "Son güncelleme" bilgisi eklendi.',
-    ],
-    itemsEn: [
-      'Removed "NEW" badges from team cards and added live "Last updated" timestamps.',
-    ],
+    id: 'ocean',
+    labelTr: 'Ocean Drive',
+    labelEn: 'Ocean Drive',
+    dot: 'bg-gradient-to-r from-teal-400 to-blue-500',
+    bg: 'bg-[#06151c] text-teal-50',
+    header: 'bg-[#091e28]/95 border-teal-500/25',
+    card: 'bg-[#0c2530] border-teal-500/20',
+    cardSoft: 'bg-[#113140] border-teal-400/20',
+    dropdown: 'bg-[#0c2530] border-teal-500/40 text-teal-50 shadow-2xl',
+    input: 'bg-[#071921] border-teal-500/30 text-teal-50 placeholder-teal-200/50',
+    accentText: 'text-teal-300',
+    accentBg: 'bg-gradient-to-r from-teal-500 to-sky-500 text-white',
+    badgeOpen: 'bg-emerald-500/20 text-emerald-300 border-emerald-400/35',
+    badgeClosed: 'bg-amber-500/20 text-amber-300 border-amber-400/35',
+    badgeVerified: 'bg-sky-500/20 text-sky-300 border-sky-400/35',
+    muted: 'text-teal-100/75',
+    pill: 'bg-[#123342] border-teal-500/30 text-teal-50 hover:bg-[#174154]',
+    progressTrack: 'bg-white/10',
+    progressBar: 'bg-gradient-to-r from-teal-400 to-sky-400',
+    chatBubble: 'bg-[#113140] border-teal-500/20',
+    replyBox: 'bg-[#081b24] border-l-2 border-teal-300',
   },
 ];
 
-const COUNTRY_FALLBACK_NAMES = {
-  TR: { tr: 'Türkiye', en: 'Turkey' },
-  DE: { tr: 'Almanya', en: 'Germany' },
-  IE: { tr: 'İrlanda', en: 'Ireland' },
-  US: { tr: 'ABD', en: 'United States' },
-  GB: { tr: 'Birleşik Krallık', en: 'United Kingdom' },
-  NL: { tr: 'Hollanda', en: 'Netherlands' },
-  FR: { tr: 'Fransa', en: 'France' },
-  AZ: { tr: 'Azerbaycan', en: 'Azerbaijan' },
-  PL: { tr: 'Polonya', en: 'Poland' },
-  RU: { tr: 'Rusya', en: 'Russia' },
-  BR: { tr: 'Brezilya', en: 'Brazil' },
-  CA: { tr: 'Kanada', en: 'Canada' },
-};
-
-const CountryFlag = ({ code }) => {
-  const cc = String(code || '').trim().toLowerCase();
-  if (!/^[a-z]{2}$/.test(cc)) {
-    return <Globe className="w-4 h-4 opacity-75 shrink-0" aria-hidden="true" />;
-  }
+// Inline SVG Bayraklar (TR / EN)
+function TrFlagSvg({ className = 'w-4 h-3 rounded-[2px]' }) {
   return (
-    <img
-      src={`https://flagcdn.com/w40/${cc}.png`}
-      srcSet={`https://flagcdn.com/w80/${cc}.png 2x`}
-      alt={cc.toUpperCase()}
-      width={20}
-      height={14}
-      loading="lazy"
-      className="w-5 h-3.5 rounded-[2px] object-cover shrink-0 shadow-sm"
-    />
+    <svg viewBox="0 0 36 24" className={className} aria-hidden="true">
+      <rect width="36" height="24" fill="#E30A17" />
+      <circle cx="14" cy="12" r="6" fill="#fff" />
+      <circle cx="15.5" cy="12" r="4.8" fill="#E30A17" />
+      <polygon
+        fill="#fff"
+        points="21.5,12 23.2,12.6 22.1,11.1 22.1,12.9 23.2,11.4"
+        transform="translate(-1.5,0) scale(1.1)"
+      />
+    </svg>
   );
+}
+
+function EnFlagSvg({ className = 'w-4 h-3 rounded-[2px]' }) {
+  return (
+    <svg viewBox="0 0 36 24" className={className} aria-hidden="true">
+      <rect width="36" height="24" fill="#012169" />
+      <path d="M0,0 L36,24 M36,0 L0,24" stroke="#fff" strokeWidth="4" />
+      <path d="M0,0 L36,24 M36,0 L0,24" stroke="#C8102E" strokeWidth="2" />
+      <path d="M18,0 V24 M0,12 H36" stroke="#fff" strokeWidth="6" />
+      <path d="M18,0 V24 M0,12 H36" stroke="#C8102E" strokeWidth="3.5" />
+    </svg>
+  );
+}
+
+// Ülke adları (TR / EN)
+const COUNTRY_NAMES = {
+  TR: { tr: 'Türkiye', en: 'Turkey' },
+  US: { tr: 'ABD', en: 'USA' },
+  DE: { tr: 'Almanya', en: 'Germany' },
+  GB: { tr: 'Birleşik Krallık', en: 'United Kingdom' },
+  FR: { tr: 'Fransa', en: 'France' },
+  NL: { tr: 'Hollanda', en: 'Netherlands' },
+  AZ: { tr: 'Azerbaycan', en: 'Azerbaijan' },
+  BR: { tr: 'Brezilya', en: 'Brazil' },
+  RU: { tr: 'Rusya', en: 'Russia' },
+  CA: { tr: 'Kanada', en: 'Canada' },
+  PL: { tr: 'Polonya', en: 'Poland' },
+  ES: { tr: 'İspanya', en: 'Spain' },
+  IT: { tr: 'İtalya', en: 'Italy' },
+  XX: { tr: 'Diğer', en: 'Other' },
 };
 
-function getCountryLabel(code, lang) {
-  const cc = String(code || '').trim().toUpperCase();
-  if (!/^[A-Z]{2}$/.test(cc)) return lang === 'tr' ? 'Diğer' : 'Other';
-  try {
-    if (typeof Intl !== 'undefined' && Intl.DisplayNames) {
-      const dn = new Intl.DisplayNames([lang === 'tr' ? 'tr' : 'en'], { type: 'region' });
-      const name = dn.of(cc);
-      if (name) return name;
-    }
-  } catch {
-    // Fallback listeye geç
-  }
-  return COUNTRY_FALLBACK_NAMES[cc]?.[lang] || cc;
-}
+// Her zaman Türkiye Saati (Europe/Istanbul — TSİ / TRT) formatlayıcı
+function formatIstanbulTime(isoString, lang = 'tr', includeDate = true) {
+  if (!isoString) return lang === 'tr' ? 'Bilinmiyor' : 'Unknown';
+  const date = new Date(isoString);
+  if (Number.isNaN(date.getTime())) return lang === 'tr' ? 'Bilinmiyor' : 'Unknown';
 
-function guessClientCountry() {
-  try {
-    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
-    if (tz.includes('Istanbul')) return 'TR';
-    const navLang = (typeof navigator !== 'undefined' && navigator.language) || '';
-    const parts = navLang.split('-');
-    if (parts[1] && /^[A-Za-z]{2}$/.test(parts[1])) return parts[1].toUpperCase();
-    if (parts[0]?.toLowerCase() === 'tr') return 'TR';
-  } catch {
-    // Varsayılan TR
-  }
-  return 'TR';
-}
-
-function formatTeamUpdated(rawDate, lang) {
-  if (!rawDate) return '';
-  const str = String(rawDate).trim();
-  const locale = lang === 'tr' ? 'tr-TR' : 'en-US';
-  if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
-    const d = new Date(`${str}T12:00:00Z`);
-    if (Number.isNaN(d.getTime())) return str;
-    return d.toLocaleDateString(locale, {
-      timeZone: 'Europe/Istanbul',
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-    });
-  }
-  const d = new Date(str);
-  if (Number.isNaN(d.getTime())) return str;
-  const datePart = d.toLocaleDateString(locale, {
-    timeZone: 'Europe/Istanbul',
-    day: 'numeric',
-    month: 'short',
-  });
-  const timePart = d.toLocaleTimeString(locale, {
-    timeZone: 'Europe/Istanbul',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-  });
-  return `${datePart} · ${timePart} ${lang === 'tr' ? 'TSİ' : 'TRT'}`;
-}
-
-function formatChatTime(iso) {
-  if (!iso) return '';
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return '';
-  return d.toLocaleTimeString('tr-TR', {
-    timeZone: 'Europe/Istanbul',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-  });
-}
-
-const FlagTR = () => (
-  <svg viewBox="0 0 24 16" className="w-4 h-3 rounded-[2px] shrink-0" aria-hidden="true">
-    <rect width="24" height="16" fill="#E30A17" />
-    <circle cx="9.5" cy="8" r="4.2" fill="#FFFFFF" />
-    <circle cx="10.6" cy="8" r="3.4" fill="#E30A17" />
-    <polygon points="15.2,8 13.7,8.5 14.3,7 13.3,5.8 14.8,5.9" fill="#FFFFFF" />
-  </svg>
-);
-
-const FlagUS = () => (
-  <svg viewBox="0 0 24 16" className="w-4 h-3 rounded-[2px] shrink-0" aria-hidden="true">
-    <rect width="24" height="16" fill="#B22234" />
-    <rect y="2" width="24" height="2" fill="#FFFFFF" />
-    <rect y="6" width="24" height="2" fill="#FFFFFF" />
-    <rect y="10" width="24" height="2" fill="#FFFFFF" />
-    <rect y="14" width="24" height="2" fill="#FFFFFF" />
-    <rect width="10" height="9" fill="#3C3B6E" />
-  </svg>
-);
-
-const IconX = () => (
-  <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 fill-current shrink-0" aria-hidden="true">
-    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-  </svg>
-);
-
-const IconWhatsApp = () => (
-  <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 fill-current shrink-0 text-emerald-400" aria-hidden="true">
-    <path d="M12.031 2c-5.516 0-9.969 4.453-9.969 9.969 0 1.766.469 3.484 1.344 5l-1.406 5.156 5.281-1.375c1.469.797 3.109 1.219 4.75 1.219 5.516 0 9.969-4.453 9.969-9.969S17.547 2 12.031 2zm5.813 14.125c-.25.703-1.438 1.344-2 1.422-.516.078-1.172.109-1.891-.125-.438-.141-1-.328-1.719-.641-3.016-1.297-4.984-4.328-5.141-4.531-.156-.203-1.234-1.641-1.234-3.125s.781-2.219 1.063-2.516c.281-.297.609-.375.813-.375.203 0 .406.016.578.016.188 0 .438-.078.688.516.25.609.859 2.094.938 2.25.078.156.125.344.031.547-.094.203-.156.328-.297.5-.141.172-.313.391-.438.516-.156.141-.313.297-.141.594.172.297.781 1.281 1.672 2.078 1.156 1.031 2.125 1.344 2.422 1.5.297.156.469.125.641-.078.172-.203.734-.859.938-1.156.203-.297.406-.25.672-.156.266.094 1.703.813 2 .953.297.156.484.219.563.344.078.125.078.719-.172 1.422z" />
-  </svg>
-);
-
-function localizeDynamicText(text, lang) {
-  if (!text) return '';
-  if (lang === 'tr') {
-    return String(text)
-      .replace(/Playable/gi, 'Oynanabilir')
-      .replace(/Free Roam/gi, 'Serbest Dolaşım')
-      .replace(/First Act/gi, 'İlk Perde')
-      .replace(/Private Build/gi, 'Özel Yapı')
-      .replace(/Opening Scene/gi, 'Açılış Sahnesi')
-      .replace(/Prologue Cleared/gi, 'Önsöz Geçildi')
-      .replace(/Prison Scene/gi, 'Hapishane Sahnesi')
-      .replace(/In the World/gi, 'Oyun Dünyası')
-      .replace(/Main Menu/gi, 'Ana Menü')
-      .replace(/First Frame/gi, 'İlk Kare')
-      .replace(/Exe Runs/gi, 'Exe Çalışıyor')
-      .replace(/Groundwork/gi, 'Altyapı')
-      .replace(/Compatibility layer/gi, 'Uyumluluk Katmanı')
-      .replace(/Static recompilation/gi, 'Statik Recomp')
-      .replace(/RTX 50 Series/gi, 'RTX 50 Serisi');
-  }
-  return String(text)
-    .replace(/Oynanabilir/gi, 'Playable')
-    .replace(/Serbest Dolaşım/gi, 'Free Roam')
-    .replace(/Hikâye Yarısı/gi, 'Half the Story')
-    .replace(/Hikâye/gi, 'Story')
-    .replace(/İlk Perde/gi, 'First Act')
-    .replace(/İlk Sahne/gi, 'First Scene')
-    .replace(/\(Sesli\)/gi, '(With Sound)')
-    .replace(/Ara Sahne/gi, 'Cutscenes')
-    .replace(/Menü/gi, 'Menu')
-    .replace(/Özel Yapı/gi, 'Private Build')
-    .replace(/Açılış Sahnesi/gi, 'Opening Scene')
-    .replace(/Önsöz Geçildi/gi, 'Prologue Cleared')
-    .replace(/Hapishane Sahnesi/gi, 'Prison Scene')
-    .replace(/Oyun Dünyası/gi, 'In the World')
-    .replace(/Ana Menü/gi, 'Main Menu')
-    .replace(/İlk Kare/gi, 'First Frame')
-    .replace(/Exe Çalışıyor/gi, 'Exe Runs')
-    .replace(/Altyapı/gi, 'Groundwork')
-    .replace(/RTX 50 Serisi/gi, 'RTX 50 Series')
-    .replace(/Bağımsız/gi, 'Independent')
-    .replace(/Ön Aşama/gi, 'Early Stage')
-    .replace(/GDK Örnekleri/gi, 'GDK Samples')
-    .replace(/HLE Emülatör/gi, 'HLE Emulator')
-    .replace(/Statik Recomp/gi, 'Static Recomp')
-    .replace(/Tanılama/gi, 'Diagnostics')
-    .replace(/C# Katmanı/gi, 'C# Layer')
-    .replace(/Rumble Yayını/gi, 'Rumble Stream')
-    .replace(/Açık Kaynak/gi, 'Open Source')
-    .replace(/PortWatch Canlı/gi, 'PortWatch Live')
-    .replace(/4K İstem/gi, '4K Prompt');
-}
-
-function cleanNestedParens(text) {
-  return String(text || '').replace(/\(([^()]+)\s*\(([^()]+)\)\)/g, '($1 · $2)');
-}
-
-function extractPeakFps(teams) {
-  let max = 0;
-  for (const t of teams) {
-    if (Number(t.progress) < 50) continue;
-    const cleaned = String(t.fps || '')
-      .toLowerCase()
-      .replace(/\(\s*\d+[^)]*\)/g, ' ');
-    if (cleaned.includes('men') || cleaned.includes('ara sahne') || cleaned.includes('cutscene')) continue;
-    const matches = cleaned.match(/\d+/g);
-    if (matches) {
-      for (const m of matches) {
-        const val = Number(m);
-        if (val > max && val <= 60) {
-          max = val;
-        }
+  const locale = lang === 'tr' ? 'tr-TR' : 'en-GB';
+  const options = includeDate
+    ? {
+        timeZone: 'Europe/Istanbul',
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
       }
-    }
-  }
-  return max > 0 ? max : 25;
-}
+    : {
+        timeZone: 'Europe/Istanbul',
+        hour: '2-digit',
+        minute: '2-digit',
+      };
 
-function getNewsBadgeStyle(tagRaw, isLight) {
-  const tag = String(tagRaw || '').toUpperCase();
-  if (tag.includes('REKOR') || tag.includes('RECORD')) {
-    return isLight
-      ? 'bg-amber-100 text-amber-900 border-amber-300'
-      : 'bg-amber-500/20 text-amber-300 border-amber-400/50 shadow-[0_0_12px_rgba(251,191,36,0.45)]';
-  }
-  if (tag.includes('AÇIK') || tag.includes('OPEN')) {
-    return isLight
-      ? 'bg-emerald-100 text-emerald-900 border-emerald-300'
-      : 'bg-emerald-500/20 text-emerald-300 border-emerald-400/50 shadow-[0_0_12px_rgba(52,211,153,0.45)]';
-  }
-  return isLight
-    ? 'bg-red-100 text-red-800 border-red-300 animate-pulse'
-    : 'bg-red-500/20 text-red-300 border-red-400/50 shadow-[0_0_12px_rgba(248,113,113,0.5)] animate-pulse';
+  const formatted = new Intl.DateTimeFormat(locale, options).format(date);
+  return `${formatted} ${lang === 'tr' ? 'TSİ' : 'TRT'}`;
 }
 
 export default function HomePage() {
+  const [themeId, setThemeId] = useState('vice');
   const [lang, setLang] = useState('tr');
-  const [themeKey, setThemeKey] = useState('vice');
-  const [themeMenuOpen, setThemeMenuOpen] = useState(false);
-  const [onlineMenuOpen, setOnlineMenuOpen] = useState(false);
-  const [changelogOpen, setChangelogOpen] = useState(false);
-  const [radarOpen, setRadarOpen] = useState(false);
-  const [openFaqIdx, setOpenFaqIdx] = useState(null);
-  const [showBackTop, setShowBackTop] = useState(false);
-  const [typeFilter, setTypeFilter] = useState('all');
+
+  // Dropdown state (tek seferde sadece biri açık)
+  const [openDropdown, setOpenDropdown] = useState(null); // 'theme' | 'online' | null
+  const headerRef = useRef(null);
+
+  // Tracker verileri
+  const [syncData, setSyncData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [filterCat, setFilterCat] = useState('all'); // 'all' | 'open' | 'closed'
+  const [searchQuery, setSearchQuery] = useState('');
   const [showAllMobile, setShowAllMobile] = useState(false);
 
+  // Online ziyaretçiler & ülke dağılımı
+  const [onlineCount, setOnlineCount] = useState(1);
+  const [countryBreakdown, setCountryBreakdown] = useState({});
+
+  // Canlı Sohbet state
   const [chatOpen, setChatOpen] = useState(false);
   const [chatMessages, setChatMessages] = useState([]);
+  const [chatLoading, setChatLoading] = useState(false);
   const [chatNick, setChatNick] = useState('');
   const [chatInput, setChatInput] = useState('');
   const [chatSending, setChatSending] = useState(false);
   const [chatError, setChatError] = useState('');
-  const chatEndRef = useRef(null);
+  const [replyTo, setReplyTo] = useState(null); // { id, nickname, message }
+  const [cooldownLeft, setCooldownLeft] = useState(0);
+  const chatScrollRef = useRef(null);
+  const chatInputRef = useRef(null);
 
+  // FAQ state
+  const [openFaq, setOpenFaq] = useState(null);
+
+  // Tavsiye / Fikir Modal state
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [feedbackName, setFeedbackName] = useState('');
-  const [feedbackEmail, setFeedbackEmail] = useState('');
   const [feedbackMsg, setFeedbackMsg] = useState('');
-  const [feedbackStatus, setFeedbackStatus] = useState('idle');
+  const [feedbackStatus, setFeedbackStatus] = useState('idle'); // idle | sending | sent | error
 
-  const [teams, setTeams] = useState(FALLBACK_TEAMS);
-  const [news, setNews] = useState(FALLBACK_NEWS);
-  const [totalEfforts, setTotalEfforts] = useState(40);
-  const [bootingCount, setBootingCount] = useState(18);
-  const [top3Avg, setTop3Avg] = useState(89.3);
-  const [lastSyncAt, setLastSyncAt] = useState('');
-  const [onlineCount, setOnlineCount] = useState(1);
-  const [countryStats, setCountryStats] = useState([{ code: 'TR', count: 1 }]);
-  const [countdown, setCountdown] = useState(120);
-  const [syncing, setSyncing] = useState(false);
-  const [copied, setCopied] = useState(false);
+  // Yukarı çık butonu
+  const [showScrollTop, setShowScrollTop] = useState(false);
 
-  const theme = THEMES[themeKey] || THEMES.vice;
-  const isLight = themeKey === 'light';
+  const theme = useMemo(
+    () => THEMES.find((t) => t.id === themeId) || THEMES[0],
+    [themeId]
+  );
 
-  const onlineBtnClass = isLight
-    ? 'bg-emerald-100 text-emerald-800 border-emerald-300 hover:bg-emerald-200/70'
-    : 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20';
-
-  const onlineDotClass = isLight ? 'bg-emerald-600' : 'bg-emerald-400';
-
-  const liveBadgeClass = isLight
-    ? 'bg-red-100 text-red-800 border-red-300 animate-pulse'
-    : 'bg-red-500/20 text-red-300 border-red-400/50 shadow-[0_0_12px_rgba(248,113,113,0.55)] animate-pulse';
-
-  const liveDotClass = isLight
-    ? 'bg-red-600'
-    : 'bg-red-400 shadow-[0_0_6px_rgba(248,113,113,0.9)]';
-
-  const faqLiveBadgeClass = isLight
-    ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
-    : 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30';
-
-  const dmcaBadgeClass = isLight
-    ? 'bg-amber-100 text-amber-900 border-amber-300'
-    : 'bg-amber-500/15 text-amber-400 border-amber-500/30';
-
-  const supabaseClient = useMemo(() => {
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-    if (!url || !key) return null;
-    try {
-      return createClient(url, key);
-    } catch {
-      return null;
-    }
-  }, []);
-
+  // localStorage tercihlerini yükle
   useEffect(() => {
     try {
       const savedTheme = localStorage.getItem('gta6takip_theme');
-      if (savedTheme && THEMES[savedTheme]) setThemeKey(savedTheme);
+      if (savedTheme && THEMES.some((t) => t.id === savedTheme)) {
+        setThemeId(savedTheme);
+      }
       const savedLang = localStorage.getItem('gta6takip_lang');
-      if (savedLang === 'tr' || savedLang === 'en') setLang(savedLang);
-      const savedNick = localStorage.getItem('gta6takip_nick');
-      if (savedNick) setChatNick(savedNick);
+      if (savedLang === 'tr' || savedLang === 'en') {
+        setLang(savedLang);
+      }
+      const savedNick = localStorage.getItem(CHAT_NICK_KEY);
+      if (savedNick) {
+        setChatNick(savedNick);
+      }
+      const savedUntil = Number(localStorage.getItem(CHAT_COOLDOWN_KEY) || '0');
+      if (savedUntil > Date.now()) {
+        setCooldownLeft(Math.ceil((savedUntil - Date.now()) / 1000));
+      }
     } catch {
-      // Depolama erişilemezse varsayılan korunur
+      // ignore storage errors
     }
   }, []);
 
-  const handleSelectTheme = (id) => {
-    setThemeKey(id);
-    setThemeMenuOpen(false);
+  // 60 saniyelik geri sayım sayacı
+  useEffect(() => {
+    if (cooldownLeft <= 0) return;
+    const timer = setInterval(() => {
+      try {
+        const until = Number(localStorage.getItem(CHAT_COOLDOWN_KEY) || '0');
+        const remain = Math.ceil((until - Date.now()) / 1000);
+        if (remain <= 0) {
+          setCooldownLeft(0);
+          localStorage.removeItem(CHAT_COOLDOWN_KEY);
+        } else {
+          setCooldownLeft(remain);
+        }
+      } catch {
+        setCooldownLeft((prev) => (prev > 1 ? prev - 1 : 0));
+      }
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [cooldownLeft > 0]);
+
+  const startCooldown = useCallback((seconds = CHAT_COOLDOWN_SEC) => {
+    const sec = Math.max(1, Math.min(CHAT_COOLDOWN_SEC, Math.ceil(seconds)));
+    const until = Date.now() + sec * 1000;
+    try {
+      localStorage.setItem(CHAT_COOLDOWN_KEY, String(until));
+    } catch {
+      // ignore
+    }
+    setCooldownLeft(sec);
+  }, []);
+
+  const handleThemeChange = (id) => {
+    setThemeId(id);
+    setOpenDropdown(null);
     try {
       localStorage.setItem('gta6takip_theme', id);
-    } catch {
-      // Yoksay
-    }
+    } catch {}
   };
 
-  const handleSelectLang = (nextLang) => {
+  const handleLangChange = (nextLang) => {
     setLang(nextLang);
     try {
       localStorage.setItem('gta6takip_lang', nextLang);
-    } catch {
-      // Yoksay
-    }
+    } catch {}
   };
 
-  useEffect(() => {
-    if (!themeMenuOpen && !onlineMenuOpen) return undefined;
-    const onPointerDown = (e) => {
-      if (!e.target.closest?.('[data-dropdown-root]')) {
-        setThemeMenuOpen(false);
-        setOnlineMenuOpen(false);
-      }
-    };
-    const onKeyDown = (e) => {
-      if (e.key === 'Escape') {
-        setThemeMenuOpen(false);
-        setOnlineMenuOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', onPointerDown);
-    document.addEventListener('keydown', onKeyDown);
-    return () => {
-      document.removeEventListener('mousedown', onPointerDown);
-      document.removeEventListener('keydown', onKeyDown);
-    };
-  }, [themeMenuOpen, onlineMenuOpen]);
-
-  const fetchChatMessages = async () => {
+  const handleNickChange = (val) => {
+    const trimmed = val.slice(0, 20);
+    setChatNick(trimmed);
     try {
-      const res = await fetch('/api/chat', { cache: 'no-store' });
-      if (!res.ok) return;
-      const data = await res.json();
-      if (Array.isArray(data?.messages)) {
-        setChatMessages(data.messages);
-      }
-    } catch {
-      // Sessizce geç
-    }
+      localStorage.setItem(CHAT_NICK_KEY, trimmed);
+    } catch {}
   };
 
+  // Dropdown dışına tıklama veya ESC ile kapatma
   useEffect(() => {
-    fetchChatMessages();
+    const handleClickOutside = (e) => {
+      if (headerRef.current && !headerRef.current.contains(e.target)) {
+        setOpenDropdown(null);
+      }
+    };
+    const handleEsc = (e) => {
+      if (e.key === 'Escape') {
+        setOpenDropdown(null);
+        setFeedbackOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleEsc);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleEsc);
+    };
+  }, []);
+
+  // Scroll-to-top görünürlüğü
+  useEffect(() => {
+    const onScroll = () => setShowScrollTop(window.scrollY > 360);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  // /api/sync veri çekme (120sn otomatik yenileme)
+  const fetchTracker = useCallback(async (isManual = false) => {
+    if (isManual) setRefreshing(true);
+    try {
+      const res = await fetch('/api/sync', { cache: 'no-store' });
+      if (res.ok) {
+        const data = await res.json();
+        setSyncData(data);
+      }
+    } catch {
+      // ignore network error
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
   }, []);
 
   useEffect(() => {
-    if (!supabaseClient) return undefined;
-    let chatChannel;
-    try {
-      chatChannel = supabaseClient
-        .channel('gta6takip-chat-realtime')
-        .on(
-          'postgres_changes',
-          { event: 'INSERT', schema: 'public', table: 'chat_messages' },
-          (payload) => {
-            const incoming = payload?.new;
-            if (!incoming?.id) return;
-            setChatMessages((prev) => {
-              if (prev.some((m) => m.id === incoming.id)) return prev;
-              return [...prev.slice(-49), incoming];
+    fetchTracker(false);
+    const interval = setInterval(() => fetchTracker(false), 120_000);
+    return () => clearInterval(interval);
+  }, [fetchTracker]);
+
+  // Supabase Presence (Çevrimiçi & Ülke bayrakları)
+  useEffect(() => {
+    if (!supabase) return;
+    let channel;
+    let active = true;
+
+    async function setupPresence() {
+      let cc = 'TR';
+      try {
+        const res = await fetch('/api/geo');
+        if (res.ok) {
+          const json = await res.json();
+          if (json?.country) cc = String(json.country).toUpperCase();
+        }
+      } catch {}
+
+      if (!active) return;
+
+      const userKey = `u_${Math.random().toString(36).slice(2, 10)}`;
+      channel = supabase.channel('gta6takip_online', {
+        config: { presence: { key: userKey } },
+      });
+
+      channel
+        .on('presence', { event: 'sync' }, () => {
+          const state = channel.presenceState();
+          const counts = {};
+          let total = 0;
+          Object.values(state).forEach((entries) => {
+            entries.forEach((entry) => {
+              total += 1;
+              const code = (entry.country || 'XX').toUpperCase();
+              counts[code] = (counts[code] || 0) + 1;
             });
+          });
+          setOnlineCount(Math.max(1, total));
+          setCountryBreakdown(counts);
+        })
+        .subscribe(async (status) => {
+          if (status === 'SUBSCRIBED') {
+            await channel.track({ country: cc, online_at: new Date().toISOString() });
           }
-        )
-        .on(
-          'postgres_changes',
-          { event: 'DELETE', schema: 'public', table: 'chat_messages' },
-          (payload) => {
-            const deletedId = payload?.old?.id;
-            if (!deletedId) return;
-            setChatMessages((prev) => prev.filter((m) => m.id !== deletedId));
-          }
-        )
-        .subscribe();
-    } catch {
-      // Realtime bağlanamazsa manuel/polling akış devam eder
+        });
     }
+
+    setupPresence();
     return () => {
-      if (chatChannel) chatChannel.unsubscribe();
+      active = false;
+      if (channel) supabase.removeChannel(channel);
     };
-  }, [supabaseClient]);
+  }, []);
+
+  // Canlı Sohbet mesajlarını yükle + Realtime dinle
+  const fetchChatMessages = useCallback(async () => {
+    setChatLoading(true);
+    try {
+      const res = await fetch('/api/chat', { cache: 'no-store' });
+      if (res.ok) {
+        const data = await res.json();
+        setChatMessages(Array.isArray(data.messages) ? data.messages : []);
+      }
+    } catch {
+      // ignore
+    } finally {
+      setChatLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    if (chatOpen && chatEndRef.current) {
-      chatEndRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    fetchChatMessages();
+  }, [fetchChatMessages]);
+
+  useEffect(() => {
+    if (!supabase) return;
+    const chatChannel = supabase
+      .channel('public:chat_messages')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'chat_messages' },
+        (payload) => {
+          const newMsg = payload.new;
+          if (!newMsg) return;
+          setChatMessages((prev) => {
+            if (prev.some((m) => String(m.id) === String(newMsg.id))) return prev;
+            return [...prev, newMsg].slice(-60);
+          });
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'DELETE', schema: 'public', table: 'chat_messages' },
+        (payload) => {
+          const deletedId = payload.old?.id;
+          if (!deletedId) return;
+          setChatMessages((prev) => prev.filter((m) => String(m.id) !== String(deletedId)));
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(chatChannel);
+    };
+  }, []);
+
+  // Yeni mesaj gelince veya sohbet açılınca aşağı kaydır
+  useEffect(() => {
+    if (chatOpen && chatScrollRef.current) {
+      chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight;
     }
   }, [chatMessages, chatOpen]);
 
   const handleSendChat = async (e) => {
     e.preventDefault();
     setChatError('');
-    const nick = chatNick.trim();
-    const msg = chatInput.trim();
-    if (nick.length < 2) {
-      setChatError(lang === 'tr' ? 'En az 2 karakterli bir rumuz yaz.' : 'Enter a nickname (at least 2 chars).');
+
+    if (cooldownLeft > 0) {
+      setChatError(
+        lang === 'tr'
+          ? `Yeni mesaj göndermek için ${cooldownLeft} saniye beklemelisin.`
+          : `Please wait ${cooldownLeft}s before sending another message.`
+      );
       return;
     }
+
+    const nick = chatNick.trim();
+    const msg = chatInput.trim();
+
+    if (nick.length < 2 || nick.length > 20) {
+      setChatError(
+        lang === 'tr'
+          ? 'Lütfen 2-20 karakter arası bir isim (takma ad) yaz.'
+          : 'Please enter a nickname between 2 and 20 characters.'
+      );
+      return;
+    }
+
     if (!msg) return;
 
     setChatSending(true);
     try {
-      localStorage.setItem('gta6takip_nick', nick);
-    } catch {
-      // Yoksay
-    }
-
-    try {
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nickname: nick, message: msg }),
+        body: JSON.stringify({
+          nickname: nick,
+          message: msg,
+          replyToId: replyTo?.id ?? null,
+        }),
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
+
       if (!res.ok) {
-        setChatError(data?.error || (lang === 'tr' ? 'Mesaj gönderilemedi.' : 'Failed to send message.'));
+        if (res.status === 429 && data.retryAfter) {
+          startCooldown(data.retryAfter);
+        }
+        setChatError(
+          data.error ||
+            (lang === 'tr' ? 'Mesaj gönderilemedi.' : 'Could not send message.')
+        );
         return;
       }
-      if (data?.message) {
+
+      if (data.message) {
         setChatMessages((prev) => {
-          if (prev.some((m) => m.id === data.message.id)) return prev;
-          return [...prev.slice(-49), data.message];
+          if (prev.some((m) => String(m.id) === String(data.message.id))) return prev;
+          return [...prev, data.message].slice(-60);
         });
       }
+
       setChatInput('');
+      setReplyTo(null);
+      startCooldown(data.cooldownSeconds || CHAT_COOLDOWN_SEC);
     } catch {
-      setChatError(lang === 'tr' ? 'Bağlantı hatası, tekrar dene.' : 'Connection error, please try again.');
+      setChatError(
+        lang === 'tr' ? 'Bağlantı hatası oluştu.' : 'Network error occurred.'
+      );
     } finally {
       setChatSending(false);
     }
   };
 
-  const fetchSyncData = async () => {
-    setSyncing(true);
-    try {
-      const res = await fetch('/api/sync', { cache: 'no-store' });
-      if (!res.ok) throw new Error('Sync failed');
-      const data = await res.json();
-
-      if (data?.updatedAt) {
-        setLastSyncAt(data.updatedAt);
-      }
-
-      if (Array.isArray(data?.teams) && data.teams.length > 0) {
-        const normalized = data.teams
-          .map((item) => ({
-            name: item.name || 'Unknown',
-            progress: Number(item.progress) || 0,
-            fps: item.fps || '—',
-            gpu: item.gpu || '',
-            type: item.type === 'private' ? 'private' : 'open',
-            stage: item.stage || '',
-            delta: item.delta || '',
-            url: item.url || 'https://portwatch-vi.xyz/#race',
-            updatedAt: item.updatedAt || data?.updatedAt || '',
-            summaryTr: item.summaryTr || '',
-            summaryEn: item.summaryEn || '',
-            isZortos: Boolean(item.isZortos),
-          }))
-          .sort((a, b) => b.progress - a.progress);
-
-        setTeams(normalized);
-      }
-
-      if (typeof data?.totalEfforts === 'number' && data.totalEfforts > 0) {
-        setTotalEfforts(data.totalEfforts);
-      }
-      if (typeof data?.bootingCount === 'number' && data.bootingCount > 0) {
-        setBootingCount(data.bootingCount);
-      }
-      if (typeof data?.top3Avg === 'number' && data.top3Avg > 0) {
-        setTop3Avg(data.top3Avg);
-      }
-      if (Array.isArray(data?.news) && data.news.length > 0) {
-        setNews(data.news);
-      }
-    } catch {
-      // Mevcut veya yedek veri korunur
-    } finally {
-      setSyncing(false);
-      setCountdown(120);
+  const handleStartReply = (msg) => {
+    setReplyTo({
+      id: msg.id,
+      nickname: msg.nickname,
+      message: msg.message,
+    });
+    if (chatInputRef.current) {
+      chatInputRef.current.focus();
     }
   };
 
-  useEffect(() => {
-    fetchSyncData();
-  }, []);
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCountdown((prev) => {
-        if (prev <= 1) {
-          fetchSyncData();
-          return 120;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
-
-  useEffect(() => {
-    const onScroll = () => setShowBackTop(window.scrollY > 360);
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
-  }, []);
-
-  useEffect(() => {
-    const localCountry = guessClientCountry();
-    setCountryStats([{ code: localCountry, count: 1 }]);
-    if (!supabaseClient) return undefined;
-
-    let channel;
-    let cancelled = false;
-
-    const initPresence = async () => {
-      let viewerCountry = localCountry;
-      try {
-        const geoRes = await fetch('/api/geo', { cache: 'no-store' });
-        if (geoRes.ok) {
-          const geoJson = await geoRes.json();
-          if (geoJson?.country && /^[A-Z]{2}$/.test(geoJson.country)) {
-            viewerCountry = geoJson.country;
-          }
-        }
-      } catch {
-        // Fallback olarak localCountry kullanılır
-      }
-
-      if (cancelled) return;
-
-      try {
-        const clientId = `v-${Math.random().toString(36).slice(2, 10)}`;
-        channel = supabaseClient.channel('gta6takip-presence', {
-          config: { presence: { key: clientId } },
-        });
-        channel
-          .on('presence', { event: 'sync' }, () => {
-            const state = channel.presenceState();
-            const entries = Object.values(state);
-            const count = entries.length;
-            if (count > 0) {
-              setOnlineCount(count);
-              const countsMap = {};
-              for (const presList of entries) {
-                const latest = Array.isArray(presList) ? presList[presList.length - 1] : null;
-                const code = String(latest?.country || 'TR').toUpperCase();
-                countsMap[code] = (countsMap[code] || 0) + 1;
-              }
-              const sortedStats = Object.entries(countsMap)
-                .map(([code, cnt]) => ({ code, count: cnt }))
-                .sort((a, b) => b.count - a.count);
-              setCountryStats(sortedStats);
-            }
-          })
-          .subscribe(async (status) => {
-            if (status === 'SUBSCRIBED') {
-              await channel.track({
-                online_at: new Date().toISOString(),
-                country: viewerCountry,
-              });
-            }
-          });
-      } catch {
-        // Supabase presence hatasında varsayılan 1 korunur
-      }
-    };
-
-    initPresence();
-
-    return () => {
-      cancelled = true;
-      if (channel) channel.unsubscribe();
-    };
-  }, [supabaseClient]);
-
-  const leader = teams[0] || FALLBACK_TEAMS[0];
-  const secondTeam = teams[1] || FALLBACK_TEAMS[1];
-  const thirdTeam = teams[2] || FALLBACK_TEAMS[2];
-  const openLeader = teams.find((t) => t.type === 'open') || leader;
-  const playableCount = useMemo(
-    () => teams.filter((t) => Number(t.progress) >= 50).length,
-    [teams]
-  );
-  const peakFps = useMemo(() => extractPeakFps(teams), [teams]);
-  const fpsPct = Math.min(100, Math.round((peakFps / 30) * 100));
-
-  const rankedTeams = useMemo(
-    () => teams.map((t, i) => ({ ...t, globalRank: i + 1 })),
-    [teams]
-  );
-
-  const filteredTeams = useMemo(() => {
-    if (typeFilter === 'all') return rankedTeams;
-    return rankedTeams.filter((t) => t.type === typeFilter);
-  }, [rankedTeams, typeFilter]);
-
-  const openCount = useMemo(
-    () => teams.filter((t) => t.type === 'open').length,
-    [teams]
-  );
-  const privateCount = teams.length - openCount;
-
-  const faqItems = useMemo(() => {
-    const etaTr =
-      leader.progress >= 95 && peakFps >= 30
-        ? `En yakın yapı (${leader.name} · %${leader.progress}) sona çok yaklaştı; ancak tüm oyunun hatasız bitirilmesi ve stabil optimizasyon için net bir çıkış tarihi yok.`
-        : `Şu an en yakın yapı (${leader.name} · %${leader.progress}, tepe ${peakFps} FPS) hızla ilerliyor; ancak tüm oyunun 30+ FPS ve hatasız tamamlanması için net bir tarih yok. Resmi PC sürümü ise söylentilere göre 2027 başını hedefliyor.`;
-
-    const etaEn =
-      leader.progress >= 95 && peakFps >= 30
-        ? `The closest build (${leader.name} · ${leader.progress}%) is nearing completion, though there is no fixed ETA for a bug-free full playthrough.`
-        : `The closest build (${leader.name} · ${leader.progress}%, peak ${peakFps} FPS) is progressing fast, but there is no firm ETA for a full 30+ FPS release. Rockstar's official PC version is rumored for early 2027.`;
-
-    const statusTr = `PortWatch üzerinden gelen son canlı verilere göre ${totalEfforts} girişimden ${bootingCount} proje oyunu başlatabiliyor ve ${playableCount} ekip "Oynanabilir" barajını geçmiş durumda. Zirvedeki #1 ${leader.name} (%${leader.progress}), ${localizeDynamicText(leader.fps, 'tr')} civarı akıcı görüntü alarak liderlikte. Hemen arkasında #2 ${secondTeam.name} (%${secondTeam.progress} · ${localizeDynamicText(secondTeam.fps, 'tr')}) ve #3 ${thirdTeam.name} (%${thirdTeam.progress} · ${localizeDynamicText(thirdTeam.fps, 'tr')}) takipte. Kodu herkese açık tarafta ise ${openLeader.name} (%${openLeader.progress} · ${localizeDynamicText(openLeader.fps, 'tr')}) önde. Kısacası oyun siyah ekrandan çıkıp görev oynanabilen seviyeye geldi; geriye optimizasyon ve herkesin indirebileceği kararlı bir sürüm kaldı.`;
-
-    const statusEn = `According to live PortWatch data, ${bootingCount} out of ${totalEfforts} tracked efforts can boot GTA VI and ${playableCount} teams have crossed the "Playable" milestone. At the top, #1 ${leader.name} (${leader.progress}%) leads at ${localizeDynamicText(leader.fps, 'en')}. Right behind, #2 ${secondTeam.name} (${secondTeam.progress}% · ${localizeDynamicText(secondTeam.fps, 'en')}) and #3 ${thirdTeam.name} (${thirdTeam.progress}% · ${localizeDynamicText(thirdTeam.fps, 'en')}) are pushing ahead. On the open-source side, ${openLeader.name} (${openLeader.progress}% · ${localizeDynamicText(openLeader.fps, 'en')}) leads. In short, the game has moved past black screens into real mission gameplay—now it's about optimization and a stable public build.`;
-
-    return [
-      {
-        qTr: 'AMD ve NVIDIA neden fark ediyor?',
-        qEn: 'Why do AMD and NVIDIA perform differently?',
-        aTr: 'PS5 ve Xbox Series X|S konsolları AMD RDNA2 grafik mimarisi kullandığı için sızdırılan konsol shader kodları AMD kartlarda daha doğrudan çalışıyor. NVIDIA kartlarda ise RDNA2 shaderlarının ekstra DXIL/HLSL dönüşümünden geçmesi gerektiği için aynı ekipte bile FPS ve görüntü kararlılığı fark edebiliyor.',
-        aEn: 'PS5 and Xbox Series X|S use AMD RDNA2 graphics, so leaked console shaders map more directly to AMD GPUs. NVIDIA GPUs require extra RDNA2-to-DXIL/HLSL translation, which creates differences in FPS and rendering stability.',
-        live: false,
-      },
-      {
-        qTr: 'Port ekipleri tam olarak ne için çalışıyor?',
-        qEn: 'What exactly are the port teams working on?',
-        aTr: 'Resmi PC sürümü çıkana kadar, sızdırılan Xbox Series çalıştırılabilir dosyasını (.exe) Windows veya Linux/Proton üzerinde açabilmek için uyumluluk katmanları (sistem DLL yönlendirmeleri, bellek yönetimi ve GPU shader çeviricileri) geliştiriyorlar.',
-        aEn: 'Until the official PC version arrives, teams are building compatibility layers (console DLL shims, memory management, and GPU shader translators) to run the leaked Xbox Series executable on Windows or Linux/Proton.',
-        live: false,
-      },
-      {
-        qTr: 'GTA VI, tahmini ne zaman tamamen portlanacak?',
-        qEn: 'When is GTA VI expected to be fully ported?',
-        aTr: etaTr,
-        aEn: etaEn,
-        live: true,
-      },
-      {
-        qTr: 'Şimdi son durum tam olarak nedir?',
-        qEn: 'What is the exact current status right now?',
-        aTr: statusTr,
-        aEn: statusEn,
-        live: true,
-      },
-    ];
-  }, [leader, secondTeam, thirdTeam, openLeader, playableCount, peakFps, totalEfforts, bootingCount]);
-
-  const fastestTeam = useMemo(() => {
-    let best = leader;
-    let bestVal = -1;
-    for (const t of teams) {
-      const num = parseFloat(String(t.delta || '').replace(/[^0-9.]/g, ''));
-      if (!Number.isNaN(num) && num > bestVal) {
-        bestVal = num;
-        best = t;
-      }
-    }
-    return best;
-  }, [teams, leader]);
-
-  const sparkPoints = useMemo(() => {
-    const endPct = Math.min(100, Math.max(50, leader.progress));
-    const pts = [
-      { x: 10, y: 50 - (0 / 100) * 40, label: lang === 'tr' ? '23 Kas' : 'Nov 23', val: '0%' },
-      { x: 76, y: 50 - (40 / 100) * 40, label: lang === 'tr' ? '24 Kas' : 'Nov 24', val: '40%' },
-      { x: 142, y: 50 - (61 / 100) * 40, label: lang === 'tr' ? '25 Kas' : 'Nov 25', val: '61%' },
-      { x: 208, y: 50 - (endPct / 100) * 40, label: lang === 'tr' ? 'Bugün' : 'Today', val: `${endPct}%` },
-    ];
-    const line = pts.map((p) => `${p.x},${p.y.toFixed(1)}`).join(' ');
-    const area = `10,52 ${line} 208,52`;
-    return { pts, line, area };
-  }, [leader.progress, lang]);
-
-  const handleCopyLink = () => {
-    if (typeof navigator !== 'undefined' && navigator.clipboard) {
-      navigator.clipboard.writeText('https://gta6takip.vercel.app/');
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }
-  };
-
+  // Tavsiye / Fikir gönderimi
   const handleSendFeedback = async (e) => {
     e.preventDefault();
     if (!feedbackMsg.trim()) return;
@@ -920,699 +590,813 @@ export default function HomePage() {
         },
         body: JSON.stringify({
           name: feedbackName.trim() || 'Anonim Ziyaretçi',
-          email: feedbackEmail.trim() || 'belirtilmedi@gta6takip.vercel.app',
           message: feedbackMsg.trim(),
-          _subject: 'GTA6takip — Yeni Tavsiye / Fikir',
-          _template: 'table',
+          _subject: 'GTA6Takip — Yeni Tavsiye / Fikir',
         }),
       });
-      if (!res.ok) throw new Error('Send failed');
-      setFeedbackStatus('sent');
-      setFeedbackName('');
-      setFeedbackEmail('');
-      setFeedbackMsg('');
+      if (res.ok) {
+        setFeedbackStatus('sent');
+        setFeedbackName('');
+        setFeedbackMsg('');
+      } else {
+        setFeedbackStatus('error');
+      }
     } catch {
       setFeedbackStatus('error');
     }
   };
 
-  const renderOnlinePopover = () =>
-    onlineMenuOpen && (
-      <div className={`absolute right-0 mt-1.5 w-52 rounded-xl border p-2 shadow-2xl z-50 space-y-1 ${theme.menuBg}`}>
-        <div className={`px-2 py-1 text-[10px] font-bold uppercase tracking-wider ${theme.muted}`}>
-          {lang === 'tr' ? 'Bağlı Ülkeler' : 'Connected Countries'}
-        </div>
-        {countryStats.map((c) => (
-          <div
-            key={c.code}
-            className={`flex items-center justify-between px-2 py-1.5 rounded-lg text-xs font-semibold ${theme.subCard}`}
-          >
-            <span className="inline-flex items-center gap-2 min-w-0">
-              <CountryFlag code={c.code} />
-              <span className="truncate">{getCountryLabel(c.code, lang)}</span>
-            </span>
-            <span className={`font-black shrink-0 ${theme.accentText}`}>{c.count}</span>
-          </div>
-        ))}
-      </div>
-    );
+  // Ekipleri normalize et
+  const teams = useMemo(() => {
+    if (!syncData) return [];
+    const list = syncData.teams || syncData.efforts || [];
+    return Array.isArray(list) ? list : [];
+  }, [syncData]);
+
+  const filteredTeams = useMemo(() => {
+    return teams.filter((t) => {
+      const isOpen = Boolean(t.isOpenSource ?? t.repo ?? t.sourceUrl);
+      if (filterCat === 'open' && !isOpen) return false;
+      if (filterCat === 'closed' && isOpen) return false;
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        const hay = `${t.name || ''} ${t.repo || ''} ${t.gpu || ''} ${t.status || ''}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    });
+  }, [teams, filterCat, searchQuery]);
+
+  const leader = teams[0] || null;
+
+  const summaryStats = useMemo(() => {
+    const total = syncData?.stats?.totalEfforts ?? teams.length;
+    const booting =
+      syncData?.stats?.bootingCount ??
+      teams.filter((t) => (t.milestones?.boots ?? t.gta?.boots ?? 0) >= 1).length;
+    const top3 = teams.slice(0, 3);
+    const top3Avg =
+      syncData?.stats?.top3Avg ??
+      (top3.length
+        ? (
+            top3.reduce((acc, cur) => acc + Number(cur.progress ?? cur.score ?? 0), 0) /
+            top3.length
+          ).toFixed(1)
+        : '0.0');
+    return { total, booting, top3Avg };
+  }, [syncData, teams]);
+
+  const faqItems = useMemo(() => {
+    const lName = leader?.name || 'Belobug';
+    const lPct = leader?.progress ?? leader?.score ?? '91.3';
+    const lFps = leader?.fps ?? leader?.gta?.fps ?? 22;
+
+    if (lang === 'tr') {
+      return [
+        {
+          q: 'GTA VI PC portu ne aşamada, şu an kim önde?',
+          a: `Canlı PortWatch VI verilerine göre lider ekip ${lName} (%${lPct}) ve ortalama ${lFps} FPS ile oynanabilir seviyeye ulaşmış durumda. Toplam ${summaryStats.total} girişimin ${summaryStats.booting} tanesi oyunu başlatabiliyor.`,
+        },
+        {
+          q: 'Veriler nereden ve ne sıklıkla güncelleniyor?',
+          a: 'Tüm ilerleme yüzdeleri, FPS değerleri ve son güncelleme saatleri doğrudan PortWatch VI JSON kaynağından otomatik çekilir; sayfa her 2 dakikada bir kendini yeniler ve tüm saatler Türkiye Saati (TSİ) olarak gösterilir.',
+        },
+        {
+          q: 'Açık Kaynak ile Kapalı projeler arasındaki fark nedir?',
+          a: 'Açık kaynak projelerin GitHub deposu herkese açıktır ve topluluk tarafından doğrulanabilir. Kapalı projeler ise özel derlemeler veya yayın/video kanıtlarıyla takip edilen girişimlerdir.',
+        },
+        {
+          q: 'Bu sitede korsan oyun veya indirme linki var mı?',
+          a: 'Hayır. GTA6Takip tamamen bilgilendirme amaçlı bir ilerleme takip panosudur; herhangi bir oyun dosyası, kırık sürüm veya telif ihlali içeren indirme bağlantısı barındırmaz.',
+        },
+      ];
+    }
+
+    return [
+      {
+        q: 'What is the current status of the GTA VI PC port?',
+        a: `According to live PortWatch VI data, ${lName} leads at ${lPct}% with around ${lFps} FPS. Out of ${summaryStats.total} tracked efforts, ${summaryStats.booting} can boot GTA VI.`,
+      },
+      {
+        q: 'Where does the data come from and how often does it sync?',
+        a: 'All progress scores, FPS figures, and update timestamps sync directly from PortWatch VI JSON data every 2 minutes, with all times displayed in Turkey Time (TRT).',
+      },
+      {
+        q: 'What is the difference between Open Source and Closed projects?',
+        a: 'Open source efforts publish verifiable code on GitHub, whereas closed efforts are private builds tracked through streams, videos, or verified reports.',
+      },
+      {
+        q: 'Does this site host game files or pirated downloads?',
+        a: 'No. GTA6Takip is strictly an informational progress tracker and never hosts copyrighted files or download links.',
+      },
+    ];
+  }, [lang, leader, summaryStats]);
+
+  const sortedCountries = useMemo(() => {
+    return Object.entries(countryBreakdown).sort((a, b) => b[1] - a[1]);
+  }, [countryBreakdown]);
 
   return (
-    <div className={`min-h-screen transition-colors duration-300 ${theme.bg}`}>
-      <style>{`
+    <div className={`min-h-screen transition-colors duration-200 ${theme.bg}`}>
+      <style jsx global>{`
         @keyframes feedbackNudge {
-          0%, 76%, 100% { transform: translateY(0) rotate(0deg); }
-          80% { transform: translateY(-7px) rotate(-2.5deg); }
-          85% { transform: translateY(0) rotate(2.5deg); }
-          90% { transform: translateY(-4px) rotate(-1.5deg); }
-          95% { transform: translateY(0) rotate(0deg); }
+          0%, 78%, 100% {
+            transform: translateY(0) rotate(0deg);
+          }
+          82% {
+            transform: translateY(-6px) rotate(-2deg);
+          }
+          86% {
+            transform: translateY(0) rotate(2deg);
+          }
+          90% {
+            transform: translateY(-4px) rotate(-1deg);
+          }
+          94% {
+            transform: translateY(0) rotate(0deg);
+          }
+        }
+        .animate-feedback-nudge {
+          animation: feedbackNudge 4s ease-in-out infinite;
         }
       `}</style>
 
-      <header className={`sticky top-0 z-40 border-b backdrop-blur-md ${theme.card}`}>
-        <div className="max-w-4xl mx-auto px-3 sm:px-5 py-2 sm:py-2.5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2 min-w-0">
-              <span className={`font-black tracking-tight text-lg sm:text-xl bg-gradient-to-r ${theme.accentGradient} bg-clip-text text-transparent`}>
-                GTA6TAKİP
-              </span>
-              <button
-                type="button"
-                onClick={() => setChangelogOpen(true)}
-                className={`px-2 py-0.5 text-[11px] font-bold rounded-full border transition hover:scale-105 ${theme.pill}`}
-                title={lang === 'tr' ? 'Sürüm Notları' : 'Release Notes'}
-              >
-                {APP_VERSION}
-              </button>
-            </div>
-
-            <div className="relative sm:hidden" data-dropdown-root="true">
-              <button
-                type="button"
-                onClick={() => {
-                  setThemeMenuOpen(false);
-                  setOnlineMenuOpen((v) => !v);
-                }}
-                className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-semibold border transition ${onlineBtnClass}`}
-              >
-                <span className={`w-1.5 h-1.5 rounded-full animate-pulse ${onlineDotClass}`} />
-                {onlineCount} {lang === 'tr' ? 'Çevrimiçi' : 'Online'}
-                <ChevronDown className="w-3 h-3 opacity-80" />
-              </button>
-              {renderOnlinePopover()}
-            </div>
+      {/* ÜST BAR (HEADER) */}
+      <header
+        ref={headerRef}
+        className={`sticky top-0 z-40 border-b backdrop-blur-md ${theme.header}`}
+      >
+        <div className="max-w-6xl mx-auto px-3 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-2.5">
+            <span className="text-lg sm:text-xl font-black tracking-tight">
+              GTA<span className={theme.accentText}>6</span>TAKİP
+            </span>
+            <span className={`text-[11px] font-mono px-2 py-0.5 rounded-full border ${theme.pill}`}>
+              {APP_VERSION}
+            </span>
           </div>
 
-          <div className="flex items-center justify-between sm:justify-end gap-2 flex-wrap">
-            <div className="relative hidden sm:block" data-dropdown-root="true">
+          <div className="flex items-center gap-2">
+            {/* Çevrimiçi + Ülke Dağılımı */}
+            <div className="relative">
               <button
                 type="button"
-                onClick={() => {
-                  setThemeMenuOpen(false);
-                  setOnlineMenuOpen((v) => !v);
-                }}
-                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border transition ${onlineBtnClass}`}
+                onClick={() =>
+                  setOpenDropdown((prev) => (prev === 'online' ? null : 'online'))
+                }
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs font-semibold border transition ${theme.pill}`}
               >
-                <span className={`w-2 h-2 rounded-full animate-pulse ${onlineDotClass}`} />
-                {onlineCount} {lang === 'tr' ? 'Çevrimiçi' : 'Online'}
-                <ChevronDown className="w-3 h-3 opacity-80" />
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span>
+                  {onlineCount} {lang === 'tr' ? 'Çevrimiçi' : 'Online'}
+                </span>
               </button>
-              {renderOnlinePopover()}
+
+              {openDropdown === 'online' && (
+                <div
+                  className={`absolute right-0 mt-2 w-56 rounded-xl border p-3 z-50 ${theme.dropdown}`}
+                >
+                  <div className="text-[11px] font-bold uppercase tracking-wider mb-2 opacity-80">
+                    {lang === 'tr' ? 'BAĞLI ÜLKELER' : 'CONNECTED COUNTRIES'}
+                  </div>
+                  <div className="space-y-1.5 max-h-56 overflow-y-auto">
+                    {sortedCountries.length === 0 ? (
+                      <div className="text-xs opacity-75">
+                        {lang === 'tr' ? 'Veri alınıyor…' : 'Loading…'}
+                      </div>
+                    ) : (
+                      sortedCountries.map(([cc, count]) => {
+                        const lower = cc.toLowerCase();
+                        const name = COUNTRY_NAMES[cc]?.[lang] || cc;
+                        return (
+                          <div
+                            key={cc}
+                            className="flex items-center justify-between text-xs py-1"
+                          >
+                            <div className="flex items-center gap-2">
+                              {cc !== 'XX' ? (
+                                <img
+                                  src={`https://flagcdn.com/w40/${lower}.png`}
+                                  alt={cc}
+                                  className="w-5 h-3.5 object-cover rounded-[2px] border border-white/15"
+                                />
+                              ) : (
+                                <span className="w-5 text-center">🌐</span>
+                              )}
+                              <span className="font-medium">{name}</span>
+                            </div>
+                            <span className="font-bold">{count}</span>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
 
-            <div className={`inline-flex rounded-lg border p-0.5 ${theme.subCard}`}>
+            {/* Tema Seçici */}
+            <div className="relative">
               <button
                 type="button"
-                onClick={() => handleSelectLang('tr')}
-                className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-semibold transition ${
-                  lang === 'tr' ? theme.btnPrimary : theme.muted
-                }`}
+                onClick={() =>
+                  setOpenDropdown((prev) => (prev === 'theme' ? null : 'theme'))
+                }
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs font-semibold border transition ${theme.pill}`}
               >
-                <FlagTR />
-                TR
+                <span className={`w-2.5 h-2.5 rounded-full ${theme.dot}`} />
+                <span className="hidden sm:inline">
+                  {lang === 'tr' ? theme.labelTr : theme.labelEn}
+                </span>
               </button>
-              <button
-                type="button"
-                onClick={() => handleSelectLang('en')}
-                className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-semibold transition ${
-                  lang === 'en' ? theme.btnPrimary : theme.muted
-                }`}
-              >
-                <FlagUS />
-                EN
-              </button>
-            </div>
 
-            <div className="relative" data-dropdown-root="true">
-              <button
-                type="button"
-                onClick={() => {
-                  setOnlineMenuOpen(false);
-                  setThemeMenuOpen((v) => !v);
-                }}
-                className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-semibold ${theme.subCard}`}
-              >
-                <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: theme.dot }} />
-                <span>{lang === 'tr' ? 'Tema' : 'Theme'}</span>
-                <ChevronDown className="w-3.5 h-3.5 opacity-70" />
-              </button>
-              {themeMenuOpen && (
-                <div className={`absolute right-0 mt-1.5 w-40 rounded-xl border p-1 shadow-2xl z-50 ${theme.menuBg}`}>
-                  {Object.values(THEMES).map((t) => (
+              {openDropdown === 'theme' && (
+                <div
+                  className={`absolute right-0 mt-2 w-48 rounded-xl border p-1.5 z-50 ${theme.dropdown}`}
+                >
+                  {THEMES.map((t) => (
                     <button
                       key={t.id}
                       type="button"
-                      onClick={() => handleSelectTheme(t.id)}
-                      className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-medium transition hover:bg-black/10 ${
-                        themeKey === t.id ? theme.accentText : ''
+                      onClick={() => handleThemeChange(t.id)}
+                      className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition ${
+                        t.id === themeId
+                          ? 'bg-pink-500/20 font-bold'
+                          : 'hover:bg-white/10'
                       }`}
                     >
-                      <span className="inline-flex items-center gap-2">
-                        <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: t.dot }} />
-                        {t.label[lang]}
+                      <span className="flex items-center gap-2">
+                        <span className={`w-3 h-3 rounded-full ${t.dot}`} />
+                        {lang === 'tr' ? t.labelTr : t.labelEn}
                       </span>
-                      {themeKey === t.id && <Check className="w-3.5 h-3.5" />}
+                      {t.id === themeId && <span>✓</span>}
                     </button>
                   ))}
                 </div>
               )}
             </div>
 
-            <button
-              type="button"
-              onClick={fetchSyncData}
-              disabled={syncing}
-              className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-semibold transition ${theme.subCard}`}
-            >
-              <RefreshCw className={`w-3.5 h-3.5 ${syncing ? 'animate-spin' : ''}`} />
-              <span>{countdown}s</span>
-            </button>
+            {/* Dil Seçici (TR | EN SVG) */}
+            <div className={`flex items-center rounded-full border p-0.5 ${theme.pill}`}>
+              <button
+                type="button"
+                onClick={() => handleLangChange('tr')}
+                className={`flex items-center gap-1 px-2 py-1 rounded-full text-[11px] font-bold transition ${
+                  lang === 'tr' ? theme.accentBg : 'opacity-70 hover:opacity-100'
+                }`}
+              >
+                <TrFlagSvg />
+                <span>TR</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleLangChange('en')}
+                className={`flex items-center gap-1 px-2 py-1 rounded-full text-[11px] font-bold transition ${
+                  lang === 'en' ? theme.accentBg : 'opacity-70 hover:opacity-100'
+                }`}
+              >
+                <EnFlagSvg />
+                <span>EN</span>
+              </button>
+            </div>
           </div>
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto px-3 sm:px-5 py-4 sm:py-5 space-y-5">
-        <section className={`rounded-2xl border p-4 sm:p-5 ${theme.card}`}>
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div className="space-y-2 flex-1">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className={`text-xs font-bold tracking-wider ${theme.accentText}`}>
-                  {lang === 'tr' ? 'GENEL İLERLEME · EN YAKIN YAPI' : 'OVERALL PROGRESS · CLOSEST EFFORT'}
-                </span>
-                <span className={`px-2 py-0.5 text-[11px] font-semibold rounded-full border ${theme.pill}`}>
-                  {totalEfforts} {lang === 'tr' ? 'Girişim' : 'Tracked'} · {bootingCount} Boot
-                </span>
+      {/* ANA İÇERİK */}
+      <main className="max-w-6xl mx-auto px-3 sm:px-6 py-6 space-y-6">
+        {/* Özet Kartları */}
+        <section className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className={`rounded-2xl border p-4 ${theme.card}`}>
+            <div className={`text-xs font-semibold uppercase tracking-wider ${theme.muted}`}>
+              {lang === 'tr' ? 'Takip Edilen Girişim' : 'Tracked Efforts'}
+            </div>
+            <div className="mt-1 text-2xl font-black">{summaryStats.total}</div>
+            <div className={`text-xs mt-1 ${theme.muted}`}>
+              {lang === 'tr'
+                ? `${summaryStats.booting} / ${summaryStats.total} GTA VI Başlatabiliyor`
+                : `${summaryStats.booting} / ${summaryStats.total} Boot GTA VI`}
+            </div>
+          </div>
+
+          <div className={`rounded-2xl border p-4 ${theme.card}`}>
+            <div className={`text-xs font-semibold uppercase tracking-wider ${theme.muted}`}>
+              {lang === 'tr' ? 'İlk 3 Ortalama' : 'Top 3 Average'}
+            </div>
+            <div className={`mt-1 text-2xl font-black ${theme.accentText}`}>
+              %{summaryStats.top3Avg}
+            </div>
+            <div className={`text-xs mt-1 ${theme.muted}`}>
+              {lang === 'tr' ? 'Canlı PortWatch VI Skoru' : 'Live PortWatch VI Score'}
+            </div>
+          </div>
+
+          <div className={`rounded-2xl border p-4 ${theme.card} flex flex-col justify-between`}>
+            <div>
+              <div className={`text-xs font-semibold uppercase tracking-wider ${theme.muted}`}>
+                {lang === 'tr' ? 'Son Senkronizasyon' : 'Last Sync'}
               </div>
-
-              <div className="flex items-baseline gap-3 flex-wrap">
-                <span className="text-3xl sm:text-4xl font-black tracking-tight">
-                  {lang === 'tr' ? `%${leader.progress}` : `${leader.progress}%`}
-                </span>
-                <span className={`text-sm font-semibold ${theme.muted}`}>
-                  {lang === 'tr' ? 'Lider:' : 'Leader:'}{' '}
-                  <strong className={theme.accentText}>{leader.name}</strong> ·{' '}
-                  {lang === 'tr' ? `İlk 3 ort. %${top3Avg}` : `Top-3 avg ${top3Avg}%`}
-                </span>
-              </div>
-
-              <div className="flex items-center gap-2 flex-wrap pt-1">
-                <div className={`inline-flex items-center gap-2 px-2.5 py-1 rounded-lg border text-xs ${theme.subCard}`}>
-                  <Target className={`w-3.5 h-3.5 ${theme.accentText}`} />
-                  <span className="font-semibold">
-                    {lang === 'tr' ? '30 FPS Barajı:' : '30 FPS Target:'}
-                  </span>
-                  <span className="font-bold">{peakFps} / 30 FPS</span>
-                  <div className="w-14 h-1.5 rounded-full bg-zinc-700/60 overflow-hidden">
-                    <div
-                      className={`h-full rounded-full bg-gradient-to-r ${theme.accentGradient}`}
-                      style={{ width: `${fpsPct}%` }}
-                    />
-                  </div>
-                </div>
-
-                <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-xs ${theme.subCard}`}>
-                  <Flame className="w-3.5 h-3.5 text-amber-500" />
-                  <span className={theme.muted}>
-                    {lang === 'tr' ? 'Zirve Lider:' : 'Top Leader:'}
-                  </span>
-                  <span className="font-bold">{fastestTeam.name}</span>
-                  <span className={isLight ? 'text-emerald-700 font-bold' : 'text-emerald-400 font-bold'}>
-                    %{fastestTeam.progress}
-                  </span>
-                </div>
+              <div className="mt-1 text-sm font-bold">
+                {formatIstanbulTime(syncData?.updatedAt || syncData?.updated, lang)}
               </div>
             </div>
-
-            <div className={`rounded-xl border p-3 md:w-60 shrink-0 ${theme.subCard}`}>
-              <div className="flex items-center justify-between text-[11px] font-semibold mb-1">
-                <span className={`inline-flex items-center gap-1 ${theme.muted}`}>
-                  <TrendingUp className={`w-3.5 h-3.5 ${theme.accentText}`} />
-                  {lang === 'tr' ? 'Günlük Yükseliş' : 'Daily Trend'}
-                </span>
-                <span className={theme.accentText}>0% → {leader.progress}%</span>
-              </div>
-              <svg viewBox="0 0 220 56" className="w-full h-12 overflow-visible" aria-label="Progress Sparkline">
-                <defs>
-                  <linearGradient id="sparkFill" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor={theme.sparkStop} />
-                    <stop offset="100%" stopColor="rgba(0,0,0,0)" />
-                  </linearGradient>
-                </defs>
-                <polygon points={sparkPoints.area} fill="url(#sparkFill)" />
-                <polyline
-                  fill="none"
-                  stroke={theme.sparkStroke}
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  points={sparkPoints.line}
-                />
-                {sparkPoints.pts.map((p, idx) => (
-                  <circle
-                    key={p.label}
-                    cx={p.x}
-                    cy={p.y}
-                    r={idx === sparkPoints.pts.length - 1 ? 4 : 2.5}
-                    fill={theme.sparkStroke}
-                  />
-                ))}
-              </svg>
-              <div className={`flex justify-between text-[10px] mt-0.5 ${theme.muted}`}>
-                <span>{sparkPoints.pts[0].label}</span>
-                <span>{sparkPoints.pts[1].label}</span>
-                <span>{sparkPoints.pts[2].label}</span>
-                <span className={`font-bold ${theme.accentText}`}>{sparkPoints.pts[3].label}</span>
-              </div>
-            </div>
+            <button
+              type="button"
+              onClick={() => fetchTracker(true)}
+              disabled={refreshing}
+              className={`mt-2 self-start text-xs font-semibold px-3 py-1 rounded-lg border transition ${theme.pill}`}
+            >
+              {refreshing
+                ? lang === 'tr'
+                  ? 'Yenileniyor…'
+                  : 'Refreshing…'
+                : lang === 'tr'
+                ? '↻ Şimdi Yenile'
+                : '↻ Refresh Now'}
+            </button>
           </div>
         </section>
 
-        <section className="space-y-2.5">
-          <h2 className="text-sm font-bold tracking-wider opacity-80">
-            {lang === 'tr' ? 'SON GELİŞMELER' : 'LATEST UPDATES'}
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
-            {news.slice(0, 3).map((item, idx) => {
-              const badgeLabel = lang === 'tr' ? item.tagTr || 'GÜNCEL' : item.tagEn || 'LIVE';
-              const rawMsg =
-                lang === 'tr'
-                  ? String(item.tr || item.text || '').replace(/(\d+)'si oyunu başlatabiliyor/g, '$1 proje oyunu başlatabiliyor')
-                  : localizeDynamicText(item.en || item.tr || item.text, 'en');
-              return (
-                <div key={idx} className={`rounded-xl border p-3 text-xs leading-relaxed ${theme.card}`}>
-                  <span
-                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full font-black text-[10px] mb-1.5 border ${getNewsBadgeStyle(
-                      badgeLabel,
-                      isLight
-                    )}`}
+        {/* #1 Lider Aşama Özeti */}
+        {leader && (
+          <section className={`rounded-2xl border p-4 sm:p-5 ${theme.card}`}>
+            <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+              <div className="flex items-center gap-2">
+                <span className={`px-2.5 py-0.5 rounded-full text-xs font-black ${theme.accentBg}`}>
+                  #1 {lang === 'tr' ? 'LİDER' : 'LEADER'}
+                </span>
+                <h2 className="text-base sm:text-lg font-extrabold">{leader.name}</h2>
+                {leader.verified && (
+                  <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border ${theme.badgeVerified}`}>
+                    ✓ {lang === 'tr' ? 'Doğrulandı' : 'Verified'}
+                  </span>
+                )}
+              </div>
+              <div className="text-right">
+                <span className={`text-xl font-black ${theme.accentText}`}>
+                  %{leader.progress ?? leader.score ?? 0}
+                </span>
+                {leader.fps != null && (
+                  <span className={`ml-2 text-xs font-bold ${theme.muted}`}>
+                    • {leader.fps} FPS
+                  </span>
+                )}
+              </div>
+            </div>
+
+            <div className={`text-xs font-semibold uppercase tracking-wider mb-2 ${theme.muted}`}>
+              {lang === 'tr' ? 'Aşama Özeti' : 'Stage Summary'}
+            </div>
+            <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 text-center">
+              {[
+                { k: 'loads', tr: 'Yükleme', en: 'Loads' },
+                { k: 'boots', tr: 'Başlatma', en: 'Boots' },
+                { k: 'menu', tr: 'Menü', en: 'Menu' },
+                { k: 'world', tr: 'Dünya', en: 'World' },
+                { k: 'playable', tr: 'Oynanabilir', en: 'Playable' },
+                { k: 'story', tr: 'Hikaye', en: 'Story' },
+              ].map((m) => {
+                const val = Number(leader.milestones?.[m.k] ?? leader.gta?.[m.k] ?? 0);
+                const done = val >= 1;
+                const partial = val > 0 && val < 1;
+                return (
+                  <div
+                    key={m.k}
+                    className={`rounded-xl border px-2 py-2 text-xs font-semibold ${theme.cardSoft}`}
                   >
-                    <span className="w-1.5 h-1.5 rounded-full bg-current" />
-                    {badgeLabel}
-                  </span>
-                  <p className={theme.muted}>{cleanNestedParens(rawMsg)}</p>
-                </div>
-              );
-            })}
+                    <div className="truncate">{lang === 'tr' ? m.tr : m.en}</div>
+                    <div
+                      className={`mt-1 font-bold ${
+                        done
+                          ? 'text-emerald-400'
+                          : partial
+                          ? 'text-amber-400'
+                          : 'opacity-50'
+                      }`}
+                    >
+                      {done ? '✓ %100' : partial ? `%${Math.round(val * 100)}` : '—'}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        )}
+
+        {/* FİLTRE VE ARAMA */}
+        <section className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-2 flex-wrap">
+            {[
+              { id: 'all', tr: 'Tümü', en: 'All' },
+              { id: 'open', tr: 'Açık Kaynak', en: 'Open Source' },
+              { id: 'closed', tr: 'Kapalı', en: 'Closed' },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setFilterCat(tab.id)}
+                className={`px-3.5 py-1.5 rounded-full text-xs font-bold border transition ${
+                  filterCat === tab.id ? theme.accentBg : theme.pill
+                }`}
+              >
+                {lang === 'tr' ? tab.tr : tab.en}
+              </button>
+            ))}
           </div>
+
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder={lang === 'tr' ? 'Ekip veya GPU ara…' : 'Search team or GPU…'}
+            className={`w-full sm:w-64 px-3.5 py-2 rounded-xl border text-xs outline-none focus:ring-2 focus:ring-pink-500/40 ${theme.input}`}
+          />
         </section>
 
-        <section className={`rounded-xl border p-3.5 ${theme.card}`}>
-          <div className="flex items-center gap-2 flex-wrap text-xs">
-            <span className="font-bold opacity-85">
-              {lang === 'tr' ? "Test Edilen GPU'lar:" : 'Tested GPUs:'}
-            </span>
-            <span className={`px-2 py-0.5 rounded-md border ${theme.pill}`}>RX 9070 XT: 22 FPS</span>
-            <span className={`px-2 py-0.5 rounded-md border ${theme.pill}`}>
-              {lang === 'tr' ? 'RTX 50 Serisi: 15-24 FPS' : 'RTX 50 Series: 15-24 FPS'}
-            </span>
-            <span className={`px-2 py-0.5 rounded-md border ${theme.pill}`}>RX 7900 XTX: 16 FPS</span>
-            <span className={`px-2 py-0.5 rounded-md border ${theme.pill}`}>RTX 4070: 3-10 FPS</span>
-            <span className={`px-2 py-0.5 rounded-md border ${theme.pill}`}>RTX 5060 Ti: 4 FPS</span>
-          </div>
-        </section>
-
+        {/* LİDERLİK TABLOSU */}
         <section className="space-y-3">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <div className="flex items-center justify-between gap-2">
-              <h2 className="text-sm font-bold tracking-wider opacity-80">
-                {lang === 'tr'
-                  ? `AKTİF EKİPLER (${filteredTeams.length})`
-                  : `ACTIVE EFFORTS (${filteredTeams.length})`}
-              </h2>
-              <span className={`text-xs sm:hidden ${theme.muted}`}>
-                {lang === 'tr' ? '6 Aşama' : '6 Stages'}
-              </span>
+          {loading ? (
+            <div className={`rounded-2xl border p-8 text-center text-sm ${theme.card}`}>
+              {lang === 'tr' ? 'Canlı veriler yükleniyor…' : 'Loading live data…'}
             </div>
-
-            <div className="flex items-center gap-2 flex-wrap">
-              <div className={`inline-flex rounded-lg border p-0.5 text-[11px] font-semibold ${theme.subCard}`}>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setTypeFilter('all');
-                    setShowAllMobile(false);
-                  }}
-                  className={`px-2.5 py-1 rounded-md transition ${
-                    typeFilter === 'all' ? theme.btnPrimary : theme.muted
-                  }`}
-                >
-                  {lang === 'tr' ? `Tümü (${teams.length})` : `All (${teams.length})`}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setTypeFilter('open');
-                    setShowAllMobile(false);
-                  }}
-                  className={`px-2.5 py-1 rounded-md transition ${
-                    typeFilter === 'open' ? theme.btnPrimary : theme.muted
-                  }`}
-                >
-                  {lang === 'tr' ? `Açık Kaynak (${openCount})` : `Open (${openCount})`}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setTypeFilter('private');
-                    setShowAllMobile(false);
-                  }}
-                  className={`px-2.5 py-1 rounded-md transition ${
-                    typeFilter === 'private' ? theme.btnPrimary : theme.muted
-                  }`}
-                >
-                  {lang === 'tr' ? `Kapalı (${privateCount})` : `Private (${privateCount})`}
-                </button>
-              </div>
-              <span className={`hidden sm:inline text-xs ${theme.muted}`}>
-                {lang === 'tr' ? '6 Aşamalı İlerleme Ölçeği' : '6-Stage Progress Scale'}
-              </span>
+          ) : filteredTeams.length === 0 ? (
+            <div className={`rounded-2xl border p-8 text-center text-sm ${theme.card}`}>
+              {lang === 'tr' ? 'Eşleşen ekip bulunamadı.' : 'No matching teams found.'}
             </div>
-          </div>
+          ) : (
+            <>
+              {filteredTeams.map((team, idx) => {
+                const isOpen = Boolean(team.isOpenSource ?? team.repo ?? team.sourceUrl);
+                const pct = Number(team.progress ?? team.score ?? 0);
+                const sourceUrl =
+                  team.sourceUrl ||
+                  (team.repo ? `https://github.com/${team.repo}` : null);
+                const hideOnMobile = !showAllMobile && idx >= 10;
 
-          <div className="space-y-3">
-            {filteredTeams.map((team, idx) => {
-              const rank = team.globalRank;
-              const isTop3 = rank <= 3;
-              const isHot = rank === 1;
-              const barWidth = Math.min(100, Math.max(2, team.progress));
-              const hideOnMobile = idx >= 10 && !showAllMobile;
-              const updatedText = formatTeamUpdated(team.updatedAt || lastSyncAt, lang);
-              const leaderSummary =
-                rank === 1
-                  ? lang === 'tr'
-                    ? team.summaryTr ||
-                      `${team.name} şu an %${team.progress} ile genel lider (${localizeDynamicText(team.fps, 'tr')}).`
-                    : team.summaryEn ||
-                      `${team.name} currently leads at ${team.progress}% (${localizeDynamicText(team.fps, 'en')}).`
-                  : '';
+                return (
+                  <article
+                    key={team.id || team.name || idx}
+                    className={`rounded-2xl border p-4 transition ${theme.card} ${
+                      hideOnMobile ? 'hidden sm:block' : 'block'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className={`text-xs font-black px-2 py-0.5 rounded-md ${theme.cardSoft}`}>
+                            #{idx + 1}
+                          </span>
+                          <h3 className="text-sm sm:text-base font-extrabold truncate">
+                            {team.name}
+                          </h3>
+                          <span
+                            className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border ${
+                              isOpen ? theme.badgeOpen : theme.badgeClosed
+                            }`}
+                          >
+                            {isOpen
+                              ? lang === 'tr'
+                                ? 'Açık Kaynak'
+                                : 'Open Source'
+                              : lang === 'tr'
+                              ? 'Kapalı'
+                              : 'Closed'}
+                          </span>
+                          {team.gpu && (
+                            <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border ${theme.pill}`}>
+                              {team.gpu}
+                            </span>
+                          )}
+                        </div>
 
-              return (
-                <article
-                  key={team.name}
-                  className={`rounded-2xl border p-3.5 sm:p-4 transition ${theme.card} ${
-                    rank === 1 ? 'ring-1 ring-orange-500/40' : ''
-                  } ${hideOnMobile ? 'hidden sm:block' : ''}`}
-                >
-                  <div className="flex items-start sm:items-center justify-between gap-2">
-                    <div className="flex items-center gap-2 flex-wrap min-w-0">
-                      <span
-                        className={`inline-flex items-center justify-center w-7 h-7 rounded-lg text-xs font-black shrink-0 ${
-                          rank === 1 ? theme.btnPrimary : `border ${theme.pill}`
-                        }`}
-                      >
-                        #{rank}
-                      </span>
-                      <h3 className="text-base sm:text-lg font-extrabold tracking-tight">
-                        {team.name}
-                      </h3>
-
-                      {isHot && (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black tracking-wider bg-gradient-to-r from-red-500 via-orange-500 to-amber-400 text-zinc-950 shadow-[0_0_16px_rgba(249,115,22,0.75)] animate-pulse">
-                          <Flame className="w-3 h-3 fill-current" />
-                          HOT
-                        </span>
-                      )}
-
-                      {isTop3 && (
-                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-black tracking-wider border ${liveBadgeClass}`}>
-                          <span className={`w-1.5 h-1.5 rounded-full ${liveDotClass}`} />
-                          {lang === 'tr' ? 'CANLI' : 'LIVE'}
-                        </span>
-                      )}
-
-                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold border ${theme.pill}`}>
-                        {team.type === 'private' ? (
-                          <Lock className="w-3 h-3 opacity-80" />
-                        ) : (
-                          <Code2 className="w-3 h-3 opacity-80" />
+                        {team.status && (
+                          <p className={`text-xs mt-1.5 ${theme.muted}`}>{team.status}</p>
                         )}
-                        <span>
-                          {team.type === 'private'
-                            ? lang === 'tr'
-                              ? 'Kapalı Ekip'
-                              : 'Private Build'
-                            : lang === 'tr'
-                              ? 'Açık Kaynak'
-                              : 'Open Source'}
-                        </span>
-                      </span>
+                      </div>
 
-                      {team.delta && (
-                        <span className={`text-[11px] font-bold ${isLight ? 'text-emerald-700' : 'text-emerald-400'}`}>
-                          ▲ {team.delta}
-                        </span>
-                      )}
+                      {/* Sağ Üst: Yüzde + Kaynak */}
+                      <div className="text-right shrink-0 flex flex-col items-end gap-1">
+                        <div className={`text-lg sm:text-xl font-black ${theme.accentText}`}>
+                          %{pct.toFixed(1).replace(/\.0$/, '')}
+                        </div>
+                        {sourceUrl && (
+                          <a
+                            href={sourceUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className={`text-[11px] font-semibold underline underline-offset-2 ${theme.accentText}`}
+                          >
+                            {lang === 'tr' ? 'Kaynak ↗' : 'Source ↗'}
+                          </a>
+                        )}
+                      </div>
                     </div>
 
-                    <div className="flex items-center gap-2 shrink-0">
-                      <span className={`text-lg sm:text-xl font-black ${theme.accentText}`}>
-                        {lang === 'tr' ? `%${team.progress}` : `${team.progress}%`}
-                      </span>
-                      <a
-                        href={team.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={`inline-flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-lg border text-xs font-semibold transition hover:opacity-80 ${theme.subCard}`}
-                      >
-                        <span>{team.isZortos ? 'X' : lang === 'tr' ? 'Kaynak' : 'Source'}</span>
-                        <ExternalLink className="w-3 h-3" />
-                      </a>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2 flex-wrap mt-2 text-xs">
-                    <span className={`px-2 py-0.5 rounded-md border font-semibold ${theme.pill}`}>
-                      {localizeDynamicText(team.fps, lang)}
-                    </span>
-                    {team.gpu && (
-                      <span className={`px-2 py-0.5 rounded-md border ${theme.pill}`}>
-                        {localizeDynamicText(team.gpu, lang)}
-                      </span>
-                    )}
-                    {team.stage && (
-                      <span className={theme.muted}>{localizeDynamicText(team.stage, lang)}</span>
-                    )}
-                  </div>
-
-                  <div className="mt-3 space-y-2">
-                    <div className="relative h-2.5 w-full rounded-full bg-zinc-700/35 overflow-hidden">
+                    {/* İlerleme Çubuğu */}
+                    <div className={`mt-3 h-2 w-full rounded-full overflow-hidden ${theme.progressTrack}`}>
                       <div
-                        className={`h-full rounded-full bg-gradient-to-r ${theme.accentGradient} transition-all duration-500`}
-                        style={{ width: `${barWidth}%` }}
+                        className={`h-full rounded-full transition-all duration-500 ${theme.progressBar}`}
+                        style={{ width: `${Math.min(100, Math.max(0, pct))}%` }}
                       />
                     </div>
-                    <div className="grid grid-cols-3 sm:grid-cols-6 gap-x-2 gap-y-1">
-                      {MILESTONES.map((m) => {
-                        const reached = team.progress >= m.min;
+
+                    {/* 6 Aşama Etiketi */}
+                    <div className="mt-3 grid grid-cols-3 sm:grid-cols-6 gap-1.5 text-[11px]">
+                      {[
+                        { k: 'loads', tr: 'Yükleme', en: 'Loads' },
+                        { k: 'boots', tr: 'Başlatma', en: 'Boots' },
+                        { k: 'menu', tr: 'Menü', en: 'Menu' },
+                        { k: 'world', tr: 'Dünya', en: 'World' },
+                        { k: 'playable', tr: 'Oynanabilir', en: 'Playable' },
+                        { k: 'render', tr: 'Görüntü', en: 'Render' },
+                      ].map((m) => {
+                        const val = Number(team.milestones?.[m.k] ?? team.gta?.[m.k] ?? 0);
                         return (
-                          <div key={m.key} className="flex items-center gap-1 min-w-0">
-                            <span
-                              className={`w-1.5 h-1.5 rounded-full shrink-0 ${
-                                reached ? theme.accentBg : 'bg-zinc-600/50'
-                              }`}
-                            />
-                            <span
-                              className={`text-[10px] leading-tight truncate ${
-                                reached ? 'font-semibold opacity-95' : theme.muted
-                              }`}
-                            >
-                              {m[lang]}
-                            </span>
+                          <div
+                            key={m.k}
+                            className={`px-2 py-1 rounded-lg border text-center truncate ${theme.cardSoft} ${
+                              val >= 1
+                                ? 'border-emerald-500/40 text-emerald-400 font-bold'
+                                : val > 0
+                                ? 'border-amber-500/40 text-amber-400 font-semibold'
+                                : 'opacity-50'
+                            }`}
+                          >
+                            {lang === 'tr' ? m.tr : m.en}
                           </div>
                         );
                       })}
                     </div>
-                  </div>
 
-                  {leaderSummary && (
-                    <div className={`mt-3 rounded-xl border px-3 py-2 text-xs leading-relaxed flex items-start gap-2 ${theme.subCard}`}>
-                      <Info className={`w-3.5 h-3.5 mt-0.5 shrink-0 ${theme.accentText}`} />
-                      <p className={theme.muted}>
-                        <strong className={theme.accentText}>
-                          {lang === 'tr' ? 'Aşama Özeti: ' : 'Stage Summary: '}
-                        </strong>
-                        {leaderSummary}
-                      </p>
+                    {/* Alt Bilgi: FPS + Son Güncelleme Saati (TSİ) */}
+                    <div className={`mt-3 pt-2.5 border-t border-white/10 flex flex-wrap items-center justify-between gap-2 text-[11px] ${theme.muted}`}>
+                      <div className="flex items-center gap-3">
+                        {team.fps != null && (
+                          <span className="font-semibold">🎮 {team.fps} FPS</span>
+                        )}
+                        {team.stability && <span>• {team.stability}</span>}
+                      </div>
+                      <div>
+                        <span className="font-semibold">
+                          {lang === 'tr' ? 'Son Güncelleme:' : 'Last Update:'}
+                        </span>{' '}
+                        {formatIstanbulTime(team.updatedAt || team.pushedAt || syncData?.updatedAt, lang)}
+                      </div>
                     </div>
-                  )}
+                  </article>
+                );
+              })}
 
-                  {updatedText && (
-                    <div
-                      className={`mt-2.5 pt-2 border-t flex items-center gap-1.5 text-[11px] ${
-                        isLight ? 'border-zinc-200/80' : 'border-white/10'
-                      } ${theme.muted}`}
-                    >
-                      <Clock className="w-3 h-3 opacity-75 shrink-0" />
-                      <span>
-                        {lang === 'tr' ? 'Son Güncelleme:' : 'Last Updated:'}{' '}
-                        <strong className="opacity-90">{updatedText}</strong>
-                      </span>
-                    </div>
-                  )}
-                </article>
-              );
-            })}
-          </div>
-
-          {filteredTeams.length > 10 && (
-            <div className="sm:hidden pt-1">
-              <button
-                type="button"
-                onClick={() => setShowAllMobile((v) => !v)}
-                className={`w-full py-2.5 px-4 rounded-xl border text-xs font-bold flex items-center justify-center gap-1.5 transition ${theme.card} ${theme.accentText}`}
-              >
-                {showAllMobile ? (
-                  <>
-                    <span>{lang === 'tr' ? 'İlk 10 Ekibi Göster' : 'Show Top 10 Only'}</span>
-                    <ChevronUp className="w-4 h-4" />
-                  </>
-                ) : (
-                  <>
-                    <span>
-                      {lang === 'tr'
-                        ? `Tümünü Göster (${filteredTeams.length - 10} ekip daha)`
-                        : `Show All (${filteredTeams.length - 10} more)`}
-                    </span>
-                    <ChevronDown className="w-4 h-4" />
-                  </>
-                )}
-              </button>
-            </div>
+              {/* Mobilde Tümünü Göster */}
+              {filteredTeams.length > 10 && (
+                <div className="sm:hidden text-center pt-1">
+                  <button
+                    type="button"
+                    onClick={() => setShowAllMobile((prev) => !prev)}
+                    className={`px-4 py-2 rounded-xl border text-xs font-bold ${theme.pill}`}
+                  >
+                    {showAllMobile
+                      ? lang === 'tr'
+                        ? 'Daha Az Göster'
+                        : 'Show Less'
+                      : lang === 'tr'
+                      ? `Tümünü Göster (${filteredTeams.length})`
+                      : `Show All (${filteredTeams.length})`}
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </section>
 
+        {/* CANLI SOHBET (AÇILIR KAPANIR AKORDİYON — SSS ÜSTÜNDE) */}
         <section className={`rounded-2xl border overflow-hidden ${theme.card}`}>
           <button
             type="button"
-            onClick={() => {
-              const next = !chatOpen;
-              setChatOpen(next);
-              if (next) fetchChatMessages();
-            }}
-            className="w-full px-4 py-3 flex items-center justify-between gap-2 text-left hover:bg-white/5 transition"
+            onClick={() => setChatOpen((prev) => !prev)}
+            className="w-full px-4 sm:px-5 py-4 flex items-center justify-between gap-3 text-left hover:bg-white/5 transition"
           >
-            <div className="flex items-center gap-2.5 flex-wrap">
-              <MessageCircle className={`w-4 h-4 ${theme.accentText} shrink-0`} />
-              <span className="text-xs sm:text-sm font-bold tracking-wider">
+            <div className="flex items-center gap-2.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="text-sm sm:text-base font-black tracking-wide">
                 {lang === 'tr' ? 'CANLI SOHBET' : 'LIVE CHAT'}
               </span>
-              <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${faqLiveBadgeClass}`}>
-                {chatMessages.length} {lang === 'tr' ? 'Mesaj · Korumalı' : 'Messages · Filtered'}
+              <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border ${theme.pill}`}>
+                {chatMessages.length}
               </span>
             </div>
-            {chatOpen ? <ChevronUp className="w-4 h-4 shrink-0" /> : <ChevronDown className="w-4 h-4 shrink-0" />}
+            <div className="flex items-center gap-2 text-xs font-semibold opacity-80">
+              <span>
+                {chatOpen
+                  ? lang === 'tr'
+                    ? 'Gizle'
+                    : 'Hide'
+                  : lang === 'tr'
+                  ? 'Sohbeti Aç'
+                  : 'Open Chat'}
+              </span>
+              <span>{chatOpen ? '▲' : '▼'}</span>
+            </div>
           </button>
 
           {chatOpen && (
-            <div className={`px-3.5 sm:px-4 pb-4 pt-3 border-t space-y-3 ${theme.subCard}`}>
-              <div className={`rounded-xl border p-2.5 max-h-64 overflow-y-auto space-y-2 ${theme.card}`}>
-                {chatMessages.length === 0 ? (
-                  <p className={`text-xs text-center py-6 ${theme.muted}`}>
+            <div className="px-4 sm:px-5 pb-5 pt-2 border-t border-white/10 space-y-3">
+              {/* Kurallar & 60sn Bilgi Çubuğu */}
+              <div className={`text-[11px] flex flex-wrap items-center justify-between gap-2 ${theme.muted}`}>
+                <span>
+                  {lang === 'tr'
+                    ? '🛡️ Küfür filtresi ve link engeli aktiftir • 60 saniyede 1 mesaj sınırı'
+                    : '🛡️ Profanity filter & link blocker active • 1 message per 60 seconds'}
+                </span>
+                {cooldownLeft > 0 && (
+                  <span className="font-bold text-amber-400">
+                    ⏱ {lang === 'tr' ? `Bekleme: ${cooldownLeft} sn` : `Cooldown: ${cooldownLeft}s`}
+                  </span>
+                )}
+              </div>
+
+              {/* Mesaj Listesi */}
+              <div
+                ref={chatScrollRef}
+                className={`h-72 overflow-y-auto rounded-xl border p-3 space-y-2.5 ${theme.cardSoft}`}
+              >
+                {chatLoading && chatMessages.length === 0 ? (
+                  <div className={`text-xs text-center py-8 ${theme.muted}`}>
+                    {lang === 'tr' ? 'Sohbet yükleniyor…' : 'Loading chat…'}
+                  </div>
+                ) : chatMessages.length === 0 ? (
+                  <div className={`text-xs text-center py-8 ${theme.muted}`}>
                     {lang === 'tr'
                       ? 'Henüz mesaj yok. İlk mesajı sen yaz!'
                       : 'No messages yet. Be the first to say hi!'}
-                  </p>
+                  </div>
                 ) : (
                   chatMessages.map((m) => (
-                    <div key={m.id} className={`rounded-lg border px-2.5 py-2 text-xs ${theme.subCard}`}>
-                      <div className="flex items-center justify-between gap-2 mb-0.5">
-                        <span className={`font-extrabold ${theme.accentText}`}>{m.nickname}</span>
-                        <span className={`text-[10px] ${theme.muted}`}>{formatChatTime(m.created_at)} TSİ</span>
+                    <div
+                      key={m.id}
+                      className={`rounded-xl border px-3 py-2 text-xs ${theme.chatBubble}`}
+                    >
+                      {/* Yanıtlanan Mesaj Önizlemesi */}
+                      {(m.reply_to_nick || m.reply_to_text) && (
+                        <div className={`mb-1.5 px-2.5 py-1 rounded-md text-[11px] ${theme.replyBox}`}>
+                          <span className="font-bold opacity-90">
+                            ↩ @{m.reply_to_nick || 'Kullanıcı'}:
+                          </span>{' '}
+                          <span className="opacity-75 break-words">{m.reply_to_text}</span>
+                        </div>
+                      )}
+
+                      <div className="flex items-center justify-between gap-2">
+                        <span className={`font-extrabold ${theme.accentText}`}>
+                          {m.nickname}
+                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className={`text-[10px] ${theme.muted}`}>
+                            {formatIstanbulTime(m.created_at, lang, false)}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handleStartReply(m)}
+                            className={`text-[10px] font-semibold px-1.5 py-0.5 rounded border transition hover:opacity-100 opacity-75 ${theme.pill}`}
+                            title={lang === 'tr' ? 'Bu mesajı yanıtla' : 'Reply to this message'}
+                          >
+                            ↩ {lang === 'tr' ? 'Yanıtla' : 'Reply'}
+                          </button>
+                        </div>
                       </div>
-                      <p className="leading-snug break-words">{m.message}</p>
+
+                      <p className="mt-1 break-words leading-relaxed">{m.message}</p>
                     </div>
                   ))
                 )}
-                <div ref={chatEndRef} />
               </div>
 
-              <form onSubmit={handleSendChat} className="space-y-2 text-xs">
+              {/* Yanıt Önizleme Çubuğu */}
+              {replyTo && (
+                <div
+                  className={`flex items-center justify-between gap-2 px-3 py-2 rounded-xl text-xs ${theme.replyBox}`}
+                >
+                  <div className="min-w-0 truncate">
+                    <span className="font-bold">
+                      ↩ {lang === 'tr' ? `@${replyTo.nickname} yanıtlanıyor:` : `Replying to @${replyTo.nickname}:`}
+                    </span>{' '}
+                    <span className="opacity-80">{replyTo.message}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setReplyTo(null)}
+                    className="shrink-0 text-xs font-bold px-2 py-0.5 rounded hover:bg-white/10"
+                    aria-label="Yanıtı iptal et"
+                  >
+                    ✕
+                  </button>
+                </div>
+              )}
+
+              {/* Hata Mesajı */}
+              {chatError && (
+                <div className="text-xs font-semibold text-rose-400 bg-rose-500/10 border border-rose-500/30 rounded-xl px-3 py-2">
+                  {chatError}
+                </div>
+              )}
+
+              {/* Mesaj Gönderme Formu */}
+              <form onSubmit={handleSendChat} className="space-y-2">
                 <div className="flex flex-col sm:flex-row gap-2">
+                  {/* Kullanıcı İsim Alma Alanı */}
                   <input
                     type="text"
-                    maxLength={20}
                     value={chatNick}
-                    onChange={(e) => setChatNick(e.target.value)}
-                    placeholder={lang === 'tr' ? 'Rumuzun (2-20)' : 'Nickname (2-20)'}
-                    className={`sm:w-40 rounded-xl border px-3 py-2 outline-none ${theme.card}`}
+                    onChange={(e) => handleNickChange(e.target.value)}
+                    maxLength={20}
+                    placeholder={lang === 'tr' ? 'İsmin (2-20 karakter)' : 'Your name (2-20 chars)'}
+                    className={`w-full sm:w-44 px-3 py-2.5 rounded-xl border text-xs font-semibold outline-none focus:ring-2 focus:ring-pink-500/40 ${theme.input}`}
                   />
-                  <div className="flex gap-2 flex-1">
+
+                  {/* Mesaj Kutusu */}
+                  <div className="flex-1 flex gap-2">
                     <input
+                      ref={chatInputRef}
                       type="text"
-                      maxLength={200}
                       value={chatInput}
                       onChange={(e) => setChatInput(e.target.value)}
+                      maxLength={280}
+                      disabled={cooldownLeft > 0 || chatSending}
                       placeholder={
-                        lang === 'tr'
-                          ? 'Mesajını yaz (link ve küfür yasak)...'
-                          : 'Type a message (no links or profanity)...'
+                        cooldownLeft > 0
+                          ? lang === 'tr'
+                            ? `Yeni mesaj için ${cooldownLeft} saniye bekle…`
+                            : `Wait ${cooldownLeft}s to send again…`
+                          : lang === 'tr'
+                          ? 'Mesajını yaz (link yasak)…'
+                          : 'Write a message (no links)…'
                       }
-                      className={`flex-1 rounded-xl border px-3 py-2 outline-none min-w-0 ${theme.card}`}
+                      className={`flex-1 px-3 py-2.5 rounded-xl border text-xs outline-none focus:ring-2 focus:ring-pink-500/40 disabled:opacity-60 ${theme.input}`}
                     />
                     <button
                       type="submit"
-                      disabled={chatSending}
-                      className={`px-3.5 py-2 rounded-xl font-bold inline-flex items-center gap-1.5 shrink-0 transition ${theme.btnPrimary}`}
+                      disabled={chatSending || cooldownLeft > 0 || !chatInput.trim()}
+                      className={`px-4 py-2.5 rounded-xl text-xs font-bold transition shrink-0 disabled:opacity-50 disabled:cursor-not-allowed ${theme.accentBg}`}
                     >
-                      <Send className="w-3.5 h-3.5" />
-                      <span className="hidden sm:inline">
-                        {chatSending
-                          ? lang === 'tr'
-                            ? 'Gönderiliyor'
-                            : 'Sending'
-                          : lang === 'tr'
-                            ? 'Gönder'
-                            : 'Send'}
-                      </span>
+                      {chatSending
+                        ? '…'
+                        : cooldownLeft > 0
+                        ? `⏱ ${cooldownLeft}s`
+                        : lang === 'tr'
+                        ? 'Gönder'
+                        : 'Send'}
                     </button>
                   </div>
                 </div>
 
-                {chatError && (
-                  <p className="text-red-500 font-semibold text-[11px]">{chatError}</p>
+                {/* 60 Saniye Görsel Geri Sayım Çubuğu */}
+                {cooldownLeft > 0 && (
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between text-[11px] font-semibold text-amber-400">
+                      <span>
+                        {lang === 'tr'
+                          ? `Yeni mesaj atabilmek için ${cooldownLeft} saniye kaldı`
+                          : `${cooldownLeft} seconds remaining until your next message`}
+                      </span>
+                      <span>{cooldownLeft}s / {CHAT_COOLDOWN_SEC}s</span>
+                    </div>
+                    <div className={`h-1.5 w-full rounded-full overflow-hidden ${theme.progressTrack}`}>
+                      <div
+                        className="h-full bg-amber-400 transition-all duration-1000 ease-linear"
+                        style={{ width: `${(cooldownLeft / CHAT_COOLDOWN_SEC) * 100}%` }}
+                      />
+                    </div>
+                  </div>
                 )}
               </form>
             </div>
           )}
         </section>
 
-        <section className={`rounded-2xl border p-4 space-y-2.5 ${theme.card}`}>
-          <div className="flex items-center gap-2">
-            <HelpCircle className={`w-4 h-4 ${theme.accentText} shrink-0`} />
-            <h2 className="text-xs sm:text-sm font-bold tracking-wider">
-              {lang === 'tr' ? 'MERAK EDİLEN SORULAR' : 'FREQUENTLY ASKED QUESTIONS'}
-            </h2>
-          </div>
-
+        {/* MERAK EDİLEN SORULAR (4 Dinamik SSS) */}
+        <section className={`rounded-2xl border p-4 sm:p-5 ${theme.card}`}>
+          <h2 className="text-sm sm:text-base font-black tracking-wide mb-3">
+            {lang === 'tr' ? 'MERAK EDİLEN SORULAR' : 'FREQUENTLY ASKED QUESTIONS'}
+          </h2>
           <div className="space-y-2">
             {faqItems.map((item, idx) => {
-              const isOpen = openFaqIdx === idx;
+              const isOpen = openFaq === idx;
               return (
-                <div key={idx} className={`rounded-xl border overflow-hidden ${theme.subCard}`}>
+                <div
+                  key={idx}
+                  className={`rounded-xl border overflow-hidden ${theme.cardSoft}`}
+                >
                   <button
                     type="button"
-                    onClick={() => setOpenFaqIdx(isOpen ? null : idx)}
-                    className="w-full px-3.5 py-2.5 flex items-center justify-between gap-2 text-left hover:bg-white/5 transition"
+                    onClick={() => setOpenFaq(isOpen ? null : idx)}
+                    className="w-full px-4 py-3 text-left flex items-center justify-between gap-2 text-xs sm:text-sm font-bold"
                   >
-                    <span className="text-xs font-bold leading-snug">
-                      {lang === 'tr' ? item.qTr : item.qEn}
-                    </span>
-                    <div className="flex items-center gap-2 shrink-0">
-                      {item.live && (
-                        <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-bold border ${faqLiveBadgeClass}`}>
-                          {lang === 'tr' ? 'Canlı Veri' : 'Live'}
-                        </span>
-                      )}
-                      {isOpen ? (
-                        <ChevronUp className="w-3.5 h-3.5 opacity-75" />
-                      ) : (
-                        <ChevronDown className="w-3.5 h-3.5 opacity-75" />
-                      )}
-                    </div>
+                    <span>{item.q}</span>
+                    <span className="shrink-0 opacity-70">{isOpen ? '−' : '+'}</span>
                   </button>
                   {isOpen && (
-                    <div className={`px-3.5 pb-3 pt-1 text-xs leading-relaxed border-t ${theme.card} ${theme.muted}`}>
-                      {lang === 'tr' ? item.aTr : item.aEn}
+                    <div className={`px-4 pb-3.5 text-xs leading-relaxed ${theme.muted}`}>
+                      {item.a}
                     </div>
                   )}
                 </div>
@@ -1621,263 +1405,153 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section className={`rounded-2xl border overflow-hidden ${theme.card}`}>
-          <button
-            type="button"
-            onClick={() => setRadarOpen((v) => !v)}
-            className="w-full px-4 py-3 flex items-center justify-between gap-2 text-left hover:bg-white/5 transition"
-          >
-            <div className="flex items-center gap-2.5 flex-wrap">
-              <ShieldAlert className="w-4 h-4 text-amber-500 shrink-0" />
-              <span className="text-xs sm:text-sm font-bold">
-                {lang === 'tr' ? 'DMCA & Güvenlik Radarı' : 'DMCA & Security Radar'}
-              </span>
-              <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${dmcaBadgeClass}`}>
-                {lang === 'tr'
-                  ? '2 Kaldırılan · Sahte .EXE Uyarısı'
-                  : '2 Takedowns · Fake .EXE Warning'}
-              </span>
-            </div>
-            {radarOpen ? <ChevronUp className="w-4 h-4 shrink-0" /> : <ChevronDown className="w-4 h-4 shrink-0" />}
-          </button>
-
-          {radarOpen && (
-            <div className={`px-4 pb-4 pt-2 border-t space-y-2.5 text-xs ${theme.subCard}`}>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                <div className={`p-2.5 rounded-xl border ${theme.card}`}>
-                  <span className="font-bold text-red-500">Leonida (DMCA)</span>
-                  <p className={`mt-0.5 ${theme.muted}`}>
-                    {lang === 'tr'
-                      ? '24 Kasım 2026 — Take-Two DMCA bildirimiyle GitHub ana deposu ve 3.007 fork devre dışı bırakıldı.'
-                      : 'Nov 24, 2026 — Main GitHub repo and 3,007 forks disabled via Take-Two DMCA notice.'}
-                  </p>
-                </div>
-                <div className={`p-2.5 rounded-xl border ${theme.card}`}>
-                  <span className="font-bold text-red-500">
-                    {lang === 'tr' ? 'ZETTROX (Kaldırıldı)' : 'ZETTROX (Removed)'}
-                  </span>
-                  <p className={`mt-0.5 ${theme.muted}`}>
-                    {lang === 'tr'
-                      ? '25 Kasım 2026 — Eski %64.2 lideri Zettrox/ztrx deposu GitHub üzerinden silindi.'
-                      : 'Nov 25, 2026 — Former 64.2% leader Zettrox/ztrx repository was removed from GitHub.'}
-                  </p>
-                </div>
-              </div>
-              <p className={`${isLight ? 'text-amber-800' : 'text-amber-300/90'} leading-relaxed font-medium`}>
-                {lang === 'tr'
-                  ? 'Güvenlik Uyarısı: İnternette dolaşan "GTA 6 PC Kurulum / Crack .exe" dosyalarının tamamı sahtedir ve zararlı yazılım içerir. Hiçbir geliştirici ekip halka açık oynanabilir bir kurulum dosyası dağıtmamaktadır.'
-                  : 'Security Warning: All "GTA 6 PC Installer / Crack .exe" files circulating online are fake and contain malware. No development team distributes a public playable installer.'}
-              </p>
-            </div>
-          )}
-        </section>
-
-        <footer className={`pt-2 pb-16 space-y-4 text-center text-xs ${theme.muted}`}>
-          <div className="flex items-center justify-center gap-2 flex-wrap">
-            <a
-              href="https://x.com/batmancodex"
-              target="_blank"
-              rel="noopener noreferrer"
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border font-semibold transition hover:opacity-85 ${theme.card}`}
-            >
-              <IconX />
-              <span>@batmancodex</span>
-            </a>
-            <a
-              href="https://wa.me/?text=GTA%20VI%20PC%20Port%20Takip%3A%20https%3A%2F%2Fgta6takip.vercel.app%2F"
-              target="_blank"
-              rel="noopener noreferrer"
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border font-semibold transition hover:opacity-85 ${theme.card}`}
-            >
-              <IconWhatsApp />
-              <span>{lang === 'tr' ? "WhatsApp'ta Paylaş" : 'Share on WhatsApp'}</span>
-            </a>
-            <a
-              href="https://x.com/intent/tweet?text=GTA%20VI%20PC%20Port%20Takip&url=https%3A%2F%2Fgta6takip.vercel.app%2F"
-              target="_blank"
-              rel="noopener noreferrer"
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border font-semibold transition hover:opacity-85 ${theme.card}`}
-            >
-              <IconX />
-              <span>{lang === 'tr' ? "X'te Paylaş" : 'Share on X'}</span>
-            </a>
-            <button
-              type="button"
-              onClick={handleCopyLink}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border font-semibold transition hover:opacity-85 ${theme.card}`}
-            >
-              <Share2 className={`w-3.5 h-3.5 ${theme.accentText}`} />
-              <span>{copied ? (lang === 'tr' ? 'Kopyalandı' : 'Copied') : (lang === 'tr' ? 'Linki Kopyala' : 'Copy Link')}</span>
-            </button>
-          </div>
-          <p className="max-w-2xl mx-auto leading-relaxed opacity-80">
+        {/* DMCA & GÜVENLİK RADARI */}
+        <section className={`rounded-2xl border p-4 sm:p-5 ${theme.card}`}>
+          <h2 className="text-sm font-black tracking-wide mb-1.5">
+            {lang === 'tr' ? '🛡️ DMCA & Güvenlik Radarı' : '🛡️ DMCA & Safety Radar'}
+          </h2>
+          <p className={`text-xs leading-relaxed ${theme.muted}`}>
             {lang === 'tr'
-              ? 'GTA6takip, PortWatch projesinin kâr gütmeyen, hobi amaçlı Türkçe alternatifidir. Veriler halka açık kaynaklardan derlenir; hiçbir korsan veya telifli dosya barındırılmaz.'
-              : 'GTA6takip is a non-profit, hobbyist tracker inspired by PortWatch. Data is aggregated from public sources; no pirated or copyrighted files are hosted.'}
+              ? 'GTA6Takip bağımsız bir bilgilendirme ve topluluk takip panosudur. Telif hakkı ihlali içeren dosya, indirme linki veya kırık sürüm barındırmaz. Resmi kaynaklar dışındaki bilinmeyen çalıştırılabilir (.exe) dosyalara karşı dikkatli olun.'
+              : 'GTA6Takip is an independent informational progress tracker. It does not host copyrighted files, builds, or download links. Always stay cautious against unverified executable files.'}
           </p>
-        </footer>
+        </section>
       </main>
 
+      {/* ALT BİLGİ (FOOTER) */}
+      <footer className="max-w-6xl mx-auto px-3 sm:px-6 pb-20 pt-4 text-center space-y-3">
+        <div className="flex flex-wrap items-center justify-center gap-2">
+          <a
+            href="https://portwatch-vi.xyz/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition ${theme.pill}`}
+          >
+            PortWatch VI ↗
+          </a>
+          <a
+            href="https://github.com/gta6takip/gta6takip"
+            target="_blank"
+            rel="noopener noreferrer"
+            className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition ${theme.pill}`}
+          >
+            GitHub ↗
+          </a>
+          <a
+            href="https://x.com/batmancodex"
+            target="_blank"
+            rel="noopener noreferrer"
+            className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition ${theme.pill}`}
+          >
+            X / @batmancodex ↗
+          </a>
+        </div>
+        <div className={`text-[11px] ${theme.muted}`}>
+          GTA6Takip {APP_VERSION} • {lang === 'tr' ? 'Tüm saatler TSİ (Europe/Istanbul)' : 'All times in TRT (Europe/Istanbul)'}
+        </div>
+      </footer>
+
+      {/* SOL ALT: TAVSİYE / FİKİR BUTONU */}
       <button
         type="button"
         onClick={() => {
           setFeedbackStatus('idle');
           setFeedbackOpen(true);
         }}
-        style={{ animation: 'feedbackNudge 4s ease-in-out infinite' }}
-        className={`fixed bottom-5 left-4 z-40 inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-full shadow-lg text-xs font-extrabold transition hover:scale-105 ${theme.btnPrimary}`}
+        className={`fixed bottom-4 left-4 z-40 px-3.5 py-2.5 rounded-full text-xs font-extrabold shadow-xl animate-feedback-nudge ${theme.accentBg}`}
       >
-        <MessageSquarePlus className="w-4 h-4" />
-        <span>{lang === 'tr' ? 'Tavsiye / Fikir' : 'Feedback / Idea'}</span>
+        💡 {lang === 'tr' ? 'Tavsiye / Fikir' : 'Feedback'}
       </button>
 
-      {showBackTop && (
+      {/* SAĞ ALT: YUKARI ÇIK BUTONU */}
+      {showScrollTop && (
         <button
           type="button"
           onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-          aria-label={lang === 'tr' ? 'Yukarı çık' : 'Back to top'}
-          className={`fixed bottom-5 right-4 z-40 p-3 rounded-full shadow-lg transition hover:scale-110 ${theme.btnPrimary}`}
+          className={`fixed bottom-4 right-4 z-40 w-10 h-10 rounded-full border shadow-xl flex items-center justify-center font-black ${theme.pill}`}
+          aria-label="Yukarı çık"
         >
-          <ArrowUp className="w-5 h-5" />
+          ↑
         </button>
       )}
 
+      {/* TAVSİYE / FİKİR MODALI */}
       {feedbackOpen && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className={`w-full max-w-md rounded-2xl border p-5 space-y-4 ${theme.menuBg}`}>
+        <div
+          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+          onClick={() => setFeedbackOpen(false)}
+        >
+          <div
+            className={`w-full max-w-md rounded-2xl border p-5 space-y-3 ${theme.dropdown}`}
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <MessageSquarePlus className={`w-4 h-4 ${theme.accentText}`} />
-                <h3 className="text-base font-black">
-                  {lang === 'tr' ? 'Tavsiye / Fikir Gönder' : 'Send Feedback / Idea'}
-                </h3>
-              </div>
+              <h3 className="text-sm font-black">
+                💡 {lang === 'tr' ? 'Tavsiye / Fikir Gönder' : 'Send Feedback'}
+              </h3>
               <button
                 type="button"
                 onClick={() => setFeedbackOpen(false)}
-                className={`p-1 rounded-lg border ${theme.subCard}`}
+                className="text-sm font-bold px-2 py-0.5 rounded hover:bg-white/10"
               >
-                <X className="w-4 h-4" />
+                ✕
               </button>
             </div>
 
             {feedbackStatus === 'sent' ? (
-              <div className={`rounded-xl border p-4 text-center space-y-2 ${theme.subCard}`}>
-                <p className="text-sm font-bold text-emerald-500">
-                  {lang === 'tr' ? 'Mesajın iletildi, teşekkürler!' : 'Your message has been sent, thank you!'}
-                </p>
+              <div className="py-4 text-center space-y-2">
+                <div className="text-emerald-400 font-bold text-sm">
+                  {lang === 'tr' ? '✓ Mesajın ulaştı, teşekkürler!' : '✓ Feedback received, thank you!'}
+                </div>
                 <button
                   type="button"
                   onClick={() => setFeedbackOpen(false)}
-                  className={`px-4 py-1.5 rounded-lg text-xs font-bold ${theme.btnPrimary}`}
+                  className={`px-4 py-1.5 rounded-xl text-xs font-bold ${theme.accentBg}`}
                 >
                   {lang === 'tr' ? 'Kapat' : 'Close'}
                 </button>
               </div>
             ) : (
-              <form onSubmit={handleSendFeedback} className="space-y-3 text-xs">
-                <div>
-                  <label className={`block font-semibold mb-1 ${theme.muted}`}>
-                    {lang === 'tr' ? 'Adın / Rumuzun (opsiyonel)' : 'Name / Nickname (optional)'}
-                  </label>
-                  <input
-                    type="text"
-                    value={feedbackName}
-                    onChange={(e) => setFeedbackName(e.target.value)}
-                    placeholder={lang === 'tr' ? 'Örn: Ahmet' : 'e.g. Alex'}
-                    className={`w-full rounded-xl border px-3 py-2 outline-none ${theme.subCard}`}
-                  />
-                </div>
-                <div>
-                  <label className={`block font-semibold mb-1 ${theme.muted}`}>
-                    {lang === 'tr' ? 'E-posta (opsiyonel, dönüş istersen)' : 'Email (optional, for reply)'}
-                  </label>
-                  <input
-                    type="email"
-                    value={feedbackEmail}
-                    onChange={(e) => setFeedbackEmail(e.target.value)}
-                    placeholder="ornek@mail.com"
-                    className={`w-full rounded-xl border px-3 py-2 outline-none ${theme.subCard}`}
-                  />
-                </div>
-                <div>
-                  <label className={`block font-semibold mb-1 ${theme.muted}`}>
-                    {lang === 'tr' ? 'Tavsiye / Fikrin *' : 'Your Feedback / Idea *'}
-                  </label>
-                  <textarea
-                    required
-                    rows={4}
-                    value={feedbackMsg}
-                    onChange={(e) => setFeedbackMsg(e.target.value)}
-                    placeholder={
-                      lang === 'tr'
-                        ? 'Site hakkında düşüncelerini, önerini veya hata bildirimini yazabilirsin...'
-                        : 'Share your thoughts, feature ideas, or bug reports...'
-                    }
-                    className={`w-full rounded-xl border px-3 py-2 outline-none resize-none ${theme.subCard}`}
-                  />
-                </div>
-
+              <form onSubmit={handleSendFeedback} className="space-y-3">
+                <input
+                  type="text"
+                  value={feedbackName}
+                  onChange={(e) => setFeedbackName(e.target.value)}
+                  placeholder={lang === 'tr' ? 'Adın (isteğe bağlı)' : 'Your name (optional)'}
+                  className={`w-full px-3 py-2 rounded-xl border text-xs outline-none ${theme.input}`}
+                />
+                <textarea
+                  rows={4}
+                  required
+                  value={feedbackMsg}
+                  onChange={(e) => setFeedbackMsg(e.target.value)}
+                  placeholder={
+                    lang === 'tr'
+                      ? 'Önerini veya fark ettiğin bir hatayı yazabilirsin…'
+                      : 'Share your suggestion or report a bug…'
+                  }
+                  className={`w-full px-3 py-2 rounded-xl border text-xs outline-none ${theme.input}`}
+                />
                 {feedbackStatus === 'error' && (
-                  <p className="text-red-500 font-semibold">
-                    {lang === 'tr'
-                      ? 'Gönderilirken bir hata oluştu, lütfen tekrar dene.'
-                      : 'Failed to send, please try again.'}
-                  </p>
+                  <div className="text-xs text-rose-400 font-semibold">
+                    {lang === 'tr' ? 'Gönderilemedi, tekrar dene.' : 'Failed to send, please retry.'}
+                  </div>
                 )}
-
                 <button
                   type="submit"
                   disabled={feedbackStatus === 'sending'}
-                  className={`w-full py-2.5 rounded-xl font-bold flex items-center justify-center gap-1.5 transition ${theme.btnPrimary}`}
+                  className={`w-full py-2.5 rounded-xl text-xs font-bold ${theme.accentBg}`}
                 >
-                  <Send className="w-3.5 h-3.5" />
-                  <span>
-                    {feedbackStatus === 'sending'
-                      ? lang === 'tr'
-                        ? 'Gönderiliyor...'
-                        : 'Sending...'
-                      : lang === 'tr'
-                        ? 'Gönder'
-                        : 'Send'}
-                  </span>
+                  {feedbackStatus === 'sending'
+                    ? lang === 'tr'
+                      ? 'Gönderiliyor…'
+                      : 'Sending…'
+                    : lang === 'tr'
+                    ? 'Gönder'
+                    : 'Submit'}
                 </button>
               </form>
             )}
-          </div>
-        </div>
-      )}
-
-      {changelogOpen && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className={`w-full max-w-lg rounded-2xl border p-5 space-y-4 max-h-[85vh] overflow-y-auto ${theme.menuBg}`}>
-            <div className="flex items-center justify-between">
-              <h3 className="text-base font-black">
-                {lang === 'tr' ? 'Sürüm Notları' : 'Release Notes'}
-              </h3>
-              <button
-                type="button"
-                onClick={() => setChangelogOpen(false)}
-                className={`p-1 rounded-lg border ${theme.subCard}`}
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-            <div className="space-y-4">
-              {CHANGELOG.map((rel) => (
-                <div key={rel.version} className={`rounded-xl border p-3.5 space-y-2 ${theme.subCard}`}>
-                  <div className="flex items-center justify-between">
-                    <span className={`font-black text-sm ${theme.accentText}`}>{rel.version}</span>
-                    <span className={`text-xs ${theme.muted}`}>{lang === 'tr' ? rel.dateTr : rel.dateEn}</span>
-                  </div>
-                  <ul className="list-disc pl-4 space-y-1 text-xs leading-relaxed">
-                    {(lang === 'tr' ? rel.itemsTr : rel.itemsEn).map((line, i) => (
-                      <li key={i}>{line}</li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
-            </div>
           </div>
         </div>
       )}
