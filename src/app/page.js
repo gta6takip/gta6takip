@@ -25,7 +25,7 @@ import {
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
-const APP_VERSION = 'v1.0.34';
+const APP_VERSION = 'v1.0.35';
 
 const THEMES = {
   vice: {
@@ -159,6 +159,17 @@ const FALLBACK_NEWS = [
 
 const CHANGELOG = [
   {
+    version: 'v1.0.35',
+    dateTr: '26 Kasım 2026',
+    dateEn: 'November 26, 2026',
+    itemsTr: [
+      'Tüm ekip güncelleme saatleri otomatik olarak sabit Türkiye saatine (TSİ / Europe/Istanbul) uyarlandı.',
+    ],
+    itemsEn: [
+      'Locked all live team update timestamps to Turkey time (TRT / Europe/Istanbul).',
+    ],
+  },
+  {
     version: 'v1.0.34',
     dateTr: '26 Kasım 2026',
     dateEn: 'November 26, 2026',
@@ -180,19 +191,6 @@ const CHANGELOG = [
     ],
     itemsEn: [
       'Connected directly to PortWatch live JSON API (tracker.json) so all score changes, leader updates, and new teams sync automatically.',
-    ],
-  },
-  {
-    version: 'v1.0.32',
-    dateTr: '26 Kasım 2026',
-    dateEn: 'November 26, 2026',
-    itemsTr: [
-      'Açılır menüler dışarı tıklayınca veya diğer menü açılınca otomatik kapanacak ve arka planı sızdırmayacak şekilde düzeltildi.',
-      'Açık (Light) temada tüm rozetlerin okunabilirliği artırıldı; EN çevirileri ve tercih hafızası eklendi.',
-    ],
-    itemsEn: [
-      'Fixed dropdowns to auto-close on outside click/ESC/sibling open with solid opaque backgrounds.',
-      'Improved Light theme badge contrast, completed English translations, and saved theme/language preferences.',
     ],
   },
 ];
@@ -266,13 +264,27 @@ function formatTeamUpdated(rawDate, lang) {
   if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
     const d = new Date(`${str}T12:00:00Z`);
     if (Number.isNaN(d.getTime())) return str;
-    return d.toLocaleDateString(locale, { day: 'numeric', month: 'short', year: 'numeric' });
+    return d.toLocaleDateString(locale, {
+      timeZone: 'Europe/Istanbul',
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    });
   }
   const d = new Date(str);
   if (Number.isNaN(d.getTime())) return str;
-  const datePart = d.toLocaleDateString(locale, { day: 'numeric', month: 'short' });
-  const timePart = d.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit', hour12: false });
-  return `${datePart} · ${timePart}`;
+  const datePart = d.toLocaleDateString(locale, {
+    timeZone: 'Europe/Istanbul',
+    day: 'numeric',
+    month: 'short',
+  });
+  const timePart = d.toLocaleTimeString(locale, {
+    timeZone: 'Europe/Istanbul',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  });
+  return `${datePart} · ${timePart} ${lang === 'tr' ? 'TSİ' : 'TRT'}`;
 }
 
 const FlagTR = () => (
