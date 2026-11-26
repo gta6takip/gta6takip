@@ -25,22 +25,22 @@ import { createClient } from '@supabase/supabase-js';
 const APP_VERSION = 'v1.0.24';
 
 const THEMES = {
-  dark: {
-    id: 'dark',
-    label: { tr: 'Koyu', en: 'Dark' },
-    dot: '#f97316',
-    bg: 'bg-[#0b0d12] text-zinc-100',
-    card: 'bg-[#131722] border-zinc-800/90',
-    subCard: 'bg-[#0f131c] border-zinc-800/80',
-    muted: 'text-zinc-400',
-    accentText: 'text-orange-400',
-    accentBg: 'bg-orange-500',
-    accentGradient: 'from-orange-500 via-amber-400 to-yellow-400',
-    badgeGlow: 'from-orange-500 to-amber-400 text-zinc-950 shadow-[0_0_16px_rgba(249,115,22,0.65)]',
-    btnPrimary: 'bg-gradient-to-r from-orange-500 to-amber-500 text-zinc-950 hover:brightness-110',
-    pill: 'bg-zinc-800/80 text-zinc-300 border-zinc-700/70',
-    sparkStroke: '#fb923c',
-    sparkStop: 'rgba(251, 146, 60, 0.32)',
+  vice: {
+    id: 'vice',
+    label: { tr: 'Vice Sunset', en: 'Vice Sunset' },
+    dot: '#ec4899',
+    bg: 'bg-[#140b1e] text-pink-50',
+    card: 'bg-[#1e112d]/95 border-pink-500/25',
+    subCard: 'bg-[#170c24] border-pink-500/20',
+    muted: 'text-pink-200/70',
+    accentText: 'text-pink-400',
+    accentBg: 'bg-pink-500',
+    accentGradient: 'from-pink-500 via-fuchsia-400 to-amber-400',
+    badgeGlow: 'from-pink-500 to-amber-400 text-zinc-950 shadow-[0_0_18px_rgba(236,72,153,0.7)]',
+    btnPrimary: 'bg-gradient-to-r from-pink-500 to-amber-400 text-zinc-950 hover:brightness-110',
+    pill: 'bg-pink-950/60 text-pink-200 border-pink-500/30',
+    sparkStroke: '#f472b6',
+    sparkStop: 'rgba(244, 114, 182, 0.32)',
   },
   light: {
     id: 'light',
@@ -59,22 +59,22 @@ const THEMES = {
     sparkStroke: '#ea580c',
     sparkStop: 'rgba(234, 88, 12, 0.22)',
   },
-  vice: {
-    id: 'vice',
-    label: { tr: 'Vice Sunset', en: 'Vice Sunset' },
-    dot: '#ec4899',
-    bg: 'bg-[#140b1e] text-pink-50',
-    card: 'bg-[#1e112d]/95 border-pink-500/25',
-    subCard: 'bg-[#170c24] border-pink-500/20',
-    muted: 'text-pink-200/70',
-    accentText: 'text-pink-400',
-    accentBg: 'bg-pink-500',
-    accentGradient: 'from-pink-500 via-fuchsia-400 to-amber-400',
-    badgeGlow: 'from-pink-500 to-amber-400 text-zinc-950 shadow-[0_0_18px_rgba(236,72,153,0.7)]',
-    btnPrimary: 'bg-gradient-to-r from-pink-500 to-amber-400 text-zinc-950 hover:brightness-110',
-    pill: 'bg-pink-950/60 text-pink-200 border-pink-500/30',
-    sparkStroke: '#f472b6',
-    sparkStop: 'rgba(244, 114, 182, 0.32)',
+  dark: {
+    id: 'dark',
+    label: { tr: 'Koyu', en: 'Dark' },
+    dot: '#f97316',
+    bg: 'bg-[#0b0d12] text-zinc-100',
+    card: 'bg-[#131722] border-zinc-800/90',
+    subCard: 'bg-[#0f131c] border-zinc-800/80',
+    muted: 'text-zinc-400',
+    accentText: 'text-orange-400',
+    accentBg: 'bg-orange-500',
+    accentGradient: 'from-orange-500 via-amber-400 to-yellow-400',
+    badgeGlow: 'from-orange-500 to-amber-400 text-zinc-950 shadow-[0_0_16px_rgba(249,115,22,0.65)]',
+    btnPrimary: 'bg-gradient-to-r from-orange-500 to-amber-500 text-zinc-950 hover:brightness-110',
+    pill: 'bg-zinc-800/80 text-zinc-300 border-zinc-700/70',
+    sparkStroke: '#fb923c',
+    sparkStop: 'rgba(251, 146, 60, 0.32)',
   },
   leonida: {
     id: 'leonida',
@@ -171,9 +171,11 @@ const CHANGELOG = [
     dateEn: 'November 26, 2026',
     itemsTr: [
       '30 FPS Barajı hesaplaması düzeltildi: CGBJ (25 FPS · 30 FPS Ara Sahne) artık doğru şekilde 25 / 30 FPS olarak görünüyor.',
+      'Varsayılan giriş teması Vice Sunset yapıldı ve tema sıralaması güncellendi.',
     ],
     itemsEn: [
       'Fixed 30 FPS Target calculation: CGBJ (25 FPS · 30 FPS Cutscenes) now displays accurately as 25 / 30 FPS.',
+      'Set Vice Sunset as the default theme and updated theme menu order.',
     ],
   },
   {
@@ -319,7 +321,7 @@ function getNewsBadgeStyle(tagRaw) {
 
 export default function HomePage() {
   const [lang, setLang] = useState('tr');
-  const [themeKey, setThemeKey] = useState('dark');
+  const [themeKey, setThemeKey] = useState('vice');
   const [themeMenuOpen, setThemeMenuOpen] = useState(false);
   const [changelogOpen, setChangelogOpen] = useState(false);
   const [radarOpen, setRadarOpen] = useState(false);
@@ -336,7 +338,7 @@ export default function HomePage() {
   const [syncing, setSyncing] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  const theme = THEMES[themeKey] || THEMES.dark;
+  const theme = THEMES[themeKey] || THEMES.vice;
 
   const supabaseClient = useMemo(() => {
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
