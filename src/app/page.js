@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
-const APP_VERSION = 'v1.0.18';
+const APP_VERSION = 'v1.0.19';
 
 const THEMES = {
   dark: {
@@ -120,7 +120,8 @@ const MILESTONES = [
 ];
 
 const FALLBACK_TEAMS = [
-  { name: 'AvatarManz', progress: 83.1, fps: '16 FPS (13-22 FPS)', gpu: 'RX 7900 XTX', type: 'open', stage: 'Oynanabilir • İlk Perde (Sesli)', delta: '+23.1%', url: 'https://github.com/avatarmanz/VIctory-7900XTX', isNew: true },
+  { name: 'AvatarManz', progress: 83.1, fps: '16 FPS (13-22 FPS)', gpu: 'RX 7900 XTX', type: 'open', stage: 'Oynanabilir • İlk Perde (Sesli)', delta: '+23.1%', url: 'https://github.com/avatarmanz/VIctory-7900XTX' },
+  { name: 'NotNozy', progress: 82.6, fps: '16 FPS', gpu: 'AMD (Rumble)', type: 'private', stage: 'Oynanabilir • İlk Perde', delta: '+21.6%', url: 'https://portwatch-vi.xyz/#race', isNew: true },
   { name: 'darkworldhm', progress: 79.5, fps: '15-24 FPS', gpu: 'RTX 50 Serisi', type: 'private', stage: 'Oynanabilir • Serbest Dolaşım', delta: '+18.5%', url: 'https://portwatch-vi.xyz/#race' },
   { name: 'Doomsday', progress: 78.7, fps: '4 FPS', gpu: 'AMD / NVIDIA', type: 'private', stage: 'Oynanabilir • İlk Perde', delta: '+14.2%', url: 'https://portwatch-vi.xyz/#race' },
   { name: 'DexNom', progress: 78.0, fps: '3 FPS', gpu: 'RX 7900 XTX', type: 'open', stage: 'Oynanabilir • İlk Perde', delta: '+12.0%', url: 'https://github.com/DexNom/VIctory' },
@@ -143,23 +144,34 @@ const FALLBACK_TEAMS = [
 ];
 
 const FALLBACK_NEWS = [
-  { tagTr: 'REKOR', tagEn: 'RECORD', tr: 'AvatarManz (RX 7900 XTX) %83.1 ile yeni genel lider; 16 FPS sesli ve 41 dk çökmeden çalıştı.', en: 'AvatarManz (RX 7900 XTX) takes #1 overall at 83.1%, running 16 FPS with sound for 41 min.' },
-  { tagTr: 'AÇIK KAYNAK', tagEn: 'OPEN SOURCE', tr: 'Açık kaynak lideri artık AvatarManz (%83.1); DexNom (%78) ve Belobug (%77.7) takipte.', en: 'AvatarManz (83.1%) now leads open source; DexNom (78%) and Belobug (77.7%) follow.' },
-  { tagTr: 'GÜNCEL', tagEn: 'LIVE', tr: "PortWatch üzerinde 38 girişim takip ediliyor; 16'sı oyunu başlatabiliyor (İlk 3 ort. %80.4).", en: '38 total efforts are tracked on PortWatch, with 16 able to boot GTA VI (Top-3 avg 80.4%).' },
+  { tagTr: 'REKOR', tagEn: 'RECORD', tr: 'AvatarManz %83.1 ile genel lider (16 FPS); NotNozy (%82.6) #2 sıraya yerleşti.', en: 'AvatarManz leads overall at 83.1% (16 FPS); NotNozy (82.6%) takes #2.' },
+  { tagTr: 'AÇIK KAYNAK', tagEn: 'OPEN SOURCE', tr: 'Açık kaynak lideri AvatarManz (%83.1); toplam 21 ana ekip izleniyor.', en: 'AvatarManz (83.1%) leads open source; 21 main teams tracked.' },
+  { tagTr: 'GÜNCEL', tagEn: 'LIVE', tr: "PortWatch üzerinde 39 girişim takip ediliyor; 17'si oyunu başlatabiliyor (İlk 3 ort. %81.7).", en: '39 total efforts tracked on PortWatch, with 17 booting GTA VI (Top-3 avg 81.7%).' },
 ];
 
 const CHANGELOG = [
+  {
+    version: 'v1.0.19',
+    dateTr: '26 Kasım 2026',
+    dateEn: 'November 26, 2026',
+    itemsTr: [
+      'Projeyi bitirmeye en yakın ve en çok hype alan #1 sıradaki ekibin yanına parlayan 🔥 HOT rozeti eklendi.',
+      'NotNozy ve otomatik eklenen yeni ekiplerin yanında YENİ rozeti görünür hale getirildi.',
+    ],
+    itemsEn: [
+      'Added a glowing 🔥 HOT badge to the #1 closest and most-hyped team.',
+      'Enabled the glowing NEW badge for NotNozy and newly discovered teams.',
+    ],
+  },
   {
     version: 'v1.0.18',
     dateTr: '26 Kasım 2026',
     dateEn: 'November 26, 2026',
     itemsTr: [
-      'Yeni #1 lider AvatarManz (%83.1 · 16 FPS sesli, RX 7900 XTX) eklendi; toplam 38 girişim ve 16 boot güncellendi.',
-      'İngilizce (EN) modundaki "ACTİVE" Türkçe harf dönüşümü hatası düzeltildi.',
+      'Yeni #1 lider AvatarManz (%83.1 · 16 FPS sesli, RX 7900 XTX) eklendi; İngilizce modundaki ACTİVE harf hatası düzeltildi.',
     ],
     itemsEn: [
-      'Added new #1 leader AvatarManz (83.1% · 16 FPS with sound, RX 7900 XTX); updated totals to 38 tracked / 16 booting.',
-      'Fixed Turkish dotted-I uppercase rendering in English mode headings.',
+      'Added new #1 leader AvatarManz (83.1% · 16 FPS with sound, RX 7900 XTX) and fixed English uppercase heading.',
     ],
   },
   {
@@ -173,19 +185,6 @@ const CHANGELOG = [
     itemsEn: [
       'Fixed 30 FPS Target calculation to track only playable (50%+) builds (24 / 30 FPS).',
       'Added glowing live styling to RECORD, OPEN SOURCE, and LIVE tags in Latest Updates.',
-    ],
-  },
-  {
-    version: 'v1.0.16',
-    dateTr: '26 Kasım 2026',
-    dateEn: 'November 26, 2026',
-    itemsTr: [
-      'CANLI rozeti ışıklı ve hafif yanıp sönen efekt ile güncellendi.',
-      'Açık Kaynak ve Kapalı Ekip etiketlerinin yanına simgeler eklendi.',
-    ],
-    itemsEn: [
-      'Updated the LIVE badge with a soft pulsing glow effect.',
-      'Added icons next to Open Source and Private Build badges.',
     ],
   },
 ];
@@ -298,9 +297,9 @@ export default function HomePage() {
 
   const [teams, setTeams] = useState(FALLBACK_TEAMS);
   const [news, setNews] = useState(FALLBACK_NEWS);
-  const [totalEfforts, setTotalEfforts] = useState(38);
-  const [bootingCount, setBootingCount] = useState(16);
-  const [top3Avg, setTop3Avg] = useState(80.4);
+  const [totalEfforts, setTotalEfforts] = useState(39);
+  const [bootingCount, setBootingCount] = useState(17);
+  const [top3Avg, setTop3Avg] = useState(81.7);
   const [onlineCount, setOnlineCount] = useState(1);
   const [countdown, setCountdown] = useState(120);
   const [syncing, setSyncing] = useState(false);
@@ -368,7 +367,7 @@ export default function HomePage() {
             stage: item.stage || item.stageText || item.milestone || item.status || fallback?.stage || '',
             delta: item.delta || item.change || item.diff || fallback?.delta || '',
             url: item.url || item.link || item.repoUrl || item.github || fallback?.url || 'https://portwatch-vi.xyz/#race',
-            isNew: item.isNew || String(itemName).toLowerCase() === 'avatarmanz',
+            isNew: String(itemName).toLowerCase() === 'notnozy' || (Boolean(item.isNew) && String(itemName).toLowerCase() !== 'avatarmanz'),
             isZortos: item.isZortos || String(itemName).toLowerCase() === 'zortos',
           };
         });
@@ -384,13 +383,16 @@ export default function HomePage() {
       }
 
       if (data?.totalEfforts || data?.summary?.totalEfforts) {
-        setTotalEfforts(Math.max(38, Number(data.totalEfforts || data.summary.totalEfforts)));
+        setTotalEfforts(Math.max(39, Number(data.totalEfforts || data.summary.totalEfforts)));
       }
       if (data?.bootingCount || data?.summary?.bootingCount) {
-        setBootingCount(Math.max(16, Number(data.bootingCount || data.summary.bootingCount)));
+        setBootingCount(Math.max(17, Number(data.bootingCount || data.summary.bootingCount)));
       }
       if (data?.top3Avg || data?.summary?.top3Avg) {
-        setTop3Avg(Math.max(80.4, Number(data.top3Avg || data.summary.top3Avg)));
+        setTop3Avg(Math.max(81.7, Number(data.top3Avg || data.summary.top3Avg)));
+      }
+      if (Array.isArray(data?.news) && data.news.length > 0) {
+        setNews(data.news);
       }
     } catch {
       // Mevcut veya yedek veri korunur
@@ -743,7 +745,8 @@ export default function HomePage() {
             {teams.map((team, idx) => {
               const rank = idx + 1;
               const isTop3 = rank <= 3;
-              const isNewLeader = rank === 1 && (team.isNew || team.name.toLowerCase() === 'avatarmanz');
+              const isHot = rank === 1;
+              const isNewBadge = Boolean(team.isNew);
               const barWidth = Math.min(100, Math.max(2, team.progress));
 
               return (
@@ -766,7 +769,14 @@ export default function HomePage() {
                         {team.name}
                       </h3>
 
-                      {isNewLeader && (
+                      {isHot && (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black tracking-wider bg-gradient-to-r from-red-500 via-orange-500 to-amber-400 text-zinc-950 shadow-[0_0_16px_rgba(249,115,22,0.75)] animate-pulse">
+                          <Flame className="w-3 h-3 fill-current" />
+                          HOT
+                        </span>
+                      )}
+
+                      {isNewBadge && (
                         <span
                           className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black tracking-wider bg-gradient-to-r animate-pulse ${theme.badgeGlow}`}
                         >
