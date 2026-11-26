@@ -5,6 +5,7 @@ import {
   RefreshCw,
   ExternalLink,
   ArrowUp,
+  ArrowDown,
   Shield,
   ShieldAlert,
   ShieldCheck,
@@ -34,14 +35,16 @@ import {
   Cpu,
   Ban,
   Trash2,
+  Pin,
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
-const APP_VERSION = 'v1.0.48';
+const APP_VERSION = 'v1.0.49';
 const CHAT_COOLDOWN_SEC = 30;
 const CHAT_COOLDOWN_KEY = 'gta6takip_chat_cooldown_until';
 const CHAT_SOUND_KEY = 'gta6takip_chat_sound';
 const CHAT_CLIENT_KEY = 'gta6takip_client_id';
+const CHAT_REACTION_EMOJIS = ['🔥', '👍', '😂'];
 
 function playChatChime() {
   try {
@@ -272,13 +275,28 @@ const FALLBACK_NEWS = [
 
 const CHANGELOG = [
   {
+    version: 'v1.0.49',
+    dateTr: '27 Kasım 2026',
+    dateEn: 'November 27, 2026',
+    itemsTr: [
+      'Canlı Sohbete sabitlenmiş duyuru şeridi (yetkililer güncelleyebilir), mini emoji tepkileri (🔥 👍 😂) ve tıkla-etiketle (@isim) eklendi.',
+      'Sohbet kapalıyken okunmamış mesaj sayacı ve yukarıda okurken "↓ Yeni Mesaj" butonu eklendi.',
+      'Sunucuya isteğe bağlı Cloudflare Turnstile bot doğrulama desteği eklendi.',
+    ],
+    itemsEn: [
+      'Added pinned announcement banner (editable by staff), mini emoji reactions (🔥 👍 😂), and click-to-mention (@user) in Live Chat.',
+      'Added unread message badge when chat is collapsed and a "↓ New Messages" jump button when scrolled up.',
+      'Added optional server-side Cloudflare Turnstile bot verification support.',
+    ],
+  },
+  {
     version: 'v1.0.48',
     dateTr: '27 Kasım 2026',
     dateEn: 'November 27, 2026',
     itemsTr: [
       'Güvenlik Paketi: Yetkili PIN için 5 hatalı denemede 15 dk kilit (brute-force koruması) ve timing-safe doğrulama eklendi.',
       'Kalıcı tarayıcı kimliği (clientId) ve veritabanı tabanlı kesin 30sn hız sınırı aktif edildi.',
-      'EN sohbet odası rozet çevirisi ve akıllı sohbet kaydırma (yukarıda okurken zıplamama) iyileştirildi.',
+      'EN sohbet odası rozet çevirisi ve akıllı sohbet kaydırma iyileştirildi.',
     ],
     itemsEn: [
       'Security Pack: Added 15-min lockout after 5 failed Staff PIN attempts and timing-safe verification.',
@@ -297,32 +315,6 @@ const CHANGELOG = [
     itemsEn: [
       'Added a "Clear" button next to Ban for staff to delete a single message without banning the user.',
       'Added a shield icon and MOD badge next to moderator nicknames.',
-    ],
-  },
-  {
-    version: 'v1.0.46',
-    dateTr: '27 Kasım 2026',
-    dateEn: 'November 27, 2026',
-    itemsTr: [
-      'Moderatör ve kurucu için sunucu doğrulamalı tek tıkla "Banla" yetkisi (Yetkili PIN) eklendi.',
-    ],
-    itemsEn: [
-      'Added server-verified one-click Ban button for moderators and admin via Staff PIN.',
-    ],
-  },
-  {
-    version: 'v1.0.45',
-    dateTr: '27 Kasım 2026',
-    dateEn: 'November 27, 2026',
-    itemsTr: [
-      'Aktif Ekipler bölümüne özel logolu TÜMÜ / AMD / NVIDIA altyapı filtresi eklendi.',
-      'ADMIN/mod taklit isimleri ve batmancodex taklidi sunucuda engellendi; batmancodex mesajlarına özel Onay Rozeti ve ADMIN kalkanı eklendi.',
-      'Canlı Sohbet kullanıcı adı baloncukları ve genel sohbet tasarımı cilalandı.',
-    ],
-    itemsEn: [
-      'Added ALL / AMD / NVIDIA architecture filters with brand icons to Active Efforts.',
-      'Blocked admin/mod impersonation nicknames and added verified ADMIN shield & badge for batmancodex.',
-      'Polished Live Chat username pill bubbles and overall chat container styling.',
     ],
   },
 ];
@@ -579,6 +571,7 @@ export default function HomePage() {
   const [showAllMobile, setShowAllMobile] = useState(false);
 
   const [chatOpen, setChatOpen] = useState(false);
+  const chatOpenRef = useRef(false);
   const [chatRoom, setChatRoom] = useState('tr');
   const chatRoomRef = useRef('tr');
   const [chatMessages, setChatMessages] = useState([]);
@@ -589,6 +582,13 @@ export default function HomePage() {
   const [staffPin, setStaffPin] = useState('');
   const [banningId, setBanningId] = useState(null);
   const [clearingId, setClearingId] = useState(null);
+  const [pinnedNotice, setPinnedNotice] = useState(null);
+  const [pinEditorOpen, setPinEditorOpen] = useState(false);
+  const [pinDraft, setPinDraft] = useState('');
+  const [pinSaving, setPinSaving] = useState(false);
+  const [unreadWhileClosed, setUnreadWhileClosed] = useState(0);
+  const [unreadWhileScrolled, setUnreadWhileScrolled] = useState(0);
+  const [myReactions, setMyReactions] = useState({});
   const [chatNotice, setChatNotice] = useState('');
   const [chatInput, setChatInput] = useState('');
   const [chatSending, setChatSending] = useState(false);
@@ -658,6 +658,13 @@ export default function HomePage() {
       return null;
     }
   }, []);
+
+  useEffect(() => {
+    chatOpenRef.current = chatOpen;
+    if (chatOpen) {
+      setUnreadWhileClosed(0);
+    }
+  }, [chatOpen]);
 
   useEffect(() => {
     chatRoomRef.current = chatRoom;
@@ -755,9 +762,13 @@ export default function HomePage() {
       const res = await fetch(`/api/chat?room=${encodeURIComponent(targetRoom)}`, { cache: 'no-store' });
       if (!res.ok) return;
       const data = await res.json();
-      if (Array.isArray(data?.messages) && chatRoomRef.current === targetRoom) {
-        forceScrollRef.current = true;
-        setChatMessages(data.messages);
+      if (chatRoomRef.current === targetRoom) {
+        if (Array.isArray(data?.messages)) {
+          forceScrollRef.current = true;
+          setChatMessages(data.messages);
+          setUnreadWhileScrolled(0);
+        }
+        setPinnedNotice(data?.pinned || null);
       }
     } catch {
       // Sessizce geç
@@ -773,6 +784,8 @@ export default function HomePage() {
     setReplyTo(null);
     setChatError('');
     setChatNotice('');
+    setPinnedNotice(null);
+    setUnreadWhileScrolled(0);
     setChatMessages([]);
     fetchChatMessages(nextRoom);
   };
@@ -832,6 +845,7 @@ export default function HomePage() {
   const handleJumpToChat = () => {
     forceScrollRef.current = true;
     setChatOpen(true);
+    setUnreadWhileClosed(0);
     fetchChatMessages(chatRoomRef.current);
     setTimeout(() => {
       chatSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -867,8 +881,28 @@ export default function HomePage() {
               if (chatSoundOnRef.current && !isOwnMessage) {
                 playChatChime();
               }
+              if (!chatOpenRef.current && !isOwnMessage) {
+                setUnreadWhileClosed((c) => c + 1);
+              } else if (chatOpenRef.current && !isOwnMessage) {
+                const el = chatListRef.current;
+                const nearBottom = !el || el.scrollHeight - el.scrollTop - el.clientHeight < 120;
+                if (!nearBottom) {
+                  setUnreadWhileScrolled((c) => c + 1);
+                }
+              }
               return [...prev.slice(-49), incoming];
             });
+          }
+        )
+        .on(
+          'postgres_changes',
+          { event: 'UPDATE', schema: 'public', table: 'chat_messages' },
+          (payload) => {
+            const updated = payload?.new;
+            if (!updated?.id) return;
+            setChatMessages((prev) =>
+              prev.map((m) => (String(m.id) === String(updated.id) ? { ...m, ...updated } : m))
+            );
           }
         )
         .on(
@@ -895,9 +929,23 @@ export default function HomePage() {
     const isNearBottom = !el || el.scrollHeight - el.scrollTop - el.clientHeight < 120;
     if (forceScrollRef.current || isNearBottom) {
       forceScrollRef.current = false;
+      setUnreadWhileScrolled(0);
       chatEndRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
   }, [chatMessages, chatOpen]);
+
+  const handleChatListScroll = () => {
+    const el = chatListRef.current;
+    if (!el) return;
+    if (el.scrollHeight - el.scrollTop - el.clientHeight < 80 && unreadWhileScrolled > 0) {
+      setUnreadWhileScrolled(0);
+    }
+  };
+
+  const handleScrollChatBottom = () => {
+    setUnreadWhileScrolled(0);
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  };
 
   const handleStartReply = (msg) => {
     setReplyTo({
@@ -910,8 +958,85 @@ export default function HomePage() {
     }
   };
 
+  const handleMentionUser = (nick) => {
+    const clean = String(nick || '').trim();
+    if (!clean) return;
+    const tag = `@${clean} `;
+    setChatInput((prev) => (prev.startsWith(tag) ? prev : `${tag}${prev}`.slice(0, 280)));
+    chatInputRef.current?.focus();
+  };
+
+  const handleToggleReaction = async (msg, emoji) => {
+    const key = `${msg.id}:${emoji}`;
+    const already = Boolean(myReactions[key]);
+    const delta = already ? -1 : 1;
+
+    setMyReactions((prev) => ({ ...prev, [key]: !already }));
+    setChatMessages((prev) =>
+      prev.map((m) => {
+        if (String(m.id) !== String(msg.id)) return m;
+        const curr = m.reactions && typeof m.reactions === 'object' ? { ...m.reactions } : {};
+        const nextCnt = Math.max(0, (Number(curr[emoji]) || 0) + delta);
+        if (nextCnt === 0) delete curr[emoji];
+        else curr[emoji] = nextCnt;
+        return { ...m, reactions: curr };
+      })
+    );
+
+    try {
+      await fetch('/api/chat', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'react',
+          messageId: msg.id,
+          emoji,
+          delta,
+        }),
+      });
+    } catch {
+      // Sessizce geç
+    }
+  };
+
   const isTypingAdminNick = chatNick.trim().toLowerCase() === 'batmancodex';
   const staffModeActive = staffPin.trim().length >= 3;
+
+  const handleSavePin = async (e) => {
+    e.preventDefault();
+    setChatError('');
+    if (!staffPin.trim()) {
+      setStaffPinOpen(true);
+      setChatError('Duyuru sabitlemek için Yetkili PIN girmelisin.');
+      return;
+    }
+    setPinSaving(true);
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'pin',
+          room: chatRoom,
+          staffPin: staffPin.trim(),
+          message: pinDraft.trim(),
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setChatError(data?.error || 'Duyuru güncellenemedi.');
+        return;
+      }
+      setPinnedNotice(data?.pinned || null);
+      setPinEditorOpen(false);
+      setChatNotice(data?.pinned ? 'Duyuru sabitlendi.' : 'Sabit duyuru kaldırıldı.');
+      setTimeout(() => setChatNotice(''), 3000);
+    } catch {
+      setChatError('Duyuru güncellenirken hata oluştu.');
+    } finally {
+      setPinSaving(false);
+    }
+  };
 
   const handleClearMessage = async (msg) => {
     setChatError('');
@@ -1994,7 +2119,10 @@ export default function HomePage() {
             type="button"
             onClick={() => {
               const next = !chatOpen;
-              if (next) forceScrollRef.current = true;
+              if (next) {
+                forceScrollRef.current = true;
+                setUnreadWhileClosed(0);
+              }
               setChatOpen(next);
               if (next) fetchChatMessages(chatRoomRef.current);
             }}
@@ -2014,6 +2142,11 @@ export default function HomePage() {
               <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${theme.pill}`}>
                 {chatMessages.length} {isEnRoom ? 'Messages · 30s Limit' : 'Mesaj · 30sn Korumalı'}
               </span>
+              {!chatOpen && unreadWhileClosed > 0 && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black bg-pink-500 text-white animate-pulse shadow-sm">
+                  +{unreadWhileClosed} {lang === 'tr' ? 'yeni' : 'new'}
+                </span>
+              )}
             </div>
             <span className={`p-1.5 rounded-xl border ${theme.subCard}`}>
               {chatOpen ? <ChevronUp className="w-4 h-4 shrink-0" /> : <ChevronDown className="w-4 h-4 shrink-0" />}
@@ -2053,6 +2186,25 @@ export default function HomePage() {
                       <Clock className="w-3 h-3" />
                       {isEnRoom ? `${chatCooldown}s` : `${chatCooldown} sn`}
                     </span>
+                  )}
+
+                  {staffModeActive && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setPinDraft(pinnedNotice?.message || '');
+                        setPinEditorOpen((v) => !v);
+                      }}
+                      className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl border text-[11px] font-semibold transition ${
+                        pinEditorOpen
+                          ? 'bg-sky-500/20 border-sky-400/50 text-sky-300'
+                          : `${theme.card} ${theme.muted} hover:opacity-100 opacity-85`
+                      }`}
+                      title="Duyuru sabitle veya kaldır"
+                    >
+                      <Pin className="w-3 h-3" />
+                      <span>Duyuru</span>
+                    </button>
                   )}
 
                   <button
@@ -2128,184 +2280,280 @@ export default function HomePage() {
                 </div>
               )}
 
+              {staffModeActive && pinEditorOpen && (
+                <form onSubmit={handleSavePin} className={`flex items-center gap-2 px-3 py-2 rounded-xl border border-sky-400/40 text-xs ${theme.card}`}>
+                  <Pin className="w-3.5 h-3.5 text-sky-400 shrink-0" />
+                  <input
+                    type="text"
+                    maxLength={180}
+                    value={pinDraft}
+                    onChange={(e) => setPinDraft(e.target.value)}
+                    placeholder="Sabitlenecek duyuruyu yaz (kaldırmak için boş bırakıp Kaydet'e bas)..."
+                    className="flex-1 bg-transparent outline-none text-xs min-w-0"
+                  />
+                  <button
+                    type="submit"
+                    disabled={pinSaving}
+                    className={`px-3 py-1 rounded-lg text-[11px] font-bold shrink-0 ${theme.btnPrimary}`}
+                  >
+                    {pinSaving ? '...' : 'Kaydet'}
+                  </button>
+                </form>
+              )}
+
+              {/* Sabitlenmiş Duyuru Şeridi */}
+              {pinnedNotice?.message && (
+                <div
+                  className={`flex items-start gap-2 px-3 py-2 rounded-xl border text-xs ${
+                    isLight
+                      ? 'bg-amber-50 border-amber-300 text-amber-950'
+                      : 'bg-amber-500/10 border-amber-400/40 text-amber-100'
+                  }`}
+                >
+                  <Pin className="w-3.5 h-3.5 mt-0.5 text-amber-400 shrink-0" />
+                  <div className="min-w-0 flex-1 leading-relaxed">
+                    <span className="font-black text-[10px] uppercase tracking-wider text-amber-400 mr-1.5">
+                      {isEnRoom ? 'PINNED:' : 'SABİT DUYURU:'}
+                    </span>
+                    <span className="font-medium break-words">{pinnedNotice.message}</span>
+                  </div>
+                </div>
+              )}
+
               <div className={`flex items-center gap-1.5 text-[11px] ${theme.muted}`}>
                 <ShieldAlert className={`w-3.5 h-3.5 shrink-0 ${theme.accentText} opacity-80`} />
                 <span>
                   {isEnRoom
-                    ? 'Global English room · Profanity & link filter active · 1 message per 30s'
-                    : 'Türkçe sohbet odası · Küfür ve link engeli aktif · 30 saniyede 1 mesaj sınırı'}
+                    ? 'Global English room · Profanity & link filter active · Click a name to @mention'
+                    : 'Türkçe sohbet odası · Küfür ve link engeli aktif · İsime tıklayarak @etiketle'}
                 </span>
               </div>
 
               {/* Mesaj Akışı */}
-              <div ref={chatListRef} className={`gta-scroll rounded-2xl border p-3 max-h-80 overflow-y-auto space-y-2.5 ${theme.card}`}>
-                {chatLoading && chatMessages.length === 0 ? (
-                  <p className={`text-xs text-center py-8 ${theme.muted}`}>
-                    {isEnRoom ? 'Loading messages...' : 'Mesajlar yükleniyor...'}
-                  </p>
-                ) : chatMessages.length === 0 ? (
-                  <p className={`text-xs text-center py-8 ${theme.muted}`}>
-                    {isEnRoom
-                      ? 'No messages in Global English room yet. Be the first to say hi!'
-                      : 'Henüz mesaj yok. İlk mesajı sen yaz!'}
-                  </p>
-                ) : (
-                  chatMessages.map((m) => {
-                    const isAdminMsg =
-                      String(m.nickname || '').trim().toLowerCase() === 'batmancodex' || m.role === 'admin';
-                    const isModMsg = !isAdminMsg && m.role === 'mod';
-                    const nickStyle = getNickStyle(m.nickname, isLight);
-                    const initial = String(m.nickname || '?').trim().charAt(0).toUpperCase() || '?';
-                    const isSelf =
-                      chatNick.trim().length >= 2 &&
-                      String(m.nickname || '').trim().toLowerCase() === chatNick.trim().toLowerCase();
+              <div className="relative">
+                <div
+                  ref={chatListRef}
+                  onScroll={handleChatListScroll}
+                  className={`gta-scroll rounded-2xl border p-3 max-h-80 overflow-y-auto space-y-2.5 ${theme.card}`}
+                >
+                  {chatLoading && chatMessages.length === 0 ? (
+                    <p className={`text-xs text-center py-8 ${theme.muted}`}>
+                      {isEnRoom ? 'Loading messages...' : 'Mesajlar yükleniyor...'}
+                    </p>
+                  ) : chatMessages.length === 0 ? (
+                    <p className={`text-xs text-center py-8 ${theme.muted}`}>
+                      {isEnRoom
+                        ? 'No messages in Global English room yet. Be the first to say hi!'
+                        : 'Henüz mesaj yok. İlk mesajı sen yaz!'}
+                    </p>
+                  ) : (
+                    chatMessages.map((m) => {
+                      const isAdminMsg =
+                        String(m.nickname || '').trim().toLowerCase() === 'batmancodex' || m.role === 'admin';
+                      const isModMsg = !isAdminMsg && m.role === 'mod';
+                      const nickStyle = getNickStyle(m.nickname, isLight);
+                      const initial = String(m.nickname || '?').trim().charAt(0).toUpperCase() || '?';
+                      const isSelf =
+                        chatNick.trim().length >= 2 &&
+                        String(m.nickname || '').trim().toLowerCase() === chatNick.trim().toLowerCase();
+                      const reactionsObj = m.reactions && typeof m.reactions === 'object' ? m.reactions : {};
 
-                    return (
-                      <div
-                        key={m.id}
-                        className={`rounded-2xl border px-3.5 py-2.5 text-xs transition ${theme.subCard} ${
-                          isAdminMsg
-                            ? isLight
-                              ? 'ring-1 ring-amber-400/70 bg-amber-50/70'
-                              : 'ring-1 ring-amber-400/45 shadow-[0_0_16px_rgba(251,191,36,0.12)]'
-                            : isModMsg
+                      return (
+                        <div
+                          key={m.id}
+                          className={`rounded-2xl border px-3.5 py-2.5 text-xs transition ${theme.subCard} ${
+                            isAdminMsg
                               ? isLight
-                                ? 'ring-1 ring-sky-400/70 bg-sky-50/70'
-                                : 'ring-1 ring-sky-400/40 shadow-[0_0_14px_rgba(56,189,248,0.12)]'
-                              : isSelf
+                                ? 'ring-1 ring-amber-400/70 bg-amber-50/70'
+                                : 'ring-1 ring-amber-400/45 shadow-[0_0_16px_rgba(251,191,36,0.12)]'
+                              : isModMsg
                                 ? isLight
-                                  ? 'ring-1 ring-orange-400/50'
-                                  : 'ring-1 ring-white/15'
-                                : 'hover:border-white/20'
-                        }`}
-                      >
-                        {(m.reply_to_nick || m.reply_to_text) && (
-                          <div
-                            className={`mb-2 px-2.5 py-1.5 rounded-xl border-l-2 text-[11px] flex items-start gap-1.5 ${
-                              isLight
-                                ? 'bg-zinc-200/75 border-orange-500 text-zinc-700'
-                                : 'bg-black/30 border-current/70 opacity-90'
-                            }`}
-                          >
-                            <Reply className={`w-3 h-3 mt-0.5 shrink-0 ${theme.accentText}`} />
-                            <div className="min-w-0 truncate">
-                              <span className={`font-bold ${theme.accentText}`}>
-                                @{m.reply_to_nick || (isEnRoom ? 'User' : 'Kullanıcı')}
+                                  ? 'ring-1 ring-sky-400/70 bg-sky-50/70'
+                                  : 'ring-1 ring-sky-400/40 shadow-[0_0_14px_rgba(56,189,248,0.12)]'
+                                : isSelf
+                                  ? isLight
+                                    ? 'ring-1 ring-orange-400/50'
+                                    : 'ring-1 ring-white/15'
+                                  : 'hover:border-white/20'
+                          }`}
+                        >
+                          {(m.reply_to_nick || m.reply_to_text) && (
+                            <div
+                              className={`mb-2 px-2.5 py-1.5 rounded-xl border-l-2 text-[11px] flex items-start gap-1.5 ${
+                                isLight
+                                  ? 'bg-zinc-200/75 border-orange-500 text-zinc-700'
+                                  : 'bg-black/30 border-current/70 opacity-90'
+                              }`}
+                            >
+                              <Reply className={`w-3 h-3 mt-0.5 shrink-0 ${theme.accentText}`} />
+                              <div className="min-w-0 truncate">
+                                <span className={`font-bold ${theme.accentText}`}>
+                                  @{m.reply_to_nick || (isEnRoom ? 'User' : 'Kullanıcı')}
+                                </span>
+                                <span className="mx-1 opacity-50">·</span>
+                                <span className="opacity-80">{m.reply_to_text}</span>
+                              </div>
+                            </div>
+                          )}
+
+                          <div className="flex items-center justify-between gap-2 mb-1.5 flex-wrap">
+                            <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
+                              {isAdminMsg ? (
+                                <button
+                                  type="button"
+                                  onClick={() => handleMentionUser(m.nickname)}
+                                  className="inline-flex items-center gap-1.5 pl-1 pr-2.5 py-0.5 rounded-full border text-[11px] font-black shadow-sm bg-gradient-to-r from-amber-500/25 via-pink-500/20 to-amber-400/25 border-amber-400/60 text-amber-200 hover:brightness-110 transition"
+                                  title={isEnRoom ? 'Click to @mention' : 'Etiketlemek için tıkla'}
+                                >
+                                  <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 text-zinc-950 shrink-0">
+                                    <ShieldCheck className="w-2.5 h-2.5" />
+                                  </span>
+                                  <span className={isLight ? 'text-amber-950' : 'text-amber-100'}>
+                                    {m.nickname}
+                                  </span>
+                                  <BadgeCheck className="w-3.5 h-3.5 text-sky-400 shrink-0" />
+                                  <span className="px-1.5 py-[1px] rounded-full text-[9px] font-black tracking-wider bg-amber-400 text-zinc-950">
+                                    ADMIN
+                                  </span>
+                                </button>
+                              ) : isModMsg ? (
+                                <button
+                                  type="button"
+                                  onClick={() => handleMentionUser(m.nickname)}
+                                  className={`inline-flex items-center gap-1.5 pl-1 pr-2.5 py-0.5 rounded-full border text-[11px] font-black shadow-sm hover:brightness-110 transition ${
+                                    isLight
+                                      ? 'bg-sky-100 border-sky-400 text-sky-950'
+                                      : 'bg-gradient-to-r from-sky-500/25 via-cyan-500/20 to-emerald-500/20 border-sky-400/60 text-sky-100'
+                                  }`}
+                                  title={isEnRoom ? 'Click to @mention' : 'Etiketlemek için tıkla'}
+                                >
+                                  <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-gradient-to-br from-sky-400 to-cyan-500 text-zinc-950 shrink-0">
+                                    <Shield className="w-2.5 h-2.5 fill-current" />
+                                  </span>
+                                  <span>{m.nickname}</span>
+                                  <span className="px-1.5 py-[1px] rounded-full text-[9px] font-black tracking-wider bg-sky-400 text-zinc-950">
+                                    {isEnRoom ? 'MOD' : 'MODERATÖR'}
+                                  </span>
+                                </button>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => handleMentionUser(m.nickname)}
+                                  className={`inline-flex items-center gap-1.5 pl-1 pr-2.5 py-0.5 rounded-full border text-[11px] font-extrabold max-w-full hover:brightness-110 transition ${nickStyle.pill}`}
+                                  title={isEnRoom ? 'Click to @mention' : 'Etiketlemek için tıkla'}
+                                >
+                                  <span
+                                    className={`inline-flex items-center justify-center w-4 h-4 rounded-full text-[9px] font-black shrink-0 shadow-inner ${nickStyle.avatar}`}
+                                  >
+                                    {initial}
+                                  </span>
+                                  <span className="truncate">{m.nickname}</span>
+                                </button>
+                              )}
+                            </div>
+
+                            <div className="flex items-center gap-1.5 shrink-0 flex-wrap">
+                              <span className={`text-[10px] font-medium tabular-nums ${theme.muted}`}>
+                                {formatChatTime(m.created_at)} {isEnRoom ? 'TRT' : 'TSİ'}
                               </span>
-                              <span className="mx-1 opacity-50">·</span>
-                              <span className="opacity-80">{m.reply_to_text}</span>
+                              <button
+                                type="button"
+                                onClick={() => handleStartReply(m)}
+                                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-[10px] font-semibold transition opacity-80 hover:opacity-100 ${theme.pill}`}
+                                title={isEnRoom ? 'Reply to this message' : 'Bu mesajı yanıtla'}
+                              >
+                                <Reply className="w-2.5 h-2.5" />
+                                <span>{isEnRoom ? 'Reply' : 'Yanıtla'}</span>
+                              </button>
+
+                              {staffModeActive && !isAdminMsg && (
+                                <>
+                                  <button
+                                    type="button"
+                                    disabled={clearingId === m.id || banningId === m.id}
+                                    onClick={() => handleClearMessage(m)}
+                                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-[10px] font-bold transition disabled:opacity-50 ${
+                                      isLight
+                                        ? 'border-amber-400 bg-amber-100 text-amber-900 hover:bg-amber-200'
+                                        : 'border-amber-400/50 bg-amber-500/20 text-amber-200 hover:bg-amber-500/35'
+                                    }`}
+                                    title={
+                                      isEnRoom
+                                        ? 'Delete this message only'
+                                        : 'Kullanıcıyı banlamadan sadece bu mesajı sil'
+                                    }
+                                  >
+                                    <Trash2 className="w-2.5 h-2.5" />
+                                    <span>{clearingId === m.id ? '...' : isEnRoom ? 'Clear' : 'Temizle'}</span>
+                                  </button>
+                                  <button
+                                    type="button"
+                                    disabled={banningId === m.id || clearingId === m.id}
+                                    onClick={() => handleBanMessage(m)}
+                                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-[10px] font-bold transition disabled:opacity-50 ${
+                                      isLight
+                                        ? 'border-red-400 bg-red-100 text-red-900 hover:bg-red-200'
+                                        : 'border-red-500/50 bg-red-500/20 text-red-300 hover:bg-red-500/35'
+                                    }`}
+                                    title={
+                                      isEnRoom
+                                        ? 'Permanently ban user and delete messages'
+                                        : 'Kullanıcıyı kalıcı banla ve mesajlarını sil'
+                                    }
+                                  >
+                                    <Ban className="w-2.5 h-2.5" />
+                                    <span>{banningId === m.id ? '...' : isEnRoom ? 'Ban' : 'Banla'}</span>
+                                  </button>
+                                </>
+                              )}
                             </div>
                           </div>
-                        )}
 
-                        <div className="flex items-center justify-between gap-2 mb-1.5 flex-wrap">
-                          <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
-                            {isAdminMsg ? (
-                              <span className="inline-flex items-center gap-1.5 pl-1 pr-2.5 py-0.5 rounded-full border text-[11px] font-black shadow-sm bg-gradient-to-r from-amber-500/25 via-pink-500/20 to-amber-400/25 border-amber-400/60 text-amber-200">
-                                <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 text-zinc-950 shrink-0">
-                                  <ShieldCheck className="w-2.5 h-2.5" />
-                                </span>
-                                <span className={isLight ? 'text-amber-950' : 'text-amber-100'}>
-                                  {m.nickname}
-                                </span>
-                                <BadgeCheck className="w-3.5 h-3.5 text-sky-400 shrink-0" />
-                                <span className="px-1.5 py-[1px] rounded-full text-[9px] font-black tracking-wider bg-amber-400 text-zinc-950">
-                                  ADMIN
-                                </span>
-                              </span>
-                            ) : isModMsg ? (
-                              <span
-                                className={`inline-flex items-center gap-1.5 pl-1 pr-2.5 py-0.5 rounded-full border text-[11px] font-black shadow-sm ${
-                                  isLight
-                                    ? 'bg-sky-100 border-sky-400 text-sky-950'
-                                    : 'bg-gradient-to-r from-sky-500/25 via-cyan-500/20 to-emerald-500/20 border-sky-400/60 text-sky-100'
-                                }`}
-                              >
-                                <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-gradient-to-br from-sky-400 to-cyan-500 text-zinc-950 shrink-0">
-                                  <Shield className="w-2.5 h-2.5 fill-current" />
-                                </span>
-                                <span>{m.nickname}</span>
-                                <span className="px-1.5 py-[1px] rounded-full text-[9px] font-black tracking-wider bg-sky-400 text-zinc-950">
-                                  {isEnRoom ? 'MOD' : 'MODERATÖR'}
-                                </span>
-                              </span>
-                            ) : (
-                              <span
-                                className={`inline-flex items-center gap-1.5 pl-1 pr-2.5 py-0.5 rounded-full border text-[11px] font-extrabold max-w-full ${nickStyle.pill}`}
-                              >
-                                <span
-                                  className={`inline-flex items-center justify-center w-4 h-4 rounded-full text-[9px] font-black shrink-0 shadow-inner ${nickStyle.avatar}`}
-                                >
-                                  {initial}
-                                </span>
-                                <span className="truncate">{m.nickname}</span>
-                              </span>
-                            )}
-                          </div>
+                          <p className="leading-relaxed break-words pl-1 text-[12.5px]">{m.message}</p>
 
-                          <div className="flex items-center gap-1.5 shrink-0 flex-wrap">
-                            <span className={`text-[10px] font-medium tabular-nums ${theme.muted}`}>
-                              {formatChatTime(m.created_at)} {isEnRoom ? 'TRT' : 'TSİ'}
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() => handleStartReply(m)}
-                              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-[10px] font-semibold transition opacity-80 hover:opacity-100 ${theme.pill}`}
-                              title={isEnRoom ? 'Reply to this message' : 'Bu mesajı yanıtla'}
-                            >
-                              <Reply className="w-2.5 h-2.5" />
-                              <span>{isEnRoom ? 'Reply' : 'Yanıtla'}</span>
-                            </button>
-
-                            {staffModeActive && !isAdminMsg && (
-                              <>
+                          {/* Mini Emoji Tepkileri */}
+                          <div className="mt-1.5 pl-1 flex items-center gap-1 flex-wrap">
+                            {CHAT_REACTION_EMOJIS.map((emoji) => {
+                              const cnt = Number(reactionsObj[emoji]) || 0;
+                              const reacted = Boolean(myReactions[`${m.id}:${emoji}`]);
+                              return (
                                 <button
+                                  key={emoji}
                                   type="button"
-                                  disabled={clearingId === m.id || banningId === m.id}
-                                  onClick={() => handleClearMessage(m)}
-                                  className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-[10px] font-bold transition disabled:opacity-50 ${
-                                    isLight
-                                      ? 'border-amber-400 bg-amber-100 text-amber-900 hover:bg-amber-200'
-                                      : 'border-amber-400/50 bg-amber-500/20 text-amber-200 hover:bg-amber-500/35'
+                                  onClick={() => handleToggleReaction(m, emoji)}
+                                  className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full border text-[10px] font-bold transition ${
+                                    reacted
+                                      ? `${theme.btnPrimary} border-transparent shadow-sm`
+                                      : cnt > 0
+                                        ? `${theme.pill} opacity-95 hover:opacity-100`
+                                        : `${theme.card} opacity-45 hover:opacity-90`
                                   }`}
-                                  title={
-                                    isEnRoom
-                                      ? 'Delete this message only'
-                                      : 'Kullanıcıyı banlamadan sadece bu mesajı sil'
-                                  }
                                 >
-                                  <Trash2 className="w-2.5 h-2.5" />
-                                  <span>{clearingId === m.id ? '...' : isEnRoom ? 'Clear' : 'Temizle'}</span>
+                                  <span>{emoji}</span>
+                                  {cnt > 0 && <span className="tabular-nums">{cnt}</span>}
                                 </button>
-                                <button
-                                  type="button"
-                                  disabled={banningId === m.id || clearingId === m.id}
-                                  onClick={() => handleBanMessage(m)}
-                                  className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-[10px] font-bold transition disabled:opacity-50 ${
-                                    isLight
-                                      ? 'border-red-400 bg-red-100 text-red-900 hover:bg-red-200'
-                                      : 'border-red-500/50 bg-red-500/20 text-red-300 hover:bg-red-500/35'
-                                  }`}
-                                  title={
-                                    isEnRoom
-                                      ? 'Permanently ban user and delete messages'
-                                      : 'Kullanıcıyı kalıcı banla ve mesajlarını sil'
-                                  }
-                                >
-                                  <Ban className="w-2.5 h-2.5" />
-                                  <span>{banningId === m.id ? '...' : isEnRoom ? 'Ban' : 'Banla'}</span>
-                                </button>
-                              </>
-                            )}
+                              );
+                            })}
                           </div>
                         </div>
+                      );
+                    })
+                  )}
+                  <div ref={chatEndRef} />
+                </div>
 
-                        <p className="leading-relaxed break-words pl-1 text-[12.5px]">{m.message}</p>
-                      </div>
-                    );
-                  })
+                {unreadWhileScrolled > 0 && (
+                  <button
+                    type="button"
+                    onClick={handleScrollChatBottom}
+                    className={`absolute bottom-3 right-4 z-10 inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-[11px] font-black shadow-lg transition hover:scale-105 ${theme.btnPrimary}`}
+                  >
+                    <ArrowDown className="w-3 h-3" />
+                    <span>
+                      {unreadWhileScrolled} {isEnRoom ? 'New Messages' : 'Yeni Mesaj'}
+                    </span>
+                  </button>
                 )}
-                <div ref={chatEndRef} />
               </div>
 
               {replyTo && (
