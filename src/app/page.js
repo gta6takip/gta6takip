@@ -36,14 +36,16 @@ import {
   Ban,
   Trash2,
   Pin,
+  Search,
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
-const APP_VERSION = 'v1.0.49';
+const APP_VERSION = 'v1.0.50';
 const CHAT_COOLDOWN_SEC = 30;
 const CHAT_COOLDOWN_KEY = 'gta6takip_chat_cooldown_until';
 const CHAT_SOUND_KEY = 'gta6takip_chat_sound';
 const CHAT_CLIENT_KEY = 'gta6takip_client_id';
+const CHAT_REACTIONS_KEY = 'gta6takip_reactions';
 const CHAT_REACTION_EMOJIS = ['🔥', '👍', '😂'];
 
 function playChatChime() {
@@ -275,6 +277,21 @@ const FALLBACK_NEWS = [
 
 const CHANGELOG = [
   {
+    version: 'v1.0.50',
+    dateTr: '27 Kasım 2026',
+    dateEn: 'November 27, 2026',
+    itemsTr: [
+      'Canlı Sohbette kullanıcı adına tıklayarak @etiketle akışı düzeltildi; emoji tepkileri tarayıcıda kalıcı hale getirilip sunucuda hız sınırıyla korundu.',
+      'Sekme arka plandayken 120sn otomatik veri yenilemesini duraklatan performans optimizasyonu eklendi.',
+      'Aktif Ekipler bölümüne hızlı isim / GPU arama kutusu eklendi.',
+    ],
+    itemsEn: [
+      'Fixed click-to-@mention in Live Chat; persisted emoji reactions locally and added server-side reaction rate limiting.',
+      'Paused 120s auto-sync while tab is in the background to cut server load and save battery.',
+      'Added a compact team / GPU search input to Active Efforts.',
+    ],
+  },
+  {
     version: 'v1.0.49',
     dateTr: '27 Kasım 2026',
     dateEn: 'November 27, 2026',
@@ -302,19 +319,6 @@ const CHANGELOG = [
       'Security Pack: Added 15-min lockout after 5 failed Staff PIN attempts and timing-safe verification.',
       'Enabled persistent browser clientId for bans and DB-backed 30s rate limiting.',
       'Fixed EN room header badge localization and added smart chat auto-scroll.',
-    ],
-  },
-  {
-    version: 'v1.0.47',
-    dateTr: '27 Kasım 2026',
-    dateEn: 'November 27, 2026',
-    itemsTr: [
-      'Yetkililer için Banla butonunun yanına kullanıcıyı banlamadan sadece mesajı silen "Temizle" butonu eklendi.',
-      'Moderatör mesajlarına kalkan simgesi ve MODERATÖR rozeti eklendi.',
-    ],
-    itemsEn: [
-      'Added a "Clear" button next to Ban for staff to delete a single message without banning the user.',
-      'Added a shield icon and MOD badge next to moderator nicknames.',
     ],
   },
 ];
@@ -568,6 +572,7 @@ export default function HomePage() {
   const [showBackTop, setShowBackTop] = useState(false);
   const [typeFilter, setTypeFilter] = useState('all');
   const [gpuFilter, setGpuFilter] = useState('all');
+  const [teamSearch, setTeamSearch] = useState('');
   const [showAllMobile, setShowAllMobile] = useState(false);
 
   const [chatOpen, setChatOpen] = useState(false);
@@ -697,6 +702,12 @@ export default function HomePage() {
         localStorage.setItem(CHAT_CLIENT_KEY, cid);
       }
       setChatClientId(cid);
+
+      const savedReactionsRaw = localStorage.getItem(CHAT_REACTIONS_KEY);
+      if (savedReactionsRaw) {
+        const parsed = JSON.parse(savedReactionsRaw);
+        if (parsed && typeof parsed === 'object') setMyReactions(parsed);
+      }
 
       const savedSound = localStorage.getItem(CHAT_SOUND_KEY);
       if (savedSound === '0') {
@@ -953,17 +964,32 @@ export default function HomePage() {
       nickname: msg.nickname,
       message: msg.message,
     });
-    if (chatInputRef.current) {
-      chatInputRef.current.focus();
-    }
+    setTimeout(() => {
+      chatInputRef.current?.focus();
+    }, 0);
   };
 
-  const handleMentionUser = (nick) => {
+  const handleMentionUser = (e, nick) => {
+    if (e?.stopPropagation) e.stopPropagation();
     const clean = String(nick || '').trim();
     if (!clean) return;
     const tag = `@${clean} `;
-    setChatInput((prev) => (prev.startsWith(tag) ? prev : `${tag}${prev}`.slice(0, 280)));
-    chatInputRef.current?.focus();
+    setChatInput((prev) => {
+      const current = String(prev || '');
+      if (current.toLowerCase().startsWith(tag.toLowerCase())) return current;
+      return `${tag}${current}`.slice(0, 280);
+    });
+    setTimeout(() => {
+      if (chatInputRef.current) {
+        chatInputRef.current.focus();
+        const len = chatInputRef.current.value.length;
+        try {
+          chatInputRef.current.setSelectionRange(len, len);
+        } catch {
+          // Yoksay
+        }
+      }
+    }, 0);
   };
 
   const handleToggleReaction = async (msg, emoji) => {
@@ -971,7 +997,19 @@ export default function HomePage() {
     const already = Boolean(myReactions[key]);
     const delta = already ? -1 : 1;
 
-    setMyReactions((prev) => ({ ...prev, [key]: !already }));
+    setMyReactions((prev) => {
+      const next = { ...prev };
+      if (already) delete next[key];
+      else next[key] = true;
+      try {
+        const entries = Object.entries(next).slice(-120);
+        localStorage.setItem(CHAT_REACTIONS_KEY, JSON.stringify(Object.fromEntries(entries)));
+      } catch {
+        // Yoksay
+      }
+      return next;
+    });
+
     setChatMessages((prev) =>
       prev.map((m) => {
         if (String(m.id) !== String(msg.id)) return m;
@@ -984,7 +1022,7 @@ export default function HomePage() {
     );
 
     try {
-      await fetch('/api/chat', {
+      const res = await fetch('/api/chat', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -994,6 +1032,9 @@ export default function HomePage() {
           delta,
         }),
       });
+      if (res.status === 429) {
+        setChatError(chatRoomRef.current === 'en' ? 'Slow down on reactions.' : 'Çok hızlı tepki veriyorsun, biraz bekle.');
+      }
     } catch {
       // Sessizce geç
     }
@@ -1240,8 +1281,10 @@ export default function HomePage() {
     fetchSyncData();
   }, []);
 
+  // Sekme arka plandayken gereksiz /api/sync fonksiyon çağrısını duraklat
   useEffect(() => {
     const timer = setInterval(() => {
+      if (typeof document !== 'undefined' && document.hidden) return;
       setCountdown((prev) => {
         if (prev <= 1) {
           fetchSyncData();
@@ -1354,14 +1397,19 @@ export default function HomePage() {
   );
 
   const filteredTeams = useMemo(() => {
+    const q = teamSearch.trim().toLowerCase();
     return rankedTeams.filter((t) => {
       if (typeFilter !== 'all' && t.type !== typeFilter) return false;
       const gpuLower = String(t.gpu || '').toLowerCase();
       if (gpuFilter === 'amd' && !gpuLower.includes('amd')) return false;
       if (gpuFilter === 'nvidia' && !gpuLower.includes('nvidia')) return false;
+      if (q) {
+        const hay = `${t.name || ''} ${t.gpu || ''} ${t.stage || ''}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
       return true;
     });
-  }, [rankedTeams, typeFilter, gpuFilter]);
+  }, [rankedTeams, typeFilter, gpuFilter, teamSearch]);
 
   const openCount = useMemo(
     () => teams.filter((t) => t.type === 'open').length,
@@ -1913,9 +1961,30 @@ export default function HomePage() {
                   {lang === 'tr' ? `Kapalı (${privateCount})` : `Private (${privateCount})`}
                 </button>
               </div>
-              <span className={`hidden sm:inline text-xs ${theme.muted}`}>
-                {lang === 'tr' ? '6 Aşamalı İlerleme Ölçeği' : '6-Stage Progress Scale'}
-              </span>
+
+              <div className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[11px] ${theme.subCard}`}>
+                <Search className="w-3 h-3 opacity-65 shrink-0" />
+                <input
+                  type="text"
+                  value={teamSearch}
+                  onChange={(e) => {
+                    setTeamSearch(e.target.value);
+                    setShowAllMobile(false);
+                  }}
+                  placeholder={lang === 'tr' ? 'Ekip / GPU ara...' : 'Search team / GPU...'}
+                  className="w-28 sm:w-32 bg-transparent outline-none text-[11px] placeholder:opacity-60"
+                />
+                {teamSearch && (
+                  <button
+                    type="button"
+                    onClick={() => setTeamSearch('')}
+                    aria-label="Aramayı temizle"
+                    className="opacity-70 hover:opacity-100"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                )}
+              </div>
             </div>
           </div>
 
@@ -2082,6 +2151,12 @@ export default function HomePage() {
                 </article>
               );
             })}
+
+            {filteredTeams.length === 0 && (
+              <div className={`rounded-2xl border p-6 text-center text-xs ${theme.card} ${theme.muted}`}>
+                {lang === 'tr' ? 'Aramana uyan ekip bulunamadı.' : 'No teams match your search.'}
+              </div>
+            )}
           </div>
 
           {filteredTeams.length > 10 && (
@@ -2401,8 +2476,8 @@ export default function HomePage() {
                               {isAdminMsg ? (
                                 <button
                                   type="button"
-                                  onClick={() => handleMentionUser(m.nickname)}
-                                  className="inline-flex items-center gap-1.5 pl-1 pr-2.5 py-0.5 rounded-full border text-[11px] font-black shadow-sm bg-gradient-to-r from-amber-500/25 via-pink-500/20 to-amber-400/25 border-amber-400/60 text-amber-200 hover:brightness-110 transition"
+                                  onClick={(e) => handleMentionUser(e, m.nickname)}
+                                  className="cursor-pointer inline-flex items-center gap-1.5 pl-1 pr-2.5 py-0.5 rounded-full border text-[11px] font-black shadow-sm bg-gradient-to-r from-amber-500/25 via-pink-500/20 to-amber-400/25 border-amber-400/60 text-amber-200 hover:brightness-110 transition"
                                   title={isEnRoom ? 'Click to @mention' : 'Etiketlemek için tıkla'}
                                 >
                                   <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 text-zinc-950 shrink-0">
@@ -2419,8 +2494,8 @@ export default function HomePage() {
                               ) : isModMsg ? (
                                 <button
                                   type="button"
-                                  onClick={() => handleMentionUser(m.nickname)}
-                                  className={`inline-flex items-center gap-1.5 pl-1 pr-2.5 py-0.5 rounded-full border text-[11px] font-black shadow-sm hover:brightness-110 transition ${
+                                  onClick={(e) => handleMentionUser(e, m.nickname)}
+                                  className={`cursor-pointer inline-flex items-center gap-1.5 pl-1 pr-2.5 py-0.5 rounded-full border text-[11px] font-black shadow-sm hover:brightness-110 transition ${
                                     isLight
                                       ? 'bg-sky-100 border-sky-400 text-sky-950'
                                       : 'bg-gradient-to-r from-sky-500/25 via-cyan-500/20 to-emerald-500/20 border-sky-400/60 text-sky-100'
@@ -2438,8 +2513,8 @@ export default function HomePage() {
                               ) : (
                                 <button
                                   type="button"
-                                  onClick={() => handleMentionUser(m.nickname)}
-                                  className={`inline-flex items-center gap-1.5 pl-1 pr-2.5 py-0.5 rounded-full border text-[11px] font-extrabold max-w-full hover:brightness-110 transition ${nickStyle.pill}`}
+                                  onClick={(e) => handleMentionUser(e, m.nickname)}
+                                  className={`cursor-pointer inline-flex items-center gap-1.5 pl-1 pr-2.5 py-0.5 rounded-full border text-[11px] font-extrabold max-w-full hover:brightness-110 transition ${nickStyle.pill}`}
                                   title={isEnRoom ? 'Click to @mention' : 'Etiketlemek için tıkla'}
                                 >
                                   <span
