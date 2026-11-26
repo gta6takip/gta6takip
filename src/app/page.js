@@ -19,10 +19,12 @@ import {
   Code2,
   Info,
   HelpCircle,
+  MessageSquarePlus,
+  Send,
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
-const APP_VERSION = 'v1.0.27';
+const APP_VERSION = 'v1.0.28';
 
 const THEMES = {
   vice: {
@@ -131,8 +133,8 @@ const FALLBACK_TEAMS = [
     stage: 'Oynanabilir • Hikâye Yarısı',
     delta: '+37.0%',
     url: 'https://github.com/codec-d/cool_fox',
-    summaryTr: 'Ara sahnelerde 30 FPS, oyun içinde ortalama 25 FPS (8 GB RAM / 16 GB VRAM). Hikâyenin yarısı oynanabilir ve kodlar GitHub üzerinde açık kaynak yayınlandı.',
-    summaryEn: '30 FPS in cutscenes, 25 FPS average in gameplay (8 GB RAM / 16 GB VRAM). Half the story playable and now open source on GitHub.',
+    summaryTr: 'Ara sahnelerde 30 FPS, oyun içinde ortalama 25 FPS (8 GB RAM / 16 GB VRAM). Hikâyenin yarısı oynanabilir (GitHub deposu şu an 404 / kaldırılmış durumda).',
+    summaryEn: '30 FPS in cutscenes, 25 FPS average in gameplay (8 GB RAM / 16 GB VRAM). Half the story playable (GitHub repo currently returns 404).',
   },
   { name: 'NotNozy', progress: 87.8, fps: '16 FPS', gpu: 'AMD (Rumble)', type: 'private', stage: 'Oynanabilir • Hikâye Yarısı', delta: '+26.8%', url: 'https://portwatch-vi.xyz/#race', isNew: true },
   { name: 'darkworldhm', progress: 84.8, fps: '15-24 FPS', gpu: 'RTX 50 Serisi', type: 'private', stage: 'Oynanabilir • Hikâye Yarısı', delta: '+23.8%', url: 'https://portwatch-vi.xyz/#race' },
@@ -141,6 +143,7 @@ const FALLBACK_TEAMS = [
   { name: 'Belobug', progress: 79.0, fps: '8 FPS', gpu: 'RX 9070 XT', type: 'open', stage: 'Oynanabilir • İlk Perde (RT)', delta: '+10.7%', url: 'https://github.com/Belobug/VIctory-Belobug-AMD' },
   { name: 'DexNom', progress: 78.0, fps: '3 FPS', gpu: 'RX 7900 XTX', type: 'open', stage: 'Oynanabilir • İlk Perde', delta: '+12.0%', url: 'https://github.com/DexNom/VIctory' },
   { name: 'suri', progress: 75.0, fps: '3 FPS', gpu: 'Özel Yapı', type: 'private', stage: 'Oynanabilir • Hikâye Yarısı', delta: '+14.0%', url: 'https://portwatch-vi.xyz/#race' },
+  { name: 'Kelvaroq', progress: 68.8, fps: 'PortWatch Canlı', gpu: 'Açık Kaynak', type: 'open', stage: 'Oynanabilir', url: 'https://github.com/fablinoo/kelvaroq', isNew: true },
   { name: 'hyphennn', progress: 59.8, fps: '3 FPS', gpu: 'RTX 4070', type: 'open', stage: 'Oynanabilir • Açılış Sahnesi', delta: '+4.0%', url: 'https://github.com/fxceless/victory-fork' },
   { name: 'Uilian (VItoriaBr)', progress: 59.6, fps: '4 FPS', gpu: 'RTX 5060 Ti', type: 'open', stage: 'Oynanabilir • Önsöz Geçildi', delta: '+5.2%', url: 'https://github.com/uiliannn/VItoriaBr' },
   { name: 'omonkey', progress: 57.9, fps: '~5 FPS', gpu: 'Rumble Yayını', type: 'private', stage: 'Oynanabilir • Hapishane Sahnesi', delta: '+2.4%', url: 'https://portwatch-vi.xyz/#race' },
@@ -161,10 +164,21 @@ const FALLBACK_TEAMS = [
 const FALLBACK_NEWS = [
   { tagTr: 'REKOR', tagEn: 'RECORD', tr: "CGBJ %91.5 ile lider (25 FPS · 30 FPS Ara Sahne) ve kodlarını GitHub'da açtı!", en: 'CGBJ leads at 91.5% (25 FPS · 30 FPS cutscenes) and went open source on GitHub!' },
   { tagTr: 'AÇIK KAYNAK', tagEn: 'OPEN SOURCE', tr: 'Açık kaynak lideri CGBJ (%91.5); AvatarManz (%83.1) ve Belobug (%79) takipte.', en: 'CGBJ (91.5%) leads open source; AvatarManz (83.1%) & Belobug (79%) follow.' },
-  { tagTr: 'GÜNCEL', tagEn: 'LIVE', tr: "PortWatch üzerinde 39 girişim takip ediliyor; 17'si oyunu başlatabiliyor (İlk 3 ort. %88).", en: '39 total efforts tracked on PortWatch, with 17 booting GTA VI (Top-3 avg 88%).' },
+  { tagTr: 'GÜNCEL', tagEn: 'LIVE', tr: "PortWatch üzerinde 40 girişim takip ediliyor; 18'si oyunu başlatabiliyor (İlk 3 ort. %88).", en: '40 total efforts tracked on PortWatch, with 18 booting GTA VI (Top-3 avg 88%).' },
 ];
 
 const CHANGELOG = [
+  {
+    version: 'v1.0.28',
+    dateTr: '26 Kasım 2026',
+    dateEn: 'November 26, 2026',
+    itemsTr: [
+      'Alt menüye tema uyumlu "Tavsiye / Fikir" butonu ve e-posta bildirim kutucuğu eklendi.',
+    ],
+    itemsEn: [
+      'Added a theme-matched "Feedback / Idea" button and modal in the footer.',
+    ],
+  },
   {
     version: 'v1.0.27',
     dateTr: '26 Kasım 2026',
@@ -187,19 +201,6 @@ const CHANGELOG = [
     itemsEn: [
       'Improved mobile UX: added Top 10 + Show All toggle, category filters, and 2-row milestone labels on mobile without changing desktop layout.',
       'Pinned percentage & Source button to top-right on mobile cards, aligned Live FAQ badge, and cleaned nested parentheses in news cards.',
-    ],
-  },
-  {
-    version: 'v1.0.24',
-    dateTr: '26 Kasım 2026',
-    dateEn: 'November 26, 2026',
-    itemsTr: [
-      '30 FPS Barajı hesaplaması düzeltildi: CGBJ (25 FPS · 30 FPS Ara Sahne) artık doğru şekilde 25 / 30 FPS olarak görünüyor.',
-      'Varsayılan giriş teması Vice Sunset yapıldı ve tema sıralaması güncellendi.',
-    ],
-    itemsEn: [
-      'Fixed 30 FPS Target calculation: CGBJ (25 FPS · 30 FPS Cutscenes) now displays accurately as 25 / 30 FPS.',
-      'Set Vice Sunset as the default theme and updated theme menu order.',
     ],
   },
 ];
@@ -323,10 +324,16 @@ export default function HomePage() {
   const [typeFilter, setTypeFilter] = useState('all');
   const [showAllMobile, setShowAllMobile] = useState(false);
 
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const [feedbackName, setFeedbackName] = useState('');
+  const [feedbackEmail, setFeedbackEmail] = useState('');
+  const [feedbackMsg, setFeedbackMsg] = useState('');
+  const [feedbackStatus, setFeedbackStatus] = useState('idle');
+
   const [teams, setTeams] = useState(FALLBACK_TEAMS);
   const [news, setNews] = useState(FALLBACK_NEWS);
-  const [totalEfforts, setTotalEfforts] = useState(39);
-  const [bootingCount, setBootingCount] = useState(17);
+  const [totalEfforts, setTotalEfforts] = useState(40);
+  const [bootingCount, setBootingCount] = useState(18);
   const [top3Avg, setTop3Avg] = useState(88.0);
   const [onlineCount, setOnlineCount] = useState(1);
   const [countdown, setCountdown] = useState(120);
@@ -413,10 +420,10 @@ export default function HomePage() {
       }
 
       if (data?.totalEfforts || data?.summary?.totalEfforts) {
-        setTotalEfforts(Math.max(39, Number(data.totalEfforts || data.summary.totalEfforts)));
+        setTotalEfforts(Math.max(40, Number(data.totalEfforts || data.summary.totalEfforts)));
       }
       if (data?.bootingCount || data?.summary?.bootingCount) {
-        setBootingCount(Math.max(17, Number(data.bootingCount || data.summary.bootingCount)));
+        setBootingCount(Math.max(18, Number(data.bootingCount || data.summary.bootingCount)));
       }
       if (data?.top3Avg || data?.summary?.top3Avg) {
         setTop3Avg(Math.max(88.0, Number(data.top3Avg || data.summary.top3Avg)));
@@ -587,6 +594,35 @@ export default function HomePage() {
       navigator.clipboard.writeText('https://gta6takip.vercel.app/');
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  const handleSendFeedback = async (e) => {
+    e.preventDefault();
+    if (!feedbackMsg.trim()) return;
+    setFeedbackStatus('sending');
+    try {
+      const res = await fetch('https://formsubmit.co/ajax/gta6takip@yandex.com', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+        body: JSON.stringify({
+          name: feedbackName.trim() || 'Anonim Ziyaretçi',
+          email: feedbackEmail.trim() || 'belirtilmedi@gta6takip.vercel.app',
+          message: feedbackMsg.trim(),
+          _subject: 'GTA6takip — Yeni Tavsiye / Fikir',
+          _template: 'table',
+        }),
+      });
+      if (!res.ok) throw new Error('Send failed');
+      setFeedbackStatus('sent');
+      setFeedbackName('');
+      setFeedbackEmail('');
+      setFeedbackMsg('');
+    } catch {
+      setFeedbackStatus('error');
     }
   };
 
@@ -1174,6 +1210,17 @@ export default function HomePage() {
 
         <footer className={`pt-2 pb-10 space-y-4 text-center text-xs ${theme.muted}`}>
           <div className="flex items-center justify-center gap-2 flex-wrap">
+            <button
+              type="button"
+              onClick={() => {
+                setFeedbackStatus('idle');
+                setFeedbackOpen(true);
+              }}
+              className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl font-bold transition ${theme.btnPrimary}`}
+            >
+              <MessageSquarePlus className="w-3.5 h-3.5" />
+              <span>{lang === 'tr' ? 'Tavsiye / Fikir' : 'Feedback / Idea'}</span>
+            </button>
             <a
               href="https://x.com/batmancodex"
               target="_blank"
@@ -1227,6 +1274,112 @@ export default function HomePage() {
         >
           <ArrowUp className="w-5 h-5" />
         </button>
+      )}
+
+      {feedbackOpen && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className={`w-full max-w-md rounded-2xl border p-5 space-y-4 ${theme.card}`}>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <MessageSquarePlus className={`w-4 h-4 ${theme.accentText}`} />
+                <h3 className="text-base font-black">
+                  {lang === 'tr' ? 'Tavsiye / Fikir Gönder' : 'Send Feedback / Idea'}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setFeedbackOpen(false)}
+                className={`p-1 rounded-lg border ${theme.subCard}`}
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {feedbackStatus === 'sent' ? (
+              <div className={`rounded-xl border p-4 text-center space-y-2 ${theme.subCard}`}>
+                <p className="text-sm font-bold text-emerald-400">
+                  {lang === 'tr' ? 'Mesajın iletildi, teşekkürler!' : 'Your message has been sent, thank you!'}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setFeedbackOpen(false)}
+                  className={`px-4 py-1.5 rounded-lg text-xs font-bold ${theme.btnPrimary}`}
+                >
+                  {lang === 'tr' ? 'Kapat' : 'Close'}
+                </button>
+              </div>
+            ) : (
+              <form onSubmit={handleSendFeedback} className="space-y-3 text-xs">
+                <div>
+                  <label className={`block font-semibold mb-1 ${theme.muted}`}>
+                    {lang === 'tr' ? 'Adın / Rumuzun (opsiyonel)' : 'Name / Nickname (optional)'}
+                  </label>
+                  <input
+                    type="text"
+                    value={feedbackName}
+                    onChange={(e) => setFeedbackName(e.target.value)}
+                    placeholder={lang === 'tr' ? 'Örn: Ahmet' : 'e.g. Alex'}
+                    className={`w-full rounded-xl border px-3 py-2 outline-none ${theme.subCard}`}
+                  />
+                </div>
+                <div>
+                  <label className={`block font-semibold mb-1 ${theme.muted}`}>
+                    {lang === 'tr' ? 'E-posta (opsiyonel, dönüş istersen)' : 'Email (optional, for reply)'}
+                  </label>
+                  <input
+                    type="email"
+                    value={feedbackEmail}
+                    onChange={(e) => setFeedbackEmail(e.target.value)}
+                    placeholder="ornek@mail.com"
+                    className={`w-full rounded-xl border px-3 py-2 outline-none ${theme.subCard}`}
+                  />
+                </div>
+                <div>
+                  <label className={`block font-semibold mb-1 ${theme.muted}`}>
+                    {lang === 'tr' ? 'Tavsiye / Fikrin *' : 'Your Feedback / Idea *'}
+                  </label>
+                  <textarea
+                    required
+                    rows={4}
+                    value={feedbackMsg}
+                    onChange={(e) => setFeedbackMsg(e.target.value)}
+                    placeholder={
+                      lang === 'tr'
+                        ? 'Site hakkında düşüncelerini, önerini veya hata bildirimini yazabilirsin...'
+                        : 'Share your thoughts, feature ideas, or bug reports...'
+                    }
+                    className={`w-full rounded-xl border px-3 py-2 outline-none resize-none ${theme.subCard}`}
+                  />
+                </div>
+
+                {feedbackStatus === 'error' && (
+                  <p className="text-red-400 font-semibold">
+                    {lang === 'tr'
+                      ? 'Gönderilirken bir hata oluştu, lütfen tekrar dene.'
+                      : 'Failed to send, please try again.'}
+                  </p>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={feedbackStatus === 'sending'}
+                  className={`w-full py-2.5 rounded-xl font-bold flex items-center justify-center gap-1.5 transition ${theme.btnPrimary}`}
+                >
+                  <Send className="w-3.5 h-3.5" />
+                  <span>
+                    {feedbackStatus === 'sending'
+                      ? lang === 'tr'
+                        ? 'Gönderiliyor...'
+                        : 'Sending...'
+                      : lang === 'tr'
+                        ? 'Gönder'
+                        : 'Send'}
+                  </span>
+                </button>
+              </form>
+            )}
+          </div>
+        </div>
       )}
 
       {changelogOpen && (
