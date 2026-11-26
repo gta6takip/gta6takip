@@ -24,7 +24,7 @@ import {
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
-const APP_VERSION = 'v1.0.29';
+const APP_VERSION = 'v1.0.30';
 
 const THEMES = {
   vice: {
@@ -169,6 +169,17 @@ const FALLBACK_NEWS = [
 
 const CHANGELOG = [
   {
+    version: 'v1.0.30',
+    dateTr: '26 Kasım 2026',
+    dateEn: 'November 26, 2026',
+    itemsTr: [
+      'Çevrimiçi sayacına tıklandığında hangi ülkeden kaç ziyaretçinin bağlı olduğunu bayrak emojileriyle gösteren açılır liste eklendi.',
+    ],
+    itemsEn: [
+      'Made the online counter clickable to show live connected visitors by country with flag emojis.',
+    ],
+  },
+  {
     version: 'v1.0.29',
     dateTr: '26 Kasım 2026',
     dateEn: 'November 26, 2026',
@@ -190,18 +201,57 @@ const CHANGELOG = [
       'Added a theme-matched "Feedback / Idea" button and modal.',
     ],
   },
-  {
-    version: 'v1.0.27',
-    dateTr: '26 Kasım 2026',
-    dateEn: 'November 26, 2026',
-    itemsTr: [
-      'SON GELİŞMELER altındaki harici haber akışı kutusu kaldırılarak daha sade bir önceki görünüme dönüldü.',
-    ],
-    itemsEn: [
-      'Removed the external news feed box under LATEST UPDATES to restore the cleaner layout.',
-    ],
-  },
 ];
+
+const COUNTRY_FALLBACK_NAMES = {
+  TR: { tr: 'Türkiye', en: 'Turkey' },
+  DE: { tr: 'Almanya', en: 'Germany' },
+  IE: { tr: 'İrlanda', en: 'Ireland' },
+  US: { tr: 'ABD', en: 'United States' },
+  GB: { tr: 'Birleşik Krallık', en: 'United Kingdom' },
+  NL: { tr: 'Hollanda', en: 'Netherlands' },
+  FR: { tr: 'Fransa', en: 'France' },
+  AZ: { tr: 'Azerbaycan', en: 'Azerbaijan' },
+  PL: { tr: 'Polonya', en: 'Poland' },
+  RU: { tr: 'Rusya', en: 'Russia' },
+  BR: { tr: 'Brezilya', en: 'Brazil' },
+  CA: { tr: 'Kanada', en: 'Canada' },
+};
+
+function countryFlagEmoji(code) {
+  const cc = String(code || '').trim().toUpperCase();
+  if (!/^[A-Z]{2}$/.test(cc)) return '🌍';
+  return String.fromCodePoint(...[...cc].map((c) => 127397 + c.charCodeAt(0)));
+}
+
+function getCountryLabel(code, lang) {
+  const cc = String(code || '').trim().toUpperCase();
+  if (!/^[A-Z]{2}$/.test(cc)) return lang === 'tr' ? 'Diğer' : 'Other';
+  try {
+    if (typeof Intl !== 'undefined' && Intl.DisplayNames) {
+      const dn = new Intl.DisplayNames([lang === 'tr' ? 'tr' : 'en'], { type: 'region' });
+      const name = dn.of(cc);
+      if (name) return name;
+    }
+  } catch {
+    // Fallback listeye geç
+  }
+  return COUNTRY_FALLBACK_NAMES[cc]?.[lang] || cc;
+}
+
+function guessClientCountry() {
+  try {
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
+    if (tz.includes('Istanbul')) return 'TR';
+    const navLang = (typeof navigator !== 'undefined' && navigator.language) || '';
+    const parts = navLang.split('-');
+    if (parts[1] && /^[A-Za-z]{2}$/.test(parts[1])) return parts[1].toUpperCase();
+    if (parts[0]?.toLowerCase() === 'tr') return 'TR';
+  } catch {
+    // Varsayılan TR
+  }
+  return 'TR';
+}
 
 const FlagTR = () => (
   <svg viewBox="0 0 24 16" className="w-4 h-3 rounded-[2px] shrink-0" aria-hidden="true">
@@ -315,6 +365,7 @@ export default function HomePage() {
   const [lang, setLang] = useState('tr');
   const [themeKey, setThemeKey] = useState('vice');
   const [themeMenuOpen, setThemeMenuOpen] = useState(false);
+  const [onlineMenuOpen, setOnlineMenuOpen] = useState(false);
   const [changelogOpen, setChangelogOpen] = useState(false);
   const [radarOpen, setRadarOpen] = useState(false);
   const [openFaqIdx, setOpenFaqIdx] = useState(null);
@@ -334,6 +385,7 @@ export default function HomePage() {
   const [bootingCount, setBootingCount] = useState(18);
   const [top3Avg, setTop3Avg] = useState(88.0);
   const [onlineCount, setOnlineCount] = useState(1);
+  const [countryStats, setCountryStats] = useState([{ code: 'TR', count: 1 }]);
   const [countdown, setCountdown] = useState(120);
   const [syncing, setSyncing] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -461,28 +513,70 @@ export default function HomePage() {
   }, []);
 
   useEffect(() => {
+    const localCountry = guessClientCountry();
+    setCountryStats([{ code: localCountry, count: 1 }]);
     if (!supabaseClient) return undefined;
+
     let channel;
-    try {
-      const clientId = `v-${Math.random().toString(36).slice(2, 10)}`;
-      channel = supabaseClient.channel('gta6takip-presence', {
-        config: { presence: { key: clientId } },
-      });
-      channel
-        .on('presence', { event: 'sync' }, () => {
-          const state = channel.presenceState();
-          const count = Object.keys(state).length;
-          if (count > 0) setOnlineCount(count);
-        })
-        .subscribe(async (status) => {
-          if (status === 'SUBSCRIBED') {
-            await channel.track({ online_at: new Date().toISOString() });
+    let cancelled = false;
+
+    const initPresence = async () => {
+      let viewerCountry = localCountry;
+      try {
+        const geoRes = await fetch('/api/geo', { cache: 'no-store' });
+        if (geoRes.ok) {
+          const geoJson = await geoRes.json();
+          if (geoJson?.country && /^[A-Z]{2}$/.test(geoJson.country)) {
+            viewerCountry = geoJson.country;
           }
+        }
+      } catch {
+        // Fallback olarak localCountry kullanılır
+      }
+
+      if (cancelled) return;
+
+      try {
+        const clientId = `v-${Math.random().toString(36).slice(2, 10)}`;
+        channel = supabaseClient.channel('gta6takip-presence', {
+          config: { presence: { key: clientId } },
         });
-    } catch {
-      // Supabase presence hatasında varsayılan 1 korunur
-    }
+        channel
+          .on('presence', { event: 'sync' }, () => {
+            const state = channel.presenceState();
+            const entries = Object.values(state);
+            const count = entries.length;
+            if (count > 0) {
+              setOnlineCount(count);
+              const countsMap = {};
+              for (const presList of entries) {
+                const latest = Array.isArray(presList) ? presList[presList.length - 1] : null;
+                const code = String(latest?.country || 'TR').toUpperCase();
+                countsMap[code] = (countsMap[code] || 0) + 1;
+              }
+              const sortedStats = Object.entries(countsMap)
+                .map(([code, cnt]) => ({ code, count: cnt }))
+                .sort((a, b) => b.count - a.count);
+              setCountryStats(sortedStats);
+            }
+          })
+          .subscribe(async (status) => {
+            if (status === 'SUBSCRIBED') {
+              await channel.track({
+                online_at: new Date().toISOString(),
+                country: viewerCountry,
+              });
+            }
+          });
+      } catch {
+        // Supabase presence hatasında varsayılan 1 korunur
+      }
+    };
+
+    initPresence();
+
     return () => {
+      cancelled = true;
       if (channel) channel.unsubscribe();
     };
   }, [supabaseClient]);
@@ -624,6 +718,27 @@ export default function HomePage() {
     }
   };
 
+  const renderOnlinePopover = () =>
+    onlineMenuOpen && (
+      <div className={`absolute right-0 mt-1.5 w-52 rounded-xl border p-2 shadow-xl z-50 space-y-1 ${theme.card}`}>
+        <div className={`px-2 py-1 text-[10px] font-bold uppercase tracking-wider ${theme.muted}`}>
+          {lang === 'tr' ? 'Bağlı Ülkeler' : 'Connected Countries'}
+        </div>
+        {countryStats.map((c) => (
+          <div
+            key={c.code}
+            className={`flex items-center justify-between px-2 py-1.5 rounded-lg text-xs font-semibold ${theme.subCard}`}
+          >
+            <span className="inline-flex items-center gap-2 min-w-0">
+              <span className="text-sm leading-none">{countryFlagEmoji(c.code)}</span>
+              <span className="truncate">{getCountryLabel(c.code, lang)}</span>
+            </span>
+            <span className={`font-black shrink-0 ${theme.accentText}`}>{c.count}</span>
+          </div>
+        ))}
+      </div>
+    );
+
   return (
     <div className={`min-h-screen transition-colors duration-300 ${theme.bg}`}>
       <style>{`
@@ -653,19 +768,33 @@ export default function HomePage() {
               </button>
             </div>
 
-            <div className="flex items-center gap-1.5 sm:hidden">
-              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+            <div className="relative sm:hidden">
+              <button
+                type="button"
+                onClick={() => setOnlineMenuOpen((v) => !v)}
+                className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
+              >
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
                 {onlineCount} {lang === 'tr' ? 'Çevrimiçi' : 'Online'}
-              </span>
+                <ChevronDown className="w-3 h-3 opacity-80" />
+              </button>
+              {renderOnlinePopover()}
             </div>
           </div>
 
           <div className="flex items-center justify-between sm:justify-end gap-2 flex-wrap">
-            <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              {onlineCount} {lang === 'tr' ? 'Çevrimiçi' : 'Online'}
-            </span>
+            <div className="relative hidden sm:block">
+              <button
+                type="button"
+                onClick={() => setOnlineMenuOpen((v) => !v)}
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20 transition"
+              >
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                {onlineCount} {lang === 'tr' ? 'Çevrimiçi' : 'Online'}
+                <ChevronDown className="w-3 h-3 opacity-80" />
+              </button>
+              {renderOnlinePopover()}
+            </div>
 
             <div className={`inline-flex rounded-lg border p-0.5 ${theme.subCard}`}>
               <button
