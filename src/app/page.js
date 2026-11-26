@@ -22,7 +22,7 @@ import {
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
-const APP_VERSION = 'v1.0.22';
+const APP_VERSION = 'v1.0.23';
 
 const THEMES = {
   dark: {
@@ -124,15 +124,15 @@ const MILESTONES = [
 const FALLBACK_TEAMS = [
   {
     name: 'CGBJ',
-    progress: 89.8,
-    fps: '20 FPS (30 FPS Ara Sahne)',
-    gpu: 'NVIDIA (10GB RAM)',
-    type: 'private',
+    progress: 91.5,
+    fps: '25 FPS (30 FPS Ara Sahne)',
+    gpu: 'NVIDIA (8GB RAM)',
+    type: 'open',
     stage: 'Oynanabilir • Hikâye Yarısı',
-    delta: '+35.3%',
-    url: 'https://portwatch-vi.xyz/#race',
-    summaryTr: 'Ara sahnelerde 30 FPS, oyun içinde sabit ~20 FPS (10 GB RAM / 16 GB VRAM). Hikâyenin yarısı oynanabilir, nadiren çöküyor; kod henüz halka açık değil.',
-    summaryEn: '30 FPS in cutscenes, ~20 FPS stable in gameplay (10 GB RAM / 16 GB VRAM). Half the story playable, rarely crashes; private build.',
+    delta: '+37.0%',
+    url: 'https://github.com/codec-d/cool_fox',
+    summaryTr: 'Ara sahnelerde 30 FPS, oyun içinde ortalama 25 FPS (8 GB RAM / 16 GB VRAM). Hikâyenin yarısı oynanabilir ve kodlar GitHub üzerinde açık kaynak yayınlandı.',
+    summaryEn: '30 FPS in cutscenes, 25 FPS average in gameplay (8 GB RAM / 16 GB VRAM). Half the story playable and now open source on GitHub.',
   },
   { name: 'NotNozy', progress: 87.8, fps: '16 FPS', gpu: 'AMD (Rumble)', type: 'private', stage: 'Oynanabilir • Hikâye Yarısı', delta: '+26.8%', url: 'https://portwatch-vi.xyz/#race', isNew: true },
   { name: 'darkworldhm', progress: 84.8, fps: '15-24 FPS', gpu: 'RTX 50 Serisi', type: 'private', stage: 'Oynanabilir • Hikâye Yarısı', delta: '+23.8%', url: 'https://portwatch-vi.xyz/#race' },
@@ -159,12 +159,25 @@ const FALLBACK_TEAMS = [
 ];
 
 const FALLBACK_NEWS = [
-  { tagTr: 'REKOR', tagEn: 'RECORD', tr: 'CGBJ %89.8 ile yeni genel lider (20 FPS · 30 FPS Ara Sahne); NotNozy (%87.8) #2 sırada.', en: 'CGBJ takes #1 overall at 89.8% (20 FPS · 30 FPS cutscenes); NotNozy (87.8%) is #2.' },
-  { tagTr: 'AÇIK KAYNAK', tagEn: 'OPEN SOURCE', tr: 'Açık kaynak lideri AvatarManz (%83.1); Belobug (%79 · 8 FPS) ve VIctory (%50.3) yükseldi.', en: 'AvatarManz (83.1%) leads open source; Belobug (79% · 8 FPS) & VIctory (50.3%) climbed.' },
-  { tagTr: 'GÜNCEL', tagEn: 'LIVE', tr: "PortWatch üzerinde 39 girişim takip ediliyor; 17'si oyunu başlatabiliyor (İlk 3 ort. %87.5).", en: '39 total efforts tracked on PortWatch, with 17 booting GTA VI (Top-3 avg 87.5%).' },
+  { tagTr: 'REKOR', tagEn: 'RECORD', tr: "CGBJ %91.5 ile lider (25 FPS · 30 FPS Ara Sahne) ve kodlarını GitHub'da açtı!", en: 'CGBJ leads at 91.5% (25 FPS · 30 FPS cutscenes) and went open source on GitHub!' },
+  { tagTr: 'AÇIK KAYNAK', tagEn: 'OPEN SOURCE', tr: 'Açık kaynak lideri CGBJ (%91.5); AvatarManz (%83.1) ve Belobug (%79) takipte.', en: 'CGBJ (91.5%) leads open source; AvatarManz (83.1%) & Belobug (79%) follow.' },
+  { tagTr: 'GÜNCEL', tagEn: 'LIVE', tr: "PortWatch üzerinde 39 girişim takip ediliyor; 17'si oyunu başlatabiliyor (İlk 3 ort. %88).", en: '39 total efforts tracked on PortWatch, with 17 booting GTA VI (Top-3 avg 88%).' },
 ];
 
 const CHANGELOG = [
+  {
+    version: 'v1.0.23',
+    dateTr: '26 Kasım 2026',
+    dateEn: 'November 26, 2026',
+    itemsTr: [
+      'CGBJ %91.5 · 25 FPS (8 GB RAM) ve GitHub açık kaynak (codec-d/cool_fox) olarak güncellendi.',
+      '30 FPS Barajı 25 / 30 FPS ve İlk 3 ortalaması %88 olarak güncellendi.',
+    ],
+    itemsEn: [
+      'Updated CGBJ to 91.5% · 25 FPS (8 GB RAM) and open source on GitHub (codec-d/cool_fox).',
+      'Updated 30 FPS Target to 25 / 30 FPS and Top-3 average to 88%.',
+    ],
+  },
   {
     version: 'v1.0.22',
     dateTr: '26 Kasım 2026',
@@ -181,23 +194,10 @@ const CHANGELOG = [
     dateTr: '26 Kasım 2026',
     dateEn: 'November 26, 2026',
     itemsTr: [
-      '4 soruluk "Merak Edilen Sorular" akordeon köşesi eklendi (tahmini tamamlanma ve son durum cevapları geliştirici verilerine göre otomatik güncellenir).',
+      '4 soruluk "Merak Edilen Sorular" akordeon köşesi eklendi.',
     ],
     itemsEn: [
-      'Added a 4-question "FAQ" accordion section (ETA and current status answers update automatically from live team data).',
-    ],
-  },
-  {
-    version: 'v1.0.20',
-    dateTr: '26 Kasım 2026',
-    dateEn: 'November 26, 2026',
-    itemsTr: [
-      '#1 sıradaki lider (CGBJ %89.8) kartının altına mobil ve masaüstü uyumlu "Aşama Özeti" kutusu eklendi.',
-      'Varsayılan liste 23 ekibe ve %89.8 CGBJ liderliğine eşitlendi.',
-    ],
-    itemsEn: [
-      'Added a responsive "Stage Summary" note inside the #1 leader card (CGBJ 89.8%) for mobile and desktop.',
-      'Synced baseline list to 23 teams with CGBJ leading at 89.8%.',
+      'Added a 4-question "FAQ" accordion section.',
     ],
   },
 ];
@@ -290,7 +290,7 @@ function extractPeakFps(teams) {
       }
     }
   }
-  return max > 0 ? max : 24;
+  return max > 0 ? max : 25;
 }
 
 function getNewsBadgeStyle(tagRaw) {
@@ -317,7 +317,7 @@ export default function HomePage() {
   const [news, setNews] = useState(FALLBACK_NEWS);
   const [totalEfforts, setTotalEfforts] = useState(39);
   const [bootingCount, setBootingCount] = useState(17);
-  const [top3Avg, setTop3Avg] = useState(87.5);
+  const [top3Avg, setTop3Avg] = useState(88.0);
   const [onlineCount, setOnlineCount] = useState(1);
   const [countdown, setCountdown] = useState(120);
   const [syncing, setSyncing] = useState(false);
@@ -409,7 +409,7 @@ export default function HomePage() {
         setBootingCount(Math.max(17, Number(data.bootingCount || data.summary.bootingCount)));
       }
       if (data?.top3Avg || data?.summary?.top3Avg) {
-        setTop3Avg(Math.max(87.5, Number(data.top3Avg || data.summary.top3Avg)));
+        setTop3Avg(Math.max(88.0, Number(data.top3Avg || data.summary.top3Avg)));
       }
       if (Array.isArray(data?.news) && data.news.length > 0) {
         setNews(data.news);
@@ -494,9 +494,9 @@ export default function HomePage() {
         ? `The closest build (${leader.name} · ${leader.progress}%) is nearing completion, though there is no fixed ETA for a bug-free full playthrough.`
         : `The closest build (${leader.name} · ${leader.progress}%, peak ${peakFps} FPS) is progressing fast, but there is no firm ETA for a full 30+ FPS release. Rockstar's official PC version is rumored for early 2027.`;
 
-    const statusTr = `PortWatch üzerinden gelen son canlı verilere göre ${totalEfforts} girişimden ${bootingCount}'si oyunu başlatabiliyor ve ${playableCount} ekip "Oynanabilir" barajını geçmiş durumda. Zirvedeki #1 ${leader.name} (%${leader.progress}), açılış ve ilk yarı görevlerini geçip ${localizeDynamicText(leader.fps, 'tr')} civarı akıcı görüntü alarak videosunu paylaştı. Hemen arkasında #2 ${secondTeam.name} (%${secondTeam.progress} · ${localizeDynamicText(secondTeam.fps, 'tr')}) ve #3 ${thirdTeam.name} (%${thirdTeam.progress} · ${localizeDynamicText(thirdTeam.fps, 'tr')}) canlı yayınlarla ilerliyor. Kodu herkese açık tarafta ise ${openLeader.name} (%${openLeader.progress} · ${localizeDynamicText(openLeader.fps, 'tr')}) sesli ve uzun süre çökmeden oynanabilen yapıyla önde. Kısacası oyun siyah ekrandan çıkıp görev oynanabilen seviyeye geldi; geriye optimizasyon ve herkesin indirebileceği kararlı bir sürüm kaldı.`;
+    const statusTr = `PortWatch üzerinden gelen son canlı verilere göre ${totalEfforts} girişimden ${bootingCount}'si oyunu başlatabiliyor ve ${playableCount} ekip "Oynanabilir" barajını geçmiş durumda. Zirvedeki #1 ${leader.name} (%${leader.progress}), açılış ve ilk yarı görevlerini geçip ${localizeDynamicText(leader.fps, 'tr')} civarı akıcı görüntü alarak videosunu paylaştı. Hemen arkasında #2 ${secondTeam.name} (%${secondTeam.progress} · ${localizeDynamicText(secondTeam.fps, 'tr')}) ve #3 ${thirdTeam.name} (%${thirdTeam.progress} · ${localizeDynamicText(thirdTeam.fps, 'tr')}) canlı yayınlarla ilerliyor. Kodu herkese açık tarafta ise ${openLeader.name} (%${openLeader.progress} · ${localizeDynamicText(openLeader.fps, 'tr')}) önde. Kısacası oyun siyah ekrandan çıkıp görev oynanabilen seviyeye geldi; geriye optimizasyon ve herkesin indirebileceği kararlı bir sürüm kaldı.`;
 
-    const statusEn = `According to live PortWatch data, ${bootingCount} out of ${totalEfforts} tracked efforts can boot GTA VI and ${playableCount} teams have crossed the "Playable" milestone. At the top, #1 ${leader.name} (${leader.progress}%) has cleared the intro into mid-story missions at ${localizeDynamicText(leader.fps, 'en')} with shared footage. Right behind, #2 ${secondTeam.name} (${secondTeam.progress}% · ${localizeDynamicText(secondTeam.fps, 'en')}) and #3 ${thirdTeam.name} (${thirdTeam.progress}% · ${localizeDynamicText(thirdTeam.fps, 'en')}) are pushing ahead on live streams. On the open-source side, ${openLeader.name} (${openLeader.progress}% · ${localizeDynamicText(openLeader.fps, 'en')}) leads with working audio and long crash-free sessions. In short, the game has moved past black screens into real mission gameplay—now it's about optimization and a stable public build.`;
+    const statusEn = `According to live PortWatch data, ${bootingCount} out of ${totalEfforts} tracked efforts can boot GTA VI and ${playableCount} teams have crossed the "Playable" milestone. At the top, #1 ${leader.name} (${leader.progress}%) has cleared the intro into mid-story missions at ${localizeDynamicText(leader.fps, 'en')} with shared footage. Right behind, #2 ${secondTeam.name} (${secondTeam.progress}% · ${localizeDynamicText(secondTeam.fps, 'en')}) and #3 ${thirdTeam.name} (${thirdTeam.progress}% · ${localizeDynamicText(thirdTeam.fps, 'en')}) are pushing ahead on live streams. On the open-source side, ${openLeader.name} (${openLeader.progress}% · ${localizeDynamicText(openLeader.fps, 'en')}) leads. In short, the game has moved past black screens into real mission gameplay—now it's about optimization and a stable public build.`;
 
     return [
       {
