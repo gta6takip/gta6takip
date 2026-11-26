@@ -9,13 +9,24 @@ const MAX_MESSAGE_LENGTH = 280;
 const MIN_NICK_LENGTH = 2;
 const MAX_NICK_LENGTH = 20;
 
-const ipCooldownMap = new Map();
+const PIN_MAX_FAILS = 5;
+const PIN_LOCK_MS = 15 * 60 * 1000;
 
-function cleanupCooldownMap(now) {
+const ipCooldownMap = new Map();
+const pinFailMap = new Map();
+
+function cleanupMaps(now) {
   if (ipCooldownMap.size > 500) {
     for (const [key, ts] of ipCooldownMap.entries()) {
       if (now - ts > COOLDOWN_MS * 2) {
         ipCooldownMap.delete(key);
+      }
+    }
+  }
+  if (pinFailMap.size > 500) {
+    for (const [key, entry] of pinFailMap.entries()) {
+      if (now > (entry.blockedUntil || 0) && now - (entry.lastFailAt || 0) > PIN_LOCK_MS) {
+        pinFailMap.delete(key);
       }
     }
   }
@@ -33,6 +44,35 @@ function hashIp(ip, salt) {
     .update(`${ip}:${salt}`)
     .digest('hex')
     .slice(0, 32);
+}
+
+function safePinEqual(input, secret) {
+  if (!input || !secret) return false;
+  const a = crypto.createHash('sha256').update(String(input)).digest();
+  const b = crypto.createHash('sha256').update(String(secret)).digest();
+  return crypto.timingSafeEqual(a, b);
+}
+
+function checkPinRateLimit(ipHash, now) {
+  const entry = pinFailMap.get(ipHash);
+  if (!entry) return { blocked: false, retryMinutes: 0 };
+  if (entry.blockedUntil && now < entry.blockedUntil) {
+    const retryMinutes = Math.max(1, Math.ceil((entry.blockedUntil - now) / 60000));
+    return { blocked: true, retryMinutes };
+  }
+  return { blocked: false, retryMinutes: 0 };
+}
+
+function recordPinFailure(ipHash, now) {
+  const prev = pinFailMap.get(ipHash);
+  const reset = !prev || now - (prev.lastFailAt || 0) > PIN_LOCK_MS;
+  const count = reset ? 1 : (prev.count || 0) + 1;
+  const blockedUntil = count >= PIN_MAX_FAILS ? now + PIN_LOCK_MS : 0;
+  pinFailMap.set(ipHash, { count, lastFailAt: now, blockedUntil });
+}
+
+function clearPinFailure(ipHash) {
+  pinFailMap.delete(ipHash);
 }
 
 function getSupabaseConfig() {
@@ -54,8 +94,8 @@ function getStaffRole(pin) {
   if (!clean) return null;
   const adminPin = (process.env.ADMIN_CHAT_PIN || '').trim();
   const modPin = (process.env.MOD_CHAT_PIN || '').trim();
-  if (adminPin && clean === adminPin) return 'admin';
-  if (modPin && clean === modPin) return 'mod';
+  if (adminPin && safePinEqual(clean, adminPin)) return 'admin';
+  if (modPin && safePinEqual(clean, modPin)) return 'mod';
   return null;
 }
 
@@ -271,12 +311,43 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Geçersiz istek.' }, { status: 400 });
     }
 
+    const now = Date.now();
+    cleanupMaps(now);
+
     const room = normalizeRoom(body.room);
     const isEn = room === 'en';
     const ip = getClientIp(request);
     const ipHash = hashIp(ip, cfg.salt);
     const clientId = sanitizeClientId(body.clientId);
-    const staffRole = getStaffRole(body.adminPin);
+    const rawPin = typeof body.adminPin === 'string' ? body.adminPin.trim() : '';
+
+    let staffRole = null;
+    if (rawPin) {
+      const lock = checkPinRateLimit(ipHash, now);
+      if (lock.blocked) {
+        return NextResponse.json(
+          {
+            error: isEn
+              ? `Too many failed PIN attempts. Try again in ${lock.retryMinutes} min.`
+              : `Çok fazla hatalı yetkili PIN denemesi. ${lock.retryMinutes} dakika sonra tekrar dene.`,
+          },
+          { status: 429 }
+        );
+      }
+      staffRole = getStaffRole(rawPin);
+      if (!staffRole) {
+        recordPinFailure(ipHash, now);
+        return NextResponse.json(
+          {
+            error: isEn
+              ? 'Invalid Staff PIN!'
+              : 'Yetkili PIN hatalı!',
+          },
+          { status: 403 }
+        );
+      }
+      clearPinFailure(ipHash);
+    }
 
     const rawNick = typeof body.nickname === 'string' ? stripInvisible(body.nickname) : '';
     const rawMsg = typeof body.message === 'string' ? stripInvisible(body.message) : '';
@@ -366,12 +437,8 @@ export async function POST(request) {
           );
         }
       }
-    }
 
-    const now = Date.now();
-    cleanupCooldownMap(now);
-
-    if (!isStaff) {
+      // L1: Bellek içi hızlı cooldown
       const lastSentAt = ipCooldownMap.get(ip);
       if (lastSentAt && now - lastSentAt < COOLDOWN_MS) {
         const retryAfter = Math.max(1, Math.ceil((COOLDOWN_MS - (now - lastSentAt)) / 1000));
@@ -384,6 +451,35 @@ export async function POST(request) {
           },
           { status: 429 }
         );
+      }
+
+      // L2: Serverless cold-start / çoklu instance için DB tabanlı kesin cooldown
+      const cutoffIso = new Date(now - COOLDOWN_MS).toISOString();
+      const cdFilter = clientId
+        ? `or=(ip_hash.eq.${encodeURIComponent(ipHash)},client_id.eq.${encodeURIComponent(clientId)})`
+        : `ip_hash=eq.${encodeURIComponent(ipHash)}`;
+      const cdRes = await fetch(
+        `${cfg.url}/rest/v1/chat_messages?select=created_at&${cdFilter}&created_at=gte.${encodeURIComponent(cutoffIso)}&order=created_at.desc&limit=1`,
+        { headers: cfg.headers, cache: 'no-store' }
+      );
+      if (cdRes.ok) {
+        const recent = await cdRes.json().catch(() => []);
+        if (Array.isArray(recent) && recent[0]?.created_at) {
+          const ts = new Date(recent[0].created_at).getTime();
+          if (!Number.isNaN(ts) && now - ts < COOLDOWN_MS) {
+            ipCooldownMap.set(ip, ts);
+            const retryAfter = Math.max(1, Math.ceil((COOLDOWN_MS - (now - ts)) / 1000));
+            return NextResponse.json(
+              {
+                error: isEn
+                  ? `1 message per 30 seconds. Please wait ${retryAfter}s.`
+                  : `30 saniyede en fazla 1 mesaj gönderebilirsin. Lütfen ${retryAfter} saniye bekle.`,
+                retryAfter,
+              },
+              { status: 429 }
+            );
+          }
+        }
       }
     }
 
@@ -538,13 +634,29 @@ export async function DELETE(request) {
       return NextResponse.json({ error: 'Geçersiz istek.' }, { status: 400 });
     }
 
+    const now = Date.now();
+    cleanupMaps(now);
+    const ipHash = hashIp(getClientIp(request), cfg.salt);
+
+    const lock = checkPinRateLimit(ipHash, now);
+    if (lock.blocked) {
+      return NextResponse.json(
+        {
+          error: `Çok fazla hatalı yetkili PIN denemesi. ${lock.retryMinutes} dakika sonra tekrar dene.`,
+        },
+        { status: 429 }
+      );
+    }
+
     const role = getStaffRole(body.staffPin);
     if (!role) {
+      recordPinFailure(ipHash, now);
       return NextResponse.json(
         { error: 'Yetkili PIN hatalı! İşlem reddedildi.' },
         { status: 403 }
       );
     }
+    clearPinFailure(ipHash);
 
     const messageId = Number(body.messageId);
     if (!Number.isInteger(messageId) || messageId <= 0) {
