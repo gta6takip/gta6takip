@@ -27,7 +27,7 @@ import {
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
-const APP_VERSION = 'v1.0.38';
+const APP_VERSION = 'v1.0.39';
 const CHAT_COOLDOWN_SEC = 60;
 const CHAT_COOLDOWN_KEY = 'gta6takip_chat_cooldown_until';
 
@@ -163,6 +163,17 @@ const FALLBACK_NEWS = [
 
 const CHANGELOG = [
   {
+    version: 'v1.0.39',
+    dateTr: '26 Kasım 2026',
+    dateEn: 'November 26, 2026',
+    itemsTr: [
+      'Canlı Sohbet başlığına anlık aktif kişi göstergesi ve üst özet kartına tek tıkla sohbete inen kısayol butonu eklendi.',
+    ],
+    itemsEn: [
+      'Added a live active user counter to the Live Chat header and a one-click jump-to-chat shortcut pill in the hero card.',
+    ],
+  },
+  {
     version: 'v1.0.38',
     dateTr: '26 Kasım 2026',
     dateEn: 'November 26, 2026',
@@ -193,17 +204,6 @@ const CHANGELOG = [
     ],
     itemsEn: [
       'Added a collapsible "Live Chat" box protected by server-side profanity/link filtering, spam rate limiting, and locked Supabase RLS.',
-    ],
-  },
-  {
-    version: 'v1.0.35',
-    dateTr: '26 Kasım 2026',
-    dateEn: 'November 26, 2026',
-    itemsTr: [
-      'Tüm ekip güncelleme saatleri otomatik olarak sabit Türkiye saatine (TSİ / Europe/Istanbul) uyarlandı.',
-    ],
-    itemsEn: [
-      'Locked all live team update timestamps to Turkey time (TRT / Europe/Istanbul).',
     ],
   },
 ];
@@ -466,6 +466,7 @@ export default function HomePage() {
   const [chatError, setChatError] = useState('');
   const [replyTo, setReplyTo] = useState(null);
   const [chatCooldown, setChatCooldown] = useState(0);
+  const chatSectionRef = useRef(null);
   const chatEndRef = useRef(null);
   const chatInputRef = useRef(null);
 
@@ -632,6 +633,14 @@ export default function HomePage() {
     } catch {
       // Sessizce geç
     }
+  };
+
+  const handleJumpToChat = () => {
+    setChatOpen(true);
+    fetchChatMessages();
+    setTimeout(() => {
+      chatSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 60);
   };
 
   useEffect(() => {
@@ -1238,6 +1247,19 @@ export default function HomePage() {
                     {lang === 'tr' ? `%${fastestTeam.progress}` : `${fastestTeam.progress}%`}
                   </span>
                 </div>
+
+                <button
+                  type="button"
+                  onClick={handleJumpToChat}
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-xs font-bold transition hover:scale-[1.02] ${onlineBtnClass}`}
+                >
+                  <MessageCircle className="w-3.5 h-3.5" />
+                  <span>{lang === 'tr' ? 'Canlı Sohbet' : 'Live Chat'}</span>
+                  <span className="inline-flex items-center gap-1 opacity-90">
+                    <span className={`w-1.5 h-1.5 rounded-full animate-pulse ${onlineDotClass}`} />
+                    {onlineCount} {lang === 'tr' ? 'Aktif' : 'Active'}
+                  </span>
+                </button>
               </div>
             </div>
 
@@ -1579,7 +1601,7 @@ export default function HomePage() {
           )}
         </section>
 
-        <section className={`rounded-2xl border overflow-hidden ${theme.card}`}>
+        <section ref={chatSectionRef} id="canli-sohbet" className={`rounded-2xl border overflow-hidden ${theme.card}`}>
           <button
             type="button"
             onClick={() => {
@@ -1589,12 +1611,16 @@ export default function HomePage() {
             }}
             className="w-full px-4 py-3 flex items-center justify-between gap-2 text-left hover:bg-white/5 transition"
           >
-            <div className="flex items-center gap-2.5 flex-wrap">
+            <div className="flex items-center gap-2 flex-wrap">
               <MessageCircle className={`w-4 h-4 ${theme.accentText} shrink-0`} />
               <span className="text-xs sm:text-sm font-bold tracking-wider">
                 {lang === 'tr' ? 'CANLI SOHBET' : 'LIVE CHAT'}
               </span>
-              <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${faqLiveBadgeClass}`}>
+              <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold border ${onlineBtnClass}`}>
+                <span className={`w-1.5 h-1.5 rounded-full animate-pulse ${onlineDotClass}`} />
+                {onlineCount} {lang === 'tr' ? 'Aktif' : 'Active'}
+              </span>
+              <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${theme.pill}`}>
                 {chatMessages.length} {lang === 'tr' ? 'Mesaj · 60sn Korumalı' : 'Messages · 60s Limit'}
               </span>
             </div>
