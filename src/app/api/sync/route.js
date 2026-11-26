@@ -2,73 +2,56 @@ import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
 
-const BASE_TEAMS = [
-  {
-    name: 'CGBJ',
-    progress: 91.5,
-    fps: '25 FPS (30 FPS Ara Sahne)',
-    gpu: 'NVIDIA (8GB RAM)',
-    type: 'open',
-    stage: 'Oynanabilir • Hikâye Yarısı',
-    delta: '+37.0%',
-    url: 'https://github.com/codec-d/cool_fox',
-    repo: 'codec-d/cool_fox',
-    summaryTr: 'Ara sahnelerde 30 FPS, oyun içinde ortalama 25 FPS (10 GB RAM / 16 GB VRAM). Hikâyenin yarısı oynanabilir (GitHub deposu şu an 404 / kaldırılmış durumda).',
-    summaryEn: '30 FPS in cutscenes, 25 FPS average in gameplay (10 GB RAM / 16 GB VRAM). Half the story playable (GitHub repo currently returns 404).',
-  },
-  { name: 'NotNozy', progress: 87.8, fps: '16 FPS', gpu: 'AMD (Rumble)', type: 'private', stage: 'Oynanabilir • Hikâye Yarısı', delta: '+26.8%', url: 'https://portwatch-vi.xyz/#race', isNew: true },
-  { name: 'darkworldhm', progress: 84.8, fps: '15-24 FPS', gpu: 'RTX 50 Serisi', type: 'private', stage: 'Oynanabilir • Hikâye Yarısı', delta: '+23.8%', url: 'https://portwatch-vi.xyz/#race' },
-  { name: 'Doomsday', progress: 84.0, fps: '4 FPS', gpu: 'AMD / NVIDIA', type: 'private', stage: 'Oynanabilir • Hikâye Yarısı', delta: '+19.5%', url: 'https://portwatch-vi.xyz/#race' },
-  { name: 'AvatarManz', progress: 83.1, fps: '16 FPS (13-22 FPS)', gpu: 'RX 7900 XTX', type: 'open', stage: 'Oynanabilir • İlk Perde (Sesli)', delta: '+23.1%', url: 'https://github.com/avatarmanz/VIctory-7900XTX' },
-  { name: 'Belobug', progress: 79.0, fps: '8 FPS', gpu: 'RX 9070 XT', type: 'open', stage: 'Oynanabilir • İlk Perde (RT)', delta: '+10.7%', url: 'https://github.com/Belobug/VIctory-Belobug-AMD' },
-  { name: 'DexNom', progress: 78.0, fps: '3 FPS', gpu: 'RX 7900 XTX', type: 'open', stage: 'Oynanabilir • İlk Perde', delta: '+12.0%', url: 'https://github.com/DexNom/VIctory' },
-  { name: 'suri', progress: 75.0, fps: '3 FPS', gpu: 'Özel Yapı', type: 'private', stage: 'Oynanabilir • Hikâye Yarısı', delta: '+14.0%', url: 'https://portwatch-vi.xyz/#race' },
-  { name: 'Kelvaroq', progress: 68.8, fps: '10 FPS', gpu: 'NVIDIA', type: 'open', stage: 'Oynanabilir', url: 'https://github.com/fablinoo/kelvaroq', repo: 'fablinoo/kelvaroq', isNew: true },
-  { name: 'hyphennn', progress: 59.8, fps: '3 FPS', gpu: 'RTX 4070', type: 'open', stage: 'Oynanabilir • Açılış Sahnesi', delta: '+4.0%', url: 'https://github.com/fxceless/victory-fork' },
-  { name: 'Uilian (VItoriaBr)', progress: 59.6, fps: '4 FPS', gpu: 'RTX 5060 Ti', type: 'open', stage: 'Oynanabilir • Önsöz Geçildi', delta: '+5.2%', url: 'https://github.com/uiliannn/VItoriaBr' },
-  { name: 'omonkey', progress: 57.9, fps: '~5 FPS', gpu: 'Rumble Yayını', type: 'private', stage: 'Oynanabilir • Hapishane Sahnesi', delta: '+2.4%', url: 'https://portwatch-vi.xyz/#race' },
-  { name: 'VIctory', progress: 50.3, fps: '1 FPS (30 FPS Menü)', gpu: 'RX 6700 XT', type: 'open', stage: 'Oynanabilir • İlk Sahne', delta: '+10.3%', url: 'https://github.com/Marvisak/VIctory' },
-  { name: 'Zortos', progress: 45.0, fps: 'PC Boot', gpu: 'Bağımsız', type: 'private', stage: 'Oyun Dünyası • PC Boot', url: 'https://x.com/Zortosdev', isZortos: true },
-  { name: 'XCL', progress: 35.0, fps: '30 FPS (Menü)', gpu: 'AMD / NVIDIA', type: 'open', stage: 'Ana Menü', url: 'https://github.com/xcl-dev/xcl' },
-  { name: 'Five Star Recomp', progress: 30.0, fps: '30 FPS (Ara Sahne)', gpu: 'C# Katmanı', type: 'open', stage: 'Ana Menü', url: 'https://portwatch-vi.xyz/#race' },
-  { name: 'keylime', progress: 30.0, fps: '30 FPS (Vulkan)', gpu: 'C++20 / Vulkan', type: 'open', stage: 'Ana Menü', url: 'https://portwatch-vi.xyz/#race' },
-  { name: 'Xbox2Windows', progress: 25.0, fps: 'Tanılama', gpu: 'Statik Recomp', type: 'open', stage: 'İlk Kare', url: 'https://github.com/R0Y00/Xbox2Windows' },
-  { name: 'Port of the Americas', progress: 25.0, fps: 'Linux / Proton', gpu: 'AMD (vkd3d)', type: 'open', stage: 'İlk Kare', url: 'https://portwatch-vi.xyz/#race', isNew: true },
-  { name: 'TuxBox', progress: 20.0, fps: '4K İstem', gpu: 'Linux / Proton', type: 'open', stage: 'İlk Kare', url: 'https://github.com/brcly/TuxBox' },
-  { name: 'vice-pc', progress: 12.0, fps: 'Exe Boot', gpu: 'Açık Kaynak', type: 'open', stage: 'Exe Çalışıyor', url: 'https://github.com/natedemoss/vice-pc' },
-  { name: 'ScarlettCompat', progress: 10.0, fps: '113 Boot', gpu: 'AMD (C++)', type: 'open', stage: 'Exe Çalışıyor', url: 'https://portwatch-vi.xyz/#race', isNew: true },
-  { name: 'XValkyrie', progress: 2.9, fps: 'Ön Aşama', gpu: 'C++ / HLSL', type: 'open', stage: 'Altyapı', url: 'https://github.com/sammwyy/xvalkyrie' },
-  { name: 'AnyXboxX', progress: 2.5, fps: 'GDK Örnekleri', gpu: 'HLE Emülatör', type: 'open', stage: 'Altyapı', url: 'https://github.com/LooperSalty/AnyXboxX' },
+const TRACKER_URLS = [
+  'https://portwatch-vi.xyz/data/tracker.json',
+  'https://raw.githubusercontent.com/4lwayz/portwatch-vi/main/data/tracker.json',
 ];
 
-const IGNORE_NAMES = new Set([
-  'overall', 'top-3', 'top3', 'watchlist', 'groundwork', 'exe', 'first', 'main',
-  'in the', 'playable', 'complete', 'story', 'rendering', 'performance', 'stability',
-  'loader', 'shader', 'graphics', 'proven', 'private', 'public', 'all', 'amd', 'nvidia',
-  'the race', 'leaderboard', 'progress', 'stars', 'recently active',
-]);
+function computePortWatchScore(effort) {
+  const g = effort?.gta || {};
+  const base =
+    (Number(g.loads) || 0) +
+    (Number(g.boots) || 0) +
+    (Number(g.menu) || 0) +
+    (Number(g.world) || 0) +
+    (Number(g.playable) || 0);
 
-function decodeEntities(str) {
-  return String(str || '')
-    .replace(/<!--[\s\S]*?-->/g, ' ')
-    .replace(/·|·|•/gi, '·')
-    .replace(/&/gi, '&')
-    .replace(/'|'/gi, "'")
-    .replace(/"/gi, '"')
-    .replace(/ /gi, ' ')
-    .replace(/</gi, '<')
-    .replace(/>/gi, '>');
+  if (base <= 0) {
+    const gw = effort?.groundwork || {};
+    const gwAvg =
+      ((Number(gw.loader) || 0) +
+        (Number(gw.shaders) || 0) +
+        (Number(gw.graphics) || 0) +
+        (Number(gw.proven) || 0)) /
+      4;
+    return Math.round(gwAvg * 10 * 10) / 10;
+  }
+
+  let score = base * 10;
+  if ((Number(g.playable) || 0) >= 1) {
+    const story = Math.min(1, Math.max(0, Number(g.story) || 0));
+    const render = Math.min(1, Math.max(0, Number(g.render) || 0));
+    const fpsNum = Math.max(0, Number(g.fps) || 0);
+    const fpsNorm = Math.min(1, fpsNum / 30);
+    const stab =
+      typeof g.stability === 'number' && !Number.isNaN(g.stability)
+        ? Math.min(1, Math.max(0, g.stability))
+        : 0;
+    score += story * 15 + render * 15 + fpsNorm * 10 + stab * 10;
+  }
+
+  return Math.min(100, Math.round(score * 10) / 10);
 }
 
-function stripHtml(html) {
-  return decodeEntities(String(html || '').replace(/<[^>]+>/g, ' '))
-    .replace(/\s+/g, ' ')
-    .trim();
-}
-
-function stageFromProgress(pct) {
-  if (pct >= 80) return 'Oynanabilir • Hikâye Yarısı';
-  if (pct >= 50) return 'Oynanabilir';
+function buildStageTr(effort, pct) {
+  const g = effort?.gta || {};
+  const storyPct = Math.round((Number(g.story) || 0) * 100);
+  if ((Number(g.playable) || 0) >= 1) {
+    if (storyPct >= 75) return `Oynanabilir • Hikâye %${storyPct}`;
+    if (storyPct >= 50) return 'Oynanabilir • Hikâye Yarısı';
+    if (storyPct > 0) return 'Oynanabilir • İlk Perde';
+    return 'Oynanabilir';
+  }
   if (pct >= 40) return 'Oyun Dünyası';
   if (pct >= 30) return 'Ana Menü';
   if (pct >= 20) return 'İlk Kare';
@@ -76,158 +59,149 @@ function stageFromProgress(pct) {
   return 'Altyapı';
 }
 
-function upsertTeam(teams, candidate) {
-  const cleanName = String(candidate.name || '').trim();
-  const pct = Number(candidate.progress);
-  if (!cleanName || cleanName.length < 2 || cleanName.length > 32) return;
-  if (Number.isNaN(pct) || pct < 10 || pct > 100) return;
-  if (IGNORE_NAMES.has(cleanName.toLowerCase())) return;
+function buildFpsLabel(effort) {
+  const g = effort?.gta || {};
+  const fpsNum = Number(g.fps) || 0;
+  if (fpsNum > 0) return `${fpsNum} FPS`;
+  if ((Number(g.menu) || 0) >= 1) return 'Ana Menü';
+  if ((Number(g.boots) || 0) >= 1) return 'PC Boot';
+  if ((Number(g.loads) || 0) >= 1) return 'Exe Boot';
+  return 'Ön Aşama';
+}
 
-  const existing = teams.find(
-    (t) =>
-      t.name.toLowerCase() === cleanName.toLowerCase() ||
-      (candidate.repo && t.repo && t.repo.toLowerCase() === candidate.repo.toLowerCase())
-  );
+function isRecentlyCreated(effort) {
+  const created = effort?.stats?.createdAt || effort?.assessedAt;
+  if (!created) return false;
+  const ts = Date.parse(created);
+  if (Number.isNaN(ts)) return false;
+  return Date.now() - ts < 36 * 60 * 60 * 1000;
+}
 
-  if (existing) {
-    if (pct > existing.progress) {
-      existing.progress = pct;
-      existing.stage = stageFromProgress(pct);
+function buildTurkishSummary(effort, progress, fps, gpu) {
+  const g = effort?.gta || {};
+  const storyPct = Math.round((Number(g.story) || 0) * 100);
+  const renderPct = Math.round((Number(g.render) || 0) * 100);
+  const repoNote = effort.repo
+    ? effort.stats?.missing
+      ? 'GitHub deposu şu an erişilemiyor (404).'
+      : `Açık kaynak (${effort.repo}).`
+    : 'Kapalı/özel geliştirme yapısı.';
+  const detailParts = [];
+  if (storyPct > 0) detailParts.push(`hikâye ilerlemesi %${storyPct}`);
+  if (renderPct > 0) detailParts.push(`görüntü kalitesi %${renderPct}`);
+  const detailStr = detailParts.length > 0 ? ` (${detailParts.join(', ')})` : '';
+  return `${effort.name} şu an %${progress} ile genel lider · ${fps} · ${gpu}${detailStr}. ${repoNote}`;
+}
+
+async function fetchTrackerJson() {
+  for (const url of TRACKER_URLS) {
+    try {
+      const res = await fetch(url, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (compatible; gta6takip/1.0)',
+          Accept: 'application/json',
+        },
+        signal: AbortSignal.timeout(5500),
+        cache: 'no-store',
+      });
+      if (!res.ok) continue;
+      const data = await res.json();
+      if (Array.isArray(data?.efforts) && data.efforts.length > 0) {
+        return data;
+      }
+    } catch {
+      // Yedek kaynağa geç
     }
-    if (candidate.url && existing.url === 'https://portwatch-vi.xyz/#race') {
-      existing.url = candidate.url;
-    }
-    return;
   }
-
-  teams.push({
-    name: cleanName,
-    progress: pct,
-    fps: candidate.fps || 'PortWatch Canlı',
-    gpu: candidate.gpu || (candidate.type === 'private' ? 'Özel Yapı' : 'Açık Kaynak'),
-    type: candidate.type === 'private' ? 'private' : 'open',
-    stage: stageFromProgress(pct),
-    url: candidate.url || 'https://portwatch-vi.xyz/#race',
-    repo: candidate.repo || undefined,
-    isNew: true,
-  });
+  return null;
 }
 
 export async function GET() {
-  const teams = BASE_TEAMS.map((t) => ({ ...t }));
-  let totalEfforts = 40;
-  let bootingCount = 18;
-  let top3Avg = 88.0;
+  const tracker = await fetchTrackerJson();
 
-  try {
-    const res = await fetch('https://portwatch-vi.xyz/', {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-        Accept: 'text/html,application/xhtml+xml',
-      },
-      signal: AbortSignal.timeout(5500),
-      cache: 'no-store',
-    });
-
-    if (res.ok) {
-      const rawHtml = await res.text();
-      const cleanText = stripHtml(rawHtml);
-      const decodedRaw = decodeEntities(rawHtml);
-
-      const bootMatch =
-        cleanText.match(/(\d+)\s*\/\s*(\d+)\s*Boot\s*GTA\s*VI/i) ||
-        cleanText.match(/Boot\s*GTA\s*VI\s*[:·-]?\s*(\d+)\s*\/\s*(\d+)/i);
-      if (bootMatch) {
-        bootingCount = Math.max(18, Number(bootMatch[1]));
-        totalEfforts = Math.max(40, Number(bootMatch[2]));
-      } else {
-        const effMatch =
-          cleanText.match(/(\d+)\s*Efforts?\s*tracked/i) ||
-          cleanText.match(/Efforts?\s*tracked\s*[:·-]?\s*(\d+)/i);
-        if (effMatch) totalEfforts = Math.max(40, Number(effMatch[1]));
-      }
-
-      const avgMatch = cleanText.match(/(\d+(?:\.\d+)?)%\s*Top-3\s*average/i);
-      if (avgMatch) {
-        top3Avg = Math.max(88.0, Number(avgMatch[1]));
-      }
-
-      for (const team of teams) {
-        const escaped = team.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        const tickerRe = new RegExp(`${escaped}\\s*[·•]\\s*(\\d+(?:\\.\\d+)?)%`, 'i');
-        const cardRe = new RegExp(
-          `${escaped}[\\s\\S]{0,180}?(\\d+(?:\\.\\d+)?)%\\s*(?:Playable|In the world|Main menu|First frame|Exe runs)`,
-          'i'
-        );
-        const m = decodedRaw.match(tickerRe) || cleanText.match(cardRe);
-        if (m) {
-          const pct = Number(m[1]);
-          if (!Number.isNaN(pct) && pct > 0 && pct <= 100 && pct >= team.progress) {
-            team.progress = pct;
-            team.stage = stageFromProgress(pct);
-          }
-        }
-      }
-
-      const repoCardRe =
-        /\b\d{1,2}\s+([A-Za-z][A-Za-z0-9_.\- ]{1,24}?)\s+([A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+)\s+(\d+(?:\.\d+)?)%\s*(?:Playable|In the world|Main menu|First frame|Exe runs)/gi;
-      let rm;
-      while ((rm = repoCardRe.exec(cleanText)) !== null) {
-        upsertTeam(teams, {
-          name: rm[1],
-          repo: rm[2],
-          url: `https://github.com/${rm[2]}`,
-          progress: rm[3],
-          type: 'open',
-        });
-      }
-
-      const autoTickerRe = /\b([A-Za-z][A-Za-z0-9_.-]{2,24})\s*[·•]\s*(\d+(?:\.\d+)?)%/g;
-      let tm;
-      while ((tm = autoTickerRe.exec(cleanText)) !== null) {
-        upsertTeam(teams, {
-          name: tm[1],
-          progress: tm[2],
-          type: 'open',
-        });
-      }
-
-      const scriptJsonRe =
-        /"name"\s*:\s*"([A-Za-z][A-Za-z0-9_.\- ]{1,26})"[^}]{0,220}?"(?:progress|score|pct)"\s*:\s*(\d+(?:\.\d+)?)/g;
-      let sm;
-      while ((sm = scriptJsonRe.exec(decodedRaw)) !== null) {
-        upsertTeam(teams, {
-          name: sm[1],
-          progress: sm[2],
-          type: 'open',
-        });
-      }
-    }
-  } catch {
-    // Bağlantı zaman aşımında mevcut BASE_TEAMS korunur
+  if (!tracker) {
+    return NextResponse.json(
+      { error: 'PortWatch tracker.json unreachable', liveSource: 'fallback' },
+      { status: 503 }
+    );
   }
 
-  teams.sort((a, b) => b.progress - a.progress);
+  const allEfforts = tracker.efforts;
+  const totalEfforts = allEfforts.length;
+  const bootingCount = allEfforts.filter(
+    (e) => (Number(e?.gta?.loads) || 0) >= 1 || (Number(e?.gta?.boots) || 0) >= 1
+  ).length;
 
-  const leader = teams[0] || BASE_TEAMS[0];
-  const openLeader = teams.find((t) => t.type === 'open') || leader;
-  const leaderFpsTr = String(leader.fps || '').replace(/\s*\(([^)]+)\)/g, ' · $1');
-  const leaderFpsEn = leaderFpsTr
-    .replace(/Ara Sahne/gi, 'Cutscenes')
-    .replace(/Menü/gi, 'Menu');
+  const mappedTeams = allEfforts
+    .map((effort) => {
+      const progress = computePortWatchScore(effort);
+      const isOpen = Boolean(effort.repo);
+      const gpu =
+        Array.isArray(effort.gpu) && effort.gpu.length > 0
+          ? effort.gpu.join(' / ')
+          : effort.approach || (isOpen ? 'Açık Kaynak' : 'Özel Yapı');
+      const fps = buildFpsLabel(effort);
+      const url = isOpen
+        ? `https://github.com/${effort.repo}`
+        : effort.proof?.url || 'https://portwatch-vi.xyz/#race';
+
+      return {
+        name: effort.name,
+        progress,
+        fps,
+        gpu,
+        type: isOpen ? 'open' : 'private',
+        stage: buildStageTr(effort, progress),
+        delta: '',
+        url,
+        repo: effort.repo || undefined,
+        tier: effort.tier || 'watchlist',
+        summaryTr: buildTurkishSummary(effort, progress, fps, gpu),
+        summaryEn: effort.summary || `${effort.name} leads at ${progress}% (${fps}, ${gpu}).`,
+        isNew: effort.tier === 'tracked' && isRecentlyCreated(effort),
+        isZortos: String(effort.name || '').toLowerCase() === 'zortos',
+      };
+    })
+    .filter((t) => t.tier === 'tracked' || t.progress >= 2.5)
+    .sort((a, b) => b.progress - a.progress);
+
+  if (mappedTeams[0]) {
+    mappedTeams[0].isNew = false;
+  }
+
+  const top3 = mappedTeams.slice(0, 3);
+  const top3Avg =
+    top3.length > 0
+      ? Math.round((top3.reduce((acc, t) => acc + t.progress, 0) / top3.length) * 10) / 10
+      : 0;
+
+  const leader = mappedTeams[0];
+  const openTeams = mappedTeams.filter((t) => t.type === 'open');
+  const openLeader = openTeams[0] || leader;
+  const openRunner1 = openTeams[1];
+  const openRunner2 = openTeams[2];
+
+  const runnerTr =
+    openRunner1 && openRunner2
+      ? `${openRunner1.name} (%${openRunner1.progress}) ve ${openRunner2.name} (%${openRunner2.progress}) takipte.`
+      : 'Açık kaynak yarışında ekipler hızla ilerliyor.';
+  const runnerEn =
+    openRunner1 && openRunner2
+      ? `${openRunner1.name} (${openRunner1.progress}%) & ${openRunner2.name} (${openRunner2.progress}%) follow.`
+      : 'Open-source teams are rapidly advancing.';
 
   const news = [
     {
       tagTr: 'REKOR',
       tagEn: 'RECORD',
-      tr: `${leader.name} %${leader.progress} ile lider (${leaderFpsTr}) ve kodlarını GitHub'da açtı!`,
-      en: `${leader.name} leads at ${leader.progress}% (${leaderFpsEn}) and went open source on GitHub!`,
+      tr: `${leader.name} %${leader.progress} ile yeni genel lider (${leader.fps} · ${leader.gpu})!`,
+      en: `${leader.name} leads overall at ${leader.progress}% (${leader.fps} · ${leader.gpu})!`,
     },
     {
       tagTr: 'AÇIK KAYNAK',
       tagEn: 'OPEN SOURCE',
-      tr: `Açık kaynak lideri ${openLeader.name} (%${openLeader.progress}); AvatarManz (%83.1) ve Belobug (%79) takipte.`,
-      en: `${openLeader.name} (${openLeader.progress}%) leads open source; AvatarManz (83.1%) & Belobug (79%) follow.`,
+      tr: `Açık kaynak lideri ${openLeader.name} (%${openLeader.progress}); ${runnerTr}`,
+      en: `${openLeader.name} (${openLeader.progress}%) leads open source; ${runnerEn}`,
     },
     {
       tagTr: 'GÜNCEL',
@@ -239,11 +213,12 @@ export async function GET() {
 
   return NextResponse.json(
     {
-      updatedAt: new Date().toISOString(),
+      liveSource: 'portwatch-tracker-json',
+      updatedAt: tracker.updated || new Date().toISOString(),
       totalEfforts,
       bootingCount,
       top3Avg,
-      teams,
+      teams: mappedTeams,
       news,
     },
     {
