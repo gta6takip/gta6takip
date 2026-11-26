@@ -4,7 +4,6 @@ import React, { useState, useEffect, useMemo } from 'react';
 import {
   RefreshCw,
   ExternalLink,
-  Sparkles,
   ArrowUp,
   ShieldAlert,
   ChevronDown,
@@ -22,10 +21,11 @@ import {
   MessageSquarePlus,
   Send,
   Globe,
+  Clock,
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
-const APP_VERSION = 'v1.0.33';
+const APP_VERSION = 'v1.0.34';
 
 const THEMES = {
   vice: {
@@ -40,7 +40,6 @@ const THEMES = {
     accentText: 'text-pink-400',
     accentBg: 'bg-pink-500',
     accentGradient: 'from-pink-500 via-fuchsia-400 to-amber-400',
-    badgeGlow: 'from-pink-500 to-amber-400 text-zinc-950 shadow-[0_0_18px_rgba(236,72,153,0.7)]',
     btnPrimary: 'bg-gradient-to-r from-pink-500 to-amber-400 text-zinc-950 hover:brightness-110',
     pill: 'bg-pink-950/60 text-pink-200 border-pink-500/30',
     sparkStroke: '#f472b6',
@@ -58,7 +57,6 @@ const THEMES = {
     accentText: 'text-orange-600',
     accentBg: 'bg-orange-600',
     accentGradient: 'from-orange-600 via-amber-500 to-yellow-500',
-    badgeGlow: 'from-orange-600 to-amber-600 text-white shadow-[0_0_12px_rgba(234,88,12,0.35)]',
     btnPrimary: 'bg-gradient-to-r from-orange-600 to-amber-500 text-white hover:brightness-105',
     pill: 'bg-zinc-100 text-zinc-700 border-zinc-300',
     sparkStroke: '#ea580c',
@@ -76,7 +74,6 @@ const THEMES = {
     accentText: 'text-orange-400',
     accentBg: 'bg-orange-500',
     accentGradient: 'from-orange-500 via-amber-400 to-yellow-400',
-    badgeGlow: 'from-orange-500 to-amber-400 text-zinc-950 shadow-[0_0_16px_rgba(249,115,22,0.65)]',
     btnPrimary: 'bg-gradient-to-r from-orange-500 to-amber-500 text-zinc-950 hover:brightness-110',
     pill: 'bg-zinc-800/80 text-zinc-300 border-zinc-700/70',
     sparkStroke: '#fb923c',
@@ -94,7 +91,6 @@ const THEMES = {
     accentText: 'text-cyan-400',
     accentBg: 'bg-cyan-400',
     accentGradient: 'from-cyan-400 via-teal-300 to-emerald-400',
-    badgeGlow: 'from-cyan-400 to-emerald-400 text-zinc-950 shadow-[0_0_18px_rgba(34,211,238,0.7)]',
     btnPrimary: 'bg-gradient-to-r from-cyan-400 to-emerald-400 text-zinc-950 hover:brightness-110',
     pill: 'bg-cyan-950/60 text-cyan-200 border-cyan-500/30',
     sparkStroke: '#22d3ee',
@@ -112,7 +108,6 @@ const THEMES = {
     accentText: 'text-blue-400',
     accentBg: 'bg-blue-500',
     accentGradient: 'from-blue-400 via-indigo-400 to-violet-400',
-    badgeGlow: 'from-blue-400 to-violet-400 text-zinc-950 shadow-[0_0_18px_rgba(96,165,250,0.65)]',
     btnPrimary: 'bg-gradient-to-r from-blue-400 to-violet-400 text-zinc-950 hover:brightness-110',
     pill: 'bg-blue-950/60 text-blue-200 border-blue-500/30',
     sparkStroke: '#60a5fa',
@@ -137,22 +132,23 @@ const FALLBACK_TEAMS = [
     gpu: 'AMD',
     type: 'open',
     stage: 'Oynanabilir • Hikâye %80',
+    updatedAt: '2026-11-26T00:57:17Z',
     url: 'https://github.com/Belobug/VIctory-Belobug-AMD',
     summaryTr: 'Belobug şu an %91.3 ile genel lider · 22 FPS · AMD (hikâye ilerlemesi %80, görüntü kalitesi %80). Açık kaynak (Belobug/VIctory-Belobug-AMD).',
     summaryEn: 'Belobug leads at 91.3% (22 FPS, AMD, 80% story, 80% rendering) as an open-source VIctory fork on GitHub.',
   },
-  { name: 'CGBJ', progress: 89.6, fps: '25 FPS', gpu: 'Özel Yapı', type: 'private', stage: 'Oynanabilir • Hikâye %80', url: 'https://portwatch-vi.xyz/#race' },
-  { name: 'NotNozy', progress: 87.1, fps: '16 FPS', gpu: 'AMD', type: 'private', stage: 'Oynanabilir • Hikâye %80', url: 'https://portwatch-vi.xyz/#race' },
-  { name: 'darkworldhm', progress: 84.8, fps: '15 FPS', gpu: 'NVIDIA', type: 'private', stage: 'Oynanabilir • İlk Perde', url: 'https://portwatch-vi.xyz/#race' },
-  { name: 'Doomsday', progress: 82.1, fps: '4 FPS', gpu: 'AMD / NVIDIA', type: 'private', stage: 'Oynanabilir • İlk Perde', url: 'https://portwatch-vi.xyz/#race' },
-  { name: 'AvatarManz', progress: 81.8, fps: '16 FPS', gpu: 'AMD', type: 'open', stage: 'Oynanabilir • İlk Perde', url: 'https://github.com/avatarmanz/VIctory-7900XTX' },
-  { name: 'DexNom', progress: 77.4, fps: '3 FPS', gpu: 'AMD', type: 'open', stage: 'Oynanabilir • İlk Perde', url: 'https://github.com/DexNom/VIctory' },
-  { name: 'suri', progress: 73.8, fps: '3 FPS', gpu: 'Özel Yapı', type: 'private', stage: 'Oynanabilir • İlk Perde', url: 'https://portwatch-vi.xyz/#race' },
-  { name: 'Kelvaroq', progress: 68.8, fps: '10 FPS', gpu: 'NVIDIA', type: 'open', stage: 'Oynanabilir', url: 'https://github.com/stellarr-studio/kelvaroq', isNew: true },
-  { name: 'hyphennn', progress: 59.8, fps: '3 FPS', gpu: 'NVIDIA', type: 'open', stage: 'Oynanabilir', url: 'https://github.com/fxceless/victory-fork' },
-  { name: 'Uilian', progress: 59.6, fps: '4 FPS', gpu: 'NVIDIA', type: 'open', stage: 'Oynanabilir', url: 'https://github.com/uiliannn/VItoriaBr' },
-  { name: 'VIctory', progress: 50.3, fps: '1 FPS', gpu: 'AMD', type: 'open', stage: 'Oynanabilir', url: 'https://github.com/Marvisak/VIctory' },
-  { name: 'XCL', progress: 35.0, fps: 'Ana Menü', gpu: 'AMD / NVIDIA', type: 'open', stage: 'Ana Menü', url: 'https://github.com/xcl-dev/xcl' },
+  { name: 'CGBJ', progress: 89.6, fps: '25 FPS', gpu: 'Özel Yapı', type: 'private', stage: 'Oynanabilir • Hikâye %80', updatedAt: '2026-11-26', url: 'https://portwatch-vi.xyz/#race' },
+  { name: 'NotNozy', progress: 87.1, fps: '16 FPS', gpu: 'AMD', type: 'private', stage: 'Oynanabilir • Hikâye %80', updatedAt: '2026-11-26', url: 'https://portwatch-vi.xyz/#race' },
+  { name: 'darkworldhm', progress: 84.8, fps: '15 FPS', gpu: 'NVIDIA', type: 'private', stage: 'Oynanabilir • İlk Perde', updatedAt: '2026-11-26', url: 'https://portwatch-vi.xyz/#race' },
+  { name: 'Doomsday', progress: 82.1, fps: '4 FPS', gpu: 'AMD / NVIDIA', type: 'private', stage: 'Oynanabilir • İlk Perde', updatedAt: '2026-11-26', url: 'https://portwatch-vi.xyz/#race' },
+  { name: 'AvatarManz', progress: 81.8, fps: '16 FPS', gpu: 'AMD', type: 'open', stage: 'Oynanabilir • İlk Perde', updatedAt: '2026-11-26', url: 'https://github.com/avatarmanz/VIctory-7900XTX' },
+  { name: 'DexNom', progress: 77.4, fps: '3 FPS', gpu: 'AMD', type: 'open', stage: 'Oynanabilir • İlk Perde', updatedAt: '2026-11-25', url: 'https://github.com/DexNom/VIctory' },
+  { name: 'suri', progress: 73.8, fps: '3 FPS', gpu: 'Özel Yapı', type: 'private', stage: 'Oynanabilir • İlk Perde', updatedAt: '2026-11-25', url: 'https://portwatch-vi.xyz/#race' },
+  { name: 'Kelvaroq', progress: 68.8, fps: '10 FPS', gpu: 'NVIDIA', type: 'open', stage: 'Oynanabilir', updatedAt: '2026-11-26', url: 'https://github.com/stellarr-studio/kelvaroq' },
+  { name: 'hyphennn', progress: 59.8, fps: '3 FPS', gpu: 'NVIDIA', type: 'open', stage: 'Oynanabilir', updatedAt: '2026-11-25', url: 'https://github.com/fxceless/victory-fork' },
+  { name: 'Uilian', progress: 59.6, fps: '4 FPS', gpu: 'NVIDIA', type: 'open', stage: 'Oynanabilir', updatedAt: '2026-11-25', url: 'https://github.com/uiliannn/VItoriaBr' },
+  { name: 'VIctory', progress: 50.3, fps: '1 FPS', gpu: 'AMD', type: 'open', stage: 'Oynanabilir', updatedAt: '2026-11-26', url: 'https://github.com/Marvisak/VIctory' },
+  { name: 'XCL', progress: 35.0, fps: 'Ana Menü', gpu: 'AMD / NVIDIA', type: 'open', stage: 'Ana Menü', updatedAt: '2026-11-25', url: 'https://github.com/xcl-dev/xcl' },
 ];
 
 const FALLBACK_NEWS = [
@@ -162,6 +158,19 @@ const FALLBACK_NEWS = [
 ];
 
 const CHANGELOG = [
+  {
+    version: 'v1.0.34',
+    dateTr: '26 Kasım 2026',
+    dateEn: 'November 26, 2026',
+    itemsTr: [
+      'Ekip kartlarındaki "YENİ" ibareleri kaldırıldı.',
+      'Her ekibin altına canlı "Son güncelleme" saat/tarih bilgisi eklendi.',
+    ],
+    itemsEn: [
+      'Removed "NEW" badges from team cards.',
+      'Added a live "Last updated" timestamp line to each team card.',
+    ],
+  },
   {
     version: 'v1.0.33',
     dateTr: '26 Kasım 2026',
@@ -184,17 +193,6 @@ const CHANGELOG = [
     itemsEn: [
       'Fixed dropdowns to auto-close on outside click/ESC/sibling open with solid opaque backgrounds.',
       'Improved Light theme badge contrast, completed English translations, and saved theme/language preferences.',
-    ],
-  },
-  {
-    version: 'v1.0.31',
-    dateTr: '26 Kasım 2026',
-    dateEn: 'November 26, 2026',
-    itemsTr: [
-      'Bağlı Ülkeler menüsündeki bayraklar Windows dahil tüm cihazlarda sorunsuz görünmesi için gerçek bayrak görsellerine çevrildi.',
-    ],
-    itemsEn: [
-      'Replaced Unicode country flag emojis with real flag images so flags render properly on Windows and all platforms.',
     ],
   },
 ];
@@ -259,6 +257,22 @@ function guessClientCountry() {
     // Varsayılan TR
   }
   return 'TR';
+}
+
+function formatTeamUpdated(rawDate, lang) {
+  if (!rawDate) return '';
+  const str = String(rawDate).trim();
+  const locale = lang === 'tr' ? 'tr-TR' : 'en-US';
+  if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
+    const d = new Date(`${str}T12:00:00Z`);
+    if (Number.isNaN(d.getTime())) return str;
+    return d.toLocaleDateString(locale, { day: 'numeric', month: 'short', year: 'numeric' });
+  }
+  const d = new Date(str);
+  if (Number.isNaN(d.getTime())) return str;
+  const datePart = d.toLocaleDateString(locale, { day: 'numeric', month: 'short' });
+  const timePart = d.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit', hour12: false });
+  return `${datePart} · ${timePart}`;
 }
 
 const FlagTR = () => (
@@ -411,6 +425,7 @@ export default function HomePage() {
   const [totalEfforts, setTotalEfforts] = useState(40);
   const [bootingCount, setBootingCount] = useState(18);
   const [top3Avg, setTop3Avg] = useState(89.3);
+  const [lastSyncAt, setLastSyncAt] = useState('');
   const [onlineCount, setOnlineCount] = useState(1);
   const [countryStats, setCountryStats] = useState([{ code: 'TR', count: 1 }]);
   const [countdown, setCountdown] = useState(120);
@@ -512,6 +527,10 @@ export default function HomePage() {
       if (!res.ok) throw new Error('Sync failed');
       const data = await res.json();
 
+      if (data?.updatedAt) {
+        setLastSyncAt(data.updatedAt);
+      }
+
       if (Array.isArray(data?.teams) && data.teams.length > 0) {
         const normalized = data.teams
           .map((item) => ({
@@ -523,9 +542,9 @@ export default function HomePage() {
             stage: item.stage || '',
             delta: item.delta || '',
             url: item.url || 'https://portwatch-vi.xyz/#race',
+            updatedAt: item.updatedAt || data?.updatedAt || '',
             summaryTr: item.summaryTr || '',
             summaryEn: item.summaryEn || '',
-            isNew: Boolean(item.isNew),
             isZortos: Boolean(item.isZortos),
           }))
           .sort((a, b) => b.progress - a.progress);
@@ -1140,9 +1159,9 @@ export default function HomePage() {
               const rank = team.globalRank;
               const isTop3 = rank <= 3;
               const isHot = rank === 1;
-              const isNewBadge = Boolean(team.isNew);
               const barWidth = Math.min(100, Math.max(2, team.progress));
               const hideOnMobile = idx >= 10 && !showAllMobile;
+              const updatedText = formatTeamUpdated(team.updatedAt || lastSyncAt, lang);
               const leaderSummary =
                 rank === 1
                   ? lang === 'tr'
@@ -1176,15 +1195,6 @@ export default function HomePage() {
                         <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black tracking-wider bg-gradient-to-r from-red-500 via-orange-500 to-amber-400 text-zinc-950 shadow-[0_0_16px_rgba(249,115,22,0.75)] animate-pulse">
                           <Flame className="w-3 h-3 fill-current" />
                           HOT
-                        </span>
-                      )}
-
-                      {isNewBadge && (
-                        <span
-                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black tracking-wider bg-gradient-to-r animate-pulse ${theme.badgeGlow}`}
-                        >
-                          <Sparkles className="w-3 h-3" />
-                          {lang === 'tr' ? 'YENİ' : 'NEW'}
                         </span>
                       )}
 
@@ -1288,6 +1298,20 @@ export default function HomePage() {
                         </strong>
                         {leaderSummary}
                       </p>
+                    </div>
+                  )}
+
+                  {updatedText && (
+                    <div
+                      className={`mt-2.5 pt-2 border-t flex items-center gap-1.5 text-[11px] ${
+                        isLight ? 'border-zinc-200/80' : 'border-white/10'
+                      } ${theme.muted}`}
+                    >
+                      <Clock className="w-3 h-3 opacity-75 shrink-0" />
+                      <span>
+                        {lang === 'tr' ? 'Son Güncelleme:' : 'Last Updated:'}{' '}
+                        <strong className="opacity-90">{updatedText}</strong>
+                      </span>
                     </div>
                   )}
                 </article>
