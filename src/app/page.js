@@ -22,7 +22,7 @@ import {
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
-const APP_VERSION = 'v1.0.23';
+const APP_VERSION = 'v1.0.24';
 
 const THEMES = {
   dark: {
@@ -166,6 +166,17 @@ const FALLBACK_NEWS = [
 
 const CHANGELOG = [
   {
+    version: 'v1.0.24',
+    dateTr: '26 Kasım 2026',
+    dateEn: 'November 26, 2026',
+    itemsTr: [
+      '30 FPS Barajı hesaplaması düzeltildi: CGBJ (25 FPS · 30 FPS Ara Sahne) artık doğru şekilde 25 / 30 FPS olarak görünüyor.',
+    ],
+    itemsEn: [
+      'Fixed 30 FPS Target calculation: CGBJ (25 FPS · 30 FPS Cutscenes) now displays accurately as 25 / 30 FPS.',
+    ],
+  },
+  {
     version: 'v1.0.23',
     dateTr: '26 Kasım 2026',
     dateEn: 'November 26, 2026',
@@ -278,9 +289,11 @@ function extractPeakFps(teams) {
   let max = 0;
   for (const t of teams) {
     if (Number(t.progress) < 50) continue;
-    const lower = String(t.fps || '').toLowerCase();
-    if (lower.includes('men') || lower.includes('ara sahne') || lower.includes('cutscene')) continue;
-    const matches = String(t.fps || '').match(/\d+/g);
+    const cleaned = String(t.fps || '')
+      .toLowerCase()
+      .replace(/\(\s*\d+[^)]*\)/g, ' ');
+    if (cleaned.includes('men') || cleaned.includes('ara sahne') || cleaned.includes('cutscene')) continue;
+    const matches = cleaned.match(/\d+/g);
     if (matches) {
       for (const m of matches) {
         const val = Number(m);
