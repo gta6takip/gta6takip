@@ -24,12 +24,59 @@ import {
   Globe,
   Clock,
   Reply,
+  Volume2,
+  VolumeX,
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
-const APP_VERSION = 'v1.0.41';
+const APP_VERSION = 'v1.0.42';
 const CHAT_COOLDOWN_SEC = 60;
 const CHAT_COOLDOWN_KEY = 'gta6takip_chat_cooldown_until';
+const CHAT_SOUND_KEY = 'gta6takip_chat_sound';
+
+function playChatChime() {
+  try {
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (!AudioCtx) return;
+    if (!window.__gta6AudioCtx) {
+      window.__gta6AudioCtx = new AudioCtx();
+    }
+    const ctx = window.__gta6AudioCtx;
+    if (ctx.state === 'suspended') {
+      ctx.resume().catch(() => {});
+    }
+
+    const now = ctx.currentTime;
+
+    // 1. Yumuşak başlangıç notası (E5 - 660Hz)
+    const osc1 = ctx.createOscillator();
+    const gain1 = ctx.createGain();
+    osc1.type = 'sine';
+    osc1.frequency.setValueAtTime(660, now);
+    gain1.gain.setValueAtTime(0.001, now);
+    gain1.gain.linearRampToValueAtTime(0.09, now + 0.015);
+    gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+    osc1.connect(gain1);
+    gain1.connect(ctx.destination);
+    osc1.start(now);
+    osc1.stop(now + 0.13);
+
+    // 2. Hafif yükselen onay notası (A5 - 880Hz)
+    const osc2 = ctx.createOscillator();
+    const gain2 = ctx.createGain();
+    osc2.type = 'sine';
+    osc2.frequency.setValueAtTime(880, now + 0.075);
+    gain2.gain.setValueAtTime(0.001, now + 0.075);
+    gain2.gain.linearRampToValueAtTime(0.08, now + 0.09);
+    gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+    osc2.connect(gain2);
+    gain2.connect(ctx.destination);
+    osc2.start(now + 0.075);
+    osc2.stop(now + 0.26);
+  } catch {
+    // Tarayıcı ses izni yoksa sessizce geç
+  }
+}
 
 const THEMES = {
   vice: {
@@ -178,6 +225,17 @@ const FALLBACK_NEWS = [
 
 const CHANGELOG = [
   {
+    version: 'v1.0.42',
+    dateTr: '26 Kasım 2026',
+    dateEn: 'November 26, 2026',
+    itemsTr: [
+      'Canlı Sohbet odasına yeni mesaj geldiğinde yumuşak bildirim sesi ve tek tıkla sesi açıp kapatma butonu eklendi.',
+    ],
+    itemsEn: [
+      'Added a gentle notification chime for incoming Live Chat messages along with a mute/unmute toggle.',
+    ],
+  },
+  {
     version: 'v1.0.41',
     dateTr: '26 Kasım 2026',
     dateEn: 'November 26, 2026',
@@ -208,17 +266,6 @@ const CHANGELOG = [
     ],
     itemsEn: [
       'Added a live active user counter to the Live Chat header and a one-click jump-to-chat shortcut pill in the hero card.',
-    ],
-  },
-  {
-    version: 'v1.0.38',
-    dateTr: '26 Kasım 2026',
-    dateEn: 'November 26, 2026',
-    itemsTr: [
-      'Çevrimiçi menüsündeki ülke bayrakları anında görünecek şekilde iyileştirildi; İngilizce dil modundaki yüzde biçimleri (91.3%, 80%) düzeltildi.',
-    ],
-    itemsEn: [
-      'Fixed instant flag rendering in the Online countries popover and standardized English percentage formatting (91.3%, 80%).',
     ],
   },
 ];
@@ -484,6 +531,10 @@ export default function HomePage() {
   const [chatError, setChatError] = useState('');
   const [replyTo, setReplyTo] = useState(null);
   const [chatCooldown, setChatCooldown] = useState(0);
+  const [chatSoundOn, setChatSoundOn] = useState(true);
+  const chatSoundOnRef = useRef(true);
+  const ownMsgIdsRef = useRef(new Set());
+  const lastOwnSendAtRef = useRef(0);
   const chatSectionRef = useRef(null);
   const chatEndRef = useRef(null);
   const chatInputRef = useRef(null);
@@ -547,6 +598,10 @@ export default function HomePage() {
   }, [chatRoom]);
 
   useEffect(() => {
+    chatSoundOnRef.current = chatSoundOn;
+  }, [chatSoundOn]);
+
+  useEffect(() => {
     try {
       const savedTheme = localStorage.getItem('gta6takip_theme');
       if (savedTheme && THEMES[savedTheme]) setThemeKey(savedTheme);
@@ -558,6 +613,11 @@ export default function HomePage() {
       }
       const savedNick = localStorage.getItem('gta6takip_nick');
       if (savedNick) setChatNick(savedNick);
+      const savedSound = localStorage.getItem(CHAT_SOUND_KEY);
+      if (savedSound === '0') {
+        setChatSoundOn(false);
+        chatSoundOnRef.current = false;
+      }
       const savedUntil = Number(localStorage.getItem(CHAT_COOLDOWN_KEY) || '0');
       if (savedUntil > Date.now()) {
         setChatCooldown(Math.ceil((savedUntil - Date.now()) / 1000));
@@ -595,6 +655,20 @@ export default function HomePage() {
       // Yoksay
     }
     setChatCooldown(sec);
+  };
+
+  const handleToggleChatSound = () => {
+    const next = !chatSoundOn;
+    setChatSoundOn(next);
+    chatSoundOnRef.current = next;
+    try {
+      localStorage.setItem(CHAT_SOUND_KEY, next ? '1' : '0');
+    } catch {
+      // Yoksay
+    }
+    if (next) {
+      playChatChime();
+    }
   };
 
   const fetchChatMessages = async (targetRoom = chatRoomRef.current) => {
@@ -701,8 +775,17 @@ export default function HomePage() {
             if (!incoming?.id) return;
             const msgRoom = incoming.room === 'en' ? 'en' : 'tr';
             if (msgRoom !== chatRoomRef.current) return;
+
+            const idStr = String(incoming.id);
+            const isOwnMessage =
+              ownMsgIdsRef.current.has(idStr) ||
+              Date.now() - lastOwnSendAtRef.current < 2500;
+
             setChatMessages((prev) => {
-              if (prev.some((m) => String(m.id) === String(incoming.id))) return prev;
+              if (prev.some((m) => String(m.id) === idStr)) return prev;
+              if (chatSoundOnRef.current && !isOwnMessage) {
+                playChatChime();
+              }
               return [...prev.slice(-49), incoming];
             });
           }
@@ -766,6 +849,7 @@ export default function HomePage() {
     if (!msg) return;
 
     setChatSending(true);
+    lastOwnSendAtRef.current = Date.now();
     try {
       localStorage.setItem('gta6takip_nick', nick);
     } catch {
@@ -792,6 +876,7 @@ export default function HomePage() {
         return;
       }
       if (data?.message) {
+        ownMsgIdsRef.current.add(String(data.message.id));
         setChatMessages((prev) => {
           if (prev.some((m) => String(m.id) === String(data.message.id))) return prev;
           return [...prev.slice(-49), data.message];
@@ -1698,7 +1783,7 @@ export default function HomePage() {
 
           {chatOpen && (
             <div className={`px-3.5 sm:px-4 pb-4 pt-3 border-t space-y-3 ${theme.subCard}`}>
-              {/* TR / EN Oda Seçici */}
+              {/* TR / EN Oda Seçici + Bildirim Sesi Butonu */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div className={`inline-flex rounded-xl border p-1 gap-1 ${theme.card}`}>
                   <button
@@ -1723,12 +1808,43 @@ export default function HomePage() {
                   </button>
                 </div>
 
-                {chatCooldown > 0 && (
-                  <span className={`inline-flex items-center gap-1 text-[11px] font-bold ${theme.accentText}`}>
-                    <Clock className="w-3 h-3" />
-                    {isEnRoom ? `Wait: ${chatCooldown}s` : `Bekleme: ${chatCooldown} sn`}
-                  </span>
-                )}
+                <div className="flex items-center justify-between sm:justify-end gap-2">
+                  {chatCooldown > 0 && (
+                    <span className={`inline-flex items-center gap-1 text-[11px] font-bold ${theme.accentText}`}>
+                      <Clock className="w-3 h-3" />
+                      {isEnRoom ? `Wait: ${chatCooldown}s` : `Bekleme: ${chatCooldown} sn`}
+                    </span>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={handleToggleChatSound}
+                    className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-[11px] font-semibold transition hover:opacity-90 ${
+                      chatSoundOn ? theme.pill : `${theme.card} ${theme.muted} opacity-75`
+                    }`}
+                    title={
+                      chatSoundOn
+                        ? isEnRoom
+                          ? 'Mute chat notification sound'
+                          : 'Bildirim sesini kapat'
+                        : isEnRoom
+                          ? 'Unmute chat notification sound'
+                          : 'Bildirim sesini aç'
+                    }
+                  >
+                    {chatSoundOn ? (
+                      <>
+                        <Volume2 className={`w-3.5 h-3.5 ${theme.accentText}`} />
+                        <span>{isEnRoom ? 'Sound On' : 'Ses Açık'}</span>
+                      </>
+                    ) : (
+                      <>
+                        <VolumeX className="w-3.5 h-3.5" />
+                        <span>{isEnRoom ? 'Muted' : 'Sessiz'}</span>
+                      </>
+                    )}
+                  </button>
+                </div>
               </div>
 
               <div className={`text-[11px] ${theme.muted}`}>
