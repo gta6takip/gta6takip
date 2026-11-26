@@ -22,7 +22,7 @@ import {
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
-const APP_VERSION = 'v1.0.24';
+const APP_VERSION = 'v1.0.25';
 
 const THEMES = {
   vice: {
@@ -166,6 +166,19 @@ const FALLBACK_NEWS = [
 
 const CHANGELOG = [
   {
+    version: 'v1.0.25',
+    dateTr: '26 Kasım 2026',
+    dateEn: 'November 26, 2026',
+    itemsTr: [
+      'Mobil arayüz iyileştirildi: ilk 10 ekip + Tümünü Göster butonu, kategori filtreleri ve 2 satırlı kesilmeyen aşama etiketleri eklendi (masaüstü düzeni korundu).',
+      'Kart başlıklarında yüzde ve Kaynak butonu mobilde sağ üste sabitlendi; Canlı Veri rozeti hizası ve REKOR kartındaki çift parantez düzeltildi.',
+    ],
+    itemsEn: [
+      'Improved mobile UX: added Top 10 + Show All toggle, category filters, and 2-row milestone labels on mobile without changing desktop layout.',
+      'Pinned percentage & Source button to top-right on mobile cards, aligned Live FAQ badge, and cleaned nested parentheses in news cards.',
+    ],
+  },
+  {
     version: 'v1.0.24',
     dateTr: '26 Kasım 2026',
     dateEn: 'November 26, 2026',
@@ -287,6 +300,10 @@ function localizeDynamicText(text, lang) {
     .replace(/Bağımsız/gi, 'Independent');
 }
 
+function cleanNestedParens(text) {
+  return String(text || '').replace(/\(([^()]+)\s*\(([^()]+)\)\)/g, '($1 · $2)');
+}
+
 function extractPeakFps(teams) {
   let max = 0;
   for (const t of teams) {
@@ -327,6 +344,8 @@ export default function HomePage() {
   const [radarOpen, setRadarOpen] = useState(false);
   const [openFaqIdx, setOpenFaqIdx] = useState(null);
   const [showBackTop, setShowBackTop] = useState(false);
+  const [typeFilter, setTypeFilter] = useState('all');
+  const [showAllMobile, setShowAllMobile] = useState(false);
 
   const [teams, setTeams] = useState(FALLBACK_TEAMS);
   const [news, setNews] = useState(FALLBACK_NEWS);
@@ -498,6 +517,22 @@ export default function HomePage() {
   const peakFps = useMemo(() => extractPeakFps(teams), [teams]);
   const fpsPct = Math.min(100, Math.round((peakFps / 30) * 100));
 
+  const rankedTeams = useMemo(
+    () => teams.map((t, i) => ({ ...t, globalRank: i + 1 })),
+    [teams]
+  );
+
+  const filteredTeams = useMemo(() => {
+    if (typeFilter === 'all') return rankedTeams;
+    return rankedTeams.filter((t) => t.type === typeFilter);
+  }, [rankedTeams, typeFilter]);
+
+  const openCount = useMemo(
+    () => teams.filter((t) => t.type === 'open').length,
+    [teams]
+  );
+  const privateCount = teams.length - openCount;
+
   const faqItems = useMemo(() => {
     const etaTr =
       leader.progress >= 95 && peakFps >= 30
@@ -582,7 +617,7 @@ export default function HomePage() {
   return (
     <div className={`min-h-screen transition-colors duration-300 ${theme.bg}`}>
       <header className={`sticky top-0 z-40 border-b backdrop-blur-md ${theme.card}`}>
-        <div className="max-w-4xl mx-auto px-3 sm:px-5 py-2.5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+        <div className="max-w-4xl mx-auto px-3 sm:px-5 py-2 sm:py-2.5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2 min-w-0">
               <span className={`font-black tracking-tight text-lg sm:text-xl bg-gradient-to-r ${theme.accentGradient} bg-clip-text text-transparent`}>
@@ -683,7 +718,7 @@ export default function HomePage() {
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto px-3 sm:px-5 py-5 space-y-5">
+      <main className="max-w-4xl mx-auto px-3 sm:px-5 py-4 sm:py-5 space-y-5">
         <section className={`rounded-2xl border p-4 sm:p-5 ${theme.card}`}>
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="space-y-2 flex-1">
@@ -786,6 +821,10 @@ export default function HomePage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
             {news.slice(0, 3).map((item, idx) => {
               const badgeLabel = lang === 'tr' ? item.tagTr || 'GÜNCEL' : item.tagEn || 'LIVE';
+              const rawMsg =
+                lang === 'tr'
+                  ? item.tr || item.text
+                  : item.en || localizeDynamicText(item.tr || item.text, 'en');
               return (
                 <div key={idx} className={`rounded-xl border p-3 text-xs leading-relaxed ${theme.card}`}>
                   <span
@@ -796,9 +835,7 @@ export default function HomePage() {
                     <span className="w-1.5 h-1.5 rounded-full bg-current" />
                     {badgeLabel}
                   </span>
-                  <p className={theme.muted}>
-                    {lang === 'tr' ? item.tr || item.text : item.en || localizeDynamicText(item.tr || item.text, 'en')}
-                  </p>
+                  <p className={theme.muted}>{cleanNestedParens(rawMsg)}</p>
                 </div>
               );
             })}
@@ -821,22 +858,71 @@ export default function HomePage() {
         </section>
 
         <section className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-bold tracking-wider opacity-80">
-              {lang === 'tr' ? `AKTİF EKİPLER (${teams.length})` : `ACTIVE EFFORTS (${teams.length})`}
-            </h2>
-            <span className={`text-xs ${theme.muted}`}>
-              {lang === 'tr' ? '6 Aşamalı İlerleme Ölçeği' : '6-Stage Progress Scale'}
-            </span>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div className="flex items-center justify-between gap-2">
+              <h2 className="text-sm font-bold tracking-wider opacity-80">
+                {lang === 'tr'
+                  ? `AKTİF EKİPLER (${filteredTeams.length})`
+                  : `ACTIVE EFFORTS (${filteredTeams.length})`}
+              </h2>
+              <span className={`text-xs sm:hidden ${theme.muted}`}>
+                {lang === 'tr' ? '6 Aşama' : '6 Stages'}
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2 flex-wrap">
+              <div className={`inline-flex rounded-lg border p-0.5 text-[11px] font-semibold ${theme.subCard}`}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTypeFilter('all');
+                    setShowAllMobile(false);
+                  }}
+                  className={`px-2.5 py-1 rounded-md transition ${
+                    typeFilter === 'all' ? theme.btnPrimary : theme.muted
+                  }`}
+                >
+                  {lang === 'tr' ? `Tümü (${teams.length})` : `All (${teams.length})`}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTypeFilter('open');
+                    setShowAllMobile(false);
+                  }}
+                  className={`px-2.5 py-1 rounded-md transition ${
+                    typeFilter === 'open' ? theme.btnPrimary : theme.muted
+                  }`}
+                >
+                  {lang === 'tr' ? `Açık Kaynak (${openCount})` : `Open (${openCount})`}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTypeFilter('private');
+                    setShowAllMobile(false);
+                  }}
+                  className={`px-2.5 py-1 rounded-md transition ${
+                    typeFilter === 'private' ? theme.btnPrimary : theme.muted
+                  }`}
+                >
+                  {lang === 'tr' ? `Kapalı (${privateCount})` : `Private (${privateCount})`}
+                </button>
+              </div>
+              <span className={`hidden sm:inline text-xs ${theme.muted}`}>
+                {lang === 'tr' ? '6 Aşamalı İlerleme Ölçeği' : '6-Stage Progress Scale'}
+              </span>
+            </div>
           </div>
 
           <div className="space-y-3">
-            {teams.map((team, idx) => {
-              const rank = idx + 1;
+            {filteredTeams.map((team, idx) => {
+              const rank = team.globalRank;
               const isTop3 = rank <= 3;
               const isHot = rank === 1;
               const isNewBadge = Boolean(team.isNew);
               const barWidth = Math.min(100, Math.max(2, team.progress));
+              const hideOnMobile = idx >= 10 && !showAllMobile;
               const leaderSummary =
                 rank === 1
                   ? lang === 'tr'
@@ -849,14 +935,14 @@ export default function HomePage() {
               return (
                 <article
                   key={team.name}
-                  className={`rounded-2xl border p-4 transition ${theme.card} ${
+                  className={`rounded-2xl border p-3.5 sm:p-4 transition ${theme.card} ${
                     rank === 1 ? 'ring-1 ring-orange-500/40' : ''
-                  }`}
+                  } ${hideOnMobile ? 'hidden sm:block' : ''}`}
                 >
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                    <div className="flex items-center gap-2 flex-wrap">
+                  <div className="flex items-start sm:items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 flex-wrap min-w-0">
                       <span
-                        className={`inline-flex items-center justify-center w-7 h-7 rounded-lg text-xs font-black ${
+                        className={`inline-flex items-center justify-center w-7 h-7 rounded-lg text-xs font-black shrink-0 ${
                           rank === 1 ? theme.btnPrimary : `border ${theme.pill}`
                         }`}
                       >
@@ -913,15 +999,15 @@ export default function HomePage() {
                       )}
                     </div>
 
-                    <div className="flex items-center gap-2.5 self-start sm:self-center">
-                      <span className={`text-xl font-black ${theme.accentText}`}>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className={`text-lg sm:text-xl font-black ${theme.accentText}`}>
                         {lang === 'tr' ? `%${team.progress}` : `${team.progress}%`}
                       </span>
                       <a
                         href={team.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border text-xs font-semibold transition hover:opacity-80 ${theme.subCard}`}
+                        className={`inline-flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-lg border text-xs font-semibold transition hover:opacity-80 ${theme.subCard}`}
                       >
                         <span>{team.isZortos ? 'X' : lang === 'tr' ? 'Kaynak' : 'Source'}</span>
                         <ExternalLink className="w-3 h-3" />
@@ -929,7 +1015,7 @@ export default function HomePage() {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2 flex-wrap mt-2.5 text-xs">
+                  <div className="flex items-center gap-2 flex-wrap mt-2 text-xs">
                     <span className={`px-2 py-0.5 rounded-md border font-semibold ${theme.pill}`}>
                       {localizeDynamicText(team.fps, lang)}
                     </span>
@@ -943,14 +1029,14 @@ export default function HomePage() {
                     )}
                   </div>
 
-                  <div className="mt-3.5 space-y-2">
+                  <div className="mt-3 space-y-2">
                     <div className="relative h-2.5 w-full rounded-full bg-zinc-700/35 overflow-hidden">
                       <div
                         className={`h-full rounded-full bg-gradient-to-r ${theme.accentGradient} transition-all duration-500`}
                         style={{ width: `${barWidth}%` }}
                       />
                     </div>
-                    <div className="grid grid-cols-6 gap-1">
+                    <div className="grid grid-cols-3 sm:grid-cols-6 gap-x-2 gap-y-1">
                       {MILESTONES.map((m) => {
                         const reached = team.progress >= m.min;
                         return (
@@ -988,6 +1074,32 @@ export default function HomePage() {
               );
             })}
           </div>
+
+          {filteredTeams.length > 10 && (
+            <div className="sm:hidden pt-1">
+              <button
+                type="button"
+                onClick={() => setShowAllMobile((v) => !v)}
+                className={`w-full py-2.5 px-4 rounded-xl border text-xs font-bold flex items-center justify-center gap-1.5 transition ${theme.card} ${theme.accentText}`}
+              >
+                {showAllMobile ? (
+                  <>
+                    <span>{lang === 'tr' ? 'İlk 10 Ekibi Göster' : 'Show Top 10 Only'}</span>
+                    <ChevronUp className="w-4 h-4" />
+                  </>
+                ) : (
+                  <>
+                    <span>
+                      {lang === 'tr'
+                        ? `Tümünü Göster (${filteredTeams.length - 10} ekip daha)`
+                        : `Show All (${filteredTeams.length - 10} more)`}
+                    </span>
+                    <ChevronDown className="w-4 h-4" />
+                  </>
+                )}
+              </button>
+            </div>
+          )}
         </section>
 
         <section className={`rounded-2xl border p-4 space-y-2.5 ${theme.card}`}>
@@ -1008,21 +1120,21 @@ export default function HomePage() {
                     onClick={() => setOpenFaqIdx(isOpen ? null : idx)}
                     className="w-full px-3.5 py-2.5 flex items-center justify-between gap-2 text-left hover:bg-white/5 transition"
                   >
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-xs font-bold">
-                        {lang === 'tr' ? item.qTr : item.qEn}
-                      </span>
+                    <span className="text-xs font-bold leading-snug">
+                      {lang === 'tr' ? item.qTr : item.qEn}
+                    </span>
+                    <div className="flex items-center gap-2 shrink-0">
                       {item.live && (
                         <span className="px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
                           {lang === 'tr' ? 'Canlı Veri' : 'Live'}
                         </span>
                       )}
+                      {isOpen ? (
+                        <ChevronUp className="w-3.5 h-3.5 opacity-75" />
+                      ) : (
+                        <ChevronDown className="w-3.5 h-3.5 opacity-75" />
+                      )}
                     </div>
-                    {isOpen ? (
-                      <ChevronUp className="w-3.5 h-3.5 shrink-0 opacity-75" />
-                    ) : (
-                      <ChevronDown className="w-3.5 h-3.5 shrink-0 opacity-75" />
-                    )}
                   </button>
                   {isOpen && (
                     <div className={`px-3.5 pb-3 pt-1 text-xs leading-relaxed border-t ${theme.card} ${theme.muted}`}>
