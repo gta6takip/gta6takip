@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
 
 export const dynamic = 'force-dynamic';
 
@@ -9,7 +8,7 @@ const MAX_MESSAGE_LENGTH = 280;
 const MIN_NICK_LENGTH = 2;
 const MAX_NICK_LENGTH = 20;
 
-// Sunucu tarafı IP bazlı 60 saniye hız sınırı (warm instance hafızası)
+// Sunucu tarafı IP bazlı 60 saniye hız sınırı
 const ipCooldownMap = new Map();
 
 function cleanupCooldownMap(now) {
@@ -24,24 +23,25 @@ function cleanupCooldownMap(now) {
 
 function getClientIp(request) {
   const xff = request.headers.get('x-forwarded-for');
-  if (xff) {
-    return xff.split(',')[0].trim();
-  }
+  if (xff) return xff.split(',')[0].trim();
   return request.headers.get('x-real-ip') || 'unknown';
 }
 
-function getSupabaseAdmin() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !serviceKey) {
-    return null;
+function getSupabaseConfig() {
+  const url = (process.env.NEXT_PUBLIC_SUPABASE_URL || '').trim().replace(/\/+$/, '');
+  const serviceKey = (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim();
+  if (!url || !serviceKey) return null;
+  const headers = {
+    apikey: serviceKey,
+    'Content-Type': 'application/json',
+  };
+  // Legacy JWT (eyJ...) anahtarlarda Bearer gerekir; yeni sb_secret_ anahtarlarda sadece apikey gönderilir
+  if (serviceKey.startsWith('eyJ')) {
+    headers.Authorization = `Bearer ${serviceKey}`;
   }
-  return createClient(url, serviceKey, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
+  return { url, headers };
 }
 
-// Görünmez karakterleri ve hileli boşlukları temizle
 function stripInvisible(str) {
   return str
     .replace(/[\u200B-\u200D\uFEFF\u00AD\u2060]/g, '')
@@ -49,7 +49,6 @@ function stripInvisible(str) {
     .trim();
 }
 
-// Türkçe + leetspeak normalizasyonu
 function normalizeText(str) {
   const lower = stripInvisible(str)
     .toLowerCase()
@@ -62,8 +61,7 @@ function normalizeText(str) {
     .replace(/ö/g, 'o')
     .replace(/ç/g, 'c');
 
-  // Leetspeak dönüşümü
-  const leet = lower
+  return lower
     .replace(/0/g, 'o')
     .replace(/[1!|]/g, 'i')
     .replace(/3/g, 'e')
@@ -72,26 +70,17 @@ function normalizeText(str) {
     .replace(/7/g, 't')
     .replace(/8/g, 'b')
     .replace(/9/g, 'g');
-
-  return leet;
 }
 
-// Tekrarlı harfleri sıkıştır (siiiktir -> siktir)
 function collapseRepeats(str) {
   return str.replace(/(.)\1{2,}/g, '$1$1').replace(/(.)\1+/g, '$1');
 }
 
-// Gelişmiş link / domain / davet kodu engelleyici
 function containsLink(raw) {
   const cleaned = stripInvisible(raw).toLowerCase();
   const compact = cleaned.replace(/\s+/g, '');
 
-  // 1. Protokoller ve www
-  if (/(https?:\/\/|ftp:\/\/|www\.|mailto:|javascript:|data:)/i.test(compact)) {
-    return true;
-  }
-
-  // 2. Popüler platform davet/kısa linkleri
+  if (/(https?:\/\/|ftp:\/\/|www\.|mailto:|javascript:|data:)/i.test(compact)) return true;
   if (
     /(discord\.gg|discord\.com\/invite|t\.me\/|telegram\.me|wa\.me\/|bit\.ly|tinyurl\.|youtu\.be|linktr\.ee|shorturl|cutt\.ly|rb\.gy|is\.gd|goo\.gl)/i.test(
       compact
@@ -99,8 +88,6 @@ function containsLink(raw) {
   ) {
     return true;
   }
-
-  // 3. Obfuscated link denemeleri (site [dot] com, site(nokta)com vb.)
   if (
     /[a-z0-9-]+\s*[\[\(\{]?\s*(dot|nokta)\s*[\]\)\}]?\s*(com|net|org|xyz|io|gg|tv|me|tr|ru|co|app|dev|site|online|info|biz|shop|link|live|pro|vip)/i.test(
       cleaned
@@ -108,8 +95,6 @@ function containsLink(raw) {
   ) {
     return true;
   }
-
-  // 4. Standart domain uzantıları (örnek.com, oyun.xyz, site.com.tr)
   if (
     /(?:^|[\s([{"'])([a-z0-9-]{2,}\.(?:com|net|org|xyz|io|gg|tv|me|tr|ru|co|app|dev|site|online|info|biz|shop|link|live|pro|vip|club|top|cc|pw|tk|ml|ga|cf|gq|edu|gov)(?:\/[^\s]*)?)(?:$|[\s)\]}"',!?])/i.test(
       cleaned
@@ -117,8 +102,6 @@ function containsLink(raw) {
   ) {
     return true;
   }
-
-  // 5. Boşlukla ayrılmış domain hilesi (ör: "site . com")
   if (
     /[a-z0-9-]{2,}\s*\.\s*(com|net|org|xyz|io|gg|tv|me|tr|ru|co|app|dev|site|online|info|biz|link|vip)\b/i.test(
       cleaned
@@ -126,167 +109,52 @@ function containsLink(raw) {
   ) {
     return true;
   }
-
-  // 6. IPv4 adresi
-  if (/\b(?:\d{1,3}\.){3}\d{1,3}\b/.test(cleaned)) {
-    return true;
-  }
+  if (/\b(?:\d{1,3}\.){3}\d{1,3}\b/.test(cleaned)) return true;
 
   return false;
 }
 
-// Kök / kesin küfür listesi (kelime içi yakalama - yüksek kesinlikli)
 const STRICT_SUBSTRING_ROOTS = [
-  'siktir',
-  'sikim',
-  'sikeyim',
-  'sikerim',
-  'sikis',
-  'siken',
-  'sikik',
-  'siktig',
-  'orospu',
-  'orosbu',
-  'oç',
-  'ocu',
-  'piclik',
-  'kahpe',
-  'kaltak',
-  'yavsak',
-  'yarrak',
-  'yarak',
-  'amcik',
-  'amina',
-  'amini',
-  'aminakoy',
-  'amk',
-  'aq',
-  'mk',
-  'sg',
-  'gotveren',
-  'gotune',
-  'gotunu',
-  'gavat',
-  'pezevenk',
-  'ibne',
-  'ipne',
-  'pust',
-  'tasak',
-  'tassak',
-  'dalyarak',
-  'serefsiz',
-  'haysiyetsiz',
-  'ananisik',
-  'ananiskm',
-  'anani',
-  'bacini',
-  'sülaleni',
-  'sulaleni',
-  'fuck',
-  'fck',
-  'fuk',
-  'bitch',
-  'asshole',
-  'motherfucker',
-  'bastard',
-  'cunt',
-  'whore',
-  'slut',
-  'dickhead',
-  'nigger',
-  'nigga',
-  'faggot',
-  'retard',
+  'siktir', 'sikim', 'sikeyim', 'sikerim', 'sikis', 'siken', 'sikik', 'siktig',
+  'orospu', 'orosbu', 'ocu', 'piclik', 'kahpe', 'kaltak', 'yavsak',
+  'yarrak', 'yarak', 'amcik', 'amina', 'amini', 'aminakoy',
+  'gotveren', 'gotune', 'gotunu', 'gavat', 'pezevenk', 'ibne', 'ipne', 'pust',
+  'tasak', 'tassak', 'dalyarak', 'serefsiz', 'haysiyetsiz',
+  'ananisik', 'ananiskm', 'anani', 'bacini', 'sulaleni',
+  'fuck', 'bitch', 'asshole', 'motherfucker', 'bastard', 'cunt', 'whore', 'slut',
+  'dickhead', 'nigger', 'nigga', 'faggot', 'retard',
 ];
 
-// Sadece tam kelime olarak yakalanacak kısa/çakışabilecek ifadeler
 const EXACT_WORD_BAD = new Set([
-  'sik',
-  'am',
-  'amq',
-  'amk',
-  'aq',
-  'mk',
-  'oc',
-  'oç',
-  'pic',
-  'got',
-  'mal',
-  'salak',
-  'aptal',
-  'gerizekali',
-  'dangalak',
-  'ahmak',
-  'embesil',
-  'it',
-  'kopek',
-  'bok',
-  'sictim',
-  'sicarim',
-  'shit',
-  'dick',
-  'cock',
-  'pussy',
-  'porn',
-  'porno',
-  'sex',
-  'seks',
-  'nude',
+  'sik', 'am', 'amq', 'amk', 'aq', 'mk', 'sg', 'oc', 'pic', 'got',
+  'mal', 'salak', 'aptal', 'gerizekali', 'dangalak', 'ahmak', 'embesil',
+  'it', 'kopek', 'bok', 'sictim', 'sicarim',
+  'shit', 'dick', 'cock', 'pussy', 'porn', 'porno', 'sex', 'seks', 'nude', 'fck', 'fuk',
 ]);
 
-// Taklit / yetkili adı engelleme listesi
 const RESERVED_NICKS = [
-  'admin',
-  'administrator',
-  'mod',
-  'moderator',
-  'yonetici',
-  'sistem',
-  'system',
-  'kurucu',
-  'owner',
-  'root',
-  'staff',
-  'yetkili',
-  'destek',
-  'support',
-  'gta6takip',
-  'official',
-  'resmi',
+  'admin', 'administrator', 'mod', 'moderator', 'yonetici', 'sistem', 'system',
+  'kurucu', 'owner', 'root', 'staff', 'yetkili', 'destek', 'support', 'gta6takip', 'official', 'resmi',
 ];
 
 function containsProfanity(raw) {
   const norm = normalizeText(raw);
   const words = norm.split(/[^a-z]+/).filter(Boolean);
 
-  // 1. Kelime bazlı kontrol (normal ve tekrar sıkıştırılmış)
   for (const w of words) {
     const collapsed = collapseRepeats(w);
-    if (EXACT_WORD_BAD.has(w) || EXACT_WORD_BAD.has(collapsed)) {
-      return true;
-    }
+    if (EXACT_WORD_BAD.has(w) || EXACT_WORD_BAD.has(collapsed)) return true;
     for (const root of STRICT_SUBSTRING_ROOTS) {
-      const cleanRoot = normalizeText(root);
-      if (cleanRoot.length >= 4 && (w.includes(cleanRoot) || collapsed.includes(cleanRoot))) {
-        return true;
-      }
+      if (w.includes(root) || collapsed.includes(root)) return true;
     }
   }
 
-  // 2. Noktalama/boşluk ile bölünmüş küfür hilesi (s.i.k.t.i.r, o r o s p u, a.m.k)
   const squashed = norm.replace(/[^a-z]/g, '');
   const squashedCollapsed = collapseRepeats(squashed);
-
   for (const root of STRICT_SUBSTRING_ROOTS) {
-    const cleanRoot = normalizeText(root);
-    if (cleanRoot.length >= 4) {
-      if (squashed.includes(cleanRoot) || squashedCollapsed.includes(cleanRoot)) {
-        return true;
-      }
-    }
+    if (squashed.includes(root) || squashedCollapsed.includes(root)) return true;
   }
 
-  // Kısa ama sık bölünen 2-3 harfli kısaltmalar (a.m.k, o.ç, a.q)
   if (/(?:^|\s)[a4]\s*[\.\-\*_]\s*m\s*[\.\-\*_]?\s*k(?:\s|$)/i.test(norm)) return true;
   if (/(?:^|\s)o\s*[\.\-\*_]\s*c(?:\s|$)/i.test(norm)) return true;
   if (/(?:^|\s)a\s*[\.\-\*_]\s*q(?:\s|$)/i.test(norm)) return true;
@@ -301,45 +169,45 @@ function isReservedNickname(rawNick) {
 
 export async function GET() {
   try {
-    const supabase = getSupabaseAdmin();
-    if (!supabase) {
-      return NextResponse.json(
-        { error: 'Sohbet servisi yapılandırılmadı.', messages: [] },
-        { status: 500 }
-      );
+    const cfg = getSupabaseConfig();
+    if (!cfg) {
+      return NextResponse.json({ error: 'Sohbet servisi yapılandırılmadı.', messages: [] }, { status: 500 });
     }
 
-    const { data, error } = await supabase
-      .from('chat_messages')
-      .select('id, nickname, message, created_at, reply_to_id, reply_to_nick, reply_to_text')
-      .order('created_at', { ascending: false })
-      .limit(50);
-
-    if (error) {
-      return NextResponse.json(
-        { error: 'Mesajlar yüklenemedi.', messages: [] },
-        { status: 500 }
-      );
-    }
-
-    const ordered = (data || []).reverse();
-    return NextResponse.json({ messages: ordered }, { status: 200 });
-  } catch {
-    return NextResponse.json(
-      { error: 'Beklenmeyen bir sunucu hatası oluştu.', messages: [] },
-      { status: 500 }
+    const res = await fetch(
+      `${cfg.url}/rest/v1/chat_messages?select=id,nickname,message,created_at,reply_to_id,reply_to_nick,reply_to_text&order=created_at.desc&limit=50`,
+      { headers: cfg.headers, cache: 'no-store' }
     );
+
+    if (!res.ok) {
+      // Sütun önbelleği henüz yenilenmediyse temel sütunlarla yedek okuma dene
+      const fallbackRes = await fetch(
+        `${cfg.url}/rest/v1/chat_messages?select=id,nickname,message,created_at&order=created_at.desc&limit=50`,
+        { headers: cfg.headers, cache: 'no-store' }
+      );
+      if (!fallbackRes.ok) {
+        const errText = await fallbackRes.text().catch(() => '');
+        return NextResponse.json(
+          { error: `Mesajlar yüklenemedi: ${errText.slice(0, 120)}`, messages: [] },
+          { status: 500 }
+        );
+      }
+      const fallbackData = await fallbackRes.json().catch(() => []);
+      return NextResponse.json({ messages: Array.isArray(fallbackData) ? fallbackData.reverse() : [] }, { status: 200 });
+    }
+
+    const data = await res.json().catch(() => []);
+    return NextResponse.json({ messages: Array.isArray(data) ? data.reverse() : [] }, { status: 200 });
+  } catch {
+    return NextResponse.json({ error: 'Beklenmeyen sunucu hatası.', messages: [] }, { status: 500 });
   }
 }
 
 export async function POST(request) {
   try {
-    const supabase = getSupabaseAdmin();
-    if (!supabase) {
-      return NextResponse.json(
-        { error: 'Sohbet servisi yapılandırılmadı.' },
-        { status: 500 }
-      );
+    const cfg = getSupabaseConfig();
+    if (!cfg) {
+      return NextResponse.json({ error: 'Sohbet servisi yapılandırılmadı (Vercel env eksik).' }, { status: 500 });
     }
 
     const now = Date.now();
@@ -367,7 +235,6 @@ export async function POST(request) {
     const rawMsg = typeof body.message === 'string' ? stripInvisible(body.message) : '';
     const rawReplyToId = body.replyToId != null ? String(body.replyToId).trim() : null;
 
-    // İsim kontrolleri
     if (rawNick.length < MIN_NICK_LENGTH || rawNick.length > MAX_NICK_LENGTH) {
       return NextResponse.json(
         { error: `Takma adın ${MIN_NICK_LENGTH} ile ${MAX_NICK_LENGTH} karakter arasında olmalı.` },
@@ -376,87 +243,73 @@ export async function POST(request) {
     }
 
     if (isReservedNickname(rawNick)) {
-      return NextResponse.json(
-        { error: 'Bu takma ad kullanılamaz. Lütfen başka bir isim seç.' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Bu takma ad kullanılamaz. Lütfen başka bir isim seç.' }, { status: 400 });
     }
 
     if (containsLink(rawNick) || containsProfanity(rawNick)) {
-      return NextResponse.json(
-        { error: 'Takma adında uygunsuz ifade veya link bulunamaz.' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Takma adında uygunsuz ifade veya link bulunamaz.' }, { status: 400 });
     }
 
-    // Mesaj kontrolleri
     if (rawMsg.length < 1) {
       return NextResponse.json({ error: 'Boş mesaj gönderemezsin.' }, { status: 400 });
     }
 
     if (rawMsg.length > MAX_MESSAGE_LENGTH) {
-      return NextResponse.json(
-        { error: `Mesajın en fazla ${MAX_MESSAGE_LENGTH} karakter olabilir.` },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: `Mesajın en fazla ${MAX_MESSAGE_LENGTH} karakter olabilir.` }, { status: 400 });
     }
 
     if (containsLink(rawMsg)) {
-      return NextResponse.json(
-        { error: 'Sohbette link, davet bağlantısı veya web adresi paylaşmak yasaktır.' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Sohbette link, davet bağlantısı veya web adresi paylaşmak yasaktır.' }, { status: 400 });
     }
 
     if (containsProfanity(rawMsg)) {
-      return NextResponse.json(
-        { error: 'Mesajın küfür/hakaret filtresine takıldı. Lütfen saygılı bir dil kullan.' },
-        { status: 400 }
-      );
-    }
-
-    // Yanıt (Reply) doğrulaması: Sahte alıntıyı engellemek için veritabanından doğrula
-    let replyToId = null;
-    let replyToNick = null;
-    let replyToText = null;
-
-    if (rawReplyToId) {
-      const { data: parentMsg } = await supabase
-        .from('chat_messages')
-        .select('id, nickname, message')
-        .eq('id', rawReplyToId)
-        .maybeSingle();
-
-      if (parentMsg) {
-        replyToId = String(parentMsg.id);
-        replyToNick = parentMsg.nickname;
-        replyToText =
-          parentMsg.message.length > 100
-            ? parentMsg.message.slice(0, 100) + '…'
-            : parentMsg.message;
-      }
+      return NextResponse.json({ error: 'Mesajın küfür/hakaret filtresine takıldı. Lütfen saygılı bir dil kullan.' }, { status: 400 });
     }
 
     const insertPayload = {
       nickname: rawNick,
       message: rawMsg,
-      reply_to_id: replyToId,
-      reply_to_nick: replyToNick,
-      reply_to_text: replyToText,
     };
 
-    const { data: inserted, error: insertError } = await supabase
-      .from('chat_messages')
-      .insert(insertPayload)
-      .select('id, nickname, message, created_at, reply_to_id, reply_to_nick, reply_to_text')
-      .single();
+    if (rawReplyToId) {
+      const parentRes = await fetch(
+        `${cfg.url}/rest/v1/chat_messages?select=id,nickname,message&id=eq.${encodeURIComponent(rawReplyToId)}&limit=1`,
+        { headers: cfg.headers, cache: 'no-store' }
+      );
+      if (parentRes.ok) {
+        const parentArr = await parentRes.json().catch(() => []);
+        const parentMsg = Array.isArray(parentArr) ? parentArr[0] : null;
+        if (parentMsg) {
+          insertPayload.reply_to_id = String(parentMsg.id);
+          insertPayload.reply_to_nick = parentMsg.nickname;
+          insertPayload.reply_to_text =
+            parentMsg.message.length > 100
+              ? parentMsg.message.slice(0, 100) + '…'
+              : parentMsg.message;
+        }
+      }
+    }
 
-    if (insertError) {
+    const insertRes = await fetch(`${cfg.url}/rest/v1/chat_messages`, {
+      method: 'POST',
+      headers: {
+        ...cfg.headers,
+        Prefer: 'return=representation',
+      },
+      body: JSON.stringify(insertPayload),
+    });
+
+    if (!insertRes.ok) {
+      const errJson = await insertRes.json().catch(() => null);
+      const detail = errJson?.message || errJson?.hint || `HTTP ${insertRes.status}`;
       return NextResponse.json(
-        { error: 'Mesaj kaydedilemedi. Supabase sütunlarını kontrol edin.' },
+        { error: `Mesaj kaydedilemedi (${detail})` },
         { status: 500 }
       );
     }
+
+    const insertedArr = await insertRes.json().catch(() => []);
+    const inserted = Array.isArray(insertedArr) ? insertedArr[0] : insertedArr;
 
     ipCooldownMap.set(ip, now);
 
@@ -468,9 +321,6 @@ export async function POST(request) {
       { status: 201 }
     );
   } catch {
-    return NextResponse.json(
-      { error: 'Mesaj gönderilirken bir hata oluştu.' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Mesaj gönderilirken bir hata oluştu.' }, { status: 500 });
   }
 }
