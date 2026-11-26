@@ -35,11 +35,14 @@ function getSupabaseConfig() {
     apikey: serviceKey,
     'Content-Type': 'application/json',
   };
-  // Legacy JWT (eyJ...) anahtarlarda Bearer gerekir; yeni sb_secret_ anahtarlarda sadece apikey gönderilir
   if (serviceKey.startsWith('eyJ')) {
     headers.Authorization = `Bearer ${serviceKey}`;
   }
   return { url, headers };
+}
+
+function normalizeRoom(raw) {
+  return String(raw || '').toLowerCase() === 'en' ? 'en' : 'tr';
 }
 
 function stripInvisible(str) {
@@ -167,37 +170,31 @@ function isReservedNickname(rawNick) {
   return RESERVED_NICKS.some((r) => squashed === r || squashed.includes('admin') || squashed.includes('yonetici'));
 }
 
-export async function GET() {
+export async function GET(request) {
   try {
     const cfg = getSupabaseConfig();
     if (!cfg) {
       return NextResponse.json({ error: 'Sohbet servisi yapılandırılmadı.', messages: [] }, { status: 500 });
     }
 
+    const { searchParams } = new URL(request.url);
+    const room = normalizeRoom(searchParams.get('room'));
+
     const res = await fetch(
-      `${cfg.url}/rest/v1/chat_messages?select=id,nickname,message,created_at,reply_to_id,reply_to_nick,reply_to_text&order=created_at.desc&limit=50`,
+      `${cfg.url}/rest/v1/chat_messages?select=id,nickname,message,created_at,reply_to_id,reply_to_nick,reply_to_text,room&room=eq.${room}&order=created_at.desc&limit=50`,
       { headers: cfg.headers, cache: 'no-store' }
     );
 
     if (!res.ok) {
-      // Sütun önbelleği henüz yenilenmediyse temel sütunlarla yedek okuma dene
-      const fallbackRes = await fetch(
-        `${cfg.url}/rest/v1/chat_messages?select=id,nickname,message,created_at&order=created_at.desc&limit=50`,
-        { headers: cfg.headers, cache: 'no-store' }
+      const errText = await res.text().catch(() => '');
+      return NextResponse.json(
+        { error: `Mesajlar yüklenemedi: ${errText.slice(0, 120)}`, messages: [] },
+        { status: 500 }
       );
-      if (!fallbackRes.ok) {
-        const errText = await fallbackRes.text().catch(() => '');
-        return NextResponse.json(
-          { error: `Mesajlar yüklenemedi: ${errText.slice(0, 120)}`, messages: [] },
-          { status: 500 }
-        );
-      }
-      const fallbackData = await fallbackRes.json().catch(() => []);
-      return NextResponse.json({ messages: Array.isArray(fallbackData) ? fallbackData.reverse() : [] }, { status: 200 });
     }
 
     const data = await res.json().catch(() => []);
-    return NextResponse.json({ messages: Array.isArray(data) ? data.reverse() : [] }, { status: 200 });
+    return NextResponse.json({ messages: Array.isArray(data) ? data.reverse() : [], room }, { status: 200 });
   } catch {
     return NextResponse.json({ error: 'Beklenmeyen sunucu hatası.', messages: [] }, { status: 500 });
   }
@@ -210,6 +207,14 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Sohbet servisi yapılandırılmadı (Vercel env eksik).' }, { status: 500 });
     }
 
+    const body = await request.json().catch(() => null);
+    if (!body || typeof body !== 'object') {
+      return NextResponse.json({ error: 'Geçersiz istek.' }, { status: 400 });
+    }
+
+    const room = normalizeRoom(body.room);
+    const isEn = room === 'en';
+
     const now = Date.now();
     cleanupCooldownMap(now);
 
@@ -219,16 +224,13 @@ export async function POST(request) {
       const retryAfter = Math.max(1, Math.ceil((COOLDOWN_MS - (now - lastSentAt)) / 1000));
       return NextResponse.json(
         {
-          error: `60 saniyede en fazla 1 mesaj gönderebilirsin. Lütfen ${retryAfter} saniye bekle.`,
+          error: isEn
+            ? `1 message per 60 seconds. Please wait ${retryAfter}s.`
+            : `60 saniyede en fazla 1 mesaj gönderebilirsin. Lütfen ${retryAfter} saniye bekle.`,
           retryAfter,
         },
         { status: 429 }
       );
-    }
-
-    const body = await request.json().catch(() => null);
-    if (!body || typeof body !== 'object') {
-      return NextResponse.json({ error: 'Geçersiz istek.' }, { status: 400 });
     }
 
     const rawNick = typeof body.nickname === 'string' ? stripInvisible(body.nickname) : '';
@@ -237,43 +239,86 @@ export async function POST(request) {
 
     if (rawNick.length < MIN_NICK_LENGTH || rawNick.length > MAX_NICK_LENGTH) {
       return NextResponse.json(
-        { error: `Takma adın ${MIN_NICK_LENGTH} ile ${MAX_NICK_LENGTH} karakter arasında olmalı.` },
+        {
+          error: isEn
+            ? `Nickname must be between ${MIN_NICK_LENGTH} and ${MAX_NICK_LENGTH} characters.`
+            : `Takma adın ${MIN_NICK_LENGTH} ile ${MAX_NICK_LENGTH} karakter arasında olmalı.`,
+        },
         { status: 400 }
       );
     }
 
     if (isReservedNickname(rawNick)) {
-      return NextResponse.json({ error: 'Bu takma ad kullanılamaz. Lütfen başka bir isim seç.' }, { status: 400 });
+      return NextResponse.json(
+        {
+          error: isEn
+            ? 'This nickname is reserved. Please pick another one.'
+            : 'Bu takma ad kullanılamaz. Lütfen başka bir isim seç.',
+        },
+        { status: 400 }
+      );
     }
 
     if (containsLink(rawNick) || containsProfanity(rawNick)) {
-      return NextResponse.json({ error: 'Takma adında uygunsuz ifade veya link bulunamaz.' }, { status: 400 });
+      return NextResponse.json(
+        {
+          error: isEn
+            ? 'Nickname cannot contain profanity or links.'
+            : 'Takma adında uygunsuz ifade veya link bulunamaz.',
+        },
+        { status: 400 }
+      );
     }
 
     if (rawMsg.length < 1) {
-      return NextResponse.json({ error: 'Boş mesaj gönderemezsin.' }, { status: 400 });
+      return NextResponse.json(
+        { error: isEn ? 'Message cannot be empty.' : 'Boş mesaj gönderemezsin.' },
+        { status: 400 }
+      );
     }
 
     if (rawMsg.length > MAX_MESSAGE_LENGTH) {
-      return NextResponse.json({ error: `Mesajın en fazla ${MAX_MESSAGE_LENGTH} karakter olabilir.` }, { status: 400 });
+      return NextResponse.json(
+        {
+          error: isEn
+            ? `Message cannot exceed ${MAX_MESSAGE_LENGTH} characters.`
+            : `Mesajın en fazla ${MAX_MESSAGE_LENGTH} karakter olabilir.`,
+        },
+        { status: 400 }
+      );
     }
 
     if (containsLink(rawMsg)) {
-      return NextResponse.json({ error: 'Sohbette link, davet bağlantısı veya web adresi paylaşmak yasaktır.' }, { status: 400 });
+      return NextResponse.json(
+        {
+          error: isEn
+            ? 'Sharing links, invites, or URLs is not allowed in chat.'
+            : 'Sohbette link, davet bağlantısı veya web adresi paylaşmak yasaktır.',
+        },
+        { status: 400 }
+      );
     }
 
     if (containsProfanity(rawMsg)) {
-      return NextResponse.json({ error: 'Mesajın küfür/hakaret filtresine takıldı. Lütfen saygılı bir dil kullan.' }, { status: 400 });
+      return NextResponse.json(
+        {
+          error: isEn
+            ? 'Your message was blocked by the profanity filter. Please keep it respectful.'
+            : 'Mesajın küfür/hakaret filtresine takıldı. Lütfen saygılı bir dil kullan.',
+        },
+        { status: 400 }
+      );
     }
 
     const insertPayload = {
       nickname: rawNick,
       message: rawMsg,
+      room,
     };
 
     if (rawReplyToId) {
       const parentRes = await fetch(
-        `${cfg.url}/rest/v1/chat_messages?select=id,nickname,message&id=eq.${encodeURIComponent(rawReplyToId)}&limit=1`,
+        `${cfg.url}/rest/v1/chat_messages?select=id,nickname,message&id=eq.${encodeURIComponent(rawReplyToId)}&room=eq.${room}&limit=1`,
         { headers: cfg.headers, cache: 'no-store' }
       );
       if (parentRes.ok) {
