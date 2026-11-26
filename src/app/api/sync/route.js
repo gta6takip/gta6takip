@@ -4,6 +4,7 @@ export const dynamic = 'force-dynamic';
 
 const BASE_TEAMS = [
   { name: 'AvatarManz', progress: 83.1, fps: '16 FPS (13-22 FPS)', gpu: 'RX 7900 XTX', type: 'open', stage: 'Oynanabilir • İlk Perde (Sesli)', delta: '+23.1%', url: 'https://github.com/avatarmanz/VIctory-7900XTX', repo: 'avatarmanz/VIctory-7900XTX', isNew: true },
+  { name: 'NotNozy', progress: 82.6, fps: '16 FPS', gpu: 'AMD (Rumble)', type: 'private', stage: 'Oynanabilir • İlk Perde', delta: '+21.6%', url: 'https://portwatch-vi.xyz/#race', isNew: true },
   { name: 'darkworldhm', progress: 79.5, fps: '15-24 FPS', gpu: 'RTX 50 Serisi', type: 'private', stage: 'Oynanabilir • Serbest Dolaşım', delta: '+18.5%', url: 'https://portwatch-vi.xyz/#race' },
   { name: 'Doomsday', progress: 78.7, fps: '4 FPS', gpu: 'AMD / NVIDIA', type: 'private', stage: 'Oynanabilir • İlk Perde', delta: '+14.2%', url: 'https://portwatch-vi.xyz/#race' },
   { name: 'DexNom', progress: 78.0, fps: '3 FPS', gpu: 'RX 7900 XTX', type: 'open', stage: 'Oynanabilir • İlk Perde', delta: '+12.0%', url: 'https://github.com/DexNom/VIctory', repo: 'DexNom/VIctory' },
@@ -32,6 +33,7 @@ function stripHtml(html) {
     .replace(/<[^>]+>/g, ' ')
     .replace(/ /g, ' ')
     .replace(/&/g, '&')
+    .replace(/·|·|�*b7;|•|•/gi, '·')
     .replace(/\s+/g, ' ')
     .trim();
 }
@@ -47,9 +49,9 @@ function stageFromProgress(pct) {
 
 export async function GET() {
   const teams = BASE_TEAMS.map((t) => ({ ...t }));
-  let totalEfforts = 38;
-  let bootingCount = 16;
-  let top3Avg = 80.4;
+  let totalEfforts = 39;
+  let bootingCount = 17;
+  let top3Avg = 81.7;
 
   try {
     const pwRes = await fetch('https://portwatch-vi.xyz/', {
@@ -72,9 +74,8 @@ export async function GET() {
       }
 
       const avgMatch = text.match(/(\d+(?:\.\d+)?)%\s*Top-3 average/i);
-      if (avgMatch) top3Avg = Number(avgMatch[1]);
+      if (avgMatch) top3Avg = Math.max(top3Avg, Number(avgMatch[1]));
 
-      // Mevcut ekiplerin canlı yüzdelerini güncelle
       for (const team of teams) {
         const shortName = team.name.split(' ')[0].replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         const tickerRe = new RegExp(`${shortName}\\s*[·•]\\s*(\\d+(?:\\.\\d+)?)%`, 'i');
@@ -88,7 +89,6 @@ export async function GET() {
         }
       }
 
-      // PortWatch yarış şeridinden listede olmayan yeni ekipleri otomatik yakala
       const autoTickerRe = /([A-Za-z0-9_-]{3,24})\s*[·•]\s*(\d+(?:\.\d+)?)%/g;
       let match;
       while ((match = autoTickerRe.exec(text)) !== null) {
@@ -130,8 +130,8 @@ export async function GET() {
     {
       tagTr: 'REKOR',
       tagEn: 'RECORD',
-      tr: `${leader.name} %${leader.progress} ile genel lider (${leader.fps}).`,
-      en: `${leader.name} leads overall at ${leader.progress}% (${leader.fps}).`,
+      tr: `${leader.name} %${leader.progress} ile genel lider (${leader.fps}); NotNozy (%82.6) #2 sıraya yerleşti.`,
+      en: `${leader.name} leads overall at ${leader.progress}% (${leader.fps}); NotNozy (82.6%) takes #2.`,
     },
     {
       tagTr: 'AÇIK KAYNAK',
@@ -142,7 +142,7 @@ export async function GET() {
     {
       tagTr: 'GÜNCEL',
       tagEn: 'LIVE',
-      tr: `PortWatch üzerinde ${totalEfforts} girişim takip ediliyor; ${bootingCount}'sı oyunu başlatabiliyor (İlk 3 ort. %${top3Avg}).`,
+      tr: `PortWatch üzerinde ${totalEfforts} girişim takip ediliyor; ${bootingCount}'si oyunu başlatabiliyor (İlk 3 ort. %${top3Avg}).`,
       en: `${totalEfforts} total efforts tracked on PortWatch, with ${bootingCount} booting GTA VI (Top-3 avg ${top3Avg}%).`,
     },
   ];
