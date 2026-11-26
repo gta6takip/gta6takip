@@ -17,10 +17,11 @@ import {
   Share2,
   Lock,
   Code2,
+  Info,
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
-const APP_VERSION = 'v1.0.19';
+const APP_VERSION = 'v1.0.20';
 
 const THEMES = {
   dark: {
@@ -120,36 +121,62 @@ const MILESTONES = [
 ];
 
 const FALLBACK_TEAMS = [
+  {
+    name: 'CGBJ',
+    progress: 89.8,
+    fps: '20 FPS (30 FPS Ara Sahne)',
+    gpu: 'NVIDIA (10GB RAM)',
+    type: 'private',
+    stage: 'Oynanabilir • Hikâye Yarısı',
+    delta: '+35.3%',
+    url: 'https://portwatch-vi.xyz/#race',
+    summaryTr: 'Ara sahnelerde 30 FPS, oyun içinde sabit ~20 FPS (10 GB RAM / 16 GB VRAM). Hikâyenin yarısı oynanabilir, nadiren çöküyor; kod henüz halka açık değil.',
+    summaryEn: '30 FPS in cutscenes, ~20 FPS stable in gameplay (10 GB RAM / 16 GB VRAM). Half the story playable, rarely crashes; private build.',
+  },
+  { name: 'NotNozy', progress: 87.8, fps: '16 FPS', gpu: 'AMD (Rumble)', type: 'private', stage: 'Oynanabilir • Hikâye Yarısı', delta: '+26.8%', url: 'https://portwatch-vi.xyz/#race', isNew: true },
+  { name: 'darkworldhm', progress: 84.8, fps: '15-24 FPS', gpu: 'RTX 50 Serisi', type: 'private', stage: 'Oynanabilir • Hikâye Yarısı', delta: '+23.8%', url: 'https://portwatch-vi.xyz/#race' },
+  { name: 'Doomsday', progress: 84.0, fps: '4 FPS', gpu: 'AMD / NVIDIA', type: 'private', stage: 'Oynanabilir • Hikâye Yarısı', delta: '+19.5%', url: 'https://portwatch-vi.xyz/#race' },
   { name: 'AvatarManz', progress: 83.1, fps: '16 FPS (13-22 FPS)', gpu: 'RX 7900 XTX', type: 'open', stage: 'Oynanabilir • İlk Perde (Sesli)', delta: '+23.1%', url: 'https://github.com/avatarmanz/VIctory-7900XTX' },
-  { name: 'NotNozy', progress: 82.6, fps: '16 FPS', gpu: 'AMD (Rumble)', type: 'private', stage: 'Oynanabilir • İlk Perde', delta: '+21.6%', url: 'https://portwatch-vi.xyz/#race', isNew: true },
-  { name: 'darkworldhm', progress: 79.5, fps: '15-24 FPS', gpu: 'RTX 50 Serisi', type: 'private', stage: 'Oynanabilir • Serbest Dolaşım', delta: '+18.5%', url: 'https://portwatch-vi.xyz/#race' },
-  { name: 'Doomsday', progress: 78.7, fps: '4 FPS', gpu: 'AMD / NVIDIA', type: 'private', stage: 'Oynanabilir • İlk Perde', delta: '+14.2%', url: 'https://portwatch-vi.xyz/#race' },
+  { name: 'Belobug', progress: 79.0, fps: '8 FPS', gpu: 'RX 9070 XT', type: 'open', stage: 'Oynanabilir • İlk Perde (RT)', delta: '+10.7%', url: 'https://github.com/Belobug/VIctory-Belobug-AMD' },
   { name: 'DexNom', progress: 78.0, fps: '3 FPS', gpu: 'RX 7900 XTX', type: 'open', stage: 'Oynanabilir • İlk Perde', delta: '+12.0%', url: 'https://github.com/DexNom/VIctory' },
-  { name: 'Belobug', progress: 77.7, fps: '4 FPS', gpu: 'RX 9070 XT', type: 'open', stage: 'Oynanabilir • İlk Perde', delta: '+9.4%', url: 'https://github.com/Belobug/VIctory-Belobug-AMD' },
-  { name: 'suri', progress: 61.0, fps: '3 FPS', gpu: 'Özel Yapı', type: 'private', stage: 'Oynanabilir • Özel Yapı', delta: '+3.1%', url: 'https://portwatch-vi.xyz/#race' },
+  { name: 'suri', progress: 75.0, fps: '3 FPS', gpu: 'Özel Yapı', type: 'private', stage: 'Oynanabilir • Hikâye Yarısı', delta: '+14.0%', url: 'https://portwatch-vi.xyz/#race' },
   { name: 'hyphennn', progress: 59.8, fps: '3 FPS', gpu: 'RTX 4070', type: 'open', stage: 'Oynanabilir • Açılış Sahnesi', delta: '+4.0%', url: 'https://github.com/fxceless/victory-fork' },
   { name: 'Uilian (VItoriaBr)', progress: 59.6, fps: '4 FPS', gpu: 'RTX 5060 Ti', type: 'open', stage: 'Oynanabilir • Önsöz Geçildi', delta: '+5.2%', url: 'https://github.com/uiliannn/VItoriaBr' },
   { name: 'omonkey', progress: 57.9, fps: '~5 FPS', gpu: 'Rumble Yayını', type: 'private', stage: 'Oynanabilir • Hapishane Sahnesi', delta: '+2.4%', url: 'https://portwatch-vi.xyz/#race' },
-  { name: 'CGBJ', progress: 54.5, fps: '4 FPS', gpu: 'Özel Yapı', type: 'private', stage: 'Oynanabilir • Özel Yapı', delta: '+1.8%', url: 'https://portwatch-vi.xyz/#race' },
+  { name: 'VIctory', progress: 50.3, fps: '1 FPS (30 FPS Menü)', gpu: 'RX 6700 XT', type: 'open', stage: 'Oynanabilir • İlk Sahne', delta: '+10.3%', url: 'https://github.com/Marvisak/VIctory' },
   { name: 'Zortos', progress: 45.0, fps: 'PC Boot', gpu: 'Bağımsız', type: 'private', stage: 'Oyun Dünyası • PC Boot', url: 'https://x.com/Zortosdev', isZortos: true },
-  { name: 'VIctory', progress: 40.0, fps: '1-30 FPS', gpu: 'RX 6700 XT', type: 'open', stage: 'Oyun Dünyası', url: 'https://github.com/Marvisak/VIctory' },
   { name: 'XCL', progress: 35.0, fps: '30 FPS (Menü)', gpu: 'AMD / NVIDIA', type: 'open', stage: 'Ana Menü', url: 'https://github.com/xcl-dev/xcl' },
   { name: 'Five Star Recomp', progress: 30.0, fps: '30 FPS (Ara Sahne)', gpu: 'C# Katmanı', type: 'open', stage: 'Ana Menü', url: 'https://portwatch-vi.xyz/#race' },
   { name: 'keylime', progress: 30.0, fps: '30 FPS (Vulkan)', gpu: 'C++20 / Vulkan', type: 'open', stage: 'Ana Menü', url: 'https://portwatch-vi.xyz/#race' },
   { name: 'Xbox2Windows', progress: 25.0, fps: 'Tanılama', gpu: 'Statik Recomp', type: 'open', stage: 'İlk Kare', url: 'https://github.com/R0Y00/Xbox2Windows' },
+  { name: 'Port of the Americas', progress: 25.0, fps: 'Linux / Proton', gpu: 'AMD (vkd3d)', type: 'open', stage: 'İlk Kare', url: 'https://portwatch-vi.xyz/#race', isNew: true },
   { name: 'TuxBox', progress: 20.0, fps: '4K İstem', gpu: 'Linux / Proton', type: 'open', stage: 'İlk Kare', url: 'https://github.com/brcly/TuxBox' },
   { name: 'vice-pc', progress: 12.0, fps: 'Exe Boot', gpu: 'Açık Kaynak', type: 'open', stage: 'Exe Çalışıyor', url: 'https://github.com/natedemoss/vice-pc' },
+  { name: 'ScarlettCompat', progress: 10.0, fps: '113 Boot', gpu: 'AMD (C++)', type: 'open', stage: 'Exe Çalışıyor', url: 'https://portwatch-vi.xyz/#race', isNew: true },
   { name: 'XValkyrie', progress: 2.9, fps: 'Ön Aşama', gpu: 'C++ / HLSL', type: 'open', stage: 'Altyapı', url: 'https://github.com/sammwyy/xvalkyrie' },
   { name: 'AnyXboxX', progress: 2.5, fps: 'GDK Örnekleri', gpu: 'HLE Emülatör', type: 'open', stage: 'Altyapı', url: 'https://github.com/LooperSalty/AnyXboxX' },
 ];
 
 const FALLBACK_NEWS = [
-  { tagTr: 'REKOR', tagEn: 'RECORD', tr: 'AvatarManz %83.1 ile genel lider (16 FPS); NotNozy (%82.6) #2 sıraya yerleşti.', en: 'AvatarManz leads overall at 83.1% (16 FPS); NotNozy (82.6%) takes #2.' },
-  { tagTr: 'AÇIK KAYNAK', tagEn: 'OPEN SOURCE', tr: 'Açık kaynak lideri AvatarManz (%83.1); toplam 21 ana ekip izleniyor.', en: 'AvatarManz (83.1%) leads open source; 21 main teams tracked.' },
-  { tagTr: 'GÜNCEL', tagEn: 'LIVE', tr: "PortWatch üzerinde 39 girişim takip ediliyor; 17'si oyunu başlatabiliyor (İlk 3 ort. %81.7).", en: '39 total efforts tracked on PortWatch, with 17 booting GTA VI (Top-3 avg 81.7%).' },
+  { tagTr: 'REKOR', tagEn: 'RECORD', tr: 'CGBJ %89.8 ile yeni genel lider (20 FPS · 30 FPS Ara Sahne); NotNozy (%87.8) #2 sırada.', en: 'CGBJ takes #1 overall at 89.8% (20 FPS · 30 FPS cutscenes); NotNozy (87.8%) is #2.' },
+  { tagTr: 'AÇIK KAYNAK', tagEn: 'OPEN SOURCE', tr: 'Açık kaynak lideri AvatarManz (%83.1); Belobug (%79 · 8 FPS) ve VIctory (%50.3) yükseldi.', en: 'AvatarManz (83.1%) leads open source; Belobug (79% · 8 FPS) & VIctory (50.3%) climbed.' },
+  { tagTr: 'GÜNCEL', tagEn: 'LIVE', tr: "PortWatch üzerinde 39 girişim takip ediliyor; 17'si oyunu başlatabiliyor (İlk 3 ort. %87.5).", en: '39 total efforts tracked on PortWatch, with 17 booting GTA VI (Top-3 avg 87.5%).' },
 ];
 
 const CHANGELOG = [
+  {
+    version: 'v1.0.20',
+    dateTr: '26 Kasım 2026',
+    dateEn: 'November 26, 2026',
+    itemsTr: [
+      '#1 sıradaki lider (CGBJ %89.8) kartının altına mobil ve masaüstü uyumlu "Aşama Özeti" kutusu eklendi.',
+      'Varsayılan liste 23 ekibe ve %89.8 CGBJ liderliğine eşitlendi.',
+    ],
+    itemsEn: [
+      'Added a responsive "Stage Summary" note inside the #1 leader card (CGBJ 89.8%) for mobile and desktop.',
+      'Synced baseline list to 23 teams with CGBJ leading at 89.8%.',
+    ],
+  },
   {
     version: 'v1.0.19',
     dateTr: '26 Kasım 2026',
@@ -172,19 +199,6 @@ const CHANGELOG = [
     ],
     itemsEn: [
       'Added new #1 leader AvatarManz (83.1% · 16 FPS with sound, RX 7900 XTX) and fixed English uppercase heading.',
-    ],
-  },
-  {
-    version: 'v1.0.17',
-    dateTr: '26 Kasım 2026',
-    dateEn: 'November 26, 2026',
-    itemsTr: [
-      '30 FPS Barajı hesaplaması sadece oynanabilir (%50+) yapıları ölçecek şekilde düzeltildi (24 / 30 FPS).',
-      'Son Gelişmeler içindeki REKOR, AÇIK KAYNAK ve GÜNCEL rozetleri ışıklı ve canlı hale getirildi.',
-    ],
-    itemsEn: [
-      'Fixed 30 FPS Target calculation to track only playable (50%+) builds (24 / 30 FPS).',
-      'Added glowing live styling to RECORD, OPEN SOURCE, and LIVE tags in Latest Updates.',
     ],
   },
 ];
@@ -242,8 +256,12 @@ function localizeDynamicText(text, lang) {
   return String(text)
     .replace(/Oynanabilir/gi, 'Playable')
     .replace(/Serbest Dolaşım/gi, 'Free Roam')
+    .replace(/Hikâye Yarısı/gi, 'Half the Story')
     .replace(/İlk Perde/gi, 'First Act')
+    .replace(/İlk Sahne/gi, 'First Scene')
     .replace(/\(Sesli\)/gi, '(With Sound)')
+    .replace(/\(30 FPS Ara Sahne\)/gi, '(30 FPS Cutscenes)')
+    .replace(/\(30 FPS Menü\)/gi, '(30 FPS Menu)')
     .replace(/Özel Yapı/gi, 'Private Build')
     .replace(/Açılış Sahnesi/gi, 'Opening Scene')
     .replace(/Önsöz Geçildi/gi, 'Prologue Cleared')
@@ -299,7 +317,7 @@ export default function HomePage() {
   const [news, setNews] = useState(FALLBACK_NEWS);
   const [totalEfforts, setTotalEfforts] = useState(39);
   const [bootingCount, setBootingCount] = useState(17);
-  const [top3Avg, setTop3Avg] = useState(81.7);
+  const [top3Avg, setTop3Avg] = useState(87.5);
   const [onlineCount, setOnlineCount] = useState(1);
   const [countdown, setCountdown] = useState(120);
   const [syncing, setSyncing] = useState(false);
@@ -367,7 +385,9 @@ export default function HomePage() {
             stage: item.stage || item.stageText || item.milestone || item.status || fallback?.stage || '',
             delta: item.delta || item.change || item.diff || fallback?.delta || '',
             url: item.url || item.link || item.repoUrl || item.github || fallback?.url || 'https://portwatch-vi.xyz/#race',
-            isNew: String(itemName).toLowerCase() === 'notnozy' || (Boolean(item.isNew) && String(itemName).toLowerCase() !== 'avatarmanz'),
+            summaryTr: item.summaryTr || fallback?.summaryTr || '',
+            summaryEn: item.summaryEn || fallback?.summaryEn || '',
+            isNew: Boolean(item.isNew) && String(itemName).toLowerCase() !== 'cgbj',
             isZortos: item.isZortos || String(itemName).toLowerCase() === 'zortos',
           };
         });
@@ -389,7 +409,7 @@ export default function HomePage() {
         setBootingCount(Math.max(17, Number(data.bootingCount || data.summary.bootingCount)));
       }
       if (data?.top3Avg || data?.summary?.top3Avg) {
-        setTop3Avg(Math.max(81.7, Number(data.top3Avg || data.summary.top3Avg)));
+        setTop3Avg(Math.max(87.5, Number(data.top3Avg || data.summary.top3Avg)));
       }
       if (Array.isArray(data?.news) && data.news.length > 0) {
         setNews(data.news);
@@ -725,7 +745,7 @@ export default function HomePage() {
               {lang === 'tr' ? 'RTX 50 Serisi: 15-24 FPS' : 'RTX 50 Series: 15-24 FPS'}
             </span>
             <span className={`px-2 py-0.5 rounded-md border ${theme.pill}`}>RX 7900 XTX: 16 FPS</span>
-            <span className={`px-2 py-0.5 rounded-md border ${theme.pill}`}>RX 9070 XT: 4 FPS</span>
+            <span className={`px-2 py-0.5 rounded-md border ${theme.pill}`}>RX 9070 XT: 8 FPS</span>
             <span className={`px-2 py-0.5 rounded-md border ${theme.pill}`}>RTX 4070: 3-10 FPS</span>
             <span className={`px-2 py-0.5 rounded-md border ${theme.pill}`}>RTX 5060 Ti: 4 FPS</span>
           </div>
@@ -748,6 +768,14 @@ export default function HomePage() {
               const isHot = rank === 1;
               const isNewBadge = Boolean(team.isNew);
               const barWidth = Math.min(100, Math.max(2, team.progress));
+              const leaderSummary =
+                rank === 1
+                  ? lang === 'tr'
+                    ? team.summaryTr ||
+                      `${team.name} şu an %${team.progress} ile genel lider (${localizeDynamicText(team.fps, 'tr')}).`
+                    : team.summaryEn ||
+                      `${team.name} currently leads at ${team.progress}% (${localizeDynamicText(team.fps, 'en')}).`
+                  : '';
 
               return (
                 <article
@@ -875,6 +903,18 @@ export default function HomePage() {
                       })}
                     </div>
                   </div>
+
+                  {leaderSummary && (
+                    <div className={`mt-3 rounded-xl border px-3 py-2 text-xs leading-relaxed flex items-start gap-2 ${theme.subCard}`}>
+                      <Info className={`w-3.5 h-3.5 mt-0.5 shrink-0 ${theme.accentText}`} />
+                      <p className={theme.muted}>
+                        <strong className={theme.accentText}>
+                          {lang === 'tr' ? 'Aşama Özeti: ' : 'Stage Summary: '}
+                        </strong>
+                        {leaderSummary}
+                      </p>
+                    </div>
+                  )}
                 </article>
               );
             })}
