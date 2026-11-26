@@ -5,6 +5,7 @@ import {
   RefreshCw,
   ExternalLink,
   ArrowUp,
+  Shield,
   ShieldAlert,
   ShieldCheck,
   BadgeCheck,
@@ -32,10 +33,11 @@ import {
   KeyRound,
   Cpu,
   Ban,
+  Trash2,
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
-const APP_VERSION = 'v1.0.46';
+const APP_VERSION = 'v1.0.47';
 const CHAT_COOLDOWN_SEC = 30;
 const CHAT_COOLDOWN_KEY = 'gta6takip_chat_cooldown_until';
 const CHAT_SOUND_KEY = 'gta6takip_chat_sound';
@@ -269,6 +271,19 @@ const FALLBACK_NEWS = [
 
 const CHANGELOG = [
   {
+    version: 'v1.0.47',
+    dateTr: '27 Kasım 2026',
+    dateEn: 'November 27, 2026',
+    itemsTr: [
+      'Yetkililer için Banla butonunun yanına kullanıcıyı banlamadan sadece mesajı silen "Temizle" butonu eklendi.',
+      'Moderatör mesajlarına kalkan simgesi ve MODERATÖR rozeti eklendi.',
+    ],
+    itemsEn: [
+      'Added a "Clear" button next to Ban for staff to delete a single message without banning the user.',
+      'Added a shield icon and MOD badge next to moderator nicknames.',
+    ],
+  },
+  {
     version: 'v1.0.46',
     dateTr: '27 Kasım 2026',
     dateEn: 'November 27, 2026',
@@ -303,17 +318,6 @@ const CHANGELOG = [
     ],
     itemsEn: [
       'Redesigned Live Chat with themed username pill badges, initial avatars, softer message bubbles, and a sleek unified message composer bar.',
-    ],
-  },
-  {
-    version: 'v1.0.43',
-    dateTr: '26 Kasım 2026',
-    dateEn: 'November 26, 2026',
-    itemsTr: [
-      'Canlı Sohbet mesaj bekleme süresi 60 saniyeden 30 saniyeye düşürüldü.',
-    ],
-    itemsEn: [
-      'Reduced Live Chat message cooldown from 60 seconds to 30 seconds.',
     ],
   },
 ];
@@ -578,6 +582,7 @@ export default function HomePage() {
   const [staffPinOpen, setStaffPinOpen] = useState(false);
   const [staffPin, setStaffPin] = useState('');
   const [banningId, setBanningId] = useState(null);
+  const [clearingId, setClearingId] = useState(null);
   const [chatNotice, setChatNotice] = useState('');
   const [chatInput, setChatInput] = useState('');
   const [chatSending, setChatSending] = useState(false);
@@ -882,6 +887,41 @@ export default function HomePage() {
   const isTypingAdminNick = chatNick.trim().toLowerCase() === 'batmancodex';
   const staffModeActive = staffPin.trim().length >= 3;
 
+  const handleClearMessage = async (msg) => {
+    setChatError('');
+    setChatNotice('');
+    if (!staffPin.trim()) {
+      setStaffPinOpen(true);
+      setChatError('Mesajı silmek için önce Yetkili PIN girmelisin.');
+      return;
+    }
+
+    setClearingId(msg.id);
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messageId: msg.id,
+          staffPin: staffPin.trim(),
+          action: 'clear',
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setChatError(data?.error || 'Mesaj silinemedi.');
+        return;
+      }
+      setChatMessages((prev) => prev.filter((m) => String(m.id) !== String(msg.id)));
+      setChatNotice(data?.result || 'Mesaj temizlendi.');
+      setTimeout(() => setChatNotice(''), 3500);
+    } catch {
+      setChatError('Silme isteği sırasında bağlantı hatası oluştu.');
+    } finally {
+      setClearingId(null);
+    }
+  };
+
   const handleBanMessage = async (msg) => {
     setChatError('');
     setChatNotice('');
@@ -899,6 +939,7 @@ export default function HomePage() {
         body: JSON.stringify({
           messageId: msg.id,
           staffPin: staffPin.trim(),
+          action: 'ban',
           reason: 'Sohbet ihlali',
         }),
       });
@@ -2041,7 +2082,7 @@ export default function HomePage() {
                       placeholder={
                         isTypingAdminNick
                           ? 'Admin PIN girin...'
-                          : 'Moderatör veya Admin PIN girin (Ban yetkisi açılır)...'
+                          : 'Moderatör veya Admin PIN girin (Temizle & Ban yetkisi açılır)...'
                       }
                       className="w-full bg-transparent outline-none font-semibold text-xs min-w-0 placeholder:font-normal placeholder:opacity-65"
                     />
@@ -2081,7 +2122,9 @@ export default function HomePage() {
                   </p>
                 ) : (
                   chatMessages.map((m) => {
-                    const isAdminMsg = String(m.nickname || '').trim().toLowerCase() === 'batmancodex';
+                    const isAdminMsg =
+                      String(m.nickname || '').trim().toLowerCase() === 'batmancodex' || m.role === 'admin';
+                    const isModMsg = !isAdminMsg && m.role === 'mod';
                     const nickStyle = getNickStyle(m.nickname, isLight);
                     const initial = String(m.nickname || '?').trim().charAt(0).toUpperCase() || '?';
                     const isSelf =
@@ -2096,11 +2139,15 @@ export default function HomePage() {
                             ? isLight
                               ? 'ring-1 ring-amber-400/70 bg-amber-50/70'
                               : 'ring-1 ring-amber-400/45 shadow-[0_0_16px_rgba(251,191,36,0.12)]'
-                            : isSelf
+                            : isModMsg
                               ? isLight
-                                ? 'ring-1 ring-orange-400/50'
-                                : 'ring-1 ring-white/15'
-                              : 'hover:border-white/20'
+                                ? 'ring-1 ring-sky-400/70 bg-sky-50/70'
+                                : 'ring-1 ring-sky-400/40 shadow-[0_0_14px_rgba(56,189,248,0.12)]'
+                              : isSelf
+                                ? isLight
+                                  ? 'ring-1 ring-orange-400/50'
+                                  : 'ring-1 ring-white/15'
+                                : 'hover:border-white/20'
                         }`}
                       >
                         {(m.reply_to_nick || m.reply_to_text) && (
@@ -2122,7 +2169,7 @@ export default function HomePage() {
                           </div>
                         )}
 
-                        <div className="flex items-center justify-between gap-2 mb-1.5">
+                        <div className="flex items-center justify-between gap-2 mb-1.5 flex-wrap">
                           <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
                             {isAdminMsg ? (
                               <span className="inline-flex items-center gap-1.5 pl-1 pr-2.5 py-0.5 rounded-full border text-[11px] font-black shadow-sm bg-gradient-to-r from-amber-500/25 via-pink-500/20 to-amber-400/25 border-amber-400/60 text-amber-200">
@@ -2135,6 +2182,22 @@ export default function HomePage() {
                                 <BadgeCheck className="w-3.5 h-3.5 text-sky-400 shrink-0" />
                                 <span className="px-1.5 py-[1px] rounded-full text-[9px] font-black tracking-wider bg-amber-400 text-zinc-950">
                                   ADMIN
+                                </span>
+                              </span>
+                            ) : isModMsg ? (
+                              <span
+                                className={`inline-flex items-center gap-1.5 pl-1 pr-2.5 py-0.5 rounded-full border text-[11px] font-black shadow-sm ${
+                                  isLight
+                                    ? 'bg-sky-100 border-sky-400 text-sky-950'
+                                    : 'bg-gradient-to-r from-sky-500/25 via-cyan-500/20 to-emerald-500/20 border-sky-400/60 text-sky-100'
+                                }`}
+                              >
+                                <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-gradient-to-br from-sky-400 to-cyan-500 text-zinc-950 shrink-0">
+                                  <Shield className="w-2.5 h-2.5 fill-current" />
+                                </span>
+                                <span>{m.nickname}</span>
+                                <span className="px-1.5 py-[1px] rounded-full text-[9px] font-black tracking-wider bg-sky-400 text-zinc-950">
+                                  {isEnRoom ? 'MOD' : 'MODERATÖR'}
                                 </span>
                               </span>
                             ) : (
@@ -2151,7 +2214,7 @@ export default function HomePage() {
                             )}
                           </div>
 
-                          <div className="flex items-center gap-1.5 shrink-0">
+                          <div className="flex items-center gap-1.5 shrink-0 flex-wrap">
                             <span className={`text-[10px] font-medium tabular-nums ${theme.muted}`}>
                               {formatChatTime(m.created_at)} {isEnRoom ? 'TRT' : 'TSİ'}
                             </span>
@@ -2166,16 +2229,44 @@ export default function HomePage() {
                             </button>
 
                             {staffModeActive && !isAdminMsg && (
-                              <button
-                                type="button"
-                                disabled={banningId === m.id}
-                                onClick={() => handleBanMessage(m)}
-                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border border-red-500/50 bg-red-500/20 text-red-300 hover:bg-red-500/35 text-[10px] font-bold transition disabled:opacity-50"
-                                title="Kullanıcıyı kalıcı banla ve mesajlarını sil"
-                              >
-                                <Ban className="w-2.5 h-2.5" />
-                                <span>{banningId === m.id ? '...' : 'Banla'}</span>
-                              </button>
+                              <>
+                                <button
+                                  type="button"
+                                  disabled={clearingId === m.id || banningId === m.id}
+                                  onClick={() => handleClearMessage(m)}
+                                  className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-[10px] font-bold transition disabled:opacity-50 ${
+                                    isLight
+                                      ? 'border-amber-400 bg-amber-100 text-amber-900 hover:bg-amber-200'
+                                      : 'border-amber-400/50 bg-amber-500/20 text-amber-200 hover:bg-amber-500/35'
+                                  }`}
+                                  title={
+                                    isEnRoom
+                                      ? 'Delete this message only'
+                                      : 'Kullanıcıyı banlamadan sadece bu mesajı sil'
+                                  }
+                                >
+                                  <Trash2 className="w-2.5 h-2.5" />
+                                  <span>{clearingId === m.id ? '...' : isEnRoom ? 'Clear' : 'Temizle'}</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  disabled={banningId === m.id || clearingId === m.id}
+                                  onClick={() => handleBanMessage(m)}
+                                  className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-[10px] font-bold transition disabled:opacity-50 ${
+                                    isLight
+                                      ? 'border-red-400 bg-red-100 text-red-900 hover:bg-red-200'
+                                      : 'border-red-500/50 bg-red-500/20 text-red-300 hover:bg-red-500/35'
+                                  }`}
+                                  title={
+                                    isEnRoom
+                                      ? 'Permanently ban user and delete messages'
+                                      : 'Kullanıcıyı kalıcı banla ve mesajlarını sil'
+                                  }
+                                >
+                                  <Ban className="w-2.5 h-2.5" />
+                                  <span>{banningId === m.id ? '...' : isEnRoom ? 'Ban' : 'Banla'}</span>
+                                </button>
+                              </>
                             )}
                           </div>
                         </div>
