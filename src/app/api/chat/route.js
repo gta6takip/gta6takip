@@ -11,6 +11,7 @@ const MAX_NICK_LENGTH = 20;
 
 const PIN_MAX_FAILS = 5;
 const PIN_LOCK_MS = 15 * 60 * 1000;
+const ALLOWED_REACTIONS = ['🔥', '👍', '😂'];
 
 const ipCooldownMap = new Map();
 const pinFailMap = new Map();
@@ -254,6 +255,26 @@ function isBatmanCodexImpersonation(rawNick) {
   return { isExactAdmin, isImpersonation: looksLikeBatman && !isExactAdmin };
 }
 
+async function verifyTurnstileIfConfigured(token, ip) {
+  const secret = (process.env.TURNSTILE_SECRET_KEY || '').trim();
+  if (!secret) return true;
+  if (!token || typeof token !== 'string') return false;
+  try {
+    const form = new URLSearchParams();
+    form.append('secret', secret);
+    form.append('response', token);
+    if (ip && ip !== 'unknown') form.append('remoteip', ip);
+    const res = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+      method: 'POST',
+      body: form,
+    });
+    const data = await res.json().catch(() => null);
+    return Boolean(data?.success);
+  } catch {
+    return false;
+  }
+}
+
 export async function GET(request) {
   try {
     const cfg = getSupabaseConfig();
@@ -265,13 +286,13 @@ export async function GET(request) {
     const room = normalizeRoom(searchParams.get('room'));
 
     let res = await fetch(
-      `${cfg.url}/rest/v1/chat_messages?select=id,nickname,message,created_at,reply_to_id,reply_to_nick,reply_to_text,room,role&room=eq.${room}&order=created_at.desc&limit=50`,
+      `${cfg.url}/rest/v1/chat_messages?select=id,nickname,message,created_at,reply_to_id,reply_to_nick,reply_to_text,room,role,reactions&room=eq.${room}&order=created_at.desc&limit=50`,
       { headers: cfg.headers, cache: 'no-store' }
     );
 
     if (!res.ok) {
       const errText = await res.text().catch(() => '');
-      if (errText.includes('role')) {
+      if (errText.includes('reactions') || errText.includes('role')) {
         res = await fetch(
           `${cfg.url}/rest/v1/chat_messages?select=id,nickname,message,created_at,reply_to_id,reply_to_nick,reply_to_text,room&room=eq.${room}&order=created_at.desc&limit=50`,
           { headers: cfg.headers, cache: 'no-store' }
@@ -293,7 +314,27 @@ export async function GET(request) {
     }
 
     const data = await res.json().catch(() => []);
-    return NextResponse.json({ messages: Array.isArray(data) ? data.reverse() : [], room }, { status: 200 });
+
+    let pinned = null;
+    try {
+      const pinRes = await fetch(
+        `${cfg.url}/rest/v1/chat_pins?select=message,updated_by,updated_at&room=eq.${room}&limit=1`,
+        { headers: cfg.headers, cache: 'no-store' }
+      );
+      if (pinRes.ok) {
+        const pinArr = await pinRes.json().catch(() => []);
+        if (Array.isArray(pinArr) && pinArr[0]?.message) {
+          pinned = pinArr[0];
+        }
+      }
+    } catch {
+      // chat_pins tablosu yoksa sessizce geç
+    }
+
+    return NextResponse.json(
+      { messages: Array.isArray(data) ? data.reverse() : [], room, pinned },
+      { status: 200 }
+    );
   } catch {
     return NextResponse.json({ error: 'Beklenmeyen sunucu hatası.', messages: [] }, { status: 500 });
   }
@@ -339,9 +380,7 @@ export async function POST(request) {
         recordPinFailure(ipHash, now);
         return NextResponse.json(
           {
-            error: isEn
-              ? 'Invalid Staff PIN!'
-              : 'Yetkili PIN hatalı!',
+            error: isEn ? 'Invalid Staff PIN!' : 'Yetkili PIN hatalı!',
           },
           { status: 403 }
         );
@@ -393,6 +432,20 @@ export async function POST(request) {
 
     const isStaff = isVerifiedAdmin || staffRole === 'mod';
 
+    if (!isStaff) {
+      const turnstileOk = await verifyTurnstileIfConfigured(body.turnstileToken, ip);
+      if (!turnstileOk) {
+        return NextResponse.json(
+          {
+            error: isEn
+              ? 'Bot verification failed. Please refresh and try again.'
+              : 'Bot doğrulaması başarısız. Sayfayı yenileyip tekrar dene.',
+          },
+          { status: 403 }
+        );
+      }
+    }
+
     if (!isVerifiedAdmin && isReservedNickname(rawNick)) {
       return NextResponse.json(
         {
@@ -438,7 +491,6 @@ export async function POST(request) {
         }
       }
 
-      // L1: Bellek içi hızlı cooldown
       const lastSentAt = ipCooldownMap.get(ip);
       if (lastSentAt && now - lastSentAt < COOLDOWN_MS) {
         const retryAfter = Math.max(1, Math.ceil((COOLDOWN_MS - (now - lastSentAt)) / 1000));
@@ -453,7 +505,6 @@ export async function POST(request) {
         );
       }
 
-      // L2: Serverless cold-start / çoklu instance için DB tabanlı kesin cooldown
       const cutoffIso = new Date(now - COOLDOWN_MS).toISOString();
       const cdFilter = clientId
         ? `or=(ip_hash.eq.${encodeURIComponent(ipHash)},client_id.eq.${encodeURIComponent(clientId)})`
@@ -532,6 +583,7 @@ export async function POST(request) {
       ip_hash: ipHash,
       client_id: clientId,
       role: msgRole,
+      reactions: {},
     };
 
     if (rawReplyToId) {
@@ -554,7 +606,7 @@ export async function POST(request) {
     }
 
     let insertRes = await fetch(
-      `${cfg.url}/rest/v1/chat_messages?select=id,nickname,message,created_at,reply_to_id,reply_to_nick,reply_to_text,room,role`,
+      `${cfg.url}/rest/v1/chat_messages?select=id,nickname,message,created_at,reply_to_id,reply_to_nick,reply_to_text,room,role,reactions`,
       {
         method: 'POST',
         headers: {
@@ -568,9 +620,10 @@ export async function POST(request) {
     if (!insertRes.ok) {
       const errJson = await insertRes.json().catch(() => null);
       const detail = errJson?.message || errJson?.hint || `HTTP ${insertRes.status}`;
-      if (String(detail).includes('role')) {
+      if (String(detail).includes('reactions') || String(detail).includes('role')) {
         const fallbackPayload = { ...insertPayload };
-        delete fallbackPayload.role;
+        delete fallbackPayload.reactions;
+        if (String(detail).includes('role')) delete fallbackPayload.role;
         insertRes = await fetch(
           `${cfg.url}/rest/v1/chat_messages?select=id,nickname,message,created_at,reply_to_id,reply_to_nick,reply_to_text,room`,
           {
@@ -601,8 +654,9 @@ export async function POST(request) {
 
     const insertedArr = await insertRes.json().catch(() => []);
     const inserted = Array.isArray(insertedArr) ? insertedArr[0] : insertedArr;
-    if (inserted && !inserted.role) {
-      inserted.role = msgRole;
+    if (inserted) {
+      if (!inserted.role) inserted.role = msgRole;
+      if (!inserted.reactions) inserted.reactions = {};
     }
 
     if (!isStaff) {
@@ -618,6 +672,128 @@ export async function POST(request) {
     );
   } catch {
     return NextResponse.json({ error: 'Mesaj gönderilirken bir hata oluştu.' }, { status: 500 });
+  }
+}
+
+// Sabitlenmiş duyuru (action='pin') ve mini emoji tepkisi (action='react')
+export async function PATCH(request) {
+  try {
+    const cfg = getSupabaseConfig();
+    if (!cfg) {
+      return NextResponse.json({ error: 'Sohbet servisi yapılandırılmadı.' }, { status: 500 });
+    }
+
+    const body = await request.json().catch(() => null);
+    if (!body || typeof body !== 'object') {
+      return NextResponse.json({ error: 'Geçersiz istek.' }, { status: 400 });
+    }
+
+    const now = Date.now();
+    cleanupMaps(now);
+    const ip = getClientIp(request);
+    const ipHash = hashIp(ip, cfg.salt);
+
+    if (body.action === 'pin') {
+      const lock = checkPinRateLimit(ipHash, now);
+      if (lock.blocked) {
+        return NextResponse.json(
+          { error: `Çok fazla hatalı yetkili PIN denemesi. ${lock.retryMinutes} dakika sonra tekrar dene.` },
+          { status: 429 }
+        );
+      }
+
+      const role = getStaffRole(body.staffPin);
+      if (!role) {
+        recordPinFailure(ipHash, now);
+        return NextResponse.json({ error: 'Yetkili PIN hatalı!' }, { status: 403 });
+      }
+      clearPinFailure(ipHash);
+
+      const room = normalizeRoom(body.room);
+      const cleanMsg = stripInvisible(typeof body.message === 'string' ? body.message : '').slice(0, 180);
+
+      if (!cleanMsg) {
+        await fetch(`${cfg.url}/rest/v1/chat_pins?room=eq.${room}`, {
+          method: 'DELETE',
+          headers: cfg.headers,
+        });
+        return NextResponse.json({ ok: true, pinned: null }, { status: 200 });
+      }
+
+      const upsertRes = await fetch(`${cfg.url}/rest/v1/chat_pins?on_conflict=room`, {
+        method: 'POST',
+        headers: {
+          ...cfg.headers,
+          Prefer: 'resolution=merge-duplicates,return=representation',
+        },
+        body: JSON.stringify({
+          room,
+          message: cleanMsg,
+          updated_by: role === 'admin' ? 'batmancodex' : 'Moderatör',
+          updated_at: new Date().toISOString(),
+        }),
+      });
+
+      if (!upsertRes.ok) {
+        return NextResponse.json(
+          { error: 'Duyuru kaydedilemedi (chat_pins tablosunu kontrol edin).' },
+          { status: 500 }
+        );
+      }
+
+      const arr = await upsertRes.json().catch(() => []);
+      return NextResponse.json({ ok: true, pinned: arr[0] || { message: cleanMsg } }, { status: 200 });
+    }
+
+    if (body.action === 'react') {
+      const messageId = Number(body.messageId);
+      const emoji = typeof body.emoji === 'string' ? body.emoji.trim() : '';
+      const delta = body.delta === -1 ? -1 : 1;
+
+      if (!Number.isInteger(messageId) || messageId <= 0 || !ALLOWED_REACTIONS.includes(emoji)) {
+        return NextResponse.json({ error: 'Geçersiz tepki.' }, { status: 400 });
+      }
+
+      const msgRes = await fetch(
+        `${cfg.url}/rest/v1/chat_messages?select=id,reactions&id=eq.${encodeURIComponent(messageId)}&limit=1`,
+        { headers: cfg.headers, cache: 'no-store' }
+      );
+      if (!msgRes.ok) {
+        return NextResponse.json({ error: 'Tepki özelliği henüz DB sütununda aktif değil.' }, { status: 400 });
+      }
+      const msgArr = await msgRes.json().catch(() => []);
+      const row = Array.isArray(msgArr) ? msgArr[0] : null;
+      if (!row) {
+        return NextResponse.json({ error: 'Mesaj bulunamadı.' }, { status: 404 });
+      }
+
+      const current = row.reactions && typeof row.reactions === 'object' ? { ...row.reactions } : {};
+      const nextCount = Math.max(0, (Number(current[emoji]) || 0) + delta);
+      if (nextCount === 0) {
+        delete current[emoji];
+      } else {
+        current[emoji] = nextCount;
+      }
+
+      const patchRes = await fetch(
+        `${cfg.url}/rest/v1/chat_messages?id=eq.${encodeURIComponent(messageId)}`,
+        {
+          method: 'PATCH',
+          headers: cfg.headers,
+          body: JSON.stringify({ reactions: current }),
+        }
+      );
+
+      if (!patchRes.ok) {
+        return NextResponse.json({ error: 'Tepki güncellenemedi.' }, { status: 500 });
+      }
+
+      return NextResponse.json({ ok: true, messageId, reactions: current }, { status: 200 });
+    }
+
+    return NextResponse.json({ error: 'Bilinmeyen işlem.' }, { status: 400 });
+  } catch {
+    return NextResponse.json({ error: 'İşlem sırasında hata oluştu.' }, { status: 500 });
   }
 }
 
