@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
@@ -8,7 +9,6 @@ const MAX_MESSAGE_LENGTH = 280;
 const MIN_NICK_LENGTH = 2;
 const MAX_NICK_LENGTH = 20;
 
-// Sunucu tarafı IP bazlı 30 saniye hız sınırı
 const ipCooldownMap = new Map();
 
 function cleanupCooldownMap(now) {
@@ -27,6 +27,14 @@ function getClientIp(request) {
   return request.headers.get('x-real-ip') || 'unknown';
 }
 
+function hashIp(ip, salt) {
+  return crypto
+    .createHash('sha256')
+    .update(`${ip}:${salt}`)
+    .digest('hex')
+    .slice(0, 32);
+}
+
 function getSupabaseConfig() {
   const url = (process.env.NEXT_PUBLIC_SUPABASE_URL || '').trim().replace(/\/+$/, '');
   const serviceKey = (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim();
@@ -38,11 +46,17 @@ function getSupabaseConfig() {
   if (serviceKey.startsWith('eyJ')) {
     headers.Authorization = `Bearer ${serviceKey}`;
   }
-  return { url, headers };
+  return { url, headers, salt: serviceKey.slice(0, 16) };
 }
 
 function normalizeRoom(raw) {
   return String(raw || '').toLowerCase() === 'en' ? 'en' : 'tr';
+}
+
+function sanitizeClientId(raw) {
+  if (typeof raw !== 'string') return null;
+  const clean = raw.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 64);
+  return clean.length >= 8 ? clean : null;
 }
 
 function stripInvisible(str) {
@@ -214,11 +228,37 @@ export async function POST(request) {
 
     const room = normalizeRoom(body.room);
     const isEn = room === 'en';
+    const ip = getClientIp(request);
+    const ipHash = hashIp(ip, cfg.salt);
+    const clientId = sanitizeClientId(body.clientId);
 
+    // 1. Kalıcı ban kontrolü (IP hash veya tarayıcı kimliği)
+    const banFilter = clientId
+      ? `or=(ip_hash.eq.${encodeURIComponent(ipHash)},client_id.eq.${encodeURIComponent(clientId)})`
+      : `ip_hash=eq.${encodeURIComponent(ipHash)}`;
+
+    const banRes = await fetch(
+      `${cfg.url}/rest/v1/chat_bans?select=id&${banFilter}&limit=1`,
+      { headers: cfg.headers, cache: 'no-store' }
+    );
+    if (banRes.ok) {
+      const banList = await banRes.json().catch(() => []);
+      if (Array.isArray(banList) && banList.length > 0) {
+        return NextResponse.json(
+          {
+            error: isEn
+              ? 'You have been permanently banned from chat for violating the rules.'
+              : 'Sohbet kurallarını ihlal ettiğin için mesaj gönderme yetkin kalıcı olarak kapatıldı.',
+          },
+          { status: 403 }
+        );
+      }
+    }
+
+    // 2. 30 saniyelik hız sınırı
     const now = Date.now();
     cleanupCooldownMap(now);
 
-    const ip = getClientIp(request);
     const lastSentAt = ipCooldownMap.get(ip);
     if (lastSentAt && now - lastSentAt < COOLDOWN_MS) {
       const retryAfter = Math.max(1, Math.ceil((COOLDOWN_MS - (now - lastSentAt)) / 1000));
@@ -314,6 +354,8 @@ export async function POST(request) {
       nickname: rawNick,
       message: rawMsg,
       room,
+      ip_hash: ipHash,
+      client_id: clientId,
     };
 
     if (rawReplyToId) {
@@ -335,14 +377,17 @@ export async function POST(request) {
       }
     }
 
-    const insertRes = await fetch(`${cfg.url}/rest/v1/chat_messages`, {
-      method: 'POST',
-      headers: {
-        ...cfg.headers,
-        Prefer: 'return=representation',
-      },
-      body: JSON.stringify(insertPayload),
-    });
+    const insertRes = await fetch(
+      `${cfg.url}/rest/v1/chat_messages?select=id,nickname,message,created_at,reply_to_id,reply_to_nick,reply_to_text,room`,
+      {
+        method: 'POST',
+        headers: {
+          ...cfg.headers,
+          Prefer: 'return=representation',
+        },
+        body: JSON.stringify(insertPayload),
+      }
+    );
 
     if (!insertRes.ok) {
       const errJson = await insertRes.json().catch(() => null);
