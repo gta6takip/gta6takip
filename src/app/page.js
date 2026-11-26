@@ -27,7 +27,7 @@ import {
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
-const APP_VERSION = 'v1.0.39';
+const APP_VERSION = 'v1.0.40';
 const CHAT_COOLDOWN_SEC = 60;
 const CHAT_COOLDOWN_KEY = 'gta6takip_chat_cooldown_until';
 
@@ -48,6 +48,9 @@ const THEMES = {
     pill: 'bg-pink-950/60 text-pink-200 border-pink-500/30',
     sparkStroke: '#f472b6',
     sparkStop: 'rgba(244, 114, 182, 0.32)',
+    sbTrack: '#170c24',
+    sbThumb: 'rgba(236, 72, 153, 0.48)',
+    sbThumbHover: 'rgba(244, 114, 182, 0.85)',
   },
   light: {
     id: 'light',
@@ -65,6 +68,9 @@ const THEMES = {
     pill: 'bg-zinc-100 text-zinc-700 border-zinc-300',
     sparkStroke: '#ea580c',
     sparkStop: 'rgba(234, 88, 12, 0.22)',
+    sbTrack: '#f4f4f5',
+    sbThumb: 'rgba(234, 88, 12, 0.42)',
+    sbThumbHover: 'rgba(234, 88, 12, 0.78)',
   },
   dark: {
     id: 'dark',
@@ -82,6 +88,9 @@ const THEMES = {
     pill: 'bg-zinc-800/80 text-zinc-300 border-zinc-700/70',
     sparkStroke: '#fb923c',
     sparkStop: 'rgba(251, 146, 60, 0.32)',
+    sbTrack: '#0f131c',
+    sbThumb: 'rgba(249, 115, 22, 0.48)',
+    sbThumbHover: 'rgba(251, 146, 60, 0.85)',
   },
   leonida: {
     id: 'leonida',
@@ -99,6 +108,9 @@ const THEMES = {
     pill: 'bg-cyan-950/60 text-cyan-200 border-cyan-500/30',
     sparkStroke: '#22d3ee',
     sparkStop: 'rgba(34, 211, 238, 0.30)',
+    sbTrack: '#09141f',
+    sbThumb: 'rgba(34, 211, 238, 0.48)',
+    sbThumbHover: 'rgba(34, 211, 238, 0.85)',
   },
   ocean: {
     id: 'ocean',
@@ -116,6 +128,9 @@ const THEMES = {
     pill: 'bg-blue-950/60 text-blue-200 border-blue-500/30',
     sparkStroke: '#60a5fa',
     sparkStop: 'rgba(96, 165, 250, 0.30)',
+    sbTrack: '#0c1324',
+    sbThumb: 'rgba(96, 165, 250, 0.48)',
+    sbThumbHover: 'rgba(96, 165, 250, 0.85)',
   },
 };
 
@@ -163,6 +178,17 @@ const FALLBACK_NEWS = [
 
 const CHANGELOG = [
   {
+    version: 'v1.0.40',
+    dateTr: '26 Kasım 2026',
+    dateEn: 'November 26, 2026',
+    itemsTr: [
+      'Sohbet kutusu ve sayfa kaydırma çubukları seçili 5 temanın her biriyle otomatik uyumlu, ince ve modern görünüme kavuşturuldu.',
+    ],
+    itemsEn: [
+      'Styled chat and page scrollbars to be slim, modern, and automatically matched to all 5 themes.',
+    ],
+  },
+  {
     version: 'v1.0.39',
     dateTr: '26 Kasım 2026',
     dateEn: 'November 26, 2026',
@@ -193,17 +219,6 @@ const CHANGELOG = [
     ],
     itemsEn: [
       'Added 60-second message cooldown with live countdown timer, message Reply support, and persistent nickname selection to Live Chat.',
-    ],
-  },
-  {
-    version: 'v1.0.36',
-    dateTr: '26 Kasım 2026',
-    dateEn: 'November 26, 2026',
-    itemsTr: [
-      'Sunucu taraflı gelişmiş küfür/link filtresi ve spam korumalı açılır-kapanır "Canlı Sohbet" kutusu eklendi (tarayıcıdan doğrudan yazma kapalı).',
-    ],
-    itemsEn: [
-      'Added a collapsible "Live Chat" box protected by server-side profanity/link filtering, spam rate limiting, and locked Supabase RLS.',
     ],
   },
 ];
@@ -1074,6 +1089,28 @@ export default function HomePage() {
           90% { transform: translateY(-4px) rotate(-1.5deg); }
           95% { transform: translateY(0) rotate(0deg); }
         }
+        html, body, .gta-scroll {
+          scrollbar-width: thin;
+          scrollbar-color: ${theme.sbThumb} ${theme.sbTrack};
+        }
+        html::-webkit-scrollbar, body::-webkit-scrollbar, .gta-scroll::-webkit-scrollbar {
+          width: 6px;
+          height: 6px;
+        }
+        html::-webkit-scrollbar-track, body::-webkit-scrollbar-track, .gta-scroll::-webkit-scrollbar-track {
+          background: ${theme.sbTrack};
+          border-radius: 9999px;
+        }
+        html::-webkit-scrollbar-thumb, body::-webkit-scrollbar-thumb, .gta-scroll::-webkit-scrollbar-thumb {
+          background: ${theme.sbThumb};
+          border-radius: 9999px;
+        }
+        html::-webkit-scrollbar-thumb:hover, body::-webkit-scrollbar-thumb:hover, .gta-scroll::-webkit-scrollbar-thumb:hover {
+          background: ${theme.sbThumbHover};
+        }
+        html::-webkit-scrollbar-button, body::-webkit-scrollbar-button, .gta-scroll::-webkit-scrollbar-button {
+          display: none;
+        }
       `}</style>
 
       <header className={`sticky top-0 z-40 border-b backdrop-blur-md ${theme.card}`}>
@@ -1643,7 +1680,7 @@ export default function HomePage() {
                 )}
               </div>
 
-              <div className={`rounded-xl border p-2.5 max-h-64 overflow-y-auto space-y-2 ${theme.card}`}>
+              <div className={`gta-scroll rounded-xl border p-2.5 max-h-64 overflow-y-auto space-y-2 ${theme.card}`}>
                 {chatMessages.length === 0 ? (
                   <p className={`text-xs text-center py-6 ${theme.muted}`}>
                     {lang === 'tr'
@@ -2074,7 +2111,7 @@ export default function HomePage() {
 
       {changelogOpen && (
         <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className={`w-full max-w-lg rounded-2xl border p-5 space-y-4 max-h-[85vh] overflow-y-auto ${theme.menuBg}`}>
+          <div className={`gta-scroll w-full max-w-lg rounded-2xl border p-5 space-y-4 max-h-[85vh] overflow-y-auto ${theme.menuBg}`}>
             <div className="flex items-center justify-between">
               <h3 className="text-base font-black">
                 {lang === 'tr' ? 'Sürüm Notları' : 'Release Notes'}
