@@ -37,10 +37,12 @@ import {
   Trash2,
   Pin,
   Search,
+  List,
+  LayoutGrid,
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
-const APP_VERSION = 'v1.0.50';
+const APP_VERSION = 'v1.1.0';
 const CHAT_COOLDOWN_SEC = 30;
 const CHAT_COOLDOWN_KEY = 'gta6takip_chat_cooldown_until';
 const CHAT_SOUND_KEY = 'gta6takip_chat_sound';
@@ -91,12 +93,12 @@ function playChatChime() {
 }
 
 const NICK_PALETTES_DARK = [
-  { pill: 'bg-pink-500/20 text-pink-100 border-pink-400/45 shadow-[0_2px_10px_rgba(236,72,153,0.18)]', avatar: 'bg-gradient-to-br from-pink-400 to-rose-500 text-zinc-950' },
-  { pill: 'bg-amber-500/20 text-amber-100 border-amber-400/45 shadow-[0_2px_10px_rgba(245,158,11,0.18)]', avatar: 'bg-gradient-to-br from-amber-300 to-orange-500 text-zinc-950' },
-  { pill: 'bg-cyan-500/20 text-cyan-100 border-cyan-400/45 shadow-[0_2px_10px_rgba(34,211,238,0.18)]', avatar: 'bg-gradient-to-br from-cyan-300 to-sky-500 text-zinc-950' },
-  { pill: 'bg-violet-500/20 text-violet-100 border-violet-400/45 shadow-[0_2px_10px_rgba(139,92,246,0.18)]', avatar: 'bg-gradient-to-br from-violet-300 to-fuchsia-500 text-zinc-950' },
-  { pill: 'bg-emerald-500/20 text-emerald-100 border-emerald-400/45 shadow-[0_2px_10px_rgba(16,185,129,0.18)]', avatar: 'bg-gradient-to-br from-emerald-300 to-teal-500 text-zinc-950' },
-  { pill: 'bg-sky-500/20 text-sky-100 border-sky-400/45 shadow-[0_2px_10px_rgba(56,189,248,0.18)]', avatar: 'bg-gradient-to-br from-sky-300 to-indigo-500 text-zinc-950' },
+  { pill: 'bg-pink-500/20 text-pink-100 border-pink-400/40 shadow-[0_2px_10px_rgba(236,72,153,0.16)]', avatar: 'bg-gradient-to-br from-pink-400 to-rose-500 text-zinc-950' },
+  { pill: 'bg-amber-500/20 text-amber-100 border-amber-400/40 shadow-[0_2px_10px_rgba(245,158,11,0.16)]', avatar: 'bg-gradient-to-br from-amber-300 to-orange-500 text-zinc-950' },
+  { pill: 'bg-cyan-500/20 text-cyan-100 border-cyan-400/40 shadow-[0_2px_10px_rgba(34,211,238,0.16)]', avatar: 'bg-gradient-to-br from-cyan-300 to-sky-500 text-zinc-950' },
+  { pill: 'bg-violet-500/20 text-violet-100 border-violet-400/40 shadow-[0_2px_10px_rgba(139,92,246,0.16)]', avatar: 'bg-gradient-to-br from-violet-300 to-fuchsia-500 text-zinc-950' },
+  { pill: 'bg-emerald-500/20 text-emerald-100 border-emerald-400/40 shadow-[0_2px_10px_rgba(16,185,129,0.16)]', avatar: 'bg-gradient-to-br from-emerald-300 to-teal-500 text-zinc-950' },
+  { pill: 'bg-sky-500/20 text-sky-100 border-sky-400/40 shadow-[0_2px_10px_rgba(56,189,248,0.16)]', avatar: 'bg-gradient-to-br from-sky-300 to-indigo-500 text-zinc-950' },
 ];
 
 const NICK_PALETTES_LIGHT = [
@@ -145,6 +147,7 @@ const THEMES = {
     accentGradient: 'from-pink-500 via-fuchsia-400 to-amber-400',
     btnPrimary: 'bg-gradient-to-r from-pink-500 to-amber-400 text-zinc-950 hover:brightness-110',
     pill: 'bg-pink-950/60 text-pink-200 border-pink-500/30',
+    softChip: 'bg-pink-500/12 text-pink-200/90',
     sparkStroke: '#f472b6',
     sparkStop: 'rgba(244, 114, 182, 0.32)',
     sbTrack: '#170c24',
@@ -165,6 +168,7 @@ const THEMES = {
     accentGradient: 'from-orange-600 via-amber-500 to-yellow-500',
     btnPrimary: 'bg-gradient-to-r from-orange-600 to-amber-500 text-white hover:brightness-105',
     pill: 'bg-zinc-100 text-zinc-700 border-zinc-300',
+    softChip: 'bg-zinc-100 text-zinc-700',
     sparkStroke: '#ea580c',
     sparkStop: 'rgba(234, 88, 12, 0.22)',
     sbTrack: '#f4f4f5',
@@ -185,6 +189,7 @@ const THEMES = {
     accentGradient: 'from-orange-500 via-amber-400 to-yellow-400',
     btnPrimary: 'bg-gradient-to-r from-orange-500 to-amber-500 text-zinc-950 hover:brightness-110',
     pill: 'bg-zinc-800/80 text-zinc-300 border-zinc-700/70',
+    softChip: 'bg-zinc-800/70 text-zinc-300',
     sparkStroke: '#fb923c',
     sparkStop: 'rgba(251, 146, 60, 0.32)',
     sbTrack: '#0f131c',
@@ -205,6 +210,7 @@ const THEMES = {
     accentGradient: 'from-cyan-400 via-teal-300 to-emerald-400',
     btnPrimary: 'bg-gradient-to-r from-cyan-400 to-emerald-400 text-zinc-950 hover:brightness-110',
     pill: 'bg-cyan-950/60 text-cyan-200 border-cyan-500/30',
+    softChip: 'bg-cyan-500/12 text-cyan-200/90',
     sparkStroke: '#22d3ee',
     sparkStop: 'rgba(34, 211, 238, 0.30)',
     sbTrack: '#09141f',
@@ -225,6 +231,7 @@ const THEMES = {
     accentGradient: 'from-blue-400 via-indigo-400 to-violet-400',
     btnPrimary: 'bg-gradient-to-r from-blue-400 to-violet-400 text-zinc-950 hover:brightness-110',
     pill: 'bg-blue-950/60 text-blue-200 border-blue-500/30',
+    softChip: 'bg-blue-500/12 text-blue-200/90',
     sparkStroke: '#60a5fa',
     sparkStop: 'rgba(96, 165, 250, 0.30)',
     sbTrack: '#0c1324',
@@ -277,6 +284,21 @@ const FALLBACK_NEWS = [
 
 const CHANGELOG = [
   {
+    version: 'v1.1.0',
+    dateTr: '27 Kasım 2026',
+    dateEn: 'November 27, 2026',
+    itemsTr: [
+      'Arayüz Cilası: Aktif Ekipler başlık ve arama çubuğu sıfır kaymalı 2 satırlı düzene alındı; tek tıkla "Kompakt / Detaylı" görünüm geçişi eklendi.',
+      'Masaüstü ve mobilde varsayılan İlk 10 ekip + "Tüm Ekipleri Göster" butonuyla Canlı Sohbete erişim kolaylaştırıldı.',
+      'Ekip kartlarındaki ikincil etiketler sadeleştirildi ve üst özet kartına nefes alanı eklendi.',
+    ],
+    itemsEn: [
+      'UI Polish: Moved Active Efforts header, search, and filters to a rock-solid 2-row layout and added a Compact / Detailed view toggle.',
+      'Defaulted both desktop and mobile to Top 10 teams with a "Show All Teams" toggle for quicker access to Live Chat.',
+      'Softened secondary badge borders on team cards and improved top hero card spacing.',
+    ],
+  },
+  {
     version: 'v1.0.50',
     dateTr: '27 Kasım 2026',
     dateEn: 'November 27, 2026',
@@ -296,29 +318,12 @@ const CHANGELOG = [
     dateTr: '27 Kasım 2026',
     dateEn: 'November 27, 2026',
     itemsTr: [
-      'Canlı Sohbete sabitlenmiş duyuru şeridi (yetkililer güncelleyebilir), mini emoji tepkileri (🔥 👍 😂) ve tıkla-etiketle (@isim) eklendi.',
-      'Sohbet kapalıyken okunmamış mesaj sayacı ve yukarıda okurken "↓ Yeni Mesaj" butonu eklendi.',
+      'Canlı Sohbete sabitlenmiş duyuru şeridi, mini emoji tepkileri (🔥 👍 😂) ve kapalıyken okunmamış mesaj sayacı eklendi.',
       'Sunucuya isteğe bağlı Cloudflare Turnstile bot doğrulama desteği eklendi.',
     ],
     itemsEn: [
-      'Added pinned announcement banner (editable by staff), mini emoji reactions (🔥 👍 😂), and click-to-mention (@user) in Live Chat.',
-      'Added unread message badge when chat is collapsed and a "↓ New Messages" jump button when scrolled up.',
+      'Added pinned announcement banner, mini emoji reactions (🔥 👍 😂), and unread badge when chat is collapsed.',
       'Added optional server-side Cloudflare Turnstile bot verification support.',
-    ],
-  },
-  {
-    version: 'v1.0.48',
-    dateTr: '27 Kasım 2026',
-    dateEn: 'November 27, 2026',
-    itemsTr: [
-      'Güvenlik Paketi: Yetkili PIN için 5 hatalı denemede 15 dk kilit (brute-force koruması) ve timing-safe doğrulama eklendi.',
-      'Kalıcı tarayıcı kimliği (clientId) ve veritabanı tabanlı kesin 30sn hız sınırı aktif edildi.',
-      'EN sohbet odası rozet çevirisi ve akıllı sohbet kaydırma iyileştirildi.',
-    ],
-    itemsEn: [
-      'Security Pack: Added 15-min lockout after 5 failed Staff PIN attempts and timing-safe verification.',
-      'Enabled persistent browser clientId for bans and DB-backed 30s rate limiting.',
-      'Fixed EN room header badge localization and added smart chat auto-scroll.',
     ],
   },
 ];
@@ -573,7 +578,8 @@ export default function HomePage() {
   const [typeFilter, setTypeFilter] = useState('all');
   const [gpuFilter, setGpuFilter] = useState('all');
   const [teamSearch, setTeamSearch] = useState('');
-  const [showAllMobile, setShowAllMobile] = useState(false);
+  const [showAllTeams, setShowAllTeams] = useState(false);
+  const [compactView, setCompactView] = useState(false);
 
   const [chatOpen, setChatOpen] = useState(false);
   const chatOpenRef = useRef(false);
@@ -1411,6 +1417,11 @@ export default function HomePage() {
     });
   }, [rankedTeams, typeFilter, gpuFilter, teamSearch]);
 
+  const visibleTeams = useMemo(() => {
+    if (showAllTeams || teamSearch.trim().length > 0) return filteredTeams;
+    return filteredTeams.slice(0, 10);
+  }, [filteredTeams, showAllTeams, teamSearch]);
+
   const openCount = useMemo(
     () => teams.filter((t) => t.type === 'open').length,
     [teams]
@@ -1706,15 +1717,15 @@ export default function HomePage() {
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto px-3 sm:px-5 py-4 sm:py-5 space-y-5">
-        <section className={`rounded-2xl border p-4 sm:p-5 ${theme.card}`}>
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div className="space-y-2 flex-1">
+      <main className="max-w-4xl mx-auto px-3 sm:px-5 py-5 space-y-5">
+        <section className={`rounded-2xl border p-4 sm:p-6 ${theme.card}`}>
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-5">
+            <div className="space-y-3 flex-1">
               <div className="flex items-center gap-2 flex-wrap">
                 <span className={`text-xs font-bold tracking-wider ${theme.accentText}`}>
                   {lang === 'tr' ? 'GENEL İLERLEME · EN YAKIN YAPI' : 'OVERALL PROGRESS · CLOSEST EFFORT'}
                 </span>
-                <span className={`px-2 py-0.5 text-[11px] font-semibold rounded-full border ${theme.pill}`}>
+                <span className={`px-2 py-0.5 text-[11px] font-semibold rounded-full ${theme.softChip}`}>
                   {totalEfforts} {lang === 'tr' ? 'Girişim' : 'Tracked'} · {bootingCount} Boot
                 </span>
               </div>
@@ -1730,8 +1741,8 @@ export default function HomePage() {
                 </span>
               </div>
 
-              <div className="flex items-center gap-2 flex-wrap pt-1">
-                <div className={`inline-flex items-center gap-2 px-2.5 py-1 rounded-lg border text-xs ${theme.subCard}`}>
+              <div className="flex items-center gap-2 flex-wrap pt-1.5">
+                <div className={`inline-flex items-center gap-2 px-2.5 py-1.5 rounded-xl border text-xs ${theme.subCard}`}>
                   <Target className={`w-3.5 h-3.5 ${theme.accentText}`} />
                   <span className="font-semibold">
                     {lang === 'tr' ? '30 FPS Barajı:' : '30 FPS Target:'}
@@ -1745,7 +1756,7 @@ export default function HomePage() {
                   </div>
                 </div>
 
-                <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-xs ${theme.subCard}`}>
+                <div className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-xs ${theme.subCard}`}>
                   <Flame className="w-3.5 h-3.5 text-amber-500" />
                   <span className={theme.muted}>
                     {lang === 'tr' ? 'Zirve Lider:' : 'Top Leader:'}
@@ -1759,7 +1770,7 @@ export default function HomePage() {
                 <button
                   type="button"
                   onClick={handleJumpToChat}
-                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-xs font-bold transition hover:scale-[1.02] ${onlineBtnClass}`}
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-xs font-bold transition hover:scale-[1.02] ${onlineBtnClass}`}
                 >
                   <MessageCircle className="w-3.5 h-3.5" />
                   <span>{lang === 'tr' ? 'Canlı Sohbet' : 'Live Chat'}</span>
@@ -1771,8 +1782,8 @@ export default function HomePage() {
               </div>
             </div>
 
-            <div className={`rounded-xl border p-3 md:w-60 shrink-0 ${theme.subCard}`}>
-              <div className="flex items-center justify-between text-[11px] font-semibold mb-1">
+            <div className={`rounded-xl border p-3.5 md:w-60 shrink-0 ${theme.subCard}`}>
+              <div className="flex items-center justify-between text-[11px] font-semibold mb-1.5">
                 <span className={`inline-flex items-center gap-1 ${theme.muted}`}>
                   <TrendingUp className={`w-3.5 h-3.5 ${theme.accentText}`} />
                   {lang === 'tr' ? 'Günlük Yükseliş' : 'Daily Trend'}
@@ -1849,152 +1860,177 @@ export default function HomePage() {
             <span className="font-bold opacity-85">
               {lang === 'tr' ? "Test Edilen GPU'lar:" : 'Tested GPUs:'}
             </span>
-            <span className={`px-2 py-0.5 rounded-md border ${theme.pill}`}>RX 9070 XT: 22 FPS</span>
-            <span className={`px-2 py-0.5 rounded-md border ${theme.pill}`}>
+            <span className={`px-2 py-0.5 rounded-md font-medium ${theme.softChip}`}>RX 9070 XT: 22 FPS</span>
+            <span className={`px-2 py-0.5 rounded-md font-medium ${theme.softChip}`}>
               {lang === 'tr' ? 'RTX 50 Serisi: 15-24 FPS' : 'RTX 50 Series: 15-24 FPS'}
             </span>
-            <span className={`px-2 py-0.5 rounded-md border ${theme.pill}`}>RX 7900 XTX: 16 FPS</span>
-            <span className={`px-2 py-0.5 rounded-md border ${theme.pill}`}>RTX 4070: 3-10 FPS</span>
-            <span className={`px-2 py-0.5 rounded-md border ${theme.pill}`}>RTX 5060 Ti: 4 FPS</span>
+            <span className={`px-2 py-0.5 rounded-md font-medium ${theme.softChip}`}>RX 7900 XTX: 16 FPS</span>
+            <span className={`px-2 py-0.5 rounded-md font-medium ${theme.softChip}`}>RTX 4070: 3-10 FPS</span>
+            <span className={`px-2 py-0.5 rounded-md font-medium ${theme.softChip}`}>RTX 5060 Ti: 4 FPS</span>
           </div>
         </section>
 
+        {/* AKTİF EKİPLER — SIFIR KAYMALI 2 SATIRLI FİLTRE & ARAMA */}
         <section className="space-y-3">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <div className="flex items-center justify-between gap-2">
-              <h2 className="text-sm font-bold tracking-wider opacity-80">
+          <div className="space-y-2">
+            {/* Satır 1: Başlık + Arama Kutusu */}
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <h2 className="text-sm font-bold tracking-wider opacity-85 whitespace-nowrap">
                 {lang === 'tr'
                   ? `AKTİF EKİPLER (${filteredTeams.length})`
                   : `ACTIVE EFFORTS (${filteredTeams.length})`}
               </h2>
-              <span className={`text-xs sm:hidden ${theme.muted}`}>
-                {lang === 'tr' ? '6 Aşama' : '6 Stages'}
-              </span>
-            </div>
 
-            <div className="flex items-center gap-2 flex-wrap">
-              <div className={`inline-flex rounded-lg border p-0.5 text-[11px] font-bold ${theme.subCard}`}>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setGpuFilter('all');
-                    setShowAllMobile(false);
-                  }}
-                  className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md transition ${
-                    gpuFilter === 'all' ? theme.btnPrimary : theme.muted
-                  }`}
-                >
-                  <Cpu className="w-3 h-3 shrink-0" />
-                  <span>{lang === 'tr' ? 'TÜMÜ' : 'ALL'}</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setGpuFilter('amd');
-                    setShowAllMobile(false);
-                  }}
-                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md transition ${
-                    gpuFilter === 'amd'
-                      ? 'bg-[#ED1C24] text-white shadow-sm'
-                      : isLight
-                        ? 'text-[#c8102e] hover:bg-red-500/10'
-                        : 'text-[#ff5c5c] hover:bg-red-500/10'
-                  }`}
-                >
-                  <IconAmd className="w-3 h-3" />
-                  <span>AMD ({amdCount})</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setGpuFilter('nvidia');
-                    setShowAllMobile(false);
-                  }}
-                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md transition ${
-                    gpuFilter === 'nvidia'
-                      ? 'bg-[#76B900] text-zinc-950 shadow-sm'
-                      : isLight
-                        ? 'text-[#598c00] hover:bg-[#76B900]/10'
-                        : 'text-[#8ce000] hover:bg-[#76B900]/15'
-                  }`}
-                >
-                  <IconNvidia className="w-3.5 h-3.5" />
-                  <span>NVIDIA ({nvidiaCount})</span>
-                </button>
-              </div>
-
-              <div className={`inline-flex rounded-lg border p-0.5 text-[11px] font-semibold ${theme.subCard}`}>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setTypeFilter('all');
-                    setShowAllMobile(false);
-                  }}
-                  className={`px-2.5 py-1 rounded-md transition ${
-                    typeFilter === 'all' ? theme.btnPrimary : theme.muted
-                  }`}
-                >
-                  {lang === 'tr' ? `Tümü (${teams.length})` : `All (${teams.length})`}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setTypeFilter('open');
-                    setShowAllMobile(false);
-                  }}
-                  className={`px-2.5 py-1 rounded-md transition ${
-                    typeFilter === 'open' ? theme.btnPrimary : theme.muted
-                  }`}
-                >
-                  {lang === 'tr' ? `Açık Kaynak (${openCount})` : `Open (${openCount})`}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setTypeFilter('private');
-                    setShowAllMobile(false);
-                  }}
-                  className={`px-2.5 py-1 rounded-md transition ${
-                    typeFilter === 'private' ? theme.btnPrimary : theme.muted
-                  }`}
-                >
-                  {lang === 'tr' ? `Kapalı (${privateCount})` : `Private (${privateCount})`}
-                </button>
-              </div>
-
-              <div className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[11px] ${theme.subCard}`}>
-                <Search className="w-3 h-3 opacity-65 shrink-0" />
+              <div className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs flex-1 sm:flex-none sm:w-60 ${theme.subCard}`}>
+                <Search className="w-3.5 h-3.5 opacity-65 shrink-0" />
                 <input
                   type="text"
                   value={teamSearch}
                   onChange={(e) => {
                     setTeamSearch(e.target.value);
-                    setShowAllMobile(false);
                   }}
-                  placeholder={lang === 'tr' ? 'Ekip / GPU ara...' : 'Search team / GPU...'}
-                  className="w-28 sm:w-32 bg-transparent outline-none text-[11px] placeholder:opacity-60"
+                  placeholder={lang === 'tr' ? 'Ekip veya GPU ara...' : 'Search team or GPU...'}
+                  className="w-full bg-transparent outline-none text-xs placeholder:opacity-60"
                 />
                 {teamSearch && (
                   <button
                     type="button"
                     onClick={() => setTeamSearch('')}
                     aria-label="Aramayı temizle"
-                    className="opacity-70 hover:opacity-100"
+                    className="opacity-70 hover:opacity-100 shrink-0"
                   >
-                    <X className="w-3 h-3" />
+                    <X className="w-3.5 h-3.5" />
                   </button>
                 )}
               </div>
             </div>
+
+            {/* Satır 2: GPU Filtreleri + Kaynak Filtreleri + Kompakt Görünüm */}
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <div className="flex items-center gap-2 flex-wrap">
+                <div className={`inline-flex rounded-lg border p-0.5 text-[11px] font-bold ${theme.subCard}`}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setGpuFilter('all');
+                      setShowAllTeams(false);
+                    }}
+                    className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md transition ${
+                      gpuFilter === 'all' ? theme.btnPrimary : theme.muted
+                    }`}
+                  >
+                    <Cpu className="w-3 h-3 shrink-0" />
+                    <span>{lang === 'tr' ? 'TÜMÜ' : 'ALL'}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setGpuFilter('amd');
+                      setShowAllTeams(false);
+                    }}
+                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md transition ${
+                      gpuFilter === 'amd'
+                        ? 'bg-[#ED1C24] text-white shadow-sm'
+                        : isLight
+                          ? 'text-[#c8102e] hover:bg-red-500/10'
+                          : 'text-[#ff5c5c] hover:bg-red-500/10'
+                    }`}
+                  >
+                    <IconAmd className="w-3 h-3" />
+                    <span>AMD ({amdCount})</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setGpuFilter('nvidia');
+                      setShowAllTeams(false);
+                    }}
+                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md transition ${
+                      gpuFilter === 'nvidia'
+                        ? 'bg-[#76B900] text-zinc-950 shadow-sm'
+                        : isLight
+                          ? 'text-[#598c00] hover:bg-[#76B900]/10'
+                          : 'text-[#8ce000] hover:bg-[#76B900]/15'
+                    }`}
+                  >
+                    <IconNvidia className="w-3.5 h-3.5" />
+                    <span>NVIDIA ({nvidiaCount})</span>
+                  </button>
+                </div>
+
+                <div className={`inline-flex rounded-lg border p-0.5 text-[11px] font-semibold ${theme.subCard}`}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setTypeFilter('all');
+                      setShowAllTeams(false);
+                    }}
+                    className={`px-2.5 py-1 rounded-md transition ${
+                      typeFilter === 'all' ? theme.btnPrimary : theme.muted
+                    }`}
+                  >
+                    {lang === 'tr' ? `Tümü (${teams.length})` : `All (${teams.length})`}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setTypeFilter('open');
+                      setShowAllTeams(false);
+                    }}
+                    className={`px-2.5 py-1 rounded-md transition ${
+                      typeFilter === 'open' ? theme.btnPrimary : theme.muted
+                    }`}
+                  >
+                    {lang === 'tr' ? `Açık Kaynak (${openCount})` : `Open (${openCount})`}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setTypeFilter('private');
+                      setShowAllTeams(false);
+                    }}
+                    className={`px-2.5 py-1 rounded-md transition ${
+                      typeFilter === 'private' ? theme.btnPrimary : theme.muted
+                    }`}
+                  >
+                    {lang === 'tr' ? `Kapalı (${privateCount})` : `Private (${privateCount})`}
+                  </button>
+                </div>
+              </div>
+
+              <div className={`inline-flex rounded-lg border p-0.5 text-[11px] font-semibold ${theme.subCard}`}>
+                <button
+                  type="button"
+                  onClick={() => setCompactView(false)}
+                  className={`inline-flex items-center gap-1 px-2 py-1 rounded-md transition ${
+                    !compactView ? theme.btnPrimary : theme.muted
+                  }`}
+                  title={lang === 'tr' ? 'Detaylı Kart Görünümü' : 'Detailed Card View'}
+                >
+                  <LayoutGrid className="w-3 h-3" />
+                  <span>{lang === 'tr' ? 'Detaylı' : 'Cards'}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCompactView(true)}
+                  className={`inline-flex items-center gap-1 px-2 py-1 rounded-md transition ${
+                    compactView ? theme.btnPrimary : theme.muted
+                  }`}
+                  title={lang === 'tr' ? 'Kompakt Liste Görünümü' : 'Compact List View'}
+                >
+                  <List className="w-3 h-3" />
+                  <span>{lang === 'tr' ? 'Kompakt' : 'Compact'}</span>
+                </button>
+              </div>
+            </div>
           </div>
 
-          <div className="space-y-3">
-            {filteredTeams.map((team, idx) => {
+          <div className={compactView ? 'space-y-1.5' : 'space-y-3'}>
+            {visibleTeams.map((team) => {
               const rank = team.globalRank;
               const isTop3 = rank <= 3;
               const isHot = rank === 1;
               const barWidth = Math.min(100, Math.max(2, team.progress));
-              const hideOnMobile = idx >= 10 && !showAllMobile;
               const updatedText = formatTeamUpdated(team.updatedAt || lastSyncAt, lang);
               const leaderSummary =
                 rank === 1
@@ -2005,18 +2041,77 @@ export default function HomePage() {
                       `${team.name} currently leads at ${team.progress}% (${localizeDynamicText(team.fps, 'en')}).`
                   : '';
 
+              if (compactView) {
+                return (
+                  <article
+                    key={team.name}
+                    className={`rounded-xl border px-3 py-2.5 transition flex flex-col sm:flex-row sm:items-center justify-between gap-2 ${theme.card} ${
+                      rank === 1 ? 'ring-1 ring-orange-500/40' : ''
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 min-w-0 flex-wrap">
+                      <span
+                        className={`inline-flex items-center justify-center w-6 h-6 rounded-md text-[11px] font-black shrink-0 ${
+                          rank === 1 ? theme.btnPrimary : theme.softChip
+                        }`}
+                      >
+                        #{rank}
+                      </span>
+                      <h3 className="text-sm font-extrabold tracking-tight truncate">{team.name}</h3>
+                      <span className={`px-2 py-0.5 rounded-md text-[10px] font-semibold ${theme.softChip}`}>
+                        {localizeDynamicText(team.fps, lang)}
+                      </span>
+                      {team.gpu && (
+                        <span className={`px-2 py-0.5 rounded-md text-[10px] font-medium ${theme.softChip}`}>
+                          {localizeDynamicText(team.gpu, lang)}
+                        </span>
+                      )}
+                      <span className={`text-[10px] ${theme.muted}`}>
+                        {team.type === 'private'
+                          ? lang === 'tr'
+                            ? 'Kapalı'
+                            : 'Private'
+                          : lang === 'tr'
+                            ? 'Açık'
+                            : 'Open'}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-2.5 shrink-0">
+                      <div className="w-24 sm:w-28 h-2 rounded-full bg-zinc-700/35 overflow-hidden">
+                        <div
+                          className={`h-full rounded-full bg-gradient-to-r ${theme.accentGradient}`}
+                          style={{ width: `${barWidth}%` }}
+                        />
+                      </div>
+                      <span className={`text-sm font-black w-14 text-right tabular-nums ${theme.accentText}`}>
+                        {lang === 'tr' ? `%${team.progress}` : `${team.progress}%`}
+                      </span>
+                      <a
+                        href={team.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg border text-[11px] font-semibold transition hover:opacity-80 ${theme.subCard}`}
+                      >
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
+                    </div>
+                  </article>
+                );
+              }
+
               return (
                 <article
                   key={team.name}
                   className={`rounded-2xl border p-3.5 sm:p-4 transition ${theme.card} ${
                     rank === 1 ? 'ring-1 ring-orange-500/40' : ''
-                  } ${hideOnMobile ? 'hidden sm:block' : ''}`}
+                  }`}
                 >
                   <div className="flex items-start sm:items-center justify-between gap-2">
                     <div className="flex items-center gap-2 flex-wrap min-w-0">
                       <span
                         className={`inline-flex items-center justify-center w-7 h-7 rounded-lg text-xs font-black shrink-0 ${
-                          rank === 1 ? theme.btnPrimary : `border ${theme.pill}`
+                          rank === 1 ? theme.btnPrimary : theme.softChip
                         }`}
                       >
                         #{rank}
@@ -2039,7 +2134,7 @@ export default function HomePage() {
                         </span>
                       )}
 
-                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold border ${theme.pill}`}>
+                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold ${theme.softChip}`}>
                         {team.type === 'private' ? (
                           <Lock className="w-3 h-3 opacity-80" />
                         ) : (
@@ -2064,7 +2159,7 @@ export default function HomePage() {
                     </div>
 
                     <div className="flex items-center gap-2 shrink-0">
-                      <span className={`text-lg sm:text-xl font-black ${theme.accentText}`}>
+                      <span className={`text-lg sm:text-xl font-black tabular-nums ${theme.accentText}`}>
                         {lang === 'tr' ? `%${team.progress}` : `${team.progress}%`}
                       </span>
                       <a
@@ -2080,11 +2175,11 @@ export default function HomePage() {
                   </div>
 
                   <div className="flex items-center gap-2 flex-wrap mt-2 text-xs">
-                    <span className={`px-2 py-0.5 rounded-md border font-semibold ${theme.pill}`}>
+                    <span className={`px-2 py-0.5 rounded-md font-semibold ${theme.softChip}`}>
                       {localizeDynamicText(team.fps, lang)}
                     </span>
                     {team.gpu && (
-                      <span className={`px-2 py-0.5 rounded-md border ${theme.pill}`}>
+                      <span className={`px-2 py-0.5 rounded-md ${theme.softChip}`}>
                         {localizeDynamicText(team.gpu, lang)}
                       </span>
                     )}
@@ -2159,14 +2254,14 @@ export default function HomePage() {
             )}
           </div>
 
-          {filteredTeams.length > 10 && (
-            <div className="sm:hidden pt-1">
+          {filteredTeams.length > 10 && teamSearch.trim().length === 0 && (
+            <div className="pt-1">
               <button
                 type="button"
-                onClick={() => setShowAllMobile((v) => !v)}
-                className={`w-full py-2.5 px-4 rounded-xl border text-xs font-bold flex items-center justify-center gap-1.5 transition ${theme.card} ${theme.accentText}`}
+                onClick={() => setShowAllTeams((v) => !v)}
+                className={`w-full py-2.5 px-4 rounded-xl border text-xs font-bold flex items-center justify-center gap-1.5 transition hover:brightness-110 ${theme.card} ${theme.accentText}`}
               >
-                {showAllMobile ? (
+                {showAllTeams ? (
                   <>
                     <span>{lang === 'tr' ? 'İlk 10 Ekibi Göster' : 'Show Top 10 Only'}</span>
                     <ChevronUp className="w-4 h-4" />
@@ -2175,8 +2270,8 @@ export default function HomePage() {
                   <>
                     <span>
                       {lang === 'tr'
-                        ? `Tümünü Göster (${filteredTeams.length - 10} ekip daha)`
-                        : `Show All (${filteredTeams.length - 10} more)`}
+                        ? `Tüm Ekipleri Göster (${filteredTeams.length - 10} ekip daha)`
+                        : `Show All Teams (${filteredTeams.length - 10} more)`}
                     </span>
                     <ChevronDown className="w-4 h-4" />
                   </>
@@ -2214,7 +2309,7 @@ export default function HomePage() {
                 <span className={`w-1.5 h-1.5 rounded-full animate-pulse ${onlineDotClass}`} />
                 {onlineCount} {lang === 'tr' ? 'Aktif' : 'Active'}
               </span>
-              <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${theme.pill}`}>
+              <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${theme.softChip}`}>
                 {chatMessages.length} {isEnRoom ? 'Messages · 30s Limit' : 'Mesaj · 30sn Korumalı'}
               </span>
               {!chatOpen && unreadWhileClosed > 0 && (
@@ -2534,7 +2629,7 @@ export default function HomePage() {
                               <button
                                 type="button"
                                 onClick={() => handleStartReply(m)}
-                                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-[10px] font-semibold transition opacity-80 hover:opacity-100 ${theme.pill}`}
+                                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold transition opacity-80 hover:opacity-100 ${theme.softChip}`}
                                 title={isEnRoom ? 'Reply to this message' : 'Bu mesajı yanıtla'}
                               >
                                 <Reply className="w-2.5 h-2.5" />
@@ -2596,12 +2691,12 @@ export default function HomePage() {
                                   key={emoji}
                                   type="button"
                                   onClick={() => handleToggleReaction(m, emoji)}
-                                  className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full border text-[10px] font-bold transition ${
+                                  className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold transition ${
                                     reacted
-                                      ? `${theme.btnPrimary} border-transparent shadow-sm`
+                                      ? `${theme.btnPrimary} shadow-sm`
                                       : cnt > 0
-                                        ? `${theme.pill} opacity-95 hover:opacity-100`
-                                        : `${theme.card} opacity-45 hover:opacity-90`
+                                        ? `${theme.softChip} opacity-95 hover:opacity-100`
+                                        : `${theme.softChip} opacity-45 hover:opacity-90`
                                   }`}
                                 >
                                   <span>{emoji}</span>
