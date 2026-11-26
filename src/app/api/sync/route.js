@@ -3,7 +3,19 @@ import { NextResponse } from 'next/server';
 export const dynamic = 'force-dynamic';
 
 const BASE_TEAMS = [
-  { name: 'CGBJ', progress: 89.8, fps: '20 FPS (30 FPS Ara Sahne)', gpu: 'NVIDIA (10GB RAM)', type: 'private', stage: 'Oynanabilir • Hikâye Yarısı', delta: '+35.3%', url: 'https://portwatch-vi.xyz/#race', summaryTr: 'Ara sahnelerde 30 FPS, oyun içinde sabit ~20 FPS (10 GB RAM / 16 GB VRAM). Hikâyenin yarısı oynanabilir, nadiren çöküyor; kod henüz halka açık değil.', summaryEn: '30 FPS in cutscenes, ~20 FPS stable in gameplay (10 GB RAM / 16 GB VRAM). Half the story playable, rarely crashes; private build.' },
+  {
+    name: 'CGBJ',
+    progress: 91.5,
+    fps: '25 FPS (30 FPS Ara Sahne)',
+    gpu: 'NVIDIA (8GB RAM)',
+    type: 'open',
+    stage: 'Oynanabilir • Hikâye Yarısı',
+    delta: '+37.0%',
+    url: 'https://github.com/codec-d/cool_fox',
+    repo: 'codec-d/cool_fox',
+    summaryTr: 'Ara sahnelerde 30 FPS, oyun içinde ortalama 25 FPS (8 GB RAM / 16 GB VRAM). Hikâyenin yarısı oynanabilir ve kodlar GitHub üzerinde açık kaynak yayınlandı.',
+    summaryEn: '30 FPS in cutscenes, 25 FPS average in gameplay (8 GB RAM / 16 GB VRAM). Half the story playable and now open source on GitHub.',
+  },
   { name: 'NotNozy', progress: 87.8, fps: '16 FPS', gpu: 'AMD (Rumble)', type: 'private', stage: 'Oynanabilir • Hikâye Yarısı', delta: '+26.8%', url: 'https://portwatch-vi.xyz/#race', isNew: true },
   { name: 'darkworldhm', progress: 84.8, fps: '15-24 FPS', gpu: 'RTX 50 Serisi', type: 'private', stage: 'Oynanabilir • Hikâye Yarısı', delta: '+23.8%', url: 'https://portwatch-vi.xyz/#race' },
   { name: 'Doomsday', progress: 84.0, fps: '4 FPS', gpu: 'AMD / NVIDIA', type: 'private', stage: 'Oynanabilir • Hikâye Yarısı', delta: '+19.5%', url: 'https://portwatch-vi.xyz/#race' },
@@ -31,9 +43,9 @@ const BASE_TEAMS = [
 function stripHtml(html) {
   return html
     .replace(/<!--[\s\S]*?-->/g, '')
-    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
     .replace(/<style[\s\S]*?<\/style>/gi, ' ')
     .replace(/<[^>]+>/g, ' ')
+    .replace(/\\"/g, '"')
     .replace(/ /g, ' ')
     .replace(/&/g, '&')
     .replace(/·|·|�*b7;|•|•/gi, '·')
@@ -54,7 +66,7 @@ export async function GET() {
   const teams = BASE_TEAMS.map((t) => ({ ...t }));
   let totalEfforts = 39;
   let bootingCount = 17;
-  let top3Avg = 87.5;
+  let top3Avg = 88.0;
 
   try {
     const pwRes = await fetch('https://portwatch-vi.xyz/', {
@@ -90,14 +102,14 @@ export async function GET() {
         if (m) {
           const val = Number(m[1]);
           if (!Number.isNaN(val) && val > 0 && val <= 100) {
-            team.progress = val;
+            team.progress = Math.max(team.progress, val);
           }
         }
       }
 
       const addIfMissing = (foundName, foundPct, isPriv = false) => {
         if (!foundName || Number.isNaN(foundPct) || foundPct < 10 || foundPct > 100) return;
-        const skip = ['avg', 'top', 'boot', 'now', 'ago', 'the', 'and', 'for', 'gta'];
+        const skip = ['avg', 'top', 'boot', 'now', 'ago', 'the', 'and', 'for', 'gta', 'self', 'true', 'false'];
         if (skip.includes(foundName.toLowerCase())) return;
         const exists = teams.some(
           (t) =>
@@ -143,14 +155,14 @@ export async function GET() {
     {
       tagTr: 'REKOR',
       tagEn: 'RECORD',
-      tr: `${leader.name} %${leader.progress} ile yeni genel lider (${leader.fps}); NotNozy (%87.8) #2 sırada.`,
-      en: `${leader.name} takes #1 overall at ${leader.progress}% (${leader.fps}); NotNozy (87.8%) is #2.`,
+      tr: `${leader.name} %${leader.progress} ile lider (${leader.fps}) ve kodlarını GitHub'da açtı!`,
+      en: `${leader.name} leads at ${leader.progress}% (${leader.fps}) and went open source on GitHub!`,
     },
     {
       tagTr: 'AÇIK KAYNAK',
       tagEn: 'OPEN SOURCE',
-      tr: `Açık kaynak lideri ${openLeader.name} (%${openLeader.progress}); Belobug (%79 · 8 FPS) ve VIctory (%50.3) yükseldi.`,
-      en: `${openLeader.name} (${openLeader.progress}%) leads open source; Belobug (79% · 8 FPS) & VIctory (50.3%) climbed.`,
+      tr: `Açık kaynak lideri ${openLeader.name} (%${openLeader.progress}); AvatarManz (%83.1) ve Belobug (%79) takipte.`,
+      en: `${openLeader.name} (${openLeader.progress}%) leads open source; AvatarManz (83.1%) & Belobug (79%) follow.`,
     },
     {
       tagTr: 'GÜNCEL',
