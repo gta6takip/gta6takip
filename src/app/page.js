@@ -19,10 +19,11 @@ import {
   Code2,
   Info,
   HelpCircle,
+  Radio,
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
-const APP_VERSION = 'v1.0.25';
+const APP_VERSION = 'v1.0.26';
 
 const THEMES = {
   vice: {
@@ -164,7 +165,42 @@ const FALLBACK_NEWS = [
   { tagTr: 'GÜNCEL', tagEn: 'LIVE', tr: "PortWatch üzerinde 39 girişim takip ediliyor; 17'si oyunu başlatabiliyor (İlk 3 ort. %88).", en: '39 total efforts tracked on PortWatch, with 17 booting GTA VI (Top-3 avg 88%).' },
 ];
 
+const FALLBACK_BUZZ = [
+  {
+    source: 'Reddit',
+    tag: 'r/pcmasterrace',
+    titleTr: 'Lider ekip CGBJ (cool_fox) kodlarını GitHub’da açtıktan kısa süre sonra telif nedeniyle kaldırıldı; topluluk yedekleri konuşuyor.',
+    titleEn: 'Leading group CGBJ (cool_fox) had its GitHub repo taken down shortly after going public.',
+    url: 'https://www.reddit.com/r/pcmasterrace/comments/1y5vslq/cgbj_the_leading_gta_6_pc_modding_group_had_its/',
+  },
+  {
+    source: 'Reddit',
+    tag: 'r/GTA',
+    titleTr: 'GTA VI PC port oynanış klipleri ve 25-30 FPS eşiği toplulukta gündem oldu.',
+    titleEn: 'GTA 6 PC port playable clips and the 25-30 FPS milestone spark discussion.',
+    url: 'https://www.reddit.com/r/GTA/comments/1y5lg5r/gta_6_pc_port_already_playable/',
+  },
+  {
+    source: 'PortWatch',
+    tag: 'X / Rapor',
+    titleTr: 'PortWatch VI canlı yarışı: 39 girişim takip ediliyor, 17 proje oyunu başlatabiliyor.',
+    titleEn: 'PortWatch VI live race: 39 efforts tracked with 17 booting GTA VI.',
+    url: 'https://portwatch-vi.xyz/#news',
+  },
+];
+
 const CHANGELOG = [
+  {
+    version: 'v1.0.26',
+    dateTr: '26 Kasım 2026',
+    dateEn: 'November 26, 2026',
+    itemsTr: [
+      'SON GELİŞMELER altına Reddit, X/PortWatch ve teknoloji haberlerinden otomatik beslenen tıklanabilir Canlı Haber Akışı kutucuğu eklendi.',
+    ],
+    itemsEn: [
+      'Added a clickable Live News Feed box under LATEST UPDATES automatically pulled from Reddit, X/PortWatch, and news feeds.',
+    ],
+  },
   {
     version: 'v1.0.25',
     dateTr: '26 Kasım 2026',
@@ -189,41 +225,6 @@ const CHANGELOG = [
     itemsEn: [
       'Fixed 30 FPS Target calculation: CGBJ (25 FPS · 30 FPS Cutscenes) now displays accurately as 25 / 30 FPS.',
       'Set Vice Sunset as the default theme and updated theme menu order.',
-    ],
-  },
-  {
-    version: 'v1.0.23',
-    dateTr: '26 Kasım 2026',
-    dateEn: 'November 26, 2026',
-    itemsTr: [
-      'CGBJ %91.5 · 25 FPS (8 GB RAM) ve GitHub açık kaynak (codec-d/cool_fox) olarak güncellendi.',
-      '30 FPS Barajı 25 / 30 FPS ve İlk 3 ortalaması %88 olarak güncellendi.',
-    ],
-    itemsEn: [
-      'Updated CGBJ to 91.5% · 25 FPS (8 GB RAM) and open source on GitHub (codec-d/cool_fox).',
-      'Updated 30 FPS Target to 25 / 30 FPS and Top-3 average to 88%.',
-    ],
-  },
-  {
-    version: 'v1.0.22',
-    dateTr: '26 Kasım 2026',
-    dateEn: 'November 26, 2026',
-    itemsTr: [
-      'Merak Edilen Sorular içindeki "Şimdi son durum tam olarak nedir?" cevabı ilk 3 ekibin aşamalarını sade dille özetleyen canlı PortWatch akışına bağlandı.',
-    ],
-    itemsEn: [
-      'Expanded the FAQ "Current Status" answer with plain-language progress summaries of the top 3 teams driven live by PortWatch data.',
-    ],
-  },
-  {
-    version: 'v1.0.21',
-    dateTr: '26 Kasım 2026',
-    dateEn: 'November 26, 2026',
-    itemsTr: [
-      '4 soruluk "Merak Edilen Sorular" akordeon köşesi eklendi.',
-    ],
-    itemsEn: [
-      'Added a 4-question "FAQ" accordion section.',
     ],
   },
 ];
@@ -349,6 +350,7 @@ export default function HomePage() {
 
   const [teams, setTeams] = useState(FALLBACK_TEAMS);
   const [news, setNews] = useState(FALLBACK_NEWS);
+  const [buzz, setBuzz] = useState(FALLBACK_BUZZ);
   const [totalEfforts, setTotalEfforts] = useState(39);
   const [bootingCount, setBootingCount] = useState(17);
   const [top3Avg, setTop3Avg] = useState(88.0);
@@ -447,6 +449,9 @@ export default function HomePage() {
       }
       if (Array.isArray(data?.news) && data.news.length > 0) {
         setNews(data.news);
+      }
+      if (Array.isArray(data?.buzz) && data.buzz.length > 0) {
+        setBuzz(data.buzz);
       }
     } catch {
       // Mevcut veya yedek veri korunur
@@ -839,6 +844,52 @@ export default function HomePage() {
                 </div>
               );
             })}
+          </div>
+
+          <div className={`rounded-xl border p-3 sm:p-3.5 space-y-2 ${theme.card}`}>
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <div className="flex items-center gap-2">
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full font-black text-[10px] border bg-red-500/20 text-red-300 border-red-400/50 shadow-[0_0_12px_rgba(248,113,113,0.45)] animate-pulse">
+                  <Radio className="w-3 h-3" />
+                  {lang === 'tr' ? 'GÜNCEL AKIŞ' : 'LIVE FEED'}
+                </span>
+                <span className="text-xs font-bold opacity-90">
+                  {lang === 'tr' ? 'Reddit · X · PortWatch Haberleri' : 'Reddit · X · PortWatch News'}
+                </span>
+              </div>
+              <span className={`text-[11px] ${theme.muted}`}>
+                {lang === 'tr' ? '120s otomatik güncellenir' : 'Auto-updates every 120s'}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {buzz.slice(0, 4).map((b, i) => (
+                <a
+                  key={i}
+                  href={b.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={`flex items-start justify-between gap-2 rounded-lg border px-2.5 py-2 text-xs transition hover:opacity-85 ${theme.subCard}`}
+                >
+                  <div className="space-y-1 min-w-0">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold border ${theme.pill}`}>
+                        {b.source}
+                      </span>
+                      {b.tag && (
+                        <span className={`text-[10px] font-semibold ${theme.accentText}`}>
+                          {b.tag}
+                        </span>
+                      )}
+                    </div>
+                    <p className={`leading-snug line-clamp-2 ${theme.muted}`}>
+                      {lang === 'tr' ? b.titleTr : b.titleEn}
+                    </p>
+                  </div>
+                  <ExternalLink className="w-3.5 h-3.5 shrink-0 mt-0.5 opacity-60" />
+                </a>
+              ))}
+            </div>
           </div>
         </section>
 
