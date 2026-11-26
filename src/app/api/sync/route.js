@@ -111,24 +111,46 @@ function stageFromProgress(pct) {
 
 async function translateToTr(text) {
   const clean = String(text || '').trim();
-  if (!clean) return '';
+  if (!clean) return { text: '', ok: false };
+
   try {
-    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=tr&dt=t&q=${encodeURIComponent(clean)}`;
-    const res = await fetch(url, {
+    const gUrl = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=tr&dt=t&q=${encodeURIComponent(clean)}`;
+    const gRes = await fetch(gUrl, {
       headers: { 'User-Agent': 'Mozilla/5.0' },
+      signal: AbortSignal.timeout(2200),
+      cache: 'no-store',
+    });
+    if (gRes.ok) {
+      const gData = await gRes.json();
+      if (Array.isArray(gData?.[0])) {
+        const translated = gData[0].map((seg) => seg?.[0] || '').join('').trim();
+        if (translated && translated.toLowerCase() !== clean.toLowerCase()) {
+          return { text: translated, ok: true };
+        }
+      }
+    }
+  } catch {
+    // Yedek çeviri servisine geç
+  }
+
+  try {
+    const mUrl = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(clean)}&langpair=en|tr`;
+    const mRes = await fetch(mUrl, {
       signal: AbortSignal.timeout(2500),
       cache: 'no-store',
     });
-    if (!res.ok) return clean;
-    const data = await res.json();
-    if (Array.isArray(data?.[0])) {
-      const translated = data[0].map((seg) => seg?.[0] || '').join('').trim();
-      return translated || clean;
+    if (mRes.ok) {
+      const mData = await mRes.json();
+      const translated = String(mData?.responseData?.translatedText || '').trim();
+      if (translated && translated.toLowerCase() !== clean.toLowerCase()) {
+        return { text: translated, ok: true };
+      }
     }
-    return clean;
   } catch {
-    return clean;
+    // Çeviri başarısız
   }
+
+  return { text: clean, ok: false };
 }
 
 async function fetchRedditBuzz() {
@@ -157,7 +179,7 @@ async function fetchRedditBuzz() {
         url: `https://www.reddit.com${d.permalink}`,
         alreadyTr: false,
       });
-      if (items.length >= 3) break;
+      if (items.length >= 2) break;
     }
     return items;
   } catch {
@@ -165,16 +187,13 @@ async function fetchRedditBuzz() {
   }
 }
 
-async function fetchNewsRssBuzz() {
+async function fetchRssBuzz(rssUrl, alreadyTr) {
   try {
-    const res = await fetch(
-      'https://news.google.com/rss/search?q=GTA+6+PC+port+OR+PortWatch+OR+CGBJ+when:7d&hl=en-US&gl=US&ceid=US:en',
-      {
-        headers: { 'User-Agent': 'Mozilla/5.0 (compatible; gta6takip/1.0)' },
-        signal: AbortSignal.timeout(3500),
-        cache: 'no-store',
-      }
-    );
+    const res = await fetch(rssUrl, {
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; gta6takip/1.0)' },
+      signal: AbortSignal.timeout(3500),
+      cache: 'no-store',
+    });
     if (!res.ok) return [];
     const xml = await res.text();
     const items = [];
@@ -194,7 +213,7 @@ async function fetchNewsRssBuzz() {
           titleTr: cleanTitle,
           titleEn: cleanTitle,
           url: linkMatch[1].trim(),
-          alreadyTr: false,
+          alreadyTr,
         });
       }
       if (items.length >= 3) break;
@@ -211,7 +230,7 @@ export async function GET() {
   let bootingCount = 17;
   let top3Avg = 88.0;
 
-  const [pwResult, redditBuzz, rssBuzz] = await Promise.all([
+  const [pwResult, trRssBuzz, redditBuzz, enRssBuzz] = await Promise.all([
     (async () => {
       try {
         const res = await fetch('https://portwatch-vi.xyz/', {
@@ -228,8 +247,15 @@ export async function GET() {
         return null;
       }
     })(),
+    fetchRssBuzz(
+      'https://news.google.com/rss/search?q=GTA+6+PC+port+OR+PortWatch+when:7d&hl=tr&gl=TR&ceid=TR:tr',
+      true
+    ),
     fetchRedditBuzz(),
-    fetchNewsRssBuzz(),
+    fetchRssBuzz(
+      'https://news.google.com/rss/search?q=GTA+6+PC+port+OR+PortWatch+OR+CGBJ+when:7d&hl=en-US&gl=US&ceid=US:en',
+      false
+    ),
   ]);
 
   if (pwResult) {
@@ -313,25 +339,38 @@ export async function GET() {
     },
   ];
 
-  const combinedBuzz = [...redditBuzz, ...rssBuzz, ...FALLBACK_BUZZ];
+  const foreignCandidates = [...redditBuzz, ...enRssBuzz].slice(0, 4);
+  const translatedForeign = await Promise.all(
+    foreignCandidates.map(async (item) => {
+      const res = await translateToTr(item.titleEn);
+      if (!res.ok) return null;
+      return {
+        source: item.source,
+        tag: item.tag,
+        titleTr: res.text,
+        titleEn: item.titleEn,
+        url: item.url,
+        alreadyTr: true,
+      };
+    })
+  );
+
+  const validTranslated = translatedForeign.filter(Boolean);
+  const combinedBuzz = [...trRssBuzz, ...validTranslated, ...FALLBACK_BUZZ];
   const seenUrls = new Set();
-  const pickedBuzz = [];
+  const buzz = [];
   for (const item of combinedBuzz) {
     if (!item?.url || seenUrls.has(item.url)) continue;
     seenUrls.add(item.url);
-    pickedBuzz.push(item);
-    if (pickedBuzz.length >= 4) break;
-  }
-
-  const buzz = await Promise.all(
-    pickedBuzz.map(async (item) => ({
+    buzz.push({
       source: item.source,
       tag: item.tag,
-      titleTr: item.alreadyTr ? item.titleTr : await translateToTr(item.titleEn),
+      titleTr: item.titleTr,
       titleEn: item.titleEn,
       url: item.url,
-    }))
-  );
+    });
+    if (buzz.length >= 4) break;
+  }
 
   return NextResponse.json(
     {
