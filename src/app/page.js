@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   RefreshCw,
   ExternalLink,
@@ -19,13 +19,14 @@ import {
   Info,
   HelpCircle,
   MessageSquarePlus,
+  MessageCircle,
   Send,
   Globe,
   Clock,
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
-const APP_VERSION = 'v1.0.35';
+const APP_VERSION = 'v1.0.36';
 
 const THEMES = {
   vice: {
@@ -159,6 +160,17 @@ const FALLBACK_NEWS = [
 
 const CHANGELOG = [
   {
+    version: 'v1.0.36',
+    dateTr: '26 Kasım 2026',
+    dateEn: 'November 26, 2026',
+    itemsTr: [
+      'Sunucu taraflı gelişmiş küfür/link filtresi ve spam korumalı açılır-kapanır "Canlı Sohbet" kutusu eklendi (tarayıcıdan doğrudan yazma kapalı).',
+    ],
+    itemsEn: [
+      'Added a collapsible "Live Chat" box protected by server-side profanity/link filtering, spam rate limiting, and locked Supabase RLS.',
+    ],
+  },
+  {
     version: 'v1.0.35',
     dateTr: '26 Kasım 2026',
     dateEn: 'November 26, 2026',
@@ -174,23 +186,10 @@ const CHANGELOG = [
     dateTr: '26 Kasım 2026',
     dateEn: 'November 26, 2026',
     itemsTr: [
-      'Ekip kartlarındaki "YENİ" ibareleri kaldırıldı.',
-      'Her ekibin altına canlı "Son güncelleme" saat/tarih bilgisi eklendi.',
+      'Ekip kartlarındaki "YENİ" ibareleri kaldırıldı; her ekibin altına canlı "Son güncelleme" bilgisi eklendi.',
     ],
     itemsEn: [
-      'Removed "NEW" badges from team cards.',
-      'Added a live "Last updated" timestamp line to each team card.',
-    ],
-  },
-  {
-    version: 'v1.0.33',
-    dateTr: '26 Kasım 2026',
-    dateEn: 'November 26, 2026',
-    itemsTr: [
-      'Veri kaynağı doğrudan PortWatch resmi canlı JSON API (tracker.json) akışına bağlandı: tüm puan artışları, lider değişiklikleri ve yeni ekipler artık sıfır manuel müdahaleyle anında güncelleniyor.',
-    ],
-    itemsEn: [
-      'Connected directly to PortWatch live JSON API (tracker.json) so all score changes, leader updates, and new teams sync automatically.',
+      'Removed "NEW" badges from team cards and added live "Last updated" timestamps.',
     ],
   },
 ];
@@ -285,6 +284,18 @@ function formatTeamUpdated(rawDate, lang) {
     hour12: false,
   });
   return `${datePart} · ${timePart} ${lang === 'tr' ? 'TSİ' : 'TRT'}`;
+}
+
+function formatChatTime(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  return d.toLocaleTimeString('tr-TR', {
+    timeZone: 'Europe/Istanbul',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  });
 }
 
 const FlagTR = () => (
@@ -426,6 +437,14 @@ export default function HomePage() {
   const [typeFilter, setTypeFilter] = useState('all');
   const [showAllMobile, setShowAllMobile] = useState(false);
 
+  const [chatOpen, setChatOpen] = useState(false);
+  const [chatMessages, setChatMessages] = useState([]);
+  const [chatNick, setChatNick] = useState('');
+  const [chatInput, setChatInput] = useState('');
+  const [chatSending, setChatSending] = useState(false);
+  const [chatError, setChatError] = useState('');
+  const chatEndRef = useRef(null);
+
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [feedbackName, setFeedbackName] = useState('');
   const [feedbackEmail, setFeedbackEmail] = useState('');
@@ -486,6 +505,8 @@ export default function HomePage() {
       if (savedTheme && THEMES[savedTheme]) setThemeKey(savedTheme);
       const savedLang = localStorage.getItem('gta6takip_lang');
       if (savedLang === 'tr' || savedLang === 'en') setLang(savedLang);
+      const savedNick = localStorage.getItem('gta6takip_nick');
+      if (savedNick) setChatNick(savedNick);
     } catch {
       // Depolama erişilemezse varsayılan korunur
     }
@@ -531,6 +552,108 @@ export default function HomePage() {
       document.removeEventListener('keydown', onKeyDown);
     };
   }, [themeMenuOpen, onlineMenuOpen]);
+
+  const fetchChatMessages = async () => {
+    try {
+      const res = await fetch('/api/chat', { cache: 'no-store' });
+      if (!res.ok) return;
+      const data = await res.json();
+      if (Array.isArray(data?.messages)) {
+        setChatMessages(data.messages);
+      }
+    } catch {
+      // Sessizce geç
+    }
+  };
+
+  useEffect(() => {
+    fetchChatMessages();
+  }, []);
+
+  useEffect(() => {
+    if (!supabaseClient) return undefined;
+    let chatChannel;
+    try {
+      chatChannel = supabaseClient
+        .channel('gta6takip-chat-realtime')
+        .on(
+          'postgres_changes',
+          { event: 'INSERT', schema: 'public', table: 'chat_messages' },
+          (payload) => {
+            const incoming = payload?.new;
+            if (!incoming?.id) return;
+            setChatMessages((prev) => {
+              if (prev.some((m) => m.id === incoming.id)) return prev;
+              return [...prev.slice(-49), incoming];
+            });
+          }
+        )
+        .on(
+          'postgres_changes',
+          { event: 'DELETE', schema: 'public', table: 'chat_messages' },
+          (payload) => {
+            const deletedId = payload?.old?.id;
+            if (!deletedId) return;
+            setChatMessages((prev) => prev.filter((m) => m.id !== deletedId));
+          }
+        )
+        .subscribe();
+    } catch {
+      // Realtime bağlanamazsa manuel/polling akış devam eder
+    }
+    return () => {
+      if (chatChannel) chatChannel.unsubscribe();
+    };
+  }, [supabaseClient]);
+
+  useEffect(() => {
+    if (chatOpen && chatEndRef.current) {
+      chatEndRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }, [chatMessages, chatOpen]);
+
+  const handleSendChat = async (e) => {
+    e.preventDefault();
+    setChatError('');
+    const nick = chatNick.trim();
+    const msg = chatInput.trim();
+    if (nick.length < 2) {
+      setChatError(lang === 'tr' ? 'En az 2 karakterli bir rumuz yaz.' : 'Enter a nickname (at least 2 chars).');
+      return;
+    }
+    if (!msg) return;
+
+    setChatSending(true);
+    try {
+      localStorage.setItem('gta6takip_nick', nick);
+    } catch {
+      // Yoksay
+    }
+
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nickname: nick, message: msg }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setChatError(data?.error || (lang === 'tr' ? 'Mesaj gönderilemedi.' : 'Failed to send message.'));
+        return;
+      }
+      if (data?.message) {
+        setChatMessages((prev) => {
+          if (prev.some((m) => m.id === data.message.id)) return prev;
+          return [...prev.slice(-49), data.message];
+        });
+      }
+      setChatInput('');
+    } catch {
+      setChatError(lang === 'tr' ? 'Bağlantı hatası, tekrar dene.' : 'Connection error, please try again.');
+    } finally {
+      setChatSending(false);
+    }
+  };
 
   const fetchSyncData = async () => {
     setSyncing(true);
@@ -1354,6 +1477,101 @@ export default function HomePage() {
                   </>
                 )}
               </button>
+            </div>
+          )}
+        </section>
+
+        <section className={`rounded-2xl border overflow-hidden ${theme.card}`}>
+          <button
+            type="button"
+            onClick={() => {
+              const next = !chatOpen;
+              setChatOpen(next);
+              if (next) fetchChatMessages();
+            }}
+            className="w-full px-4 py-3 flex items-center justify-between gap-2 text-left hover:bg-white/5 transition"
+          >
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <MessageCircle className={`w-4 h-4 ${theme.accentText} shrink-0`} />
+              <span className="text-xs sm:text-sm font-bold tracking-wider">
+                {lang === 'tr' ? 'CANLI SOHBET' : 'LIVE CHAT'}
+              </span>
+              <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${faqLiveBadgeClass}`}>
+                {chatMessages.length} {lang === 'tr' ? 'Mesaj · Korumalı' : 'Messages · Filtered'}
+              </span>
+            </div>
+            {chatOpen ? <ChevronUp className="w-4 h-4 shrink-0" /> : <ChevronDown className="w-4 h-4 shrink-0" />}
+          </button>
+
+          {chatOpen && (
+            <div className={`px-3.5 sm:px-4 pb-4 pt-3 border-t space-y-3 ${theme.subCard}`}>
+              <div className={`rounded-xl border p-2.5 max-h-64 overflow-y-auto space-y-2 ${theme.card}`}>
+                {chatMessages.length === 0 ? (
+                  <p className={`text-xs text-center py-6 ${theme.muted}`}>
+                    {lang === 'tr'
+                      ? 'Henüz mesaj yok. İlk mesajı sen yaz!'
+                      : 'No messages yet. Be the first to say hi!'}
+                  </p>
+                ) : (
+                  chatMessages.map((m) => (
+                    <div key={m.id} className={`rounded-lg border px-2.5 py-2 text-xs ${theme.subCard}`}>
+                      <div className="flex items-center justify-between gap-2 mb-0.5">
+                        <span className={`font-extrabold ${theme.accentText}`}>{m.nickname}</span>
+                        <span className={`text-[10px] ${theme.muted}`}>{formatChatTime(m.created_at)} TSİ</span>
+                      </div>
+                      <p className="leading-snug break-words">{m.message}</p>
+                    </div>
+                  ))
+                )}
+                <div ref={chatEndRef} />
+              </div>
+
+              <form onSubmit={handleSendChat} className="space-y-2 text-xs">
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <input
+                    type="text"
+                    maxLength={20}
+                    value={chatNick}
+                    onChange={(e) => setChatNick(e.target.value)}
+                    placeholder={lang === 'tr' ? 'Rumuzun (2-20)' : 'Nickname (2-20)'}
+                    className={`sm:w-40 rounded-xl border px-3 py-2 outline-none ${theme.card}`}
+                  />
+                  <div className="flex gap-2 flex-1">
+                    <input
+                      type="text"
+                      maxLength={200}
+                      value={chatInput}
+                      onChange={(e) => setChatInput(e.target.value)}
+                      placeholder={
+                        lang === 'tr'
+                          ? 'Mesajını yaz (link ve küfür yasak)...'
+                          : 'Type a message (no links or profanity)...'
+                      }
+                      className={`flex-1 rounded-xl border px-3 py-2 outline-none min-w-0 ${theme.card}`}
+                    />
+                    <button
+                      type="submit"
+                      disabled={chatSending}
+                      className={`px-3.5 py-2 rounded-xl font-bold inline-flex items-center gap-1.5 shrink-0 transition ${theme.btnPrimary}`}
+                    >
+                      <Send className="w-3.5 h-3.5" />
+                      <span className="hidden sm:inline">
+                        {chatSending
+                          ? lang === 'tr'
+                            ? 'Gönderiliyor'
+                            : 'Sending'
+                          : lang === 'tr'
+                            ? 'Gönder'
+                            : 'Send'}
+                      </span>
+                    </button>
+                  </div>
+                </div>
+
+                {chatError && (
+                  <p className="text-red-500 font-semibold text-[11px]">{chatError}</p>
+                )}
+              </form>
             </div>
           )}
         </section>
