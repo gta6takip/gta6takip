@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 export const dynamic = 'force-dynamic';
 
 const BASE_TEAMS = [
-  { name: 'CGBJ', progress: 89.8, fps: '20 FPS (30 FPS Ara Sahne)', gpu: 'NVIDIA (10GB RAM)', type: 'private', stage: 'Oynanabilir • Hikâye Yarısı', delta: '+35.3%', url: 'https://portwatch-vi.xyz/#race', isNew: true },
+  { name: 'CGBJ', progress: 89.8, fps: '20 FPS (30 FPS Ara Sahne)', gpu: 'NVIDIA (10GB RAM)', type: 'private', stage: 'Oynanabilir • Hikâye Yarısı', delta: '+35.3%', url: 'https://portwatch-vi.xyz/#race', summaryTr: 'Ara sahnelerde 30 FPS, oyun içinde sabit ~20 FPS (10 GB RAM / 16 GB VRAM). Hikâyenin yarısı oynanabilir, nadiren çöküyor; kod henüz halka açık değil.', summaryEn: '30 FPS in cutscenes, ~20 FPS stable in gameplay (10 GB RAM / 16 GB VRAM). Half the story playable, rarely crashes; private build.' },
   { name: 'NotNozy', progress: 87.8, fps: '16 FPS', gpu: 'AMD (Rumble)', type: 'private', stage: 'Oynanabilir • Hikâye Yarısı', delta: '+26.8%', url: 'https://portwatch-vi.xyz/#race', isNew: true },
   { name: 'darkworldhm', progress: 84.8, fps: '15-24 FPS', gpu: 'RTX 50 Serisi', type: 'private', stage: 'Oynanabilir • Hikâye Yarısı', delta: '+23.8%', url: 'https://portwatch-vi.xyz/#race' },
   { name: 'Doomsday', progress: 84.0, fps: '4 FPS', gpu: 'AMD / NVIDIA', type: 'private', stage: 'Oynanabilir • Hikâye Yarısı', delta: '+19.5%', url: 'https://portwatch-vi.xyz/#race' },
@@ -95,33 +95,39 @@ export async function GET() {
         }
       }
 
-      const autoTickerRe = /([A-Za-z0-9_-]{3,24})\s*[·•]\s*(\d+(?:\.\d+)?)\s*%/g;
-      let match;
-      while ((match = autoTickerRe.exec(text)) !== null) {
-        const foundName = match[1].trim();
-        const foundPct = Number(match[2]);
-        if (Number.isNaN(foundPct) || foundPct < 10 || foundPct > 100) continue;
-        if (['avg', 'top', 'boot', 'now', 'ago'].includes(foundName.toLowerCase())) continue;
-
+      const addIfMissing = (foundName, foundPct, isPriv = false) => {
+        if (!foundName || Number.isNaN(foundPct) || foundPct < 10 || foundPct > 100) return;
+        const skip = ['avg', 'top', 'boot', 'now', 'ago', 'the', 'and', 'for', 'gta'];
+        if (skip.includes(foundName.toLowerCase())) return;
         const exists = teams.some(
           (t) =>
             t.name.toLowerCase() === foundName.toLowerCase() ||
             t.name.toLowerCase().startsWith(foundName.toLowerCase())
         );
-
         if (!exists) {
           teams.push({
             name: foundName,
             progress: foundPct,
             fps: 'Yeni Yapı',
             gpu: 'PortWatch',
-            type: 'open',
+            type: isPriv ? 'private' : 'open',
             stage: stageFromProgress(foundPct),
             delta: 'Yeni',
             url: 'https://portwatch-vi.xyz/#race',
             isNew: true,
           });
         }
+      };
+
+      const autoTickerRe = /([A-Za-z0-9_-]{3,24})\s*[·•]\s*(\d+(?:\.\d+)?)\s*%/g;
+      let match;
+      while ((match = autoTickerRe.exec(text)) !== null) {
+        addIfMissing(match[1].trim(), Number(match[2]), false);
+      }
+
+      const cardAutoRe = /([A-Za-z0-9_-]{3,24})\s+(?:\S+\s+){0,5}(\d+(?:\.\d+)?)\s*%\s*(Playable|In the world|Main menu|First frame|Exe runs|private\.notRanked)/g;
+      while ((match = cardAutoRe.exec(text)) !== null) {
+        addIfMissing(match[1].trim(), Number(match[2]), match[3] === 'private.notRanked');
       }
     }
   } catch {
