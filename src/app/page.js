@@ -18,10 +18,11 @@ import {
   Lock,
   Code2,
   Info,
+  HelpCircle,
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
-const APP_VERSION = 'v1.0.20';
+const APP_VERSION = 'v1.0.21';
 
 const THEMES = {
   dark: {
@@ -165,6 +166,17 @@ const FALLBACK_NEWS = [
 
 const CHANGELOG = [
   {
+    version: 'v1.0.21',
+    dateTr: '26 Kasım 2026',
+    dateEn: 'November 26, 2026',
+    itemsTr: [
+      '4 soruluk "Merak Edilen Sorular" akordeon köşesi eklendi (tahmini tamamlanma ve son durum cevapları geliştirici verilerine göre otomatik güncellenir).',
+    ],
+    itemsEn: [
+      'Added a 4-question "FAQ" accordion section (ETA and current status answers update automatically from live team data).',
+    ],
+  },
+  {
     version: 'v1.0.20',
     dateTr: '26 Kasım 2026',
     dateEn: 'November 26, 2026',
@@ -188,17 +200,6 @@ const CHANGELOG = [
     itemsEn: [
       'Added a glowing 🔥 HOT badge to the #1 closest and most-hyped team.',
       'Enabled the glowing NEW badge for NotNozy and newly discovered teams.',
-    ],
-  },
-  {
-    version: 'v1.0.18',
-    dateTr: '26 Kasım 2026',
-    dateEn: 'November 26, 2026',
-    itemsTr: [
-      'Yeni #1 lider AvatarManz (%83.1 · 16 FPS sesli, RX 7900 XTX) eklendi; İngilizce modundaki ACTİVE harf hatası düzeltildi.',
-    ],
-    itemsEn: [
-      'Added new #1 leader AvatarManz (83.1% · 16 FPS with sound, RX 7900 XTX) and fixed English uppercase heading.',
     ],
   },
 ];
@@ -311,6 +312,7 @@ export default function HomePage() {
   const [themeMenuOpen, setThemeMenuOpen] = useState(false);
   const [changelogOpen, setChangelogOpen] = useState(false);
   const [radarOpen, setRadarOpen] = useState(false);
+  const [openFaqIdx, setOpenFaqIdx] = useState(null);
   const [showBackTop, setShowBackTop] = useState(false);
 
   const [teams, setTeams] = useState(FALLBACK_TEAMS);
@@ -473,8 +475,55 @@ export default function HomePage() {
   }, [supabaseClient]);
 
   const leader = teams[0] || FALLBACK_TEAMS[0];
+  const openLeader = teams.find((t) => t.type === 'open') || leader;
   const peakFps = useMemo(() => extractPeakFps(teams), [teams]);
   const fpsPct = Math.min(100, Math.round((peakFps / 30) * 100));
+
+  const faqItems = useMemo(() => {
+    const etaTr =
+      leader.progress >= 95 && peakFps >= 30
+        ? `En yakın yapı (${leader.name} · %${leader.progress}) sona çok yaklaştı; ancak tüm oyunun hatasız bitirilmesi ve stabil optimizasyon için net bir çıkış tarihi yok.`
+        : `Şu an en yakın yapı (${leader.name} · %${leader.progress}, tepe ${peakFps} FPS) hızla ilerliyor; ancak tüm oyunun 30+ FPS ve hatasız tamamlanması için net bir tarih yok. Resmi PC sürümü ise söylentilere göre 2027 başını hedefliyor.`;
+
+    const etaEn =
+      leader.progress >= 95 && peakFps >= 30
+        ? `The closest build (${leader.name} · ${leader.progress}%) is nearing completion, though there is no fixed ETA for a bug-free full playthrough.`
+        : `The closest build (${leader.name} · ${leader.progress}%, peak ${peakFps} FPS) is progressing fast, but there is no firm ETA for a full 30+ FPS release. Rockstar's official PC version is rumored for early 2027.`;
+
+    const statusTr = `PortWatch üzerinde şu an ${totalEfforts} girişim takip ediliyor ve ${bootingCount}'si oyunu başlatabiliyor. Genel lider ${leader.name} (%${leader.progress} · ${localizeDynamicText(leader.fps, 'tr')}), açık kaynak lideri ise ${openLeader.name} (%${openLeader.progress}). İlk 3 ortalaması %${top3Avg}.`;
+    const statusEn = `${totalEfforts} efforts are currently tracked on PortWatch, with ${bootingCount} booting GTA VI. Overall leader is ${leader.name} (${leader.progress}% · ${localizeDynamicText(leader.fps, 'en')}), and ${openLeader.name} (${openLeader.progress}%) leads open source. Top-3 average is ${top3Avg}%.`;
+
+    return [
+      {
+        qTr: 'AMD ve NVIDIA neden fark ediyor?',
+        qEn: 'Why do AMD and NVIDIA perform differently?',
+        aTr: 'PS5 ve Xbox Series X|S konsolları AMD RDNA2 grafik mimarisi kullandığı için sızdırılan konsol shader kodları AMD kartlarda daha doğrudan çalışıyor. NVIDIA kartlarda ise RDNA2 shaderlarının ekstra DXIL/HLSL dönüşümünden geçmesi gerektiği için aynı ekipte bile FPS ve görüntü kararlılığı fark edebiliyor.',
+        aEn: 'PS5 and Xbox Series X|S use AMD RDNA2 graphics, so leaked console shaders map more directly to AMD GPUs. NVIDIA GPUs require extra RDNA2-to-DXIL/HLSL translation, which creates differences in FPS and rendering stability.',
+        live: false,
+      },
+      {
+        qTr: 'Port ekipleri tam olarak ne için çalışıyor?',
+        qEn: 'What exactly are the port teams working on?',
+        aTr: 'Resmi PC sürümü çıkana kadar, sızdırılan Xbox Series çalıştırılabilir dosyasını (.exe) Windows veya Linux/Proton üzerinde açabilmek için uyumluluk katmanları (sistem DLL yönlendirmeleri, bellek yönetimi ve GPU shader çeviricileri) geliştiriyorlar.',
+        aEn: 'Until the official PC version arrives, teams are building compatibility layers (console DLL shims, memory management, and GPU shader translators) to run the leaked Xbox Series executable on Windows or Linux/Proton.',
+        live: false,
+      },
+      {
+        qTr: 'GTA VI, tahmini ne zaman tamamen portlanacak?',
+        qEn: 'When is GTA VI expected to be fully ported?',
+        aTr: etaTr,
+        aEn: etaEn,
+        live: true,
+      },
+      {
+        qTr: 'Şimdi son durum tam olarak nedir?',
+        qEn: 'What is the exact current status right now?',
+        aTr: statusTr,
+        aEn: statusEn,
+        live: true,
+      },
+    ];
+  }, [leader, openLeader, peakFps, totalEfforts, bootingCount, top3Avg]);
 
   const fastestTeam = useMemo(() => {
     let best = leader;
@@ -916,6 +965,52 @@ export default function HomePage() {
                     </div>
                   )}
                 </article>
+              );
+            })}
+          </div>
+        </section>
+
+        {/* Merak Edilen Sorular Köşesi */}
+        <section className={`rounded-2xl border p-4 space-y-2.5 ${theme.card}`}>
+          <div className="flex items-center gap-2">
+            <HelpCircle className={`w-4 h-4 ${theme.accentText} shrink-0`} />
+            <h2 className="text-xs sm:text-sm font-bold tracking-wider">
+              {lang === 'tr' ? 'MERAK EDİLEN SORULAR' : 'FREQUENTLY ASKED QUESTIONS'}
+            </h2>
+          </div>
+
+          <div className="space-y-2">
+            {faqItems.map((item, idx) => {
+              const isOpen = openFaqIdx === idx;
+              return (
+                <div key={idx} className={`rounded-xl border overflow-hidden ${theme.subCard}`}>
+                  <button
+                    type="button"
+                    onClick={() => setOpenFaqIdx(isOpen ? null : idx)}
+                    className="w-full px-3.5 py-2.5 flex items-center justify-between gap-2 text-left hover:bg-white/5 transition"
+                  >
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-xs font-bold">
+                        {lang === 'tr' ? item.qTr : item.qEn}
+                      </span>
+                      {item.live && (
+                        <span className="px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                          {lang === 'tr' ? 'Canlı Veri' : 'Live'}
+                        </span>
+                      )}
+                    </div>
+                    {isOpen ? (
+                      <ChevronUp className="w-3.5 h-3.5 shrink-0 opacity-75" />
+                    ) : (
+                      <ChevronDown className="w-3.5 h-3.5 shrink-0 opacity-75" />
+                    )}
+                  </button>
+                  {isOpen && (
+                    <div className={`px-3.5 pb-3 pt-1 text-xs leading-relaxed border-t ${theme.card} ${theme.muted}`}>
+                      {lang === 'tr' ? item.aTr : item.aEn}
+                    </div>
+                  )}
+                </div>
               );
             })}
           </div>
