@@ -47,6 +47,7 @@ const FALLBACK_BUZZ = [
     titleTr: 'Lider ekip CGBJ (cool_fox) kodlarını GitHub’da açtıktan kısa süre sonra telif nedeniyle kaldırıldı; topluluk yedekleri konuşuyor.',
     titleEn: 'Leading group CGBJ (cool_fox) had its GitHub repo taken down shortly after going public.',
     url: 'https://www.reddit.com/r/pcmasterrace/comments/1y5vslq/cgbj_the_leading_gta_6_pc_modding_group_had_its/',
+    alreadyTr: true,
   },
   {
     source: 'Reddit',
@@ -54,6 +55,7 @@ const FALLBACK_BUZZ = [
     titleTr: 'GTA VI PC port oynanış klipleri ve 25-30 FPS eşiği toplulukta gündem oldu.',
     titleEn: 'GTA 6 PC port playable clips and the 25-30 FPS milestone spark discussion.',
     url: 'https://www.reddit.com/r/GTA/comments/1y5lg5r/gta_6_pc_port_already_playable/',
+    alreadyTr: true,
   },
   {
     source: 'PortWatch',
@@ -61,6 +63,7 @@ const FALLBACK_BUZZ = [
     titleTr: 'PortWatch VI canlı yarışı: 39 girişim takip ediliyor, 17 proje oyunu başlatabiliyor.',
     titleEn: 'PortWatch VI live race: 39 efforts tracked with 17 booting GTA VI.',
     url: 'https://portwatch-vi.xyz/#news',
+    alreadyTr: true,
   },
   {
     source: 'Reddit',
@@ -68,6 +71,7 @@ const FALLBACK_BUZZ = [
     titleTr: 'PortWatch VI takipçisi ile tüm Xbox Series recomp projeleri tek ölçekte izleniyor.',
     titleEn: 'PortWatch VI live tracker monitors all GTA VI PC recomp projects on one scale.',
     url: 'https://www.reddit.com/r/Piracy/comments/1y3wlm8/portwatchvi_a_live_tracker_of_gta_6_recomps/',
+    alreadyTr: true,
   },
 ];
 
@@ -105,6 +109,28 @@ function stageFromProgress(pct) {
   return 'Altyapı';
 }
 
+async function translateToTr(text) {
+  const clean = String(text || '').trim();
+  if (!clean) return '';
+  try {
+    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=tr&dt=t&q=${encodeURIComponent(clean)}`;
+    const res = await fetch(url, {
+      headers: { 'User-Agent': 'Mozilla/5.0' },
+      signal: AbortSignal.timeout(2500),
+      cache: 'no-store',
+    });
+    if (!res.ok) return clean;
+    const data = await res.json();
+    if (Array.isArray(data?.[0])) {
+      const translated = data[0].map((seg) => seg?.[0] || '').join('').trim();
+      return translated || clean;
+    }
+    return clean;
+  } catch {
+    return clean;
+  }
+}
+
 async function fetchRedditBuzz() {
   try {
     const res = await fetch(
@@ -122,12 +148,14 @@ async function fetchRedditBuzz() {
     for (const c of children) {
       const d = c?.data;
       if (!d || d.over_18 || !d.title || !d.permalink) continue;
+      const orig = String(d.title).trim();
       items.push({
         source: 'Reddit',
         tag: d.subreddit ? `r/${d.subreddit}` : 'Reddit',
-        titleTr: String(d.title).trim(),
-        titleEn: String(d.title).trim(),
+        titleTr: orig,
+        titleEn: orig,
         url: `https://www.reddit.com${d.permalink}`,
+        alreadyTr: false,
       });
       if (items.length >= 3) break;
     }
@@ -166,6 +194,7 @@ async function fetchNewsRssBuzz() {
           titleTr: cleanTitle,
           titleEn: cleanTitle,
           url: linkMatch[1].trim(),
+          alreadyTr: false,
         });
       }
       if (items.length >= 3) break;
@@ -286,13 +315,23 @@ export async function GET() {
 
   const combinedBuzz = [...redditBuzz, ...rssBuzz, ...FALLBACK_BUZZ];
   const seenUrls = new Set();
-  const buzz = [];
+  const pickedBuzz = [];
   for (const item of combinedBuzz) {
     if (!item?.url || seenUrls.has(item.url)) continue;
     seenUrls.add(item.url);
-    buzz.push(item);
-    if (buzz.length >= 4) break;
+    pickedBuzz.push(item);
+    if (pickedBuzz.length >= 4) break;
   }
+
+  const buzz = await Promise.all(
+    pickedBuzz.map(async (item) => ({
+      source: item.source,
+      tag: item.tag,
+      titleTr: item.alreadyTr ? item.titleTr : await translateToTr(item.titleEn),
+      titleEn: item.titleEn,
+      url: item.url,
+    }))
+  );
 
   return NextResponse.json(
     {
