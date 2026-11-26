@@ -21,10 +21,11 @@ import {
   HelpCircle,
   MessageSquarePlus,
   Send,
+  Globe,
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
-const APP_VERSION = 'v1.0.30';
+const APP_VERSION = 'v1.0.31';
 
 const THEMES = {
   vice: {
@@ -169,14 +170,25 @@ const FALLBACK_NEWS = [
 
 const CHANGELOG = [
   {
+    version: 'v1.0.31',
+    dateTr: '26 Kasım 2026',
+    dateEn: 'November 26, 2026',
+    itemsTr: [
+      'Bağlı Ülkeler menüsündeki bayraklar Windows dahil tüm cihazlarda sorunsuz görünmesi için gerçek bayrak görsellerine çevrildi.',
+    ],
+    itemsEn: [
+      'Replaced Unicode country flag emojis with real flag images so flags render properly on Windows and all platforms.',
+    ],
+  },
+  {
     version: 'v1.0.30',
     dateTr: '26 Kasım 2026',
     dateEn: 'November 26, 2026',
     itemsTr: [
-      'Çevrimiçi sayacına tıklandığında hangi ülkeden kaç ziyaretçinin bağlı olduğunu bayrak emojileriyle gösteren açılır liste eklendi.',
+      'Çevrimiçi sayacına tıklandığında hangi ülkeden kaç ziyaretçinin bağlı olduğunu gösteren açılır liste eklendi.',
     ],
     itemsEn: [
-      'Made the online counter clickable to show live connected visitors by country with flag emojis.',
+      'Made the online counter clickable to show live connected visitors by country.',
     ],
   },
   {
@@ -188,17 +200,6 @@ const CHANGELOG = [
     ],
     itemsEn: [
       'Moved the "Feedback / Idea" button to a floating bottom-left position with a periodic hop-and-wiggle animation.',
-    ],
-  },
-  {
-    version: 'v1.0.28',
-    dateTr: '26 Kasım 2026',
-    dateEn: 'November 26, 2026',
-    itemsTr: [
-      'Tema uyumlu "Tavsiye / Fikir" butonu ve e-posta bildirim kutucuğu eklendi.',
-    ],
-    itemsEn: [
-      'Added a theme-matched "Feedback / Idea" button and modal.',
     ],
   },
 ];
@@ -218,11 +219,23 @@ const COUNTRY_FALLBACK_NAMES = {
   CA: { tr: 'Kanada', en: 'Canada' },
 };
 
-function countryFlagEmoji(code) {
-  const cc = String(code || '').trim().toUpperCase();
-  if (!/^[A-Z]{2}$/.test(cc)) return '🌍';
-  return String.fromCodePoint(...[...cc].map((c) => 127397 + c.charCodeAt(0)));
-}
+const CountryFlag = ({ code }) => {
+  const cc = String(code || '').trim().toLowerCase();
+  if (!/^[a-z]{2}$/.test(cc)) {
+    return <Globe className="w-4 h-4 opacity-75 shrink-0" aria-hidden="true" />;
+  }
+  return (
+    <img
+      src={`https://flagcdn.com/w40/${cc}.png`}
+      srcSet={`https://flagcdn.com/w80/${cc}.png 2x`}
+      alt={cc.toUpperCase()}
+      width={20}
+      height={14}
+      loading="lazy"
+      className="w-5 h-3.5 rounded-[2px] object-cover shrink-0 shadow-sm"
+    />
+  );
+};
 
 function getCountryLabel(code, lang) {
   const cc = String(code || '').trim().toUpperCase();
@@ -730,7 +743,7 @@ export default function HomePage() {
             className={`flex items-center justify-between px-2 py-1.5 rounded-lg text-xs font-semibold ${theme.subCard}`}
           >
             <span className="inline-flex items-center gap-2 min-w-0">
-              <span className="text-sm leading-none">{countryFlagEmoji(c.code)}</span>
+              <CountryFlag code={c.code} />
               <span className="truncate">{getCountryLabel(c.code, lang)}</span>
             </span>
             <span className={`font-black shrink-0 ${theme.accentText}`}>{c.count}</span>
