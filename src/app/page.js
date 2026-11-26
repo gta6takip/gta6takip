@@ -29,8 +29,8 @@ import {
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
-const APP_VERSION = 'v1.0.42';
-const CHAT_COOLDOWN_SEC = 60;
+const APP_VERSION = 'v1.0.43';
+const CHAT_COOLDOWN_SEC = 30;
 const CHAT_COOLDOWN_KEY = 'gta6takip_chat_cooldown_until';
 const CHAT_SOUND_KEY = 'gta6takip_chat_sound';
 
@@ -48,7 +48,6 @@ function playChatChime() {
 
     const now = ctx.currentTime;
 
-    // 1. Yumuşak başlangıç notası (E5 - 660Hz)
     const osc1 = ctx.createOscillator();
     const gain1 = ctx.createGain();
     osc1.type = 'sine';
@@ -61,7 +60,6 @@ function playChatChime() {
     osc1.start(now);
     osc1.stop(now + 0.13);
 
-    // 2. Hafif yükselen onay notası (A5 - 880Hz)
     const osc2 = ctx.createOscillator();
     const gain2 = ctx.createGain();
     osc2.type = 'sine';
@@ -225,6 +223,17 @@ const FALLBACK_NEWS = [
 
 const CHANGELOG = [
   {
+    version: 'v1.0.43',
+    dateTr: '26 Kasım 2026',
+    dateEn: 'November 26, 2026',
+    itemsTr: [
+      'Canlı Sohbet mesaj bekleme süresi 60 saniyeden 30 saniyeye düşürüldü.',
+    ],
+    itemsEn: [
+      'Reduced Live Chat message cooldown from 60 seconds to 30 seconds.',
+    ],
+  },
+  {
     version: 'v1.0.42',
     dateTr: '26 Kasım 2026',
     dateEn: 'November 26, 2026',
@@ -255,17 +264,6 @@ const CHANGELOG = [
     ],
     itemsEn: [
       'Styled chat and page scrollbars to be slim, modern, and automatically matched to all 5 themes.',
-    ],
-  },
-  {
-    version: 'v1.0.39',
-    dateTr: '26 Kasım 2026',
-    dateEn: 'November 26, 2026',
-    itemsTr: [
-      'Canlı Sohbet başlığına anlık aktif kişi göstergesi ve üst özet kartına tek tıkla sohbete inen kısayol butonu eklendi.',
-    ],
-    itemsEn: [
-      'Added a live active user counter to the Live Chat header and a one-click jump-to-chat shortcut pill in the hero card.',
     ],
   },
 ];
@@ -620,7 +618,7 @@ export default function HomePage() {
       }
       const savedUntil = Number(localStorage.getItem(CHAT_COOLDOWN_KEY) || '0');
       if (savedUntil > Date.now()) {
-        setChatCooldown(Math.ceil((savedUntil - Date.now()) / 1000));
+        setChatCooldown(Math.min(CHAT_COOLDOWN_SEC, Math.ceil((savedUntil - Date.now()) / 1000)));
       }
     } catch {
       // Depolama erişilemezse varsayılan korunur
@@ -637,7 +635,7 @@ export default function HomePage() {
           setChatCooldown(0);
           localStorage.removeItem(CHAT_COOLDOWN_KEY);
         } else {
-          setChatCooldown(remain);
+          setChatCooldown(Math.min(CHAT_COOLDOWN_SEC, remain));
         }
       } catch {
         setChatCooldown((prev) => (prev > 1 ? prev - 1 : 0));
@@ -834,8 +832,8 @@ export default function HomePage() {
     if (chatCooldown > 0) {
       setChatError(
         isEnRoom
-          ? `1 message per 60 seconds. Please wait ${chatCooldown}s.`
-          : `60 saniyede 1 mesaj gönderebilirsin. Lütfen ${chatCooldown} saniye bekle.`
+          ? `1 message per 30 seconds. Please wait ${chatCooldown}s.`
+          : `30 saniyede 1 mesaj gönderebilirsin. Lütfen ${chatCooldown} saniye bekle.`
       );
       return;
     }
@@ -1775,7 +1773,7 @@ export default function HomePage() {
                 {onlineCount} {lang === 'tr' ? 'Aktif' : 'Active'}
               </span>
               <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${theme.pill}`}>
-                {chatMessages.length} {lang === 'tr' ? 'Mesaj · 60sn Korumalı' : 'Messages · 60s Limit'}
+                {chatMessages.length} {lang === 'tr' ? 'Mesaj · 30sn Korumalı' : 'Messages · 30s Limit'}
               </span>
             </div>
             {chatOpen ? <ChevronUp className="w-4 h-4 shrink-0" /> : <ChevronDown className="w-4 h-4 shrink-0" />}
@@ -1849,8 +1847,8 @@ export default function HomePage() {
 
               <div className={`text-[11px] ${theme.muted}`}>
                 {isEnRoom
-                  ? 'Global English room · Profanity & link filter active · 1 message per 60s'
-                  : 'Türkçe sohbet odası · Küfür ve link engeli aktif · 60 saniyede 1 mesaj sınırı'}
+                  ? 'Global English room · Profanity & link filter active · 1 message per 30s'
+                  : 'Türkçe sohbet odası · Küfür ve link engeli aktif · 30 saniyede 1 mesaj sınırı'}
               </div>
 
               <div className={`gta-scroll rounded-xl border p-2.5 max-h-64 overflow-y-auto space-y-2 ${theme.card}`}>
