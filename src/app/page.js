@@ -31,10 +31,11 @@ import {
   User,
   KeyRound,
   Cpu,
+  Ban,
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
-const APP_VERSION = 'v1.0.45';
+const APP_VERSION = 'v1.0.46';
 const CHAT_COOLDOWN_SEC = 30;
 const CHAT_COOLDOWN_KEY = 'gta6takip_chat_cooldown_until';
 const CHAT_SOUND_KEY = 'gta6takip_chat_sound';
@@ -109,7 +110,6 @@ function getNickStyle(name, isLight) {
   return list[hash % list.length];
 }
 
-// AMD ve NVIDIA için özel marka SVG ikonları
 const IconAmd = ({ className = 'w-3.5 h-3.5 shrink-0' }) => (
   <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-hidden="true">
     <path d="M18.324 9.137L24 14.813V0H9.187l5.676 5.676h3.461v3.461zM14.813 18.324H5.676V9.187L0 14.863V24h9.137l5.676-5.676z" />
@@ -269,6 +269,17 @@ const FALLBACK_NEWS = [
 
 const CHANGELOG = [
   {
+    version: 'v1.0.46',
+    dateTr: '27 Kasım 2026',
+    dateEn: 'November 27, 2026',
+    itemsTr: [
+      'Moderatör ve kurucu için sunucu doğrulamalı tek tıkla "Banla" yetkisi (Yetkili PIN) eklendi.',
+    ],
+    itemsEn: [
+      'Added server-verified one-click Ban button for moderators and admin via Staff PIN.',
+    ],
+  },
+  {
     version: 'v1.0.45',
     dateTr: '27 Kasım 2026',
     dateEn: 'November 27, 2026',
@@ -303,17 +314,6 @@ const CHANGELOG = [
     ],
     itemsEn: [
       'Reduced Live Chat message cooldown from 60 seconds to 30 seconds.',
-    ],
-  },
-  {
-    version: 'v1.0.42',
-    dateTr: '26 Kasım 2026',
-    dateEn: 'November 26, 2026',
-    itemsTr: [
-      'Canlı Sohbet odasına yeni mesaj geldiğinde yumuşak bildirim sesi ve tek tıkla sesi açıp kapatma butonu eklendi.',
-    ],
-    itemsEn: [
-      'Added a gentle notification chime for incoming Live Chat messages along with a mute/unmute toggle.',
     ],
   },
 ];
@@ -566,7 +566,7 @@ export default function HomePage() {
   const [openFaqIdx, setOpenFaqIdx] = useState(null);
   const [showBackTop, setShowBackTop] = useState(false);
   const [typeFilter, setTypeFilter] = useState('all');
-  const [gpuFilter, setGpuFilter] = useState('all'); // 'all' | 'amd' | 'nvidia'
+  const [gpuFilter, setGpuFilter] = useState('all');
   const [showAllMobile, setShowAllMobile] = useState(false);
 
   const [chatOpen, setChatOpen] = useState(false);
@@ -575,7 +575,10 @@ export default function HomePage() {
   const [chatMessages, setChatMessages] = useState([]);
   const [chatLoading, setChatLoading] = useState(false);
   const [chatNick, setChatNick] = useState('');
-  const [adminPin, setAdminPin] = useState('');
+  const [staffPinOpen, setStaffPinOpen] = useState(false);
+  const [staffPin, setStaffPin] = useState('');
+  const [banningId, setBanningId] = useState(null);
+  const [chatNotice, setChatNotice] = useState('');
   const [chatInput, setChatInput] = useState('');
   const [chatSending, setChatSending] = useState(false);
   const [chatError, setChatError] = useState('');
@@ -743,6 +746,7 @@ export default function HomePage() {
     chatRoomRef.current = nextRoom;
     setReplyTo(null);
     setChatError('');
+    setChatNotice('');
     setChatMessages([]);
     fetchChatMessages(nextRoom);
   };
@@ -876,14 +880,53 @@ export default function HomePage() {
   };
 
   const isTypingAdminNick = chatNick.trim().toLowerCase() === 'batmancodex';
+  const staffModeActive = staffPin.trim().length >= 3;
+
+  const handleBanMessage = async (msg) => {
+    setChatError('');
+    setChatNotice('');
+    if (!staffPin.trim()) {
+      setStaffPinOpen(true);
+      setChatError('Banlamak için önce Yetkili PIN girmelisin.');
+      return;
+    }
+
+    setBanningId(msg.id);
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messageId: msg.id,
+          staffPin: staffPin.trim(),
+          reason: 'Sohbet ihlali',
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setChatError(data?.error || 'Ban işlemi başarısız.');
+        return;
+      }
+      setChatMessages((prev) => prev.filter((m) => String(m.id) !== String(msg.id)));
+      setChatNotice(data?.result || `${msg.nickname} banlandı ve mesajı silindi.`);
+      setTimeout(() => setChatNotice(''), 4000);
+      fetchChatMessages(chatRoomRef.current);
+    } catch {
+      setChatError('Ban isteği sırasında bağlantı hatası oluştu.');
+    } finally {
+      setBanningId(null);
+    }
+  };
 
   const handleSendChat = async (e) => {
     e.preventDefault();
     setChatError('');
+    setChatNotice('');
 
     const isEnRoom = chatRoom === 'en';
+    const hasPin = staffPin.trim().length > 0;
 
-    if (!isTypingAdminNick && chatCooldown > 0) {
+    if (!isTypingAdminNick && !hasPin && chatCooldown > 0) {
       setChatError(
         isEnRoom
           ? `1 message per 30 seconds. Please wait ${chatCooldown}s.`
@@ -917,7 +960,7 @@ export default function HomePage() {
           message: msg,
           room: chatRoom,
           replyToId: replyTo?.id ?? null,
-          adminPin: isTypingAdminNick ? adminPin : undefined,
+          adminPin: hasPin ? staffPin.trim() : undefined,
         }),
       });
       const data = await res.json();
@@ -1588,7 +1631,6 @@ export default function HomePage() {
             </div>
 
             <div className="flex items-center gap-2 flex-wrap">
-              {/* GPU Altyapı Filtresi: TÜMÜ / AMD / NVIDIA */}
               <div className={`inline-flex rounded-lg border p-0.5 text-[11px] font-bold ${theme.subCard}`}>
                 <button
                   type="button"
@@ -1639,7 +1681,6 @@ export default function HomePage() {
                 </button>
               </div>
 
-              {/* Kaynak Tipi Filtresi */}
               <div className={`inline-flex rounded-lg border p-0.5 text-[11px] font-semibold ${theme.subCard}`}>
                 <button
                   type="button"
@@ -1911,7 +1952,7 @@ export default function HomePage() {
 
           {chatOpen && (
             <div className={`px-3.5 sm:px-4 pb-4 pt-3.5 border-t space-y-3 ${theme.subCard}`}>
-              {/* Üst Kontrol Çubuğu: Oda Sekmeleri + Bildirim Sesi */}
+              {/* Üst Kontrol Çubuğu: Oda Sekmeleri + Yetkili Kilidi + Bildirim Sesi */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div className={`inline-flex rounded-xl border p-1 gap-1 ${theme.card}`}>
                   <button
@@ -1936,13 +1977,27 @@ export default function HomePage() {
                   </button>
                 </div>
 
-                <div className="flex items-center justify-between sm:justify-end gap-2">
-                  {chatCooldown > 0 && !isTypingAdminNick && (
+                <div className="flex items-center justify-between sm:justify-end gap-2 flex-wrap">
+                  {chatCooldown > 0 && !isTypingAdminNick && !staffModeActive && (
                     <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-xl border text-[11px] font-bold ${theme.card} ${theme.accentText}`}>
                       <Clock className="w-3 h-3" />
                       {isEnRoom ? `${chatCooldown}s` : `${chatCooldown} sn`}
                     </span>
                   )}
+
+                  <button
+                    type="button"
+                    onClick={() => setStaffPinOpen((v) => !v)}
+                    className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl border text-[11px] font-semibold transition ${
+                      staffModeActive
+                        ? 'bg-amber-500/20 border-amber-400/50 text-amber-300'
+                        : `${theme.card} ${theme.muted} hover:opacity-100 opacity-80`
+                    }`}
+                    title={lang === 'tr' ? 'Yetkili / Moderatör Girişi' : 'Staff / Moderator PIN'}
+                  >
+                    <KeyRound className="w-3 h-3" />
+                    <span>{staffModeActive ? 'Yetkili Açık' : 'Yetkili'}</span>
+                  </button>
 
                   <button
                     type="button"
@@ -1974,6 +2029,34 @@ export default function HomePage() {
                   </button>
                 </div>
               </div>
+
+              {(staffPinOpen || isTypingAdminNick) && (
+                <div className={`flex items-center justify-between gap-2 px-3 py-2 rounded-xl border border-amber-400/40 text-xs ${theme.card}`}>
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                    <KeyRound className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                    <input
+                      type="password"
+                      value={staffPin}
+                      onChange={(e) => setStaffPin(e.target.value)}
+                      placeholder={
+                        isTypingAdminNick
+                          ? 'Admin PIN girin...'
+                          : 'Moderatör veya Admin PIN girin (Ban yetkisi açılır)...'
+                      }
+                      className="w-full bg-transparent outline-none font-semibold text-xs min-w-0 placeholder:font-normal placeholder:opacity-65"
+                    />
+                  </div>
+                  {staffPin && (
+                    <button
+                      type="button"
+                      onClick={() => setStaffPin('')}
+                      className="text-[11px] font-bold opacity-75 hover:opacity-100 shrink-0"
+                    >
+                      Temizle
+                    </button>
+                  )}
+                </div>
+              )}
 
               <div className={`flex items-center gap-1.5 text-[11px] ${theme.muted}`}>
                 <ShieldAlert className={`w-3.5 h-3.5 shrink-0 ${theme.accentText} opacity-80`} />
@@ -2040,7 +2123,6 @@ export default function HomePage() {
                         )}
 
                         <div className="flex items-center justify-between gap-2 mb-1.5">
-                          {/* Cilalı Kullanıcı Adı Baloncuğu + Admin Onay Rozeti */}
                           <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
                             {isAdminMsg ? (
                               <span className="inline-flex items-center gap-1.5 pl-1 pr-2.5 py-0.5 rounded-full border text-[11px] font-black shadow-sm bg-gradient-to-r from-amber-500/25 via-pink-500/20 to-amber-400/25 border-amber-400/60 text-amber-200">
@@ -2082,6 +2164,19 @@ export default function HomePage() {
                               <Reply className="w-2.5 h-2.5" />
                               <span>{isEnRoom ? 'Reply' : 'Yanıtla'}</span>
                             </button>
+
+                            {staffModeActive && !isAdminMsg && (
+                              <button
+                                type="button"
+                                disabled={banningId === m.id}
+                                onClick={() => handleBanMessage(m)}
+                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border border-red-500/50 bg-red-500/20 text-red-300 hover:bg-red-500/35 text-[10px] font-bold transition disabled:opacity-50"
+                                title="Kullanıcıyı kalıcı banla ve mesajlarını sil"
+                              >
+                                <Ban className="w-2.5 h-2.5" />
+                                <span>{banningId === m.id ? '...' : 'Banla'}</span>
+                              </button>
+                            )}
                           </div>
                         </div>
 
@@ -2093,7 +2188,6 @@ export default function HomePage() {
                 <div ref={chatEndRef} />
               </div>
 
-              {/* Yanıt Önizleme Çubuğu */}
               {replyTo && (
                 <div
                   className={`flex items-center justify-between gap-2 px-3 py-2 rounded-xl border border-l-2 text-xs ${theme.card}`}
@@ -2121,7 +2215,6 @@ export default function HomePage() {
               {/* Modern Giriş Barı */}
               <form onSubmit={handleSendChat} className="space-y-2 text-xs">
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-                  {/* Kullanıcı Adı Kutusu */}
                   <div
                     className={`sm:w-44 flex items-center gap-2 rounded-2xl border px-3 py-2 transition focus-within:ring-2 focus-within:ring-pink-500/35 ${theme.card}`}
                   >
@@ -2138,23 +2231,6 @@ export default function HomePage() {
                     />
                   </div>
 
-                  {/* Sadece batmancodex yazıldığında görünen gizli Admin PIN alanı */}
-                  {isTypingAdminNick && (
-                    <div
-                      className={`sm:w-36 flex items-center gap-1.5 rounded-2xl border border-amber-400/50 px-3 py-2 transition focus-within:ring-2 focus-within:ring-amber-400/40 ${theme.card}`}
-                    >
-                      <KeyRound className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                      <input
-                        type="password"
-                        value={adminPin}
-                        onChange={(e) => setAdminPin(e.target.value)}
-                        placeholder="Admin PIN"
-                        className="w-full bg-transparent outline-none font-bold text-xs min-w-0 placeholder:font-normal placeholder:opacity-60"
-                      />
-                    </div>
-                  )}
-
-                  {/* Birleşik Mesaj Çubuğu */}
                   <div
                     className={`flex-1 flex items-center gap-1.5 rounded-2xl border p-1.5 pl-3 transition focus-within:ring-2 focus-within:ring-pink-500/35 ${theme.card}`}
                   >
@@ -2162,11 +2238,11 @@ export default function HomePage() {
                       ref={chatInputRef}
                       type="text"
                       maxLength={280}
-                      disabled={(!isTypingAdminNick && chatCooldown > 0) || chatSending}
+                      disabled={(!isTypingAdminNick && !staffModeActive && chatCooldown > 0) || chatSending}
                       value={chatInput}
                       onChange={(e) => setChatInput(e.target.value)}
                       placeholder={
-                        !isTypingAdminNick && chatCooldown > 0
+                        !isTypingAdminNick && !staffModeActive && chatCooldown > 0
                           ? isEnRoom
                             ? `Wait ${chatCooldown}s before sending again...`
                             : `Yeni mesaj için ${chatCooldown} saniye bekle...`
@@ -2177,7 +2253,7 @@ export default function HomePage() {
                       className="flex-1 bg-transparent outline-none text-xs min-w-0 disabled:opacity-60 placeholder:opacity-60"
                     />
 
-                    {chatInput.length > 0 && (isTypingAdminNick || chatCooldown === 0) && (
+                    {chatInput.length > 0 && (isTypingAdminNick || staffModeActive || chatCooldown === 0) && (
                       <span className={`hidden sm:inline text-[10px] font-mono pr-1 ${theme.muted}`}>
                         {chatInput.length}/280
                       </span>
@@ -2185,10 +2261,10 @@ export default function HomePage() {
 
                     <button
                       type="submit"
-                      disabled={chatSending || (!isTypingAdminNick && chatCooldown > 0)}
+                      disabled={chatSending || (!isTypingAdminNick && !staffModeActive && chatCooldown > 0)}
                       className={`px-3.5 py-2 rounded-xl font-bold inline-flex items-center gap-1.5 shrink-0 shadow-sm transition disabled:opacity-60 disabled:cursor-not-allowed ${theme.btnPrimary}`}
                     >
-                      {!isTypingAdminNick && chatCooldown > 0 ? (
+                      {!isTypingAdminNick && !staffModeActive && chatCooldown > 0 ? (
                         <>
                           <Clock className="w-3.5 h-3.5" />
                           <span className="tabular-nums">{chatCooldown}s</span>
@@ -2211,7 +2287,7 @@ export default function HomePage() {
                   </div>
                 </div>
 
-                {!isTypingAdminNick && chatCooldown > 0 && (
+                {!isTypingAdminNick && !staffModeActive && chatCooldown > 0 && (
                   <div className="space-y-1 pt-0.5 px-1">
                     <div className="flex items-center justify-between text-[11px] font-semibold">
                       <span className={theme.accentText}>
@@ -2230,6 +2306,10 @@ export default function HomePage() {
                       />
                     </div>
                   </div>
+                )}
+
+                {chatNotice && (
+                  <p className="text-emerald-400 font-semibold text-[11px] px-1">{chatNotice}</p>
                 )}
 
                 {chatError && (
