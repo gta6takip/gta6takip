@@ -25,7 +25,7 @@ import {
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
-const APP_VERSION = 'v1.0.31';
+const APP_VERSION = 'v1.0.32';
 
 const THEMES = {
   vice: {
@@ -34,6 +34,7 @@ const THEMES = {
     dot: '#ec4899',
     bg: 'bg-[#140b1e] text-pink-50',
     card: 'bg-[#1e112d]/95 border-pink-500/25',
+    menuBg: 'bg-[#1e112d] border-pink-500/35',
     subCard: 'bg-[#170c24] border-pink-500/20',
     muted: 'text-pink-200/70',
     accentText: 'text-pink-400',
@@ -51,12 +52,13 @@ const THEMES = {
     dot: '#ea580c',
     bg: 'bg-zinc-50 text-zinc-900',
     card: 'bg-white border-zinc-200 shadow-sm',
+    menuBg: 'bg-white border-zinc-200',
     subCard: 'bg-zinc-100/80 border-zinc-200',
     muted: 'text-zinc-600',
     accentText: 'text-orange-600',
     accentBg: 'bg-orange-600',
     accentGradient: 'from-orange-600 via-amber-500 to-yellow-500',
-    badgeGlow: 'from-orange-500 to-amber-500 text-white shadow-[0_0_14px_rgba(234,88,12,0.45)]',
+    badgeGlow: 'from-orange-600 to-amber-600 text-white shadow-[0_0_12px_rgba(234,88,12,0.35)]',
     btnPrimary: 'bg-gradient-to-r from-orange-600 to-amber-500 text-white hover:brightness-105',
     pill: 'bg-zinc-100 text-zinc-700 border-zinc-300',
     sparkStroke: '#ea580c',
@@ -68,6 +70,7 @@ const THEMES = {
     dot: '#f97316',
     bg: 'bg-[#0b0d12] text-zinc-100',
     card: 'bg-[#131722] border-zinc-800/90',
+    menuBg: 'bg-[#131722] border-zinc-700',
     subCard: 'bg-[#0f131c] border-zinc-800/80',
     muted: 'text-zinc-400',
     accentText: 'text-orange-400',
@@ -85,6 +88,7 @@ const THEMES = {
     dot: '#22d3ee',
     bg: 'bg-[#07111a] text-cyan-50',
     card: 'bg-[#0d1b28] border-cyan-500/25',
+    menuBg: 'bg-[#0d1b28] border-cyan-500/35',
     subCard: 'bg-[#09141f] border-cyan-500/20',
     muted: 'text-cyan-200/70',
     accentText: 'text-cyan-400',
@@ -102,6 +106,7 @@ const THEMES = {
     dot: '#60a5fa',
     bg: 'bg-[#090f1d] text-slate-100',
     card: 'bg-[#10192d] border-blue-500/25',
+    menuBg: 'bg-[#10192d] border-blue-500/35',
     subCard: 'bg-[#0c1324] border-blue-500/20',
     muted: 'text-slate-400',
     accentText: 'text-blue-400',
@@ -134,8 +139,8 @@ const FALLBACK_TEAMS = [
     stage: 'Oynanabilir • Hikâye Yarısı',
     delta: '+37.0%',
     url: 'https://github.com/codec-d/cool_fox',
-    summaryTr: 'Ara sahnelerde 30 FPS, oyun içinde ortalama 25 FPS (8 GB RAM / 16 GB VRAM). Hikâyenin yarısı oynanabilir (GitHub deposu şu an 404 / kaldırılmış durumda).',
-    summaryEn: '30 FPS in cutscenes, 25 FPS average in gameplay (8 GB RAM / 16 GB VRAM). Half the story playable (GitHub repo currently returns 404).',
+    summaryTr: 'Ara sahnelerde 30 FPS, oyun içinde ortalama 25 FPS (10 GB RAM / 16 GB VRAM). Hikâyenin yarısı oynanabilir (GitHub deposu şu an 404 / kaldırılmış durumda).',
+    summaryEn: '30 FPS in cutscenes, 25 FPS average in gameplay (10 GB RAM / 16 GB VRAM). Half the story playable (GitHub repo currently returns 404).',
   },
   { name: 'NotNozy', progress: 87.8, fps: '16 FPS', gpu: 'AMD (Rumble)', type: 'private', stage: 'Oynanabilir • Hikâye Yarısı', delta: '+26.8%', url: 'https://portwatch-vi.xyz/#race', isNew: true },
   { name: 'darkworldhm', progress: 84.8, fps: '15-24 FPS', gpu: 'RTX 50 Serisi', type: 'private', stage: 'Oynanabilir • Hikâye Yarısı', delta: '+23.8%', url: 'https://portwatch-vi.xyz/#race' },
@@ -144,7 +149,7 @@ const FALLBACK_TEAMS = [
   { name: 'Belobug', progress: 79.0, fps: '8 FPS', gpu: 'RX 9070 XT', type: 'open', stage: 'Oynanabilir • İlk Perde (RT)', delta: '+10.7%', url: 'https://github.com/Belobug/VIctory-Belobug-AMD' },
   { name: 'DexNom', progress: 78.0, fps: '3 FPS', gpu: 'RX 7900 XTX', type: 'open', stage: 'Oynanabilir • İlk Perde', delta: '+12.0%', url: 'https://github.com/DexNom/VIctory' },
   { name: 'suri', progress: 75.0, fps: '3 FPS', gpu: 'Özel Yapı', type: 'private', stage: 'Oynanabilir • Hikâye Yarısı', delta: '+14.0%', url: 'https://portwatch-vi.xyz/#race' },
-  { name: 'Kelvaroq', progress: 68.8, fps: 'PortWatch Canlı', gpu: 'Açık Kaynak', type: 'open', stage: 'Oynanabilir', url: 'https://github.com/fablinoo/kelvaroq', isNew: true },
+  { name: 'Kelvaroq', progress: 68.8, fps: '10 FPS', gpu: 'NVIDIA', type: 'open', stage: 'Oynanabilir', url: 'https://github.com/fablinoo/kelvaroq', isNew: true },
   { name: 'hyphennn', progress: 59.8, fps: '3 FPS', gpu: 'RTX 4070', type: 'open', stage: 'Oynanabilir • Açılış Sahnesi', delta: '+4.0%', url: 'https://github.com/fxceless/victory-fork' },
   { name: 'Uilian (VItoriaBr)', progress: 59.6, fps: '4 FPS', gpu: 'RTX 5060 Ti', type: 'open', stage: 'Oynanabilir • Önsöz Geçildi', delta: '+5.2%', url: 'https://github.com/uiliannn/VItoriaBr' },
   { name: 'omonkey', progress: 57.9, fps: '~5 FPS', gpu: 'Rumble Yayını', type: 'private', stage: 'Oynanabilir • Hapishane Sahnesi', delta: '+2.4%', url: 'https://portwatch-vi.xyz/#race' },
@@ -163,12 +168,27 @@ const FALLBACK_TEAMS = [
 ];
 
 const FALLBACK_NEWS = [
-  { tagTr: 'REKOR', tagEn: 'RECORD', tr: "CGBJ %91.5 ile lider (25 FPS · 30 FPS Ara Sahne) ve kodlarını GitHub'da açtı!", en: 'CGBJ leads at 91.5% (25 FPS · 30 FPS cutscenes) and went open source on GitHub!' },
+  { tagTr: 'REKOR', tagEn: 'RECORD', tr: "CGBJ %91.5 ile lider (25 FPS · 30 FPS Ara Sahne) ve kodlarını GitHub'da açtı!", en: 'CGBJ leads at 91.5% (25 FPS · 30 FPS Cutscenes) and went open source on GitHub!' },
   { tagTr: 'AÇIK KAYNAK', tagEn: 'OPEN SOURCE', tr: 'Açık kaynak lideri CGBJ (%91.5); AvatarManz (%83.1) ve Belobug (%79) takipte.', en: 'CGBJ (91.5%) leads open source; AvatarManz (83.1%) & Belobug (79%) follow.' },
-  { tagTr: 'GÜNCEL', tagEn: 'LIVE', tr: "PortWatch üzerinde 40 girişim takip ediliyor; 18'si oyunu başlatabiliyor (İlk 3 ort. %88).", en: '40 total efforts tracked on PortWatch, with 18 booting GTA VI (Top-3 avg 88%).' },
+  { tagTr: 'GÜNCEL', tagEn: 'LIVE', tr: 'PortWatch üzerinde 40 girişim takip ediliyor; 18 proje oyunu başlatabiliyor (İlk 3 ort. %88).', en: '40 total efforts tracked on PortWatch, with 18 booting GTA VI (Top-3 avg 88%).' },
 ];
 
 const CHANGELOG = [
+  {
+    version: 'v1.0.32',
+    dateTr: '26 Kasım 2026',
+    dateEn: 'November 26, 2026',
+    itemsTr: [
+      'Açılır menüler dışarı tıklayınca veya diğer menü açılınca otomatik kapanacak ve arka planı sızdırmayacak şekilde düzeltildi.',
+      'Açık (Light) temada tüm rozetlerin okunabilirliği artırıldı; EN çevirileri ve Türkçe ek uyumu tamamlandı.',
+      'Seçilen tema ve dil tercihi artık tarayıcıda hatırlanıyor.',
+    ],
+    itemsEn: [
+      'Fixed dropdowns to auto-close on outside click/ESC/sibling open with solid opaque backgrounds.',
+      'Improved Light theme badge contrast and completed remaining English translations.',
+      'Saved theme and language preferences in browser storage.',
+    ],
+  },
   {
     version: 'v1.0.31',
     dateTr: '26 Kasım 2026',
@@ -189,17 +209,6 @@ const CHANGELOG = [
     ],
     itemsEn: [
       'Made the online counter clickable to show live connected visitors by country.',
-    ],
-  },
-  {
-    version: 'v1.0.29',
-    dateTr: '26 Kasım 2026',
-    dateEn: 'November 26, 2026',
-    itemsTr: [
-      '"Tavsiye / Fikir" butonu daha görünür olan sol alt köşeye taşındı ve ara sıra zıplayıp titreyen animasyon eklendi.',
-    ],
-    itemsEn: [
-      'Moved the "Feedback / Idea" button to a floating bottom-left position with a periodic hop-and-wiggle animation.',
     ],
   },
 ];
@@ -323,8 +332,8 @@ function localizeDynamicText(text, lang) {
     .replace(/İlk Perde/gi, 'First Act')
     .replace(/İlk Sahne/gi, 'First Scene')
     .replace(/\(Sesli\)/gi, '(With Sound)')
-    .replace(/\(30 FPS Ara Sahne\)/gi, '(30 FPS Cutscenes)')
-    .replace(/\(30 FPS Menü\)/gi, '(30 FPS Menu)')
+    .replace(/Ara Sahne/gi, 'Cutscenes')
+    .replace(/Menü/gi, 'Menu')
     .replace(/Özel Yapı/gi, 'Private Build')
     .replace(/Açılış Sahnesi/gi, 'Opening Scene')
     .replace(/Önsöz Geçildi/gi, 'Prologue Cleared')
@@ -335,7 +344,17 @@ function localizeDynamicText(text, lang) {
     .replace(/Exe Çalışıyor/gi, 'Exe Runs')
     .replace(/Altyapı/gi, 'Groundwork')
     .replace(/RTX 50 Serisi/gi, 'RTX 50 Series')
-    .replace(/Bağımsız/gi, 'Independent');
+    .replace(/Bağımsız/gi, 'Independent')
+    .replace(/Ön Aşama/gi, 'Early Stage')
+    .replace(/GDK Örnekleri/gi, 'GDK Samples')
+    .replace(/HLE Emülatör/gi, 'HLE Emulator')
+    .replace(/Statik Recomp/gi, 'Static Recomp')
+    .replace(/Tanılama/gi, 'Diagnostics')
+    .replace(/C# Katmanı/gi, 'C# Layer')
+    .replace(/Rumble Yayını/gi, 'Rumble Stream')
+    .replace(/Açık Kaynak/gi, 'Open Source')
+    .replace(/PortWatch Canlı/gi, 'PortWatch Live')
+    .replace(/4K İstem/gi, '4K Prompt');
 }
 
 function cleanNestedParens(text) {
@@ -363,15 +382,21 @@ function extractPeakFps(teams) {
   return max > 0 ? max : 25;
 }
 
-function getNewsBadgeStyle(tagRaw) {
+function getNewsBadgeStyle(tagRaw, isLight) {
   const tag = String(tagRaw || '').toUpperCase();
   if (tag.includes('REKOR') || tag.includes('RECORD')) {
-    return 'bg-amber-500/20 text-amber-300 border-amber-400/50 shadow-[0_0_12px_rgba(251,191,36,0.45)]';
+    return isLight
+      ? 'bg-amber-100 text-amber-900 border-amber-300'
+      : 'bg-amber-500/20 text-amber-300 border-amber-400/50 shadow-[0_0_12px_rgba(251,191,36,0.45)]';
   }
   if (tag.includes('AÇIK') || tag.includes('OPEN')) {
-    return 'bg-emerald-500/20 text-emerald-300 border-emerald-400/50 shadow-[0_0_12px_rgba(52,211,153,0.45)]';
+    return isLight
+      ? 'bg-emerald-100 text-emerald-900 border-emerald-300'
+      : 'bg-emerald-500/20 text-emerald-300 border-emerald-400/50 shadow-[0_0_12px_rgba(52,211,153,0.45)]';
   }
-  return 'bg-red-500/20 text-red-300 border-red-400/50 shadow-[0_0_12px_rgba(248,113,113,0.5)] animate-pulse';
+  return isLight
+    ? 'bg-red-100 text-red-800 border-red-300 animate-pulse'
+    : 'bg-red-500/20 text-red-300 border-red-400/50 shadow-[0_0_12px_rgba(248,113,113,0.5)] animate-pulse';
 }
 
 export default function HomePage() {
@@ -404,6 +429,29 @@ export default function HomePage() {
   const [copied, setCopied] = useState(false);
 
   const theme = THEMES[themeKey] || THEMES.vice;
+  const isLight = themeKey === 'light';
+
+  const onlineBtnClass = isLight
+    ? 'bg-emerald-100 text-emerald-800 border-emerald-300 hover:bg-emerald-200/70'
+    : 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20';
+
+  const onlineDotClass = isLight ? 'bg-emerald-600' : 'bg-emerald-400';
+
+  const liveBadgeClass = isLight
+    ? 'bg-red-100 text-red-800 border-red-300 animate-pulse'
+    : 'bg-red-500/20 text-red-300 border-red-400/50 shadow-[0_0_12px_rgba(248,113,113,0.55)] animate-pulse';
+
+  const liveDotClass = isLight
+    ? 'bg-red-600'
+    : 'bg-red-400 shadow-[0_0_6px_rgba(248,113,113,0.9)]';
+
+  const faqLiveBadgeClass = isLight
+    ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+    : 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30';
+
+  const dmcaBadgeClass = isLight
+    ? 'bg-amber-100 text-amber-900 border-amber-300'
+    : 'bg-amber-500/15 text-amber-400 border-amber-500/30';
 
   const supabaseClient = useMemo(() => {
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -415,6 +463,58 @@ export default function HomePage() {
       return null;
     }
   }, []);
+
+  useEffect(() => {
+    try {
+      const savedTheme = localStorage.getItem('gta6takip_theme');
+      if (savedTheme && THEMES[savedTheme]) setThemeKey(savedTheme);
+      const savedLang = localStorage.getItem('gta6takip_lang');
+      if (savedLang === 'tr' || savedLang === 'en') setLang(savedLang);
+    } catch {
+      // Depolama erişilemezse varsayılan korunur
+    }
+  }, []);
+
+  const handleSelectTheme = (id) => {
+    setThemeKey(id);
+    setThemeMenuOpen(false);
+    try {
+      localStorage.setItem('gta6takip_theme', id);
+    } catch {
+      // Yoksay
+    }
+  };
+
+  const handleSelectLang = (nextLang) => {
+    setLang(nextLang);
+    try {
+      localStorage.setItem('gta6takip_lang', nextLang);
+    } catch {
+      // Yoksay
+    }
+  };
+
+  useEffect(() => {
+    if (!themeMenuOpen && !onlineMenuOpen) return undefined;
+    const onPointerDown = (e) => {
+      if (!e.target.closest?.('[data-dropdown-root]')) {
+        setThemeMenuOpen(false);
+        setOnlineMenuOpen(false);
+      }
+    };
+    const onKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setThemeMenuOpen(false);
+        setOnlineMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', onPointerDown);
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', onPointerDown);
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [themeMenuOpen, onlineMenuOpen]);
 
   const fetchSyncData = async () => {
     setSyncing(true);
@@ -632,7 +732,7 @@ export default function HomePage() {
         ? `The closest build (${leader.name} · ${leader.progress}%) is nearing completion, though there is no fixed ETA for a bug-free full playthrough.`
         : `The closest build (${leader.name} · ${leader.progress}%, peak ${peakFps} FPS) is progressing fast, but there is no firm ETA for a full 30+ FPS release. Rockstar's official PC version is rumored for early 2027.`;
 
-    const statusTr = `PortWatch üzerinden gelen son canlı verilere göre ${totalEfforts} girişimden ${bootingCount}'si oyunu başlatabiliyor ve ${playableCount} ekip "Oynanabilir" barajını geçmiş durumda. Zirvedeki #1 ${leader.name} (%${leader.progress}), açılış ve ilk yarı görevlerini geçip ${localizeDynamicText(leader.fps, 'tr')} civarı akıcı görüntü alarak videosunu paylaştı. Hemen arkasında #2 ${secondTeam.name} (%${secondTeam.progress} · ${localizeDynamicText(secondTeam.fps, 'tr')}) ve #3 ${thirdTeam.name} (%${thirdTeam.progress} · ${localizeDynamicText(thirdTeam.fps, 'tr')}) canlı yayınlarla ilerliyor. Kodu herkese açık tarafta ise ${openLeader.name} (%${openLeader.progress} · ${localizeDynamicText(openLeader.fps, 'tr')}) önde. Kısacası oyun siyah ekrandan çıkıp görev oynanabilen seviyeye geldi; geriye optimizasyon ve herkesin indirebileceği kararlı bir sürüm kaldı.`;
+    const statusTr = `PortWatch üzerinden gelen son canlı verilere göre ${totalEfforts} girişimden ${bootingCount} proje oyunu başlatabiliyor ve ${playableCount} ekip "Oynanabilir" barajını geçmiş durumda. Zirvedeki #1 ${leader.name} (%${leader.progress}), açılış ve ilk yarı görevlerini geçip ${localizeDynamicText(leader.fps, 'tr')} civarı akıcı görüntü alarak videosunu paylaştı. Hemen arkasında #2 ${secondTeam.name} (%${secondTeam.progress} · ${localizeDynamicText(secondTeam.fps, 'tr')}) ve #3 ${thirdTeam.name} (%${thirdTeam.progress} · ${localizeDynamicText(thirdTeam.fps, 'tr')}) canlı yayınlarla ilerliyor. Kodu herkese açık tarafta ise ${openLeader.name} (%${openLeader.progress} · ${localizeDynamicText(openLeader.fps, 'tr')}) önde. Kısacası oyun siyah ekrandan çıkıp görev oynanabilen seviyeye geldi; geriye optimizasyon ve herkesin indirebileceği kararlı bir sürüm kaldı.`;
 
     const statusEn = `According to live PortWatch data, ${bootingCount} out of ${totalEfforts} tracked efforts can boot GTA VI and ${playableCount} teams have crossed the "Playable" milestone. At the top, #1 ${leader.name} (${leader.progress}%) has cleared the intro into mid-story missions at ${localizeDynamicText(leader.fps, 'en')} with shared footage. Right behind, #2 ${secondTeam.name} (${secondTeam.progress}% · ${localizeDynamicText(secondTeam.fps, 'en')}) and #3 ${thirdTeam.name} (${thirdTeam.progress}% · ${localizeDynamicText(thirdTeam.fps, 'en')}) are pushing ahead on live streams. On the open-source side, ${openLeader.name} (${openLeader.progress}% · ${localizeDynamicText(openLeader.fps, 'en')}) leads. In short, the game has moved past black screens into real mission gameplay—now it's about optimization and a stable public build.`;
 
@@ -733,7 +833,7 @@ export default function HomePage() {
 
   const renderOnlinePopover = () =>
     onlineMenuOpen && (
-      <div className={`absolute right-0 mt-1.5 w-52 rounded-xl border p-2 shadow-xl z-50 space-y-1 ${theme.card}`}>
+      <div className={`absolute right-0 mt-1.5 w-52 rounded-xl border p-2 shadow-2xl z-50 space-y-1 ${theme.menuBg}`}>
         <div className={`px-2 py-1 text-[10px] font-bold uppercase tracking-wider ${theme.muted}`}>
           {lang === 'tr' ? 'Bağlı Ülkeler' : 'Connected Countries'}
         </div>
@@ -781,13 +881,16 @@ export default function HomePage() {
               </button>
             </div>
 
-            <div className="relative sm:hidden">
+            <div className="relative sm:hidden" data-dropdown-root="true">
               <button
                 type="button"
-                onClick={() => setOnlineMenuOpen((v) => !v)}
-                className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
+                onClick={() => {
+                  setThemeMenuOpen(false);
+                  setOnlineMenuOpen((v) => !v);
+                }}
+                className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-semibold border transition ${onlineBtnClass}`}
               >
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                <span className={`w-1.5 h-1.5 rounded-full animate-pulse ${onlineDotClass}`} />
                 {onlineCount} {lang === 'tr' ? 'Çevrimiçi' : 'Online'}
                 <ChevronDown className="w-3 h-3 opacity-80" />
               </button>
@@ -796,13 +899,16 @@ export default function HomePage() {
           </div>
 
           <div className="flex items-center justify-between sm:justify-end gap-2 flex-wrap">
-            <div className="relative hidden sm:block">
+            <div className="relative hidden sm:block" data-dropdown-root="true">
               <button
                 type="button"
-                onClick={() => setOnlineMenuOpen((v) => !v)}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20 transition"
+                onClick={() => {
+                  setThemeMenuOpen(false);
+                  setOnlineMenuOpen((v) => !v);
+                }}
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border transition ${onlineBtnClass}`}
               >
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span className={`w-2 h-2 rounded-full animate-pulse ${onlineDotClass}`} />
                 {onlineCount} {lang === 'tr' ? 'Çevrimiçi' : 'Online'}
                 <ChevronDown className="w-3 h-3 opacity-80" />
               </button>
@@ -812,7 +918,7 @@ export default function HomePage() {
             <div className={`inline-flex rounded-lg border p-0.5 ${theme.subCard}`}>
               <button
                 type="button"
-                onClick={() => setLang('tr')}
+                onClick={() => handleSelectLang('tr')}
                 className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-semibold transition ${
                   lang === 'tr' ? theme.btnPrimary : theme.muted
                 }`}
@@ -822,7 +928,7 @@ export default function HomePage() {
               </button>
               <button
                 type="button"
-                onClick={() => setLang('en')}
+                onClick={() => handleSelectLang('en')}
                 className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-semibold transition ${
                   lang === 'en' ? theme.btnPrimary : theme.muted
                 }`}
@@ -832,10 +938,13 @@ export default function HomePage() {
               </button>
             </div>
 
-            <div className="relative">
+            <div className="relative" data-dropdown-root="true">
               <button
                 type="button"
-                onClick={() => setThemeMenuOpen((v) => !v)}
+                onClick={() => {
+                  setOnlineMenuOpen(false);
+                  setThemeMenuOpen((v) => !v);
+                }}
                 className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-semibold ${theme.subCard}`}
               >
                 <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: theme.dot }} />
@@ -843,16 +952,13 @@ export default function HomePage() {
                 <ChevronDown className="w-3.5 h-3.5 opacity-70" />
               </button>
               {themeMenuOpen && (
-                <div className={`absolute right-0 mt-1.5 w-40 rounded-xl border p-1 shadow-xl z-50 ${theme.card}`}>
+                <div className={`absolute right-0 mt-1.5 w-40 rounded-xl border p-1 shadow-2xl z-50 ${theme.menuBg}`}>
                   {Object.values(THEMES).map((t) => (
                     <button
                       key={t.id}
                       type="button"
-                      onClick={() => {
-                        setThemeKey(t.id);
-                        setThemeMenuOpen(false);
-                      }}
-                      className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-medium transition hover:bg-white/5 ${
+                      onClick={() => handleSelectTheme(t.id)}
+                      className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-medium transition hover:bg-black/10 ${
                         themeKey === t.id ? theme.accentText : ''
                       }`}
                     >
@@ -920,13 +1026,15 @@ export default function HomePage() {
                 </div>
 
                 <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-xs ${theme.subCard}`}>
-                  <Flame className="w-3.5 h-3.5 text-amber-400" />
+                  <Flame className="w-3.5 h-3.5 text-amber-500" />
                   <span className={theme.muted}>
                     {lang === 'tr' ? '24s En Hızlı:' : '24h Fastest:'}
                   </span>
                   <span className="font-bold">{fastestTeam.name}</span>
                   {fastestTeam.delta && (
-                    <span className="text-emerald-400 font-bold">▲ {fastestTeam.delta}</span>
+                    <span className={isLight ? 'text-emerald-700 font-bold' : 'text-emerald-400 font-bold'}>
+                      ▲ {fastestTeam.delta}
+                    </span>
                   )}
                 </div>
               </div>
@@ -985,13 +1093,14 @@ export default function HomePage() {
               const badgeLabel = lang === 'tr' ? item.tagTr || 'GÜNCEL' : item.tagEn || 'LIVE';
               const rawMsg =
                 lang === 'tr'
-                  ? item.tr || item.text
-                  : item.en || localizeDynamicText(item.tr || item.text, 'en');
+                  ? String(item.tr || item.text || '').replace(/(\d+)'si oyunu başlatabiliyor/g, '$1 proje oyunu başlatabiliyor')
+                  : localizeDynamicText(item.en || item.tr || item.text, 'en');
               return (
                 <div key={idx} className={`rounded-xl border p-3 text-xs leading-relaxed ${theme.card}`}>
                   <span
                     className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full font-black text-[10px] mb-1.5 border ${getNewsBadgeStyle(
-                      badgeLabel
+                      badgeLabel,
+                      isLight
                     )}`}
                   >
                     <span className="w-1.5 h-1.5 rounded-full bg-current" />
@@ -1131,8 +1240,8 @@ export default function HomePage() {
                       )}
 
                       {isTop3 && (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-black tracking-wider bg-red-500/20 text-red-300 border border-red-400/50 shadow-[0_0_12px_rgba(248,113,113,0.55)] animate-pulse">
-                          <span className="w-1.5 h-1.5 rounded-full bg-red-400 shadow-[0_0_6px_rgba(248,113,113,0.9)]" />
+                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-black tracking-wider border ${liveBadgeClass}`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${liveDotClass}`} />
                           {lang === 'tr' ? 'CANLI' : 'LIVE'}
                         </span>
                       )}
@@ -1155,7 +1264,7 @@ export default function HomePage() {
                       </span>
 
                       {team.delta && (
-                        <span className="text-[11px] font-bold text-emerald-400">
+                        <span className={`text-[11px] font-bold ${isLight ? 'text-emerald-700' : 'text-emerald-400'}`}>
                           ▲ {team.delta}
                         </span>
                       )}
@@ -1287,7 +1396,7 @@ export default function HomePage() {
                     </span>
                     <div className="flex items-center gap-2 shrink-0">
                       {item.live && (
-                        <span className="px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                        <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-bold border ${faqLiveBadgeClass}`}>
                           {lang === 'tr' ? 'Canlı Veri' : 'Live'}
                         </span>
                       )}
@@ -1316,11 +1425,11 @@ export default function HomePage() {
             className="w-full px-4 py-3 flex items-center justify-between gap-2 text-left hover:bg-white/5 transition"
           >
             <div className="flex items-center gap-2.5 flex-wrap">
-              <ShieldAlert className="w-4 h-4 text-amber-400 shrink-0" />
+              <ShieldAlert className="w-4 h-4 text-amber-500 shrink-0" />
               <span className="text-xs sm:text-sm font-bold">
                 {lang === 'tr' ? 'DMCA & Güvenlik Radarı' : 'DMCA & Security Radar'}
               </span>
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/15 text-amber-400 border border-amber-500/30">
+              <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${dmcaBadgeClass}`}>
                 {lang === 'tr'
                   ? '2 Kaldırılan · Sahte .EXE Uyarısı'
                   : '2 Takedowns · Fake .EXE Warning'}
@@ -1333,7 +1442,7 @@ export default function HomePage() {
             <div className={`px-4 pb-4 pt-2 border-t space-y-2.5 text-xs ${theme.subCard}`}>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <div className={`p-2.5 rounded-xl border ${theme.card}`}>
-                  <span className="font-bold text-red-400">Leonida (DMCA)</span>
+                  <span className="font-bold text-red-500">Leonida (DMCA)</span>
                   <p className={`mt-0.5 ${theme.muted}`}>
                     {lang === 'tr'
                       ? '24 Kasım 2026 — Take-Two DMCA bildirimiyle GitHub ana deposu ve 3.007 fork devre dışı bırakıldı.'
@@ -1341,7 +1450,9 @@ export default function HomePage() {
                   </p>
                 </div>
                 <div className={`p-2.5 rounded-xl border ${theme.card}`}>
-                  <span className="font-bold text-red-400">ZETTROX (Kaldırıldı)</span>
+                  <span className="font-bold text-red-500">
+                    {lang === 'tr' ? 'ZETTROX (Kaldırıldı)' : 'ZETTROX (Removed)'}
+                  </span>
                   <p className={`mt-0.5 ${theme.muted}`}>
                     {lang === 'tr'
                       ? '25 Kasım 2026 — Eski %64.2 lideri Zettrox/ztrx deposu GitHub üzerinden silindi.'
@@ -1349,7 +1460,7 @@ export default function HomePage() {
                   </p>
                 </div>
               </div>
-              <p className="text-amber-300/90 leading-relaxed font-medium">
+              <p className={`${isLight ? 'text-amber-800' : 'text-amber-300/90'} leading-relaxed font-medium`}>
                 {lang === 'tr'
                   ? 'Güvenlik Uyarısı: İnternette dolaşan "GTA 6 PC Kurulum / Crack .exe" dosyalarının tamamı sahtedir ve zararlı yazılım içerir. Hiçbir geliştirici ekip halka açık oynanabilir bir kurulum dosyası dağıtmamaktadır.'
                   : 'Security Warning: All "GTA 6 PC Installer / Crack .exe" files circulating online are fake and contain malware. No development team distributes a public playable installer.'}
@@ -1430,7 +1541,7 @@ export default function HomePage() {
 
       {feedbackOpen && (
         <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className={`w-full max-w-md rounded-2xl border p-5 space-y-4 ${theme.card}`}>
+          <div className={`w-full max-w-md rounded-2xl border p-5 space-y-4 ${theme.menuBg}`}>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <MessageSquarePlus className={`w-4 h-4 ${theme.accentText}`} />
@@ -1449,7 +1560,7 @@ export default function HomePage() {
 
             {feedbackStatus === 'sent' ? (
               <div className={`rounded-xl border p-4 text-center space-y-2 ${theme.subCard}`}>
-                <p className="text-sm font-bold text-emerald-400">
+                <p className="text-sm font-bold text-emerald-500">
                   {lang === 'tr' ? 'Mesajın iletildi, teşekkürler!' : 'Your message has been sent, thank you!'}
                 </p>
                 <button
@@ -1505,7 +1616,7 @@ export default function HomePage() {
                 </div>
 
                 {feedbackStatus === 'error' && (
-                  <p className="text-red-400 font-semibold">
+                  <p className="text-red-500 font-semibold">
                     {lang === 'tr'
                       ? 'Gönderilirken bir hata oluştu, lütfen tekrar dene.'
                       : 'Failed to send, please try again.'}
@@ -1536,7 +1647,7 @@ export default function HomePage() {
 
       {changelogOpen && (
         <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className={`w-full max-w-lg rounded-2xl border p-5 space-y-4 max-h-[85vh] overflow-y-auto ${theme.card}`}>
+          <div className={`w-full max-w-lg rounded-2xl border p-5 space-y-4 max-h-[85vh] overflow-y-auto ${theme.menuBg}`}>
             <div className="flex items-center justify-between">
               <h3 className="text-base font-black">
                 {lang === 'tr' ? 'Sürüm Notları' : 'Release Notes'}
