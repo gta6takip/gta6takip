@@ -13,8 +13,8 @@ const BASE_TEAMS = [
     delta: '+37.0%',
     url: 'https://github.com/codec-d/cool_fox',
     repo: 'codec-d/cool_fox',
-    summaryTr: 'Ara sahnelerde 30 FPS, oyun içinde ortalama 25 FPS (8 GB RAM / 16 GB VRAM). Hikâyenin yarısı oynanabilir (GitHub deposu şu an 404 / kaldırılmış durumda).',
-    summaryEn: '30 FPS in cutscenes, 25 FPS average in gameplay (8 GB RAM / 16 GB VRAM). Half the story playable (GitHub repo currently returns 404).',
+    summaryTr: 'Ara sahnelerde 30 FPS, oyun içinde ortalama 25 FPS (10 GB RAM / 16 GB VRAM). Hikâyenin yarısı oynanabilir (GitHub deposu şu an 404 / kaldırılmış durumda).',
+    summaryEn: '30 FPS in cutscenes, 25 FPS average in gameplay (10 GB RAM / 16 GB VRAM). Half the story playable (GitHub repo currently returns 404).',
   },
   { name: 'NotNozy', progress: 87.8, fps: '16 FPS', gpu: 'AMD (Rumble)', type: 'private', stage: 'Oynanabilir • Hikâye Yarısı', delta: '+26.8%', url: 'https://portwatch-vi.xyz/#race', isNew: true },
   { name: 'darkworldhm', progress: 84.8, fps: '15-24 FPS', gpu: 'RTX 50 Serisi', type: 'private', stage: 'Oynanabilir • Hikâye Yarısı', delta: '+23.8%', url: 'https://portwatch-vi.xyz/#race' },
@@ -23,7 +23,7 @@ const BASE_TEAMS = [
   { name: 'Belobug', progress: 79.0, fps: '8 FPS', gpu: 'RX 9070 XT', type: 'open', stage: 'Oynanabilir • İlk Perde (RT)', delta: '+10.7%', url: 'https://github.com/Belobug/VIctory-Belobug-AMD' },
   { name: 'DexNom', progress: 78.0, fps: '3 FPS', gpu: 'RX 7900 XTX', type: 'open', stage: 'Oynanabilir • İlk Perde', delta: '+12.0%', url: 'https://github.com/DexNom/VIctory' },
   { name: 'suri', progress: 75.0, fps: '3 FPS', gpu: 'Özel Yapı', type: 'private', stage: 'Oynanabilir • Hikâye Yarısı', delta: '+14.0%', url: 'https://portwatch-vi.xyz/#race' },
-  { name: 'Kelvaroq', progress: 68.8, fps: 'PortWatch Canlı', gpu: 'Açık Kaynak', type: 'open', stage: 'Oynanabilir', url: 'https://github.com/fablinoo/kelvaroq', repo: 'fablinoo/kelvaroq', isNew: true },
+  { name: 'Kelvaroq', progress: 68.8, fps: '10 FPS', gpu: 'NVIDIA', type: 'open', stage: 'Oynanabilir', url: 'https://github.com/fablinoo/kelvaroq', repo: 'fablinoo/kelvaroq', isNew: true },
   { name: 'hyphennn', progress: 59.8, fps: '3 FPS', gpu: 'RTX 4070', type: 'open', stage: 'Oynanabilir • Açılış Sahnesi', delta: '+4.0%', url: 'https://github.com/fxceless/victory-fork' },
   { name: 'Uilian (VItoriaBr)', progress: 59.6, fps: '4 FPS', gpu: 'RTX 5060 Ti', type: 'open', stage: 'Oynanabilir • Önsöz Geçildi', delta: '+5.2%', url: 'https://github.com/uiliannn/VItoriaBr' },
   { name: 'omonkey', progress: 57.9, fps: '~5 FPS', gpu: 'Rumble Yayını', type: 'private', stage: 'Oynanabilir • Hapishane Sahnesi', delta: '+2.4%', url: 'https://portwatch-vi.xyz/#race' },
@@ -169,7 +169,6 @@ export async function GET() {
         }
       }
 
-      // 1) Ana liderlik tablosundaki açık kaynak kartları (Sıra + Ekip + owner/repo + %)
       const repoCardRe =
         /\b\d{1,2}\s+([A-Za-z][A-Za-z0-9_.\- ]{1,24}?)\s+([A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+)\s+(\d+(?:\.\d+)?)%\s*(?:Playable|In the world|Main menu|First frame|Exe runs)/gi;
       let rm;
@@ -183,7 +182,6 @@ export async function GET() {
         });
       }
 
-      // 2) Üst şerit (ticker) üzerindeki yeni ekipler
       const autoTickerRe = /\b([A-Za-z][A-Za-z0-9_.-]{2,24})\s*[·•]\s*(\d+(?:\.\d+)?)%/g;
       let tm;
       while ((tm = autoTickerRe.exec(cleanText)) !== null) {
@@ -194,7 +192,6 @@ export async function GET() {
         });
       }
 
-      // 3) Sayfa içindeki gömülü JSON / script verisi
       const scriptJsonRe =
         /"name"\s*:\s*"([A-Za-z][A-Za-z0-9_.\- ]{1,26})"[^}]{0,220}?"(?:progress|score|pct)"\s*:\s*(\d+(?:\.\d+)?)/g;
       let sm;
@@ -214,14 +211,17 @@ export async function GET() {
 
   const leader = teams[0] || BASE_TEAMS[0];
   const openLeader = teams.find((t) => t.type === 'open') || leader;
-  const leaderFpsClean = String(leader.fps || '').replace(/\s*\(([^)]+)\)/g, ' · $1');
+  const leaderFpsTr = String(leader.fps || '').replace(/\s*\(([^)]+)\)/g, ' · $1');
+  const leaderFpsEn = leaderFpsTr
+    .replace(/Ara Sahne/gi, 'Cutscenes')
+    .replace(/Menü/gi, 'Menu');
 
   const news = [
     {
       tagTr: 'REKOR',
       tagEn: 'RECORD',
-      tr: `${leader.name} %${leader.progress} ile lider (${leaderFpsClean}) ve kodlarını GitHub'da açtı!`,
-      en: `${leader.name} leads at ${leader.progress}% (${leaderFpsClean}) and went open source on GitHub!`,
+      tr: `${leader.name} %${leader.progress} ile lider (${leaderFpsTr}) ve kodlarını GitHub'da açtı!`,
+      en: `${leader.name} leads at ${leader.progress}% (${leaderFpsEn}) and went open source on GitHub!`,
     },
     {
       tagTr: 'AÇIK KAYNAK',
@@ -232,7 +232,7 @@ export async function GET() {
     {
       tagTr: 'GÜNCEL',
       tagEn: 'LIVE',
-      tr: `PortWatch üzerinde ${totalEfforts} girişim takip ediliyor; ${bootingCount}'si oyunu başlatabiliyor (İlk 3 ort. %${top3Avg}).`,
+      tr: `PortWatch üzerinde ${totalEfforts} girişim takip ediliyor; ${bootingCount} proje oyunu başlatabiliyor (İlk 3 ort. %${top3Avg}).`,
       en: `${totalEfforts} total efforts tracked on PortWatch, with ${bootingCount} booting GTA VI (Top-3 avg ${top3Avg}%).`,
     },
   ];
