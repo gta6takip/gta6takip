@@ -27,7 +27,7 @@ import {
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
-const APP_VERSION = 'v1.0.40';
+const APP_VERSION = 'v1.0.41';
 const CHAT_COOLDOWN_SEC = 60;
 const CHAT_COOLDOWN_KEY = 'gta6takip_chat_cooldown_until';
 
@@ -178,6 +178,17 @@ const FALLBACK_NEWS = [
 
 const CHANGELOG = [
   {
+    version: 'v1.0.41',
+    dateTr: '26 Kasım 2026',
+    dateEn: 'November 26, 2026',
+    itemsTr: [
+      'Canlı Sohbet bayraklı iki ayrı odaya ayrıldı: TR (Turkish) ve EN (Global English).',
+    ],
+    itemsEn: [
+      'Split Live Chat into two dedicated rooms with flags: TR (Turkish) and EN (Global English).',
+    ],
+  },
+  {
     version: 'v1.0.40',
     dateTr: '26 Kasım 2026',
     dateEn: 'November 26, 2026',
@@ -208,17 +219,6 @@ const CHANGELOG = [
     ],
     itemsEn: [
       'Fixed instant flag rendering in the Online countries popover and standardized English percentage formatting (91.3%, 80%).',
-    ],
-  },
-  {
-    version: 'v1.0.37',
-    dateTr: '26 Kasım 2026',
-    dateEn: 'November 26, 2026',
-    itemsTr: [
-      'Canlı Sohbet kutusuna 60 saniyede 1 mesaj sınırı, canlı geri sayım sayacı, mesajlara Yanıtla (Reply) özelliği ve kalıcı isim seçimi eklendi.',
-    ],
-    itemsEn: [
-      'Added 60-second message cooldown with live countdown timer, message Reply support, and persistent nickname selection to Live Chat.',
     ],
   },
 ];
@@ -474,7 +474,10 @@ export default function HomePage() {
   const [showAllMobile, setShowAllMobile] = useState(false);
 
   const [chatOpen, setChatOpen] = useState(false);
+  const [chatRoom, setChatRoom] = useState('tr');
+  const chatRoomRef = useRef('tr');
   const [chatMessages, setChatMessages] = useState([]);
+  const [chatLoading, setChatLoading] = useState(false);
   const [chatNick, setChatNick] = useState('');
   const [chatInput, setChatInput] = useState('');
   const [chatSending, setChatSending] = useState(false);
@@ -540,11 +543,19 @@ export default function HomePage() {
   }, []);
 
   useEffect(() => {
+    chatRoomRef.current = chatRoom;
+  }, [chatRoom]);
+
+  useEffect(() => {
     try {
       const savedTheme = localStorage.getItem('gta6takip_theme');
       if (savedTheme && THEMES[savedTheme]) setThemeKey(savedTheme);
       const savedLang = localStorage.getItem('gta6takip_lang');
-      if (savedLang === 'tr' || savedLang === 'en') setLang(savedLang);
+      if (savedLang === 'tr' || savedLang === 'en') {
+        setLang(savedLang);
+        setChatRoom(savedLang);
+        chatRoomRef.current = savedLang;
+      }
       const savedNick = localStorage.getItem('gta6takip_nick');
       if (savedNick) setChatNick(savedNick);
       const savedUntil = Number(localStorage.getItem(CHAT_COOLDOWN_KEY) || '0');
@@ -586,6 +597,32 @@ export default function HomePage() {
     setChatCooldown(sec);
   };
 
+  const fetchChatMessages = async (targetRoom = chatRoomRef.current) => {
+    setChatLoading(true);
+    try {
+      const res = await fetch(`/api/chat?room=${encodeURIComponent(targetRoom)}`, { cache: 'no-store' });
+      if (!res.ok) return;
+      const data = await res.json();
+      if (Array.isArray(data?.messages) && chatRoomRef.current === targetRoom) {
+        setChatMessages(data.messages);
+      }
+    } catch {
+      // Sessizce geç
+    } finally {
+      setChatLoading(false);
+    }
+  };
+
+  const handleSwitchChatRoom = (nextRoom) => {
+    if (nextRoom === chatRoom) return;
+    setChatRoom(nextRoom);
+    chatRoomRef.current = nextRoom;
+    setReplyTo(null);
+    setChatError('');
+    setChatMessages([]);
+    fetchChatMessages(nextRoom);
+  };
+
   const handleSelectTheme = (id) => {
     setThemeKey(id);
     setThemeMenuOpen(false);
@@ -598,6 +635,7 @@ export default function HomePage() {
 
   const handleSelectLang = (nextLang) => {
     setLang(nextLang);
+    handleSwitchChatRoom(nextLang);
     try {
       localStorage.setItem('gta6takip_lang', nextLang);
     } catch {
@@ -637,29 +675,16 @@ export default function HomePage() {
     };
   }, [themeMenuOpen, onlineMenuOpen]);
 
-  const fetchChatMessages = async () => {
-    try {
-      const res = await fetch('/api/chat', { cache: 'no-store' });
-      if (!res.ok) return;
-      const data = await res.json();
-      if (Array.isArray(data?.messages)) {
-        setChatMessages(data.messages);
-      }
-    } catch {
-      // Sessizce geç
-    }
-  };
-
   const handleJumpToChat = () => {
     setChatOpen(true);
-    fetchChatMessages();
+    fetchChatMessages(chatRoomRef.current);
     setTimeout(() => {
       chatSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }, 60);
   };
 
   useEffect(() => {
-    fetchChatMessages();
+    fetchChatMessages(chatRoomRef.current);
   }, []);
 
   useEffect(() => {
@@ -674,6 +699,8 @@ export default function HomePage() {
           (payload) => {
             const incoming = payload?.new;
             if (!incoming?.id) return;
+            const msgRoom = incoming.room === 'en' ? 'en' : 'tr';
+            if (msgRoom !== chatRoomRef.current) return;
             setChatMessages((prev) => {
               if (prev.some((m) => String(m.id) === String(incoming.id))) return prev;
               return [...prev.slice(-49), incoming];
@@ -719,11 +746,13 @@ export default function HomePage() {
     e.preventDefault();
     setChatError('');
 
+    const isEnRoom = chatRoom === 'en';
+
     if (chatCooldown > 0) {
       setChatError(
-        lang === 'tr'
-          ? `60 saniyede 1 mesaj gönderebilirsin. Lütfen ${chatCooldown} saniye bekle.`
-          : `1 message per 60 seconds. Please wait ${chatCooldown}s.`
+        isEnRoom
+          ? `1 message per 60 seconds. Please wait ${chatCooldown}s.`
+          : `60 saniyede 1 mesaj gönderebilirsin. Lütfen ${chatCooldown} saniye bekle.`
       );
       return;
     }
@@ -731,7 +760,7 @@ export default function HomePage() {
     const nick = chatNick.trim();
     const msg = chatInput.trim();
     if (nick.length < 2) {
-      setChatError(lang === 'tr' ? 'En az 2 karakterli bir isim (rumuz) yaz.' : 'Enter a nickname (at least 2 chars).');
+      setChatError(isEnRoom ? 'Enter a nickname (at least 2 chars).' : 'En az 2 karakterli bir isim (rumuz) yaz.');
       return;
     }
     if (!msg) return;
@@ -750,6 +779,7 @@ export default function HomePage() {
         body: JSON.stringify({
           nickname: nick,
           message: msg,
+          room: chatRoom,
           replyToId: replyTo?.id ?? null,
         }),
       });
@@ -758,7 +788,7 @@ export default function HomePage() {
         if (res.status === 429 && data?.retryAfter) {
           startChatCooldown(data.retryAfter);
         }
-        setChatError(data?.error || (lang === 'tr' ? 'Mesaj gönderilemedi.' : 'Failed to send message.'));
+        setChatError(data?.error || (isEnRoom ? 'Failed to send message.' : 'Mesaj gönderilemedi.'));
         return;
       }
       if (data?.message) {
@@ -771,7 +801,7 @@ export default function HomePage() {
       setReplyTo(null);
       startChatCooldown(data?.cooldownSeconds || CHAT_COOLDOWN_SEC);
     } catch {
-      setChatError(lang === 'tr' ? 'Bağlantı hatası, tekrar dene.' : 'Connection error, please try again.');
+      setChatError(isEnRoom ? 'Connection error, please try again.' : 'Bağlantı hatası, tekrar dene.');
     } finally {
       setChatSending(false);
     }
@@ -1078,6 +1108,8 @@ export default function HomePage() {
         ))}
       </div>
     );
+
+  const isEnRoom = chatRoom === 'en';
 
   return (
     <div className={`min-h-screen transition-colors duration-300 ${theme.bg}`}>
@@ -1644,7 +1676,7 @@ export default function HomePage() {
             onClick={() => {
               const next = !chatOpen;
               setChatOpen(next);
-              if (next) fetchChatMessages();
+              if (next) fetchChatMessages(chatRoomRef.current);
             }}
             className="w-full px-4 py-3 flex items-center justify-between gap-2 text-left hover:bg-white/5 transition"
           >
@@ -1666,26 +1698,55 @@ export default function HomePage() {
 
           {chatOpen && (
             <div className={`px-3.5 sm:px-4 pb-4 pt-3 border-t space-y-3 ${theme.subCard}`}>
-              <div className={`flex items-center justify-between gap-2 flex-wrap text-[11px] ${theme.muted}`}>
-                <span>
-                  {lang === 'tr'
-                    ? 'Küfür ve link engeli aktif · 60 saniyede 1 mesaj sınırı'
-                    : 'Profanity & link filter active · 1 message per 60s'}
-                </span>
+              {/* TR / EN Oda Seçici */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div className={`inline-flex rounded-xl border p-1 gap-1 ${theme.card}`}>
+                  <button
+                    type="button"
+                    onClick={() => handleSwitchChatRoom('tr')}
+                    className={`flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition ${
+                      chatRoom === 'tr' ? theme.btnPrimary : `${theme.muted} hover:bg-white/5`
+                    }`}
+                  >
+                    <FlagTR className="w-4 h-3 rounded-[2px] shrink-0 shadow-sm" />
+                    <span>TR (Turkish)</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleSwitchChatRoom('en')}
+                    className={`flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition ${
+                      chatRoom === 'en' ? theme.btnPrimary : `${theme.muted} hover:bg-white/5`
+                    }`}
+                  >
+                    <FlagUS className="w-4 h-3 rounded-[2px] shrink-0 shadow-sm" />
+                    <span>EN (Global English)</span>
+                  </button>
+                </div>
+
                 {chatCooldown > 0 && (
-                  <span className={`inline-flex items-center gap-1 font-bold ${theme.accentText}`}>
+                  <span className={`inline-flex items-center gap-1 text-[11px] font-bold ${theme.accentText}`}>
                     <Clock className="w-3 h-3" />
-                    {lang === 'tr' ? `Bekleme: ${chatCooldown} sn` : `Wait: ${chatCooldown}s`}
+                    {isEnRoom ? `Wait: ${chatCooldown}s` : `Bekleme: ${chatCooldown} sn`}
                   </span>
                 )}
               </div>
 
+              <div className={`text-[11px] ${theme.muted}`}>
+                {isEnRoom
+                  ? 'Global English room · Profanity & link filter active · 1 message per 60s'
+                  : 'Türkçe sohbet odası · Küfür ve link engeli aktif · 60 saniyede 1 mesaj sınırı'}
+              </div>
+
               <div className={`gta-scroll rounded-xl border p-2.5 max-h-64 overflow-y-auto space-y-2 ${theme.card}`}>
-                {chatMessages.length === 0 ? (
+                {chatLoading && chatMessages.length === 0 ? (
                   <p className={`text-xs text-center py-6 ${theme.muted}`}>
-                    {lang === 'tr'
-                      ? 'Henüz mesaj yok. İlk mesajı sen yaz!'
-                      : 'No messages yet. Be the first to say hi!'}
+                    {isEnRoom ? 'Loading messages...' : 'Mesajlar yükleniyor...'}
+                  </p>
+                ) : chatMessages.length === 0 ? (
+                  <p className={`text-xs text-center py-6 ${theme.muted}`}>
+                    {isEnRoom
+                      ? 'No messages in Global English room yet. Be the first to say hi!'
+                      : 'Henüz mesaj yok. İlk mesajı sen yaz!'}
                   </p>
                 ) : (
                   chatMessages.map((m) => (
@@ -1699,7 +1760,7 @@ export default function HomePage() {
                           }`}
                         >
                           <span className={`font-bold ${theme.accentText}`}>
-                            @{m.reply_to_nick || (lang === 'tr' ? 'Kullanıcı' : 'User')}:
+                            @{m.reply_to_nick || (isEnRoom ? 'User' : 'Kullanıcı')}:
                           </span>{' '}
                           <span className="break-words opacity-85">{m.reply_to_text}</span>
                         </div>
@@ -1708,16 +1769,16 @@ export default function HomePage() {
                         <span className={`font-extrabold ${theme.accentText}`}>{m.nickname}</span>
                         <div className="flex items-center gap-2 shrink-0">
                           <span className={`text-[10px] ${theme.muted}`}>
-                            {formatChatTime(m.created_at)} {lang === 'tr' ? 'TSİ' : 'TRT'}
+                            {formatChatTime(m.created_at)} {isEnRoom ? 'TRT' : 'TSİ'}
                           </span>
                           <button
                             type="button"
                             onClick={() => handleStartReply(m)}
                             className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded border text-[10px] font-semibold transition hover:opacity-100 opacity-80 ${theme.pill}`}
-                            title={lang === 'tr' ? 'Bu mesajı yanıtla' : 'Reply to this message'}
+                            title={isEnRoom ? 'Reply to this message' : 'Bu mesajı yanıtla'}
                           >
                             <Reply className="w-2.5 h-2.5" />
-                            <span>{lang === 'tr' ? 'Yanıtla' : 'Reply'}</span>
+                            <span>{isEnRoom ? 'Reply' : 'Yanıtla'}</span>
                           </button>
                         </div>
                       </div>
@@ -1734,9 +1795,9 @@ export default function HomePage() {
                 >
                   <div className="min-w-0 truncate">
                     <span className={`font-bold ${theme.accentText}`}>
-                      {lang === 'tr'
-                        ? `@${replyTo.nickname} yanıtlanıyor:`
-                        : `Replying to @${replyTo.nickname}:`}
+                      {isEnRoom
+                        ? `Replying to @${replyTo.nickname}:`
+                        : `@${replyTo.nickname} yanıtlanıyor:`}
                     </span>{' '}
                     <span className={theme.muted}>{replyTo.message}</span>
                   </div>
@@ -1744,7 +1805,7 @@ export default function HomePage() {
                     type="button"
                     onClick={() => setReplyTo(null)}
                     className={`p-1 rounded-lg border shrink-0 ${theme.subCard}`}
-                    aria-label={lang === 'tr' ? 'Yanıtı iptal et' : 'Cancel reply'}
+                    aria-label={isEnRoom ? 'Cancel reply' : 'Yanıtı iptal et'}
                   >
                     <X className="w-3 h-3" />
                   </button>
@@ -1758,7 +1819,7 @@ export default function HomePage() {
                     maxLength={20}
                     value={chatNick}
                     onChange={(e) => handleNickChange(e.target.value)}
-                    placeholder={lang === 'tr' ? 'İsmin (2-20 karakter)' : 'Your name (2-20 chars)'}
+                    placeholder={isEnRoom ? 'Your name (2-20 chars)' : 'İsmin (2-20 karakter)'}
                     className={`sm:w-44 rounded-xl border px-3 py-2 outline-none ${theme.card}`}
                   />
                   <div className="flex gap-2 flex-1">
@@ -1771,12 +1832,12 @@ export default function HomePage() {
                       onChange={(e) => setChatInput(e.target.value)}
                       placeholder={
                         chatCooldown > 0
-                          ? lang === 'tr'
-                            ? `Yeni mesaj için ${chatCooldown} saniye bekle...`
-                            : `Wait ${chatCooldown}s before sending again...`
-                          : lang === 'tr'
-                            ? 'Mesajını yaz (link ve küfür yasak)...'
-                            : 'Type a message (no links or profanity)...'
+                          ? isEnRoom
+                            ? `Wait ${chatCooldown}s before sending again...`
+                            : `Yeni mesaj için ${chatCooldown} saniye bekle...`
+                          : isEnRoom
+                            ? 'Type a message in Global English (no links)...'
+                            : 'Mesajını yaz (link ve küfür yasak)...'
                       }
                       className={`flex-1 rounded-xl border px-3 py-2 outline-none min-w-0 disabled:opacity-60 ${theme.card}`}
                     />
@@ -1795,12 +1856,12 @@ export default function HomePage() {
                           <Send className="w-3.5 h-3.5" />
                           <span className="hidden sm:inline">
                             {chatSending
-                              ? lang === 'tr'
-                                ? 'Gönderiliyor'
-                                : 'Sending'
-                              : lang === 'tr'
-                                ? 'Gönder'
-                                : 'Send'}
+                              ? isEnRoom
+                                ? 'Sending'
+                                : 'Gönderiliyor'
+                              : isEnRoom
+                                ? 'Send'
+                                : 'Gönder'}
                           </span>
                         </>
                       )}
@@ -1812,9 +1873,9 @@ export default function HomePage() {
                   <div className="space-y-1 pt-0.5">
                     <div className="flex items-center justify-between text-[11px] font-semibold">
                       <span className={theme.accentText}>
-                        {lang === 'tr'
-                          ? `Yeni mesaj atabilmek için ${chatCooldown} saniye kaldı`
-                          : `${chatCooldown} seconds left until your next message`}
+                        {isEnRoom
+                          ? `${chatCooldown} seconds left until your next message`
+                          : `Yeni mesaj atabilmek için ${chatCooldown} saniye kaldı`}
                       </span>
                       <span className={theme.muted}>
                         {chatCooldown}s / {CHAT_COOLDOWN_SEC}s
