@@ -9,7 +9,6 @@ import {
   ShieldAlert,
   ChevronDown,
   ChevronUp,
-  ChevronRight,
   Flame,
   Target,
   TrendingUp,
@@ -18,11 +17,10 @@ import {
   Share2,
   Lock,
   Code2,
-  MessageSquareQuote,
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
-const APP_VERSION = 'v1.0.20';
+const APP_VERSION = 'v1.0.19';
 
 const THEMES = {
   dark: {
@@ -151,63 +149,7 @@ const FALLBACK_NEWS = [
   { tagTr: 'GÜNCEL', tagEn: 'LIVE', tr: "PortWatch üzerinde 39 girişim takip ediliyor; 17'si oyunu başlatabiliyor (İlk 3 ort. %81.7).", en: '39 total efforts tracked on PortWatch, with 17 booting GTA VI (Top-3 avg 81.7%).' },
 ];
 
-const COMMUNITY_BUZZ = [
-  {
-    source: 'Reddit · r/pcmasterrace',
-    tr: 'Doomsday ekibinin X’teki GIF paylaşımı sonrası toplulukta 60 FPS beklentisi ve sahte kurulum dosyalarına karşı uyarılar tartışılıyor.',
-    en: 'Following Doomsday’s teaser GIF on X, players debate 60 FPS prospects while warning against malware-laced fake builds.',
-    url: 'https://www.reddit.com/r/pcmasterrace/comments/1y5ffs6/doomsday_the_team_who_has_made_the_most_progress/',
-  },
-  {
-    source: 'Notebookcheck',
-    tr: 'Take-Two’nun 3.007 depoluk GitHub DMCA hamlesine rağmen PC port çalışmalarının özel gruplara taşındığı ve devam ettiği aktarılıyor.',
-    en: 'Despite Take-Two’s 3,007-repo GitHub DMCA takedown, development has shifted into private channels and keeps advancing.',
-    url: 'https://www.notebookcheck.net/GTA-6-PC-ports-reach-gameplay-despite-Take-Two-s-GitHub-DMCA.1459752.0.html',
-  },
-  {
-    source: 'PC Gamer',
-    tr: 'Takipçiler uyarıyor: PortWatch yüzdeleri oyunun çıkış tarihini değil teknik aşamayı ölçüyor; asıl zorluk stabil performans.',
-    en: 'PC Gamer notes PortWatch scores track technical milestones rather than a release ETA, with smooth performance still the hard part.',
-    url: 'https://www.pcgamer.com/games/grand-theft-auto/gta-6-recomp-explained/',
-  },
-  {
-    source: 'IGN',
-    tr: 'Take-Two, Cyberleek tarafından sızdırılan Xbox yapısına dayalı izinsiz GTA 6 PC portlarını internetten temizlemek için harekete geçti.',
-    en: 'IGN reports Take-Two is actively targeting unauthorized GTA 6 PC port efforts built on the leaked Xbox build.',
-    url: 'https://www.ign.com/articles/take-two-appears-to-be-trying-to-scrub-gta-6-pc-ports-from-the-internet-as-vibecoders-race-toward-controversial-world-first',
-  },
-  {
-    source: 'DonanımHaber',
-    tr: '3 binden fazla proje kaldırılsa da bazı ekiplerde ışın izleme (ray tracing) denemeleri ve ilk görev sahneleri çalışır hale geldi.',
-    en: 'DonanımHaber highlights that despite over 3,000 repo removals, early ray-tracing tests and opening missions are running.',
-    url: 'https://www.donanimhaber.com/take-two-gta-6-pc-projelerine-savas-acti-oyun-5-fps-e-ulasti--213363',
-  },
-  {
-    source: 'TweakTown',
-    tr: 'Oyun basını, sızan Xbox çalıştırılabilir dosyasının PC topluluğunda saatler içinde nasıl bir yarış başlattığını mercek altına aldı.',
-    en: 'TweakTown breaks down how the leaked Xbox executable sparked an overnight PC recompilation race across the community.',
-    url: 'https://www.tweaktown.com/articles/11693/the-state-of-gta-6-on-pc-everything-you-need-to-know/index.html',
-  },
-  {
-    source: 'Reddit · r/FitGirlRepack',
-    tr: 'Rumble yayınında 20 FPS civarı performans gösteren akışların aniden kapanması forumlarda gerçeklik tartışması yarattı.',
-    en: 'Forum threads debate the authenticity of closed Rumble streams claiming ~20 FPS after streams suddenly went offline.',
-    url: 'https://www.reddit.com/r/FitGirlRepack/comments/1y5hx5p/the_stream_from_the_guy_on_rumble_claiming_20fps/',
-  },
-];
-
 const CHANGELOG = [
-  {
-    version: 'v1.0.20',
-    dateTr: '26 Kasım 2026',
-    dateEn: 'November 26, 2026',
-    itemsTr: [
-      'Son Gelişmeler altına her 10 saniyede bir dönen "İnsanlar Ne Diyor?" sosyal medya ve basın akışı eklendi.',
-    ],
-    itemsEn: [
-      'Added a 10-second rotating "What People Are Saying" social & gaming press feed below Latest Updates.',
-    ],
-  },
   {
     version: 'v1.0.19',
     dateTr: '26 Kasım 2026',
@@ -230,6 +172,19 @@ const CHANGELOG = [
     ],
     itemsEn: [
       'Added new #1 leader AvatarManz (83.1% · 16 FPS with sound, RX 7900 XTX) and fixed English uppercase heading.',
+    ],
+  },
+  {
+    version: 'v1.0.17',
+    dateTr: '26 Kasım 2026',
+    dateEn: 'November 26, 2026',
+    itemsTr: [
+      '30 FPS Barajı hesaplaması sadece oynanabilir (%50+) yapıları ölçecek şekilde düzeltildi (24 / 30 FPS).',
+      'Son Gelişmeler içindeki REKOR, AÇIK KAYNAK ve GÜNCEL rozetleri ışıklı ve canlı hale getirildi.',
+    ],
+    itemsEn: [
+      'Fixed 30 FPS Target calculation to track only playable (50%+) builds (24 / 30 FPS).',
+      'Added glowing live styling to RECORD, OPEN SOURCE, and LIVE tags in Latest Updates.',
     ],
   },
 ];
@@ -349,7 +304,6 @@ export default function HomePage() {
   const [countdown, setCountdown] = useState(120);
   const [syncing, setSyncing] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [buzzIndex, setBuzzIndex] = useState(0);
 
   const theme = THEMES[themeKey] || THEMES.dark;
 
@@ -466,13 +420,6 @@ export default function HomePage() {
   }, []);
 
   useEffect(() => {
-    const buzzTimer = setInterval(() => {
-      setBuzzIndex((prev) => (prev + 1) % COMMUNITY_BUZZ.length);
-    }, 10000);
-    return () => clearInterval(buzzTimer);
-  }, []);
-
-  useEffect(() => {
     const onScroll = () => setShowBackTop(window.scrollY > 360);
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
@@ -508,7 +455,6 @@ export default function HomePage() {
   const leader = teams[0] || FALLBACK_TEAMS[0];
   const peakFps = useMemo(() => extractPeakFps(teams), [teams]);
   const fpsPct = Math.min(100, Math.round((peakFps / 30) * 100));
-  const currentBuzz = COMMUNITY_BUZZ[buzzIndex] || COMMUNITY_BUZZ[0];
 
   const fastestTeam = useMemo(() => {
     let best = leader;
@@ -767,49 +713,6 @@ export default function HomePage() {
                 </div>
               );
             })}
-          </div>
-        </section>
-
-        {/* İnsanlar Ne Diyor? (10 saniyede bir dönen sosyal medya & basın akışı) */}
-        <section className={`rounded-2xl border p-3.5 ${theme.card}`}>
-          <div className="flex items-center justify-between gap-2 mb-2">
-            <div className="flex items-center gap-2">
-              <MessageSquareQuote className={`w-4 h-4 ${theme.accentText} shrink-0`} />
-              <h2 className="text-xs font-extrabold tracking-wider">
-                {lang === 'tr' ? 'İNSANLAR NE DİYOR?' : 'WHAT PEOPLE ARE SAYING'}
-              </h2>
-              <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold border ${theme.pill}`}>
-                {currentBuzz.source}
-              </span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span className={`text-[10px] hidden sm:inline ${theme.muted}`}>
-                {buzzIndex + 1}/{COMMUNITY_BUZZ.length}
-              </span>
-              <button
-                type="button"
-                onClick={() => setBuzzIndex((prev) => (prev + 1) % COMMUNITY_BUZZ.length)}
-                aria-label={lang === 'tr' ? 'Sonraki yorum' : 'Next item'}
-                className={`p-1 rounded-lg border transition hover:opacity-80 ${theme.subCard}`}
-              >
-                <ChevronRight className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          </div>
-
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <p className={`text-xs leading-relaxed ${theme.muted}`}>
-              {lang === 'tr' ? currentBuzz.tr : currentBuzz.en}
-            </p>
-            <a
-              href={currentBuzz.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border text-[11px] font-semibold shrink-0 self-start sm:self-center transition hover:opacity-80 ${theme.subCard}`}
-            >
-              <span>{lang === 'tr' ? 'Kaynağa Git' : 'Read'}</span>
-              <ExternalLink className="w-3 h-3" />
-            </a>
           </div>
         </section>
 
