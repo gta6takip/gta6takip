@@ -37,10 +37,11 @@ import {
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
-const APP_VERSION = 'v1.0.47';
+const APP_VERSION = 'v1.0.48';
 const CHAT_COOLDOWN_SEC = 30;
 const CHAT_COOLDOWN_KEY = 'gta6takip_chat_cooldown_until';
 const CHAT_SOUND_KEY = 'gta6takip_chat_sound';
+const CHAT_CLIENT_KEY = 'gta6takip_client_id';
 
 function playChatChime() {
   try {
@@ -271,6 +272,21 @@ const FALLBACK_NEWS = [
 
 const CHANGELOG = [
   {
+    version: 'v1.0.48',
+    dateTr: '27 Kasım 2026',
+    dateEn: 'November 27, 2026',
+    itemsTr: [
+      'Güvenlik Paketi: Yetkili PIN için 5 hatalı denemede 15 dk kilit (brute-force koruması) ve timing-safe doğrulama eklendi.',
+      'Kalıcı tarayıcı kimliği (clientId) ve veritabanı tabanlı kesin 30sn hız sınırı aktif edildi.',
+      'EN sohbet odası rozet çevirisi ve akıllı sohbet kaydırma (yukarıda okurken zıplamama) iyileştirildi.',
+    ],
+    itemsEn: [
+      'Security Pack: Added 15-min lockout after 5 failed Staff PIN attempts and timing-safe verification.',
+      'Enabled persistent browser clientId for bans and DB-backed 30s rate limiting.',
+      'Fixed EN room header badge localization and added smart chat auto-scroll.',
+    ],
+  },
+  {
     version: 'v1.0.47',
     dateTr: '27 Kasım 2026',
     dateEn: 'November 27, 2026',
@@ -307,17 +323,6 @@ const CHANGELOG = [
       'Added ALL / AMD / NVIDIA architecture filters with brand icons to Active Efforts.',
       'Blocked admin/mod impersonation nicknames and added verified ADMIN shield & badge for batmancodex.',
       'Polished Live Chat username pill bubbles and overall chat container styling.',
-    ],
-  },
-  {
-    version: 'v1.0.44',
-    dateTr: '27 Kasım 2026',
-    dateEn: 'November 27, 2026',
-    itemsTr: [
-      'Canlı Sohbet tasarımı temayla uyumlu renkli kullanıcı adı baloncukları, baş harf avatarları ve modern tek parça mesaj giriş çubuğuyla yenilendi.',
-    ],
-    itemsEn: [
-      'Redesigned Live Chat with themed username pill badges, initial avatars, softer message bubbles, and a sleek unified message composer bar.',
     ],
   },
 ];
@@ -579,6 +584,7 @@ export default function HomePage() {
   const [chatMessages, setChatMessages] = useState([]);
   const [chatLoading, setChatLoading] = useState(false);
   const [chatNick, setChatNick] = useState('');
+  const [chatClientId, setChatClientId] = useState('');
   const [staffPinOpen, setStaffPinOpen] = useState(false);
   const [staffPin, setStaffPin] = useState('');
   const [banningId, setBanningId] = useState(null);
@@ -593,7 +599,9 @@ export default function HomePage() {
   const chatSoundOnRef = useRef(true);
   const ownMsgIdsRef = useRef(new Set());
   const lastOwnSendAtRef = useRef(0);
+  const forceScrollRef = useRef(false);
   const chatSectionRef = useRef(null);
+  const chatListRef = useRef(null);
   const chatEndRef = useRef(null);
   const chatInputRef = useRef(null);
 
@@ -671,6 +679,18 @@ export default function HomePage() {
       }
       const savedNick = localStorage.getItem('gta6takip_nick');
       if (savedNick) setChatNick(savedNick);
+
+      let cid = localStorage.getItem(CHAT_CLIENT_KEY) || '';
+      if (cid.length < 8) {
+        const rand =
+          typeof crypto !== 'undefined' && crypto.randomUUID
+            ? crypto.randomUUID().replace(/-/g, '').slice(0, 20)
+            : `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 12)}`;
+        cid = `c_${rand}`;
+        localStorage.setItem(CHAT_CLIENT_KEY, cid);
+      }
+      setChatClientId(cid);
+
       const savedSound = localStorage.getItem(CHAT_SOUND_KEY);
       if (savedSound === '0') {
         setChatSoundOn(false);
@@ -736,6 +756,7 @@ export default function HomePage() {
       if (!res.ok) return;
       const data = await res.json();
       if (Array.isArray(data?.messages) && chatRoomRef.current === targetRoom) {
+        forceScrollRef.current = true;
         setChatMessages(data.messages);
       }
     } catch {
@@ -809,6 +830,7 @@ export default function HomePage() {
   }, [themeMenuOpen, onlineMenuOpen]);
 
   const handleJumpToChat = () => {
+    forceScrollRef.current = true;
     setChatOpen(true);
     fetchChatMessages(chatRoomRef.current);
     setTimeout(() => {
@@ -868,7 +890,11 @@ export default function HomePage() {
   }, [supabaseClient]);
 
   useEffect(() => {
-    if (chatOpen && chatEndRef.current) {
+    if (!chatOpen || !chatEndRef.current) return;
+    const el = chatListRef.current;
+    const isNearBottom = !el || el.scrollHeight - el.scrollTop - el.clientHeight < 120;
+    if (forceScrollRef.current || isNearBottom) {
+      forceScrollRef.current = false;
       chatEndRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
   }, [chatMessages, chatOpen]);
@@ -1002,6 +1028,7 @@ export default function HomePage() {
           room: chatRoom,
           replyToId: replyTo?.id ?? null,
           adminPin: hasPin ? staffPin.trim() : undefined,
+          clientId: chatClientId || undefined,
         }),
       });
       const data = await res.json();
@@ -1014,6 +1041,7 @@ export default function HomePage() {
       }
       if (data?.message) {
         ownMsgIdsRef.current.add(String(data.message.id));
+        forceScrollRef.current = true;
         setChatMessages((prev) => {
           if (prev.some((m) => String(m.id) === String(data.message.id))) return prev;
           return [...prev.slice(-49), data.message];
@@ -1966,6 +1994,7 @@ export default function HomePage() {
             type="button"
             onClick={() => {
               const next = !chatOpen;
+              if (next) forceScrollRef.current = true;
               setChatOpen(next);
               if (next) fetchChatMessages(chatRoomRef.current);
             }}
@@ -1983,7 +2012,7 @@ export default function HomePage() {
                 {onlineCount} {lang === 'tr' ? 'Aktif' : 'Active'}
               </span>
               <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${theme.pill}`}>
-                {chatMessages.length} {lang === 'tr' ? 'Mesaj · 30sn Korumalı' : 'Messages · 30s Limit'}
+                {chatMessages.length} {isEnRoom ? 'Messages · 30s Limit' : 'Mesaj · 30sn Korumalı'}
               </span>
             </div>
             <span className={`p-1.5 rounded-xl border ${theme.subCard}`}>
@@ -2109,7 +2138,7 @@ export default function HomePage() {
               </div>
 
               {/* Mesaj Akışı */}
-              <div className={`gta-scroll rounded-2xl border p-3 max-h-80 overflow-y-auto space-y-2.5 ${theme.card}`}>
+              <div ref={chatListRef} className={`gta-scroll rounded-2xl border p-3 max-h-80 overflow-y-auto space-y-2.5 ${theme.card}`}>
                 {chatLoading && chatMessages.length === 0 ? (
                   <p className={`text-xs text-center py-8 ${theme.muted}`}>
                     {isEnRoom ? 'Loading messages...' : 'Mesajlar yükleniyor...'}
