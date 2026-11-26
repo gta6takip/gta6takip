@@ -6,6 +6,8 @@ import {
   ExternalLink,
   ArrowUp,
   ShieldAlert,
+  ShieldCheck,
+  BadgeCheck,
   ChevronDown,
   ChevronUp,
   Flame,
@@ -26,10 +28,13 @@ import {
   Reply,
   Volume2,
   VolumeX,
+  User,
+  KeyRound,
+  Cpu,
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
-const APP_VERSION = 'v1.0.43';
+const APP_VERSION = 'v1.0.45';
 const CHAT_COOLDOWN_SEC = 30;
 const CHAT_COOLDOWN_KEY = 'gta6takip_chat_cooldown_until';
 const CHAT_SOUND_KEY = 'gta6takip_chat_sound';
@@ -75,6 +80,47 @@ function playChatChime() {
     // Tarayıcı ses izni yoksa sessizce geç
   }
 }
+
+const NICK_PALETTES_DARK = [
+  { pill: 'bg-pink-500/20 text-pink-100 border-pink-400/45 shadow-[0_2px_10px_rgba(236,72,153,0.18)]', avatar: 'bg-gradient-to-br from-pink-400 to-rose-500 text-zinc-950' },
+  { pill: 'bg-amber-500/20 text-amber-100 border-amber-400/45 shadow-[0_2px_10px_rgba(245,158,11,0.18)]', avatar: 'bg-gradient-to-br from-amber-300 to-orange-500 text-zinc-950' },
+  { pill: 'bg-cyan-500/20 text-cyan-100 border-cyan-400/45 shadow-[0_2px_10px_rgba(34,211,238,0.18)]', avatar: 'bg-gradient-to-br from-cyan-300 to-sky-500 text-zinc-950' },
+  { pill: 'bg-violet-500/20 text-violet-100 border-violet-400/45 shadow-[0_2px_10px_rgba(139,92,246,0.18)]', avatar: 'bg-gradient-to-br from-violet-300 to-fuchsia-500 text-zinc-950' },
+  { pill: 'bg-emerald-500/20 text-emerald-100 border-emerald-400/45 shadow-[0_2px_10px_rgba(16,185,129,0.18)]', avatar: 'bg-gradient-to-br from-emerald-300 to-teal-500 text-zinc-950' },
+  { pill: 'bg-sky-500/20 text-sky-100 border-sky-400/45 shadow-[0_2px_10px_rgba(56,189,248,0.18)]', avatar: 'bg-gradient-to-br from-sky-300 to-indigo-500 text-zinc-950' },
+];
+
+const NICK_PALETTES_LIGHT = [
+  { pill: 'bg-pink-100 text-pink-950 border-pink-300 shadow-sm', avatar: 'bg-gradient-to-br from-pink-500 to-rose-600 text-white' },
+  { pill: 'bg-amber-100 text-amber-950 border-amber-300 shadow-sm', avatar: 'bg-gradient-to-br from-amber-500 to-orange-600 text-white' },
+  { pill: 'bg-cyan-100 text-cyan-950 border-cyan-300 shadow-sm', avatar: 'bg-gradient-to-br from-cyan-500 to-sky-600 text-white' },
+  { pill: 'bg-violet-100 text-violet-950 border-violet-300 shadow-sm', avatar: 'bg-gradient-to-br from-violet-500 to-purple-600 text-white' },
+  { pill: 'bg-emerald-100 text-emerald-950 border-emerald-300 shadow-sm', avatar: 'bg-gradient-to-br from-emerald-500 to-teal-600 text-white' },
+  { pill: 'bg-sky-100 text-sky-950 border-sky-300 shadow-sm', avatar: 'bg-gradient-to-br from-sky-500 to-indigo-600 text-white' },
+];
+
+function getNickStyle(name, isLight) {
+  const str = String(name || 'U');
+  let hash = 0;
+  for (let i = 0; i < str.length; i += 1) {
+    hash = (hash * 31 + str.charCodeAt(i)) >>> 0;
+  }
+  const list = isLight ? NICK_PALETTES_LIGHT : NICK_PALETTES_DARK;
+  return list[hash % list.length];
+}
+
+// AMD ve NVIDIA için özel marka SVG ikonları
+const IconAmd = ({ className = 'w-3.5 h-3.5 shrink-0' }) => (
+  <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-hidden="true">
+    <path d="M18.324 9.137L24 14.813V0H9.187l5.676 5.676h3.461v3.461zM14.813 18.324H5.676V9.187L0 14.863V24h9.137l5.676-5.676z" />
+  </svg>
+);
+
+const IconNvidia = ({ className = 'w-3.5 h-3.5 shrink-0' }) => (
+  <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-hidden="true">
+    <path d="M8.948 8.798v-1.43a6.7 6.7 0 0 1 .424-.018c3.922-.124 6.493 3.374 6.493 3.374s-2.774 3.851-5.75 3.851c-.398 0-.787-.062-1.167-.185v-4.34a3.01 3.01 0 0 1 2.752 1.724l2.044-1.724s-1.494-1.959-4.012-1.959c-.269 0-.531.02-.784.051v.656zm0-4.366v1.894c.14-.011.281-.017.424-.022 5.475-.176 9.048 4.492 9.048 4.492s-4.093 4.976-8.353 4.976c-.379 0-.751-.035-1.119-.098v1.186c.309.04.626.063.95.063 3.963 0 6.83-2.022 9.603-4.416.459.369 2.341 1.265 2.725 1.658-2.633 2.203-8.765 3.979-12.244 3.979-.338 0-.67-.016-.994-.047v1.727H24V4.432H8.948zm0 9.95v1.298c-3.779-.673-4.827-4.597-4.827-4.597s1.815-2.011 4.827-2.326v1.282c-.008 0-.016-.001-.024-.001-1.579-.191-2.815 1.285-2.815 1.285s.692 2.482 2.839 3.059zM2.393 10.94s2.241-3.307 6.555-3.635V6.05C3.97 6.451 0 10.654 0 10.654s2.348 6.798 8.948 7.428v-1.307c-4.832-.608-6.555-5.835-6.555-5.835z" />
+  </svg>
+);
 
 const THEMES = {
   vice: {
@@ -223,6 +269,32 @@ const FALLBACK_NEWS = [
 
 const CHANGELOG = [
   {
+    version: 'v1.0.45',
+    dateTr: '27 Kasım 2026',
+    dateEn: 'November 27, 2026',
+    itemsTr: [
+      'Aktif Ekipler bölümüne özel logolu TÜMÜ / AMD / NVIDIA altyapı filtresi eklendi.',
+      'ADMIN/mod taklit isimleri ve batmancodex taklidi sunucuda engellendi; batmancodex mesajlarına özel Onay Rozeti ve ADMIN kalkanı eklendi.',
+      'Canlı Sohbet kullanıcı adı baloncukları ve genel sohbet tasarımı cilalandı.',
+    ],
+    itemsEn: [
+      'Added ALL / AMD / NVIDIA architecture filters with brand icons to Active Efforts.',
+      'Blocked admin/mod impersonation nicknames and added verified ADMIN shield & badge for batmancodex.',
+      'Polished Live Chat username pill bubbles and overall chat container styling.',
+    ],
+  },
+  {
+    version: 'v1.0.44',
+    dateTr: '27 Kasım 2026',
+    dateEn: 'November 27, 2026',
+    itemsTr: [
+      'Canlı Sohbet tasarımı temayla uyumlu renkli kullanıcı adı baloncukları, baş harf avatarları ve modern tek parça mesaj giriş çubuğuyla yenilendi.',
+    ],
+    itemsEn: [
+      'Redesigned Live Chat with themed username pill badges, initial avatars, softer message bubbles, and a sleek unified message composer bar.',
+    ],
+  },
+  {
     version: 'v1.0.43',
     dateTr: '26 Kasım 2026',
     dateEn: 'November 26, 2026',
@@ -242,28 +314,6 @@ const CHANGELOG = [
     ],
     itemsEn: [
       'Added a gentle notification chime for incoming Live Chat messages along with a mute/unmute toggle.',
-    ],
-  },
-  {
-    version: 'v1.0.41',
-    dateTr: '26 Kasım 2026',
-    dateEn: 'November 26, 2026',
-    itemsTr: [
-      'Canlı Sohbet bayraklı iki ayrı odaya ayrıldı: TR (Turkish) ve EN (Global English).',
-    ],
-    itemsEn: [
-      'Split Live Chat into two dedicated rooms with flags: TR (Turkish) and EN (Global English).',
-    ],
-  },
-  {
-    version: 'v1.0.40',
-    dateTr: '26 Kasım 2026',
-    dateEn: 'November 26, 2026',
-    itemsTr: [
-      'Sohbet kutusu ve sayfa kaydırma çubukları seçili 5 temanın her biriyle otomatik uyumlu, ince ve modern görünüme kavuşturuldu.',
-    ],
-    itemsEn: [
-      'Styled chat and page scrollbars to be slim, modern, and automatically matched to all 5 themes.',
     ],
   },
 ];
@@ -516,6 +566,7 @@ export default function HomePage() {
   const [openFaqIdx, setOpenFaqIdx] = useState(null);
   const [showBackTop, setShowBackTop] = useState(false);
   const [typeFilter, setTypeFilter] = useState('all');
+  const [gpuFilter, setGpuFilter] = useState('all'); // 'all' | 'amd' | 'nvidia'
   const [showAllMobile, setShowAllMobile] = useState(false);
 
   const [chatOpen, setChatOpen] = useState(false);
@@ -524,6 +575,7 @@ export default function HomePage() {
   const [chatMessages, setChatMessages] = useState([]);
   const [chatLoading, setChatLoading] = useState(false);
   const [chatNick, setChatNick] = useState('');
+  const [adminPin, setAdminPin] = useState('');
   const [chatInput, setChatInput] = useState('');
   const [chatSending, setChatSending] = useState(false);
   const [chatError, setChatError] = useState('');
@@ -823,13 +875,15 @@ export default function HomePage() {
     }
   };
 
+  const isTypingAdminNick = chatNick.trim().toLowerCase() === 'batmancodex';
+
   const handleSendChat = async (e) => {
     e.preventDefault();
     setChatError('');
 
     const isEnRoom = chatRoom === 'en';
 
-    if (chatCooldown > 0) {
+    if (!isTypingAdminNick && chatCooldown > 0) {
       setChatError(
         isEnRoom
           ? `1 message per 30 seconds. Please wait ${chatCooldown}s.`
@@ -863,6 +917,7 @@ export default function HomePage() {
           message: msg,
           room: chatRoom,
           replyToId: replyTo?.id ?? null,
+          adminPin: isTypingAdminNick ? adminPin : undefined,
         }),
       });
       const data = await res.json();
@@ -882,7 +937,9 @@ export default function HomePage() {
       }
       setChatInput('');
       setReplyTo(null);
-      startChatCooldown(data?.cooldownSeconds || CHAT_COOLDOWN_SEC);
+      if (typeof data?.cooldownSeconds === 'number' && data.cooldownSeconds > 0) {
+        startChatCooldown(data.cooldownSeconds);
+      }
     } catch {
       setChatError(isEnRoom ? 'Connection error, please try again.' : 'Bağlantı hatası, tekrar dene.');
     } finally {
@@ -1050,10 +1107,24 @@ export default function HomePage() {
     [teams]
   );
 
+  const amdCount = useMemo(
+    () => teams.filter((t) => String(t.gpu || '').toLowerCase().includes('amd')).length,
+    [teams]
+  );
+  const nvidiaCount = useMemo(
+    () => teams.filter((t) => String(t.gpu || '').toLowerCase().includes('nvidia')).length,
+    [teams]
+  );
+
   const filteredTeams = useMemo(() => {
-    if (typeFilter === 'all') return rankedTeams;
-    return rankedTeams.filter((t) => t.type === typeFilter);
-  }, [rankedTeams, typeFilter]);
+    return rankedTeams.filter((t) => {
+      if (typeFilter !== 'all' && t.type !== typeFilter) return false;
+      const gpuLower = String(t.gpu || '').toLowerCase();
+      if (gpuFilter === 'amd' && !gpuLower.includes('amd')) return false;
+      if (gpuFilter === 'nvidia' && !gpuLower.includes('nvidia')) return false;
+      return true;
+    });
+  }, [rankedTeams, typeFilter, gpuFilter]);
 
   const openCount = useMemo(
     () => teams.filter((t) => t.type === 'open').length,
@@ -1517,6 +1588,58 @@ export default function HomePage() {
             </div>
 
             <div className="flex items-center gap-2 flex-wrap">
+              {/* GPU Altyapı Filtresi: TÜMÜ / AMD / NVIDIA */}
+              <div className={`inline-flex rounded-lg border p-0.5 text-[11px] font-bold ${theme.subCard}`}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setGpuFilter('all');
+                    setShowAllMobile(false);
+                  }}
+                  className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md transition ${
+                    gpuFilter === 'all' ? theme.btnPrimary : theme.muted
+                  }`}
+                >
+                  <Cpu className="w-3 h-3 shrink-0" />
+                  <span>{lang === 'tr' ? 'TÜMÜ' : 'ALL'}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setGpuFilter('amd');
+                    setShowAllMobile(false);
+                  }}
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md transition ${
+                    gpuFilter === 'amd'
+                      ? 'bg-[#ED1C24] text-white shadow-sm'
+                      : isLight
+                        ? 'text-[#c8102e] hover:bg-red-500/10'
+                        : 'text-[#ff5c5c] hover:bg-red-500/10'
+                  }`}
+                >
+                  <IconAmd className="w-3 h-3" />
+                  <span>AMD ({amdCount})</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setGpuFilter('nvidia');
+                    setShowAllMobile(false);
+                  }}
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md transition ${
+                    gpuFilter === 'nvidia'
+                      ? 'bg-[#76B900] text-zinc-950 shadow-sm'
+                      : isLight
+                        ? 'text-[#598c00] hover:bg-[#76B900]/10'
+                        : 'text-[#8ce000] hover:bg-[#76B900]/15'
+                  }`}
+                >
+                  <IconNvidia className="w-3.5 h-3.5" />
+                  <span>NVIDIA ({nvidiaCount})</span>
+                </button>
+              </div>
+
+              {/* Kaynak Tipi Filtresi */}
               <div className={`inline-flex rounded-lg border p-0.5 text-[11px] font-semibold ${theme.subCard}`}>
                 <button
                   type="button"
@@ -1753,7 +1876,10 @@ export default function HomePage() {
           )}
         </section>
 
-        <section ref={chatSectionRef} id="canli-sohbet" className={`rounded-2xl border overflow-hidden ${theme.card}`}>
+        {/* MODERN CANLI SOHBET KUTUSU */}
+        <section ref={chatSectionRef} id="canli-sohbet" className={`rounded-2xl border overflow-hidden shadow-xl ${theme.card}`}>
+          {chatOpen && <div className={`h-0.5 w-full bg-gradient-to-r ${theme.accentGradient}`} />}
+
           <button
             type="button"
             onClick={() => {
@@ -1761,34 +1887,38 @@ export default function HomePage() {
               setChatOpen(next);
               if (next) fetchChatMessages(chatRoomRef.current);
             }}
-            className="w-full px-4 py-3 flex items-center justify-between gap-2 text-left hover:bg-white/5 transition"
+            className="w-full px-4 py-3.5 flex items-center justify-between gap-2 text-left hover:bg-white/5 transition"
           >
-            <div className="flex items-center gap-2 flex-wrap">
-              <MessageCircle className={`w-4 h-4 ${theme.accentText} shrink-0`} />
-              <span className="text-xs sm:text-sm font-bold tracking-wider">
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <span className={`inline-flex items-center justify-center w-8 h-8 rounded-xl border shadow-sm ${theme.subCard}`}>
+                <MessageCircle className={`w-4 h-4 ${theme.accentText}`} />
+              </span>
+              <span className="text-xs sm:text-sm font-black tracking-wider">
                 {lang === 'tr' ? 'CANLI SOHBET' : 'LIVE CHAT'}
               </span>
-              <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold border ${onlineBtnClass}`}>
+              <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${onlineBtnClass}`}>
                 <span className={`w-1.5 h-1.5 rounded-full animate-pulse ${onlineDotClass}`} />
                 {onlineCount} {lang === 'tr' ? 'Aktif' : 'Active'}
               </span>
-              <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${theme.pill}`}>
+              <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${theme.pill}`}>
                 {chatMessages.length} {lang === 'tr' ? 'Mesaj · 30sn Korumalı' : 'Messages · 30s Limit'}
               </span>
             </div>
-            {chatOpen ? <ChevronUp className="w-4 h-4 shrink-0" /> : <ChevronDown className="w-4 h-4 shrink-0" />}
+            <span className={`p-1.5 rounded-xl border ${theme.subCard}`}>
+              {chatOpen ? <ChevronUp className="w-4 h-4 shrink-0" /> : <ChevronDown className="w-4 h-4 shrink-0" />}
+            </span>
           </button>
 
           {chatOpen && (
-            <div className={`px-3.5 sm:px-4 pb-4 pt-3 border-t space-y-3 ${theme.subCard}`}>
-              {/* TR / EN Oda Seçici + Bildirim Sesi Butonu */}
+            <div className={`px-3.5 sm:px-4 pb-4 pt-3.5 border-t space-y-3 ${theme.subCard}`}>
+              {/* Üst Kontrol Çubuğu: Oda Sekmeleri + Bildirim Sesi */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div className={`inline-flex rounded-xl border p-1 gap-1 ${theme.card}`}>
                   <button
                     type="button"
                     onClick={() => handleSwitchChatRoom('tr')}
                     className={`flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition ${
-                      chatRoom === 'tr' ? theme.btnPrimary : `${theme.muted} hover:bg-white/5`
+                      chatRoom === 'tr' ? `${theme.btnPrimary} shadow-sm` : `${theme.muted} hover:bg-white/5`
                     }`}
                   >
                     <FlagTR className="w-4 h-3 rounded-[2px] shrink-0 shadow-sm" />
@@ -1798,7 +1928,7 @@ export default function HomePage() {
                     type="button"
                     onClick={() => handleSwitchChatRoom('en')}
                     className={`flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition ${
-                      chatRoom === 'en' ? theme.btnPrimary : `${theme.muted} hover:bg-white/5`
+                      chatRoom === 'en' ? `${theme.btnPrimary} shadow-sm` : `${theme.muted} hover:bg-white/5`
                     }`}
                   >
                     <FlagUS className="w-4 h-3 rounded-[2px] shrink-0 shadow-sm" />
@@ -1807,17 +1937,17 @@ export default function HomePage() {
                 </div>
 
                 <div className="flex items-center justify-between sm:justify-end gap-2">
-                  {chatCooldown > 0 && (
-                    <span className={`inline-flex items-center gap-1 text-[11px] font-bold ${theme.accentText}`}>
+                  {chatCooldown > 0 && !isTypingAdminNick && (
+                    <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-xl border text-[11px] font-bold ${theme.card} ${theme.accentText}`}>
                       <Clock className="w-3 h-3" />
-                      {isEnRoom ? `Wait: ${chatCooldown}s` : `Bekleme: ${chatCooldown} sn`}
+                      {isEnRoom ? `${chatCooldown}s` : `${chatCooldown} sn`}
                     </span>
                   )}
 
                   <button
                     type="button"
                     onClick={handleToggleChatSound}
-                    className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-[11px] font-semibold transition hover:opacity-90 ${
+                    className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-[11px] font-semibold transition hover:opacity-90 ${
                       chatSoundOn ? theme.pill : `${theme.card} ${theme.muted} opacity-75`
                     }`}
                     title={
@@ -1845,80 +1975,142 @@ export default function HomePage() {
                 </div>
               </div>
 
-              <div className={`text-[11px] ${theme.muted}`}>
-                {isEnRoom
-                  ? 'Global English room · Profanity & link filter active · 1 message per 30s'
-                  : 'Türkçe sohbet odası · Küfür ve link engeli aktif · 30 saniyede 1 mesaj sınırı'}
+              <div className={`flex items-center gap-1.5 text-[11px] ${theme.muted}`}>
+                <ShieldAlert className={`w-3.5 h-3.5 shrink-0 ${theme.accentText} opacity-80`} />
+                <span>
+                  {isEnRoom
+                    ? 'Global English room · Profanity & link filter active · 1 message per 30s'
+                    : 'Türkçe sohbet odası · Küfür ve link engeli aktif · 30 saniyede 1 mesaj sınırı'}
+                </span>
               </div>
 
-              <div className={`gta-scroll rounded-xl border p-2.5 max-h-64 overflow-y-auto space-y-2 ${theme.card}`}>
+              {/* Mesaj Akışı */}
+              <div className={`gta-scroll rounded-2xl border p-3 max-h-80 overflow-y-auto space-y-2.5 ${theme.card}`}>
                 {chatLoading && chatMessages.length === 0 ? (
-                  <p className={`text-xs text-center py-6 ${theme.muted}`}>
+                  <p className={`text-xs text-center py-8 ${theme.muted}`}>
                     {isEnRoom ? 'Loading messages...' : 'Mesajlar yükleniyor...'}
                   </p>
                 ) : chatMessages.length === 0 ? (
-                  <p className={`text-xs text-center py-6 ${theme.muted}`}>
+                  <p className={`text-xs text-center py-8 ${theme.muted}`}>
                     {isEnRoom
                       ? 'No messages in Global English room yet. Be the first to say hi!'
                       : 'Henüz mesaj yok. İlk mesajı sen yaz!'}
                   </p>
                 ) : (
-                  chatMessages.map((m) => (
-                    <div key={m.id} className={`rounded-lg border px-2.5 py-2 text-xs ${theme.subCard}`}>
-                      {(m.reply_to_nick || m.reply_to_text) && (
-                        <div
-                          className={`mb-1.5 pl-2 pr-2 py-1 rounded border-l-2 text-[11px] ${
-                            isLight
-                              ? 'bg-zinc-200/70 border-orange-500 text-zinc-700'
-                              : 'bg-black/25 border-current opacity-85'
-                          }`}
-                        >
-                          <span className={`font-bold ${theme.accentText}`}>
-                            @{m.reply_to_nick || (isEnRoom ? 'User' : 'Kullanıcı')}:
-                          </span>{' '}
-                          <span className="break-words opacity-85">{m.reply_to_text}</span>
-                        </div>
-                      )}
-                      <div className="flex items-center justify-between gap-2 mb-0.5">
-                        <span className={`font-extrabold ${theme.accentText}`}>{m.nickname}</span>
-                        <div className="flex items-center gap-2 shrink-0">
-                          <span className={`text-[10px] ${theme.muted}`}>
-                            {formatChatTime(m.created_at)} {isEnRoom ? 'TRT' : 'TSİ'}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => handleStartReply(m)}
-                            className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded border text-[10px] font-semibold transition hover:opacity-100 opacity-80 ${theme.pill}`}
-                            title={isEnRoom ? 'Reply to this message' : 'Bu mesajı yanıtla'}
+                  chatMessages.map((m) => {
+                    const isAdminMsg = String(m.nickname || '').trim().toLowerCase() === 'batmancodex';
+                    const nickStyle = getNickStyle(m.nickname, isLight);
+                    const initial = String(m.nickname || '?').trim().charAt(0).toUpperCase() || '?';
+                    const isSelf =
+                      chatNick.trim().length >= 2 &&
+                      String(m.nickname || '').trim().toLowerCase() === chatNick.trim().toLowerCase();
+
+                    return (
+                      <div
+                        key={m.id}
+                        className={`rounded-2xl border px-3.5 py-2.5 text-xs transition ${theme.subCard} ${
+                          isAdminMsg
+                            ? isLight
+                              ? 'ring-1 ring-amber-400/70 bg-amber-50/70'
+                              : 'ring-1 ring-amber-400/45 shadow-[0_0_16px_rgba(251,191,36,0.12)]'
+                            : isSelf
+                              ? isLight
+                                ? 'ring-1 ring-orange-400/50'
+                                : 'ring-1 ring-white/15'
+                              : 'hover:border-white/20'
+                        }`}
+                      >
+                        {(m.reply_to_nick || m.reply_to_text) && (
+                          <div
+                            className={`mb-2 px-2.5 py-1.5 rounded-xl border-l-2 text-[11px] flex items-start gap-1.5 ${
+                              isLight
+                                ? 'bg-zinc-200/75 border-orange-500 text-zinc-700'
+                                : 'bg-black/30 border-current/70 opacity-90'
+                            }`}
                           >
-                            <Reply className="w-2.5 h-2.5" />
-                            <span>{isEnRoom ? 'Reply' : 'Yanıtla'}</span>
-                          </button>
+                            <Reply className={`w-3 h-3 mt-0.5 shrink-0 ${theme.accentText}`} />
+                            <div className="min-w-0 truncate">
+                              <span className={`font-bold ${theme.accentText}`}>
+                                @{m.reply_to_nick || (isEnRoom ? 'User' : 'Kullanıcı')}
+                              </span>
+                              <span className="mx-1 opacity-50">·</span>
+                              <span className="opacity-80">{m.reply_to_text}</span>
+                            </div>
+                          </div>
+                        )}
+
+                        <div className="flex items-center justify-between gap-2 mb-1.5">
+                          {/* Cilalı Kullanıcı Adı Baloncuğu + Admin Onay Rozeti */}
+                          <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
+                            {isAdminMsg ? (
+                              <span className="inline-flex items-center gap-1.5 pl-1 pr-2.5 py-0.5 rounded-full border text-[11px] font-black shadow-sm bg-gradient-to-r from-amber-500/25 via-pink-500/20 to-amber-400/25 border-amber-400/60 text-amber-200">
+                                <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 text-zinc-950 shrink-0">
+                                  <ShieldCheck className="w-2.5 h-2.5" />
+                                </span>
+                                <span className={isLight ? 'text-amber-950' : 'text-amber-100'}>
+                                  {m.nickname}
+                                </span>
+                                <BadgeCheck className="w-3.5 h-3.5 text-sky-400 shrink-0" />
+                                <span className="px-1.5 py-[1px] rounded-full text-[9px] font-black tracking-wider bg-amber-400 text-zinc-950">
+                                  ADMIN
+                                </span>
+                              </span>
+                            ) : (
+                              <span
+                                className={`inline-flex items-center gap-1.5 pl-1 pr-2.5 py-0.5 rounded-full border text-[11px] font-extrabold max-w-full ${nickStyle.pill}`}
+                              >
+                                <span
+                                  className={`inline-flex items-center justify-center w-4 h-4 rounded-full text-[9px] font-black shrink-0 shadow-inner ${nickStyle.avatar}`}
+                                >
+                                  {initial}
+                                </span>
+                                <span className="truncate">{m.nickname}</span>
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <span className={`text-[10px] font-medium tabular-nums ${theme.muted}`}>
+                              {formatChatTime(m.created_at)} {isEnRoom ? 'TRT' : 'TSİ'}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => handleStartReply(m)}
+                              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-[10px] font-semibold transition opacity-80 hover:opacity-100 ${theme.pill}`}
+                              title={isEnRoom ? 'Reply to this message' : 'Bu mesajı yanıtla'}
+                            >
+                              <Reply className="w-2.5 h-2.5" />
+                              <span>{isEnRoom ? 'Reply' : 'Yanıtla'}</span>
+                            </button>
+                          </div>
                         </div>
+
+                        <p className="leading-relaxed break-words pl-1 text-[12.5px]">{m.message}</p>
                       </div>
-                      <p className="leading-snug break-words">{m.message}</p>
-                    </div>
-                  ))
+                    );
+                  })
                 )}
                 <div ref={chatEndRef} />
               </div>
 
+              {/* Yanıt Önizleme Çubuğu */}
               {replyTo && (
                 <div
                   className={`flex items-center justify-between gap-2 px-3 py-2 rounded-xl border border-l-2 text-xs ${theme.card}`}
                 >
-                  <div className="min-w-0 truncate">
-                    <span className={`font-bold ${theme.accentText}`}>
+                  <div className="flex items-center gap-1.5 min-w-0 truncate">
+                    <Reply className={`w-3.5 h-3.5 shrink-0 ${theme.accentText}`} />
+                    <span className={`font-bold shrink-0 ${theme.accentText}`}>
                       {isEnRoom
                         ? `Replying to @${replyTo.nickname}:`
                         : `@${replyTo.nickname} yanıtlanıyor:`}
-                    </span>{' '}
-                    <span className={theme.muted}>{replyTo.message}</span>
+                    </span>
+                    <span className={`truncate ${theme.muted}`}>{replyTo.message}</span>
                   </div>
                   <button
                     type="button"
                     onClick={() => setReplyTo(null)}
-                    className={`p-1 rounded-lg border shrink-0 ${theme.subCard}`}
+                    className={`p-1 rounded-full border shrink-0 transition hover:opacity-80 ${theme.subCard}`}
                     aria-label={isEnRoom ? 'Cancel reply' : 'Yanıtı iptal et'}
                   >
                     <X className="w-3 h-3" />
@@ -1926,49 +2118,85 @@ export default function HomePage() {
                 </div>
               )}
 
+              {/* Modern Giriş Barı */}
               <form onSubmit={handleSendChat} className="space-y-2 text-xs">
-                <div className="flex flex-col sm:flex-row gap-2">
-                  <input
-                    type="text"
-                    maxLength={20}
-                    value={chatNick}
-                    onChange={(e) => handleNickChange(e.target.value)}
-                    placeholder={isEnRoom ? 'Your name (2-20 chars)' : 'İsmin (2-20 karakter)'}
-                    className={`sm:w-44 rounded-xl border px-3 py-2 outline-none ${theme.card}`}
-                  />
-                  <div className="flex gap-2 flex-1">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                  {/* Kullanıcı Adı Kutusu */}
+                  <div
+                    className={`sm:w-44 flex items-center gap-2 rounded-2xl border px-3 py-2 transition focus-within:ring-2 focus-within:ring-pink-500/35 ${theme.card}`}
+                  >
+                    <span className={`inline-flex items-center justify-center w-5 h-5 rounded-full shrink-0 border ${theme.pill}`}>
+                      {isTypingAdminNick ? <ShieldCheck className="w-3 h-3 text-amber-400" /> : <User className="w-3 h-3" />}
+                    </span>
+                    <input
+                      type="text"
+                      maxLength={20}
+                      value={chatNick}
+                      onChange={(e) => handleNickChange(e.target.value)}
+                      placeholder={isEnRoom ? 'Nickname...' : 'İsmin...'}
+                      className="w-full bg-transparent outline-none font-bold text-xs min-w-0 placeholder:font-normal placeholder:opacity-60"
+                    />
+                  </div>
+
+                  {/* Sadece batmancodex yazıldığında görünen gizli Admin PIN alanı */}
+                  {isTypingAdminNick && (
+                    <div
+                      className={`sm:w-36 flex items-center gap-1.5 rounded-2xl border border-amber-400/50 px-3 py-2 transition focus-within:ring-2 focus-within:ring-amber-400/40 ${theme.card}`}
+                    >
+                      <KeyRound className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                      <input
+                        type="password"
+                        value={adminPin}
+                        onChange={(e) => setAdminPin(e.target.value)}
+                        placeholder="Admin PIN"
+                        className="w-full bg-transparent outline-none font-bold text-xs min-w-0 placeholder:font-normal placeholder:opacity-60"
+                      />
+                    </div>
+                  )}
+
+                  {/* Birleşik Mesaj Çubuğu */}
+                  <div
+                    className={`flex-1 flex items-center gap-1.5 rounded-2xl border p-1.5 pl-3 transition focus-within:ring-2 focus-within:ring-pink-500/35 ${theme.card}`}
+                  >
                     <input
                       ref={chatInputRef}
                       type="text"
                       maxLength={280}
-                      disabled={chatCooldown > 0 || chatSending}
+                      disabled={(!isTypingAdminNick && chatCooldown > 0) || chatSending}
                       value={chatInput}
                       onChange={(e) => setChatInput(e.target.value)}
                       placeholder={
-                        chatCooldown > 0
+                        !isTypingAdminNick && chatCooldown > 0
                           ? isEnRoom
                             ? `Wait ${chatCooldown}s before sending again...`
                             : `Yeni mesaj için ${chatCooldown} saniye bekle...`
                           : isEnRoom
-                            ? 'Type a message in Global English (no links)...'
+                            ? 'Write a message (no links)...'
                             : 'Mesajını yaz (link ve küfür yasak)...'
                       }
-                      className={`flex-1 rounded-xl border px-3 py-2 outline-none min-w-0 disabled:opacity-60 ${theme.card}`}
+                      className="flex-1 bg-transparent outline-none text-xs min-w-0 disabled:opacity-60 placeholder:opacity-60"
                     />
+
+                    {chatInput.length > 0 && (isTypingAdminNick || chatCooldown === 0) && (
+                      <span className={`hidden sm:inline text-[10px] font-mono pr-1 ${theme.muted}`}>
+                        {chatInput.length}/280
+                      </span>
+                    )}
+
                     <button
                       type="submit"
-                      disabled={chatSending || chatCooldown > 0}
-                      className={`px-3.5 py-2 rounded-xl font-bold inline-flex items-center gap-1.5 shrink-0 transition disabled:opacity-60 disabled:cursor-not-allowed ${theme.btnPrimary}`}
+                      disabled={chatSending || (!isTypingAdminNick && chatCooldown > 0)}
+                      className={`px-3.5 py-2 rounded-xl font-bold inline-flex items-center gap-1.5 shrink-0 shadow-sm transition disabled:opacity-60 disabled:cursor-not-allowed ${theme.btnPrimary}`}
                     >
-                      {chatCooldown > 0 ? (
+                      {!isTypingAdminNick && chatCooldown > 0 ? (
                         <>
                           <Clock className="w-3.5 h-3.5" />
-                          <span>{chatCooldown}s</span>
+                          <span className="tabular-nums">{chatCooldown}s</span>
                         </>
                       ) : (
                         <>
                           <Send className="w-3.5 h-3.5" />
-                          <span className="hidden sm:inline">
+                          <span>
                             {chatSending
                               ? isEnRoom
                                 ? 'Sending'
@@ -1983,15 +2211,15 @@ export default function HomePage() {
                   </div>
                 </div>
 
-                {chatCooldown > 0 && (
-                  <div className="space-y-1 pt-0.5">
+                {!isTypingAdminNick && chatCooldown > 0 && (
+                  <div className="space-y-1 pt-0.5 px-1">
                     <div className="flex items-center justify-between text-[11px] font-semibold">
                       <span className={theme.accentText}>
                         {isEnRoom
                           ? `${chatCooldown} seconds left until your next message`
                           : `Yeni mesaj atabilmek için ${chatCooldown} saniye kaldı`}
                       </span>
-                      <span className={theme.muted}>
+                      <span className={`tabular-nums ${theme.muted}`}>
                         {chatCooldown}s / {CHAT_COOLDOWN_SEC}s
                       </span>
                     </div>
@@ -2005,7 +2233,7 @@ export default function HomePage() {
                 )}
 
                 {chatError && (
-                  <p className="text-red-500 font-semibold text-[11px]">{chatError}</p>
+                  <p className="text-red-500 font-semibold text-[11px] px-1">{chatError}</p>
                 )}
               </form>
             </div>
