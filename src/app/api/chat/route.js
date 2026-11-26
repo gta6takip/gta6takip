@@ -49,6 +49,16 @@ function getSupabaseConfig() {
   return { url, headers, salt: serviceKey.slice(0, 16) };
 }
 
+function getStaffRole(pin) {
+  const clean = typeof pin === 'string' ? pin.trim() : '';
+  if (!clean) return null;
+  const adminPin = (process.env.ADMIN_CHAT_PIN || '').trim();
+  const modPin = (process.env.MOD_CHAT_PIN || '').trim();
+  if (adminPin && clean === adminPin) return 'admin';
+  if (modPin && clean === modPin) return 'mod';
+  return null;
+}
+
 function normalizeRoom(raw) {
   return String(raw || '').toLowerCase() === 'en' ? 'en' : 'tr';
 }
@@ -251,6 +261,7 @@ export async function POST(request) {
     const ip = getClientIp(request);
     const ipHash = hashIp(ip, cfg.salt);
     const clientId = sanitizeClientId(body.clientId);
+    const staffRole = getStaffRole(body.adminPin);
 
     const rawNick = typeof body.nickname === 'string' ? stripInvisible(body.nickname) : '';
     const rawMsg = typeof body.message === 'string' ? stripInvisible(body.message) : '';
@@ -267,7 +278,6 @@ export async function POST(request) {
       );
     }
 
-    // Admin / batmancodex koruma ve taklit engeli
     const batmanCheck = isBatmanCodexImpersonation(rawNick);
     if (batmanCheck.isImpersonation) {
       return NextResponse.json(
@@ -282,19 +292,7 @@ export async function POST(request) {
 
     let isVerifiedAdmin = false;
     if (batmanCheck.isExactAdmin) {
-      const configuredPin = (process.env.ADMIN_CHAT_PIN || '').trim();
-      const providedPin = typeof body.adminPin === 'string' ? body.adminPin.trim() : '';
-      if (!configuredPin) {
-        return NextResponse.json(
-          {
-            error: isEn
-              ? 'Admin verification PIN is not configured on the server.'
-              : 'batmancodex koruması aktif. Vercel Environment Variables içine ADMIN_CHAT_PIN eklemelisin.',
-          },
-          { status: 403 }
-        );
-      }
-      if (!providedPin || providedPin !== configuredPin) {
+      if (staffRole !== 'admin') {
         return NextResponse.json(
           {
             error: isEn
@@ -306,6 +304,8 @@ export async function POST(request) {
       }
       isVerifiedAdmin = true;
     }
+
+    const isStaff = isVerifiedAdmin || staffRole === 'mod';
 
     if (!isVerifiedAdmin && isReservedNickname(rawNick)) {
       return NextResponse.json(
@@ -329,8 +329,7 @@ export async function POST(request) {
       );
     }
 
-    // Kalıcı ban kontrolü (admin hariç)
-    if (!isVerifiedAdmin) {
+    if (!isStaff) {
       const banFilter = clientId
         ? `or=(ip_hash.eq.${encodeURIComponent(ipHash)},client_id.eq.${encodeURIComponent(clientId)})`
         : `ip_hash=eq.${encodeURIComponent(ipHash)}`;
@@ -354,11 +353,10 @@ export async function POST(request) {
       }
     }
 
-    // 30 saniyelik hız sınırı (doğrulanmış admin muaf)
     const now = Date.now();
     cleanupCooldownMap(now);
 
-    if (!isVerifiedAdmin) {
+    if (!isStaff) {
       const lastSentAt = ipCooldownMap.get(ip);
       if (lastSentAt && now - lastSentAt < COOLDOWN_MS) {
         const retryAfter = Math.max(1, Math.ceil((COOLDOWN_MS - (now - lastSentAt)) / 1000));
@@ -465,18 +463,78 @@ export async function POST(request) {
     const insertedArr = await insertRes.json().catch(() => []);
     const inserted = Array.isArray(insertedArr) ? insertedArr[0] : insertedArr;
 
-    if (!isVerifiedAdmin) {
+    if (!isStaff) {
       ipCooldownMap.set(ip, now);
     }
 
     return NextResponse.json(
       {
         message: inserted,
-        cooldownSeconds: isVerifiedAdmin ? 0 : COOLDOWN_SECONDS,
+        cooldownSeconds: isStaff ? 0 : COOLDOWN_SECONDS,
       },
       { status: 201 }
     );
   } catch {
     return NextResponse.json({ error: 'Mesaj gönderilirken bir hata oluştu.' }, { status: 500 });
+  }
+}
+
+// Admin veya Moderatör için tek tıkla kalıcı IP ban + mesaj silme
+export async function DELETE(request) {
+  try {
+    const cfg = getSupabaseConfig();
+    if (!cfg) {
+      return NextResponse.json({ error: 'Sohbet servisi yapılandırılmadı.' }, { status: 500 });
+    }
+
+    const body = await request.json().catch(() => null);
+    if (!body || typeof body !== 'object') {
+      return NextResponse.json({ error: 'Geçersiz istek.' }, { status: 400 });
+    }
+
+    const role = getStaffRole(body.staffPin);
+    if (!role) {
+      return NextResponse.json(
+        { error: 'Yetkili PIN hatalı! Ban işlemi reddedildi.' },
+        { status: 403 }
+      );
+    }
+
+    const messageId = Number(body.messageId);
+    if (!Number.isInteger(messageId) || messageId <= 0) {
+      return NextResponse.json({ error: 'Geçersiz mesaj ID.' }, { status: 400 });
+    }
+
+    const reason =
+      typeof body.reason === 'string' && body.reason.trim()
+        ? body.reason.trim().slice(0, 80)
+        : role === 'admin'
+          ? 'Admin ban'
+          : 'Moderatör ban';
+
+    const rpcRes = await fetch(`${cfg.url}/rest/v1/rpc/ban_by_message_id`, {
+      method: 'POST',
+      headers: cfg.headers,
+      body: JSON.stringify({
+        target_msg_id: messageId,
+        ban_reason: reason,
+      }),
+    });
+
+    if (!rpcRes.ok) {
+      const errText = await rpcRes.text().catch(() => '');
+      return NextResponse.json(
+        { error: `Ban işlemi başarısız: ${errText.slice(0, 120)}` },
+        { status: 500 }
+      );
+    }
+
+    const resultText = await rpcRes.json().catch(() => 'İşlem tamamlandı.');
+    return NextResponse.json(
+      { ok: true, result: resultText, deletedId: messageId },
+      { status: 200 }
+    );
+  } catch {
+    return NextResponse.json({ error: 'Ban işlemi sırasında hata oluştu.' }, { status: 500 });
   }
 }
