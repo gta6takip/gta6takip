@@ -301,8 +301,8 @@ export function LiveChat({
         </div>
       </div>
 
-      {/* INLINE STAFF PIN BAR (ONLY WHEN OPENED OR TYPING ADMIN NICK) */}
-      {(staffPinOpen || isTypingAdminNick) && (
+      {/* INLINE STAFF PIN BAR (ONLY WHEN OPENED OR ADMIN NICK WITHOUT PIN YET) */}
+      {(staffPinOpen || (isTypingAdminNick && !staffModeActive)) && (
         <div className="px-3 py-2 border-b border-subtle bg-elevated flex items-center gap-2 text-xs shrink-0">
           <KeyRound className="w-3.5 h-3.5 text-amber-500 shrink-0" />
           <input

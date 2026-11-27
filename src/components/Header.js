@@ -86,10 +86,10 @@ export function Header({
     <header className="sticky top-0 z-40 border-b border-subtle bg-header-glass">
       <div className="max-w-[1380px] mx-auto px-3 sm:px-5 lg:px-6">
         {/* Desktop & Mobile Top Row */}
-        <div className="h-14 flex items-center justify-between gap-3">
+        <div className="h-14 flex items-center justify-between gap-2">
           {/* Left: Brand + Desktop Inline Nav */}
-          <div className="flex items-center gap-5 min-w-0">
-            <div className="flex items-center gap-2.5 shrink-0">
+          <div className="flex items-center gap-3 xl:gap-4 min-w-0 shrink-0">
+            <div className="flex items-center gap-2 shrink-0">
               <button
                 type="button"
                 onClick={() => {
@@ -99,14 +99,14 @@ export function Header({
                   }
                 }}
                 title={lang === 'tr' ? 'Ana görünüme dön' : 'Back to overview'}
-                className="group inline-flex items-center gap-2.5 text-left cursor-pointer"
+                className="group inline-flex items-center gap-2 text-left cursor-pointer"
               >
                 <BrandLogoMark />
                 <span className="font-brand inline-flex items-baseline leading-none select-none">
-                  <span className="font-display font-extrabold tracking-tight text-[22px] text-ink">
+                  <span className="font-display font-extrabold tracking-tight text-[21px] text-ink">
                     GTA6
                   </span>
-                  <span className="font-semibold tracking-[0.09em] text-[13px] ml-0.5 text-ink-2">
+                  <span className="font-semibold tracking-[0.09em] text-[12px] ml-0.5 text-ink-2">
                     TAKIP
                   </span>
                 </span>
@@ -115,7 +115,7 @@ export function Header({
               <button
                 type="button"
                 onClick={onOpenChangelog}
-                className="font-tech px-1.5 py-0.5 text-[10px] font-medium rounded border border-subtle bg-elevated text-ink-2 hover:text-ink hover:border-default ui-tactile"
+                className="sm:inline-flex lg:hidden xl:inline-flex font-tech px-1.5 py-0.5 text-[10px] font-medium rounded border border-subtle bg-elevated text-ink-2 hover:text-ink hover:border-default ui-tactile"
                 title={lang === 'tr' ? 'Sürüm Notları' : 'Release Notes'}
               >
                 {APP_VERSION}
@@ -124,7 +124,7 @@ export function Header({
 
             {/* Desktop Primary Nav (Inline in header for clean single-bar chrome) */}
             <nav
-              className="hidden lg:flex items-center gap-0.5 xl:gap-1 h-14 shrink-0"
+              className="hidden lg:flex items-center gap-0.5 h-14 shrink-0"
               aria-label={lang === 'tr' ? 'Ana Menü' : 'Primary Navigation'}
             >
               {navItems.map((tab) => {
@@ -135,7 +135,7 @@ export function Header({
                     key={tab.id}
                     type="button"
                     onClick={() => onSelectTab(tab.id)}
-                    className={`relative h-full inline-flex items-center gap-1.5 px-2.5 xl:px-3 text-[13px] font-medium whitespace-nowrap shrink-0 ui-tactile ${
+                    className={`relative h-full inline-flex items-center gap-1.5 px-2 xl:px-2.5 text-[12px] xl:text-[13px] font-medium whitespace-nowrap shrink-0 ui-tactile ${
                       active ? 'text-ink font-semibold' : 'text-ink-2 hover:text-ink'
                     }`}
                   >
@@ -170,7 +170,7 @@ export function Header({
           </div>
 
           {/* Right Utility Controls */}
-          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+          <div className="flex items-center gap-1.5 shrink-0">
             {/* Online Presence Pill */}
             <div className="relative" data-dropdown-root="true">
               <button
@@ -179,12 +179,16 @@ export function Header({
                   setThemeMenuOpen(false);
                   setOnlineMenuOpen((v) => !v);
                 }}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border border-subtle bg-elevated text-xs font-medium text-ink whitespace-nowrap hover:border-default ui-tactile"
-                title={lang === 'tr' ? 'Anlık çevrimiçi kullanıcılar' : 'Live online viewers'}
+                className="inline-flex items-center gap-1.5 px-2 py-1.5 rounded-md border border-subtle bg-elevated text-xs font-medium text-ink whitespace-nowrap hover:border-default ui-tactile"
+                title={
+                  lang === 'tr'
+                    ? `${onlineCount} kişi çevrimiçi — ülke dağılımını gör`
+                    : `${onlineCount} online — view regions`
+                }
               >
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
                 <span className="font-tech font-semibold">{onlineCount}</span>
-                <span className="hidden xl:inline text-ink-2">
+                <span className="hidden 2xl:inline text-ink-2">
                   {lang === 'tr' ? 'çevrimiçi' : 'online'}
                 </span>
                 <ChevronDown className="w-3 h-3 text-ink-3" />
@@ -197,21 +201,21 @@ export function Header({
               <button
                 type="button"
                 onClick={() => onSelectLang('tr')}
-                className={`inline-flex items-center gap-1 px-2 py-1 rounded text-[11px] font-semibold ui-tactile ${
+                className={`inline-flex items-center gap-1 px-1.5 py-1 rounded text-[11px] font-semibold ui-tactile ${
                   lang === 'tr' ? 'bg-active-pill' : 'text-ink-2 hover:text-ink'
                 }`}
               >
-                <FlagTR className="w-3.5 h-2.5 rounded-[1px]" />
+                <FlagTR className="w-3 h-2 rounded-[1px]" />
                 <span>TR</span>
               </button>
               <button
                 type="button"
                 onClick={() => onSelectLang('en')}
-                className={`inline-flex items-center gap-1 px-2 py-1 rounded text-[11px] font-semibold ui-tactile ${
+                className={`inline-flex items-center gap-1 px-1.5 py-1 rounded text-[11px] font-semibold ui-tactile ${
                   lang === 'en' ? 'bg-active-pill' : 'text-ink-2 hover:text-ink'
                 }`}
               >
-                <FlagUS className="w-3.5 h-2.5 rounded-[1px]" />
+                <FlagUS className="w-3 h-2 rounded-[1px]" />
                 <span>EN</span>
               </button>
             </div>
@@ -224,14 +228,14 @@ export function Header({
                   setOnlineMenuOpen(false);
                   setThemeMenuOpen((v) => !v);
                 }}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border border-subtle bg-elevated text-xs font-medium text-ink-2 hover:text-ink hover:border-default ui-tactile"
+                className="inline-flex items-center gap-1.5 px-2 py-1.5 rounded-md border border-subtle bg-elevated text-xs font-medium text-ink-2 hover:text-ink hover:border-default ui-tactile"
                 title={lang === 'tr' ? 'Tema değiştir' : 'Switch theme'}
               >
                 <span
                   className="w-2.5 h-2.5 rounded-full shrink-0"
                   style={{ backgroundColor: theme.dot }}
                 />
-                <span className="hidden md:inline">{lang === 'tr' ? 'Tema' : 'Theme'}</span>
+                <span className="hidden 2xl:inline">{lang === 'tr' ? 'Tema' : 'Theme'}</span>
                 <ChevronDown className="w-3 h-3 text-ink-3" />
               </button>
               {themeMenuOpen && (
@@ -259,16 +263,17 @@ export function Header({
               )}
             </div>
 
-            {/* PWA Install (Subtle, non-screaming) */}
+            {/* PWA Install (Compact icon until wide desktop) */}
             {!isStandalone && (
               <button
                 type="button"
                 onClick={onInstallPwa}
-                className="hidden md:inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border border-subtle bg-elevated text-xs font-medium text-ink-2 hover:text-ink hover:border-default ui-tactile"
+                className="hidden md:inline-flex lg:hidden xl:inline-flex items-center gap-1.5 px-2 py-1.5 rounded-md border border-subtle bg-elevated text-xs font-medium text-ink-2 hover:text-ink hover:border-default ui-tactile"
                 title={lang === 'tr' ? 'Uygulama olarak ekle' : 'Install as App'}
+                aria-label={lang === 'tr' ? 'Uygulama olarak ekle' : 'Install as App'}
               >
                 <Smartphone className="w-3.5 h-3.5 text-ink-3" />
-                <span className="hidden xl:inline">{lang === 'tr' ? 'Uygulama' : 'App'}</span>
+                <span className="hidden 2xl:inline">{lang === 'tr' ? 'Uygulama' : 'App'}</span>
               </button>
             )}
 
@@ -277,7 +282,7 @@ export function Header({
               type="button"
               onClick={onRefresh}
               disabled={syncing}
-              className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border border-subtle bg-elevated text-xs font-medium text-ink-2 hover:text-ink hover:border-default ui-tactile disabled:opacity-60"
+              className="hidden sm:inline-flex items-center gap-1 px-2 py-1.5 rounded-md border border-subtle bg-elevated text-xs font-medium text-ink-2 hover:text-ink hover:border-default ui-tactile disabled:opacity-60"
               title={lang === 'tr' ? 'Verileri şimdi yenile' : 'Refresh data now'}
             >
               <RefreshCw className={`w-3.5 h-3.5 ${syncing ? 'animate-spin text-accent' : 'text-ink-3'}`} />
@@ -289,7 +294,7 @@ export function Header({
               <button
                 type="button"
                 onClick={onToggleChatDock}
-                className={`hidden lg:inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border text-xs font-medium ui-tactile ${
+                className={`hidden lg:inline-flex items-center gap-1.5 px-2 py-1.5 rounded-md border text-xs font-medium whitespace-nowrap ui-tactile ${
                   chatDockOpen
                     ? 'border-accent-soft bg-accent-soft text-accent'
                     : 'border-subtle bg-elevated text-ink-2 hover:text-ink hover:border-default'
@@ -309,8 +314,8 @@ export function Header({
                 ) : (
                   <PanelRightOpen className="w-3.5 h-3.5" />
                 )}
-                <span>{lang === 'tr' ? 'Sohbet' : 'Chat'}</span>
-                <span className="font-tech text-[11px] opacity-85">
+                <span className="hidden xl:inline">{lang === 'tr' ? 'Sohbet' : 'Chat'}</span>
+                <span className="font-tech text-[11px] opacity-90">
                   {Math.max(chatActiveCount, chatDockOpen ? 1 : 0)}
                 </span>
               </button>
