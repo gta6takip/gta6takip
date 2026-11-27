@@ -52,10 +52,10 @@ import {
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
-const APP_VERSION = 'v1.2.4';
+const APP_VERSION = 'v1.2.5';
 const CHAT_CACHE_PREFIX = 'gta6takip_chat_cache_';
 const INITIAL_TEAMS_LIMIT = 5;
-const CHAT_COOLDOWN_SEC = 30;
+const CHAT_COOLDOWN_SEC = 20;
 const CHAT_COOLDOWN_KEY = 'gta6takip_chat_cooldown_until';
 const CHAT_SOUND_KEY = 'gta6takip_chat_sound';
 const CHAT_CLIENT_KEY = 'gta6takip_client_id';
@@ -433,6 +433,19 @@ const FALLBACK_FEATURED_PORT = {
 
 const CHANGELOG = [
   {
+    version: 'v1.2.5',
+    dateTr: '27 Kasım 2026',
+    dateEn: 'November 27, 2026',
+    itemsTr: [
+      'SlaktarnVI (Valhalla — Linux / Proton · AMD FSR 4) otomatik GitHub takibiyle aktif ekiplere eklendi.',
+      'Canlı Sohbet mesaj gönderme aralığı 30 saniyeden 20 saniyeye düşürüldü.',
+    ],
+    itemsEn: [
+      'Added SlaktarnVI (Valhalla — Linux / Proton · AMD FSR 4) to active efforts with automatic GitHub tracking.',
+      'Reduced Live Chat message cooldown from 30 seconds to 20 seconds.',
+    ],
+  },
+  {
     version: 'v1.2.4',
     dateTr: '27 Kasım 2026',
     dateEn: 'November 27, 2026',
@@ -493,13 +506,13 @@ const CHANGELOG = [
     itemsTr: [
       'ScarlettPort otomatik GitHub takibi + "Öne Çıkan Yeni Port" vitrin kartı eklendi (sürüm, yıldız, aşama ve tahmini bar otomatik güncellenir).',
       'Mobilde "Uygulama Olarak Ekle" (PWA) butonu ve özel Vice Sunset GTA6takip ana ekran ikonu eklendi.',
-      'Canlı Sohbette sitede çevrimiçi olanlar ile sohbeti açanlar ayrıldı; sabit "50 Mesaj" kaldırılıp "30 Saniye Koruması Aktif" rozeti eklendi ve "+X yeni" uyarısı tüm temalara uyumlu hale getirildi.',
+      'Canlı Sohbette sitede çevrimiçi olanlar ile sohbeti açanlar ayrıldı; sabit "50 Mesaj" kaldırılıp "20 Saniye Koruması Aktif" rozeti eklendi ve "+X yeni" uyarısı tüm temalara uyumlu hale getirildi.',
       'Neon Vice ve Soft Dark temaları eklendi; ana kart ve #1 lider vurgusu, kart hover glow/scale, animasyonlu progress bar ve mobilde sticky filtre şeridi devreye alındı.',
     ],
     itemsEn: [
       'Added live automatic GitHub tracking for ScarlettPort plus a dedicated Featured New Port showcase card.',
       'Added mobile "Install App" (PWA) support with a custom Vice Sunset GTA6takip home-screen icon.',
-      'Separated total site online users from active Live Chat users, replaced the static "50 Messages" chip with "30s Protection Active", and theme-matched the "+X new" badge.',
+      'Separated total site online users from active Live Chat users, replaced the static "50 Messages" chip with "20s Protection Active", and theme-matched the "+X new" badge.',
       'Added Neon Vice and Soft Dark themes, hero & leader glow, card hover glow/scale, animated progress bars, and a mobile sticky filter strip.',
     ],
   },
@@ -1662,8 +1675,8 @@ export default function HomePage() {
     if (!isTypingAdminNick && !hasPin && chatCooldown > 0) {
       setChatError(
         isEnRoom
-          ? `1 message per 30 seconds. Please wait ${chatCooldown}s.`
-          : `30 saniyede 1 mesaj gönderebilirsin. Lütfen ${chatCooldown} saniye bekle.`
+          ? `1 message per 20 seconds. Please wait ${chatCooldown}s.`
+          : `20 saniyede 1 mesaj gönderebilirsin. Lütfen ${chatCooldown} saniye bekle.`
       );
       return;
     }
@@ -1754,6 +1767,7 @@ export default function HomePage() {
             isEstimated: Boolean(item.isEstimated),
             hasLauncher: Boolean(item.hasLauncher),
             releaseTag: item.releaseTag || '',
+            platformTag: item.platformTag || '',
           }))
           .sort((a, b) => b.progress - a.progress);
 
@@ -3063,6 +3077,15 @@ export default function HomePage() {
                           <span>Launcher</span>
                         </span>
                       )}
+                      {team.platformTag && (
+                        <span className={`hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold shrink-0 border ${
+                          isLight
+                            ? 'bg-sky-100 text-sky-900 border-sky-300'
+                            : 'bg-sky-500/20 text-sky-200 border-sky-400/40'
+                        }`}>
+                          <span>{team.platformTag}</span>
+                        </span>
+                      )}
                       {team.isEstimated && (
                         <span className={`hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold shrink-0 ${theme.softChip}`}>
                           <span>{lang === 'tr' ? 'Tahmini' : 'Est.'}</span>
@@ -3277,7 +3300,7 @@ export default function HomePage() {
               {!chatFullscreen && (
                 <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${theme.pill}`}>
                   <ShieldCheck className={`w-3 h-3 shrink-0 ${theme.accentText}`} />
-                  <span>{isEnRoom ? '30s Protection Active' : '30 Saniye Koruması Aktif'}</span>
+                  <span>{isEnRoom ? '20s Protection Active' : '20 Saniye Koruması Aktif'}</span>
                 </span>
               )}
               {!chatOpen && unreadWhileClosed > 0 && (
