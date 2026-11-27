@@ -130,6 +130,39 @@ function getNickStyle(name, isLight) {
   return list[hash % list.length];
 }
 
+const BrandLogoMark = ({ isLight }) => (
+  <svg
+    viewBox="0 0 36 36"
+    className={`w-8 h-8 shrink-0 rounded-[9px] transition-transform duration-200 group-hover:scale-105 ${
+      isLight
+        ? 'shadow-[0_2px_10px_rgba(24,24,27,0.22)] ring-1 ring-zinc-900/15'
+        : 'shadow-[0_0_14px_rgba(236,72,153,0.38)] ring-1 ring-white/15'
+    }`}
+    aria-hidden="true"
+  >
+    <defs>
+      <linearGradient id="gta6BrandGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stopColor="#22d3ee" />
+        <stop offset="52%" stopColor="#ec4899" />
+        <stop offset="100%" stopColor="#fbbf24" />
+      </linearGradient>
+      <linearGradient id="gta6BgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stopColor={isLight ? '#18181b' : '#1b0f2b'} />
+        <stop offset="100%" stopColor={isLight ? '#09090b' : '#0f081a'} />
+      </linearGradient>
+    </defs>
+    <rect width="36" height="36" rx="9" fill="url(#gta6BgGrad)" />
+    <path
+      d="M7.5 10.5L14.2 25.5H17.4L24.1 10.5H20.6L15.8 21.6L11 10.5H7.5Z"
+      fill="url(#gta6BrandGrad)"
+    />
+    <path
+      d="M25.6 10.5H28.9V25.5H25.6V10.5Z"
+      fill="url(#gta6BrandGrad)"
+    />
+  </svg>
+);
+
 const IconAmd = ({ className = 'w-3.5 h-3.5 shrink-0' }) => (
   <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-hidden="true">
     <path d="M18.324 9.137L24 14.813V0H9.187l5.676 5.676h3.461v3.461zM14.813 18.324H5.676V9.187L0 14.863V24h9.137l5.676-5.676z" />
@@ -2038,21 +2071,28 @@ export default function HomePage() {
                 type="button"
                 onClick={() => window.location.reload()}
                 title={lang === 'tr' ? 'Ana sayfayı yenile' : 'Refresh homepage'}
-                className="group inline-flex items-center gap-2 text-left transition hover:opacity-95 active:scale-[0.98] cursor-pointer"
+                className="group inline-flex items-center gap-2.5 text-left transition hover:opacity-95 active:scale-[0.98] cursor-pointer"
               >
-                <img
-                  src="/icon-192.png"
-                  alt="GTA6takip"
-                  width={30}
-                  height={30}
-                  className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg object-cover shrink-0 ring-1 ring-white/15 shadow-[0_0_12px_rgba(236,72,153,0.35)] transition-transform duration-200 group-hover:scale-105"
-                />
-                <span className="inline-flex items-baseline leading-none select-none">
-                  <span className={`font-black italic tracking-tighter text-lg sm:text-[21px] bg-gradient-to-r ${theme.accentGradient} bg-clip-text text-transparent drop-shadow-[0_0_10px_rgba(236,72,153,0.28)]`}>
+                <BrandLogoMark isLight={isLight} />
+                <span
+                  style={{ fontFamily: 'var(--font-brand), ui-sans-serif, system-ui, sans-serif' }}
+                  className="inline-flex items-baseline leading-none select-none"
+                >
+                  <span
+                    className={`font-bold tracking-[-0.03em] text-[19px] sm:text-[21px] bg-clip-text text-transparent bg-gradient-to-r ${
+                      isLight
+                        ? 'from-pink-600 via-fuchsia-600 to-orange-500'
+                        : 'from-cyan-300 via-pink-400 to-amber-300'
+                    }`}
+                  >
                     GTA6
                   </span>
-                  <span className={`font-extrabold tracking-[0.08em] text-[15px] sm:text-[17px] ml-0.5 bg-gradient-to-r ${theme.accentGradient} bg-clip-text text-transparent opacity-95`}>
-                    TAKİP
+                  <span
+                    className={`font-semibold tracking-[0.11em] text-[15px] sm:text-[16px] ml-0.5 ${
+                      isLight ? 'text-zinc-900' : 'text-white/95'
+                    }`}
+                  >
+                    TAKIP
                   </span>
                 </span>
               </button>
