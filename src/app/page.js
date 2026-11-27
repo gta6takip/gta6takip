@@ -351,7 +351,7 @@ const CHANGELOG = [
     dateEn: 'November 27, 2026',
     itemsTr: [
       'UI/UX tasarım sistemi revizyonu: Cam kartlara üst ışık yansıması (specular highlight), daha yüksek WCAG kontrastı ve erişilebilir odak halkaları eklendi.',
-      'Hero kartı ve 3'lü Podyum, net tipografi hiyerarşisi, parıltılı ilerleme halkası ve yükselen cam metrik kutularıyla yenilendi.',
+      'Hero kartı ve 3\'lü Podyum, net tipografi hiyerarşisi, parıltılı ilerleme halkası ve yükselen cam metrik kutularıyla yenilendi.',
       'Mobil ve masaüstü butonlara 44px+ dokunma ergonomisi ve dokunsal tıklama tepkisi eklendi; tüm canlı otomasyonlar ve 3 tema korundu.',
     ],
     itemsEn: [
