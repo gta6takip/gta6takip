@@ -58,7 +58,7 @@ import {
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
-const APP_VERSION = 'v2.0.2';
+const APP_VERSION = 'v2.0.3';
 const SCORE_SNAPSHOT_KEY = 'gta6takip_prev_scores_v2';
 const CHAT_CACHE_PREFIX = 'gta6takip_chat_cache_';
 const INITIAL_TEAMS_LIMIT = 5;
@@ -232,29 +232,29 @@ const THEMES = {
   softdark: {
     id: 'softdark',
     label: { tr: 'Soft Dark', en: 'Soft Dark' },
-    dot: '#818cf8',
-    bg: 'bg-[#11131a] text-slate-100',
-    backdropGlow: 'radial-gradient(ellipse 80% 40% at 50% -10%, rgba(129,140,248,0.16), transparent 70%)',
-    card: 'bg-[#181b25]/95 border-slate-700/60',
-    cardHover: 'hover:border-indigo-400/55 hover:shadow-[0_0_22px_rgba(129,140,248,0.16)]',
-    heroGlow: 'shadow-[0_0_38px_rgba(129,140,248,0.14)] bg-gradient-to-br from-[#1d2130] via-[#181b25] to-[#141720]',
-    leaderGlow: 'ring-1 ring-indigo-400/50 shadow-[0_0_22px_rgba(129,140,248,0.2)]',
-    menuBg: 'bg-[#181b25] border-slate-700',
-    subCard: 'bg-[#13161f] border-slate-700/50',
-    stickyBar: 'bg-[#11131a]/92 border-slate-700/50',
-    selfMsgBg: 'bg-indigo-500/12 border-l-2 border-indigo-400',
+    dot: '#3b82f6',
+    bg: 'bg-[#060b17] text-slate-100',
+    backdropGlow: 'radial-gradient(ellipse 52% 45% at 16% 18%, rgba(37,99,235,0.26), transparent 72%), radial-gradient(ellipse 46% 42% at 84% 34%, rgba(234,88,12,0.19), transparent 72%)',
+    card: 'bg-[#0c1324]/78 backdrop-blur-xl border-white/[0.09] shadow-[0_8px_32px_rgba(0,0,0,0.36)]',
+    cardHover: 'hover:border-blue-400/45 hover:bg-[#111b32]/85 hover:shadow-[0_0_26px_rgba(59,130,246,0.18)]',
+    heroGlow: 'shadow-[0_12px_44px_rgba(0,0,0,0.45)] bg-gradient-to-br from-[#0f1930]/85 via-[#0b1222]/80 to-[#111624]/75',
+    leaderGlow: 'ring-1 ring-blue-400/45 shadow-[0_0_28px_rgba(59,130,246,0.22)]',
+    menuBg: 'bg-[#0b1222]/95 backdrop-blur-xl border-white/12 shadow-2xl',
+    subCard: 'bg-white/[0.045] border-white/[0.10] backdrop-blur-md',
+    stickyBar: 'bg-[#091020]/82 backdrop-blur-xl border-white/[0.11] shadow-[0_10px_34px_rgba(0,0,0,0.52)]',
+    selfMsgBg: 'bg-blue-500/12 border-l-2 border-blue-400',
     muted: 'text-slate-400',
-    accentText: 'text-indigo-300',
-    accentBg: 'bg-indigo-400',
-    accentGradient: 'from-indigo-400 via-purple-400 to-cyan-300',
-    btnPrimary: 'bg-gradient-to-r from-indigo-400 to-cyan-300 text-zinc-950 hover:brightness-105',
-    pill: 'bg-indigo-950/60 text-indigo-200 border-indigo-400/30',
-    softChip: 'bg-slate-800/80 text-slate-200',
-    sparkStroke: '#818cf8',
-    sparkStop: 'rgba(129, 140, 248, 0.28)',
-    sbTrack: '#13161f',
-    sbThumb: 'rgba(129, 140, 248, 0.45)',
-    sbThumbHover: 'rgba(165, 180, 252, 0.8)',
+    accentText: 'text-blue-400',
+    accentBg: 'bg-blue-500',
+    accentGradient: 'from-blue-500 via-sky-400 to-orange-400',
+    btnPrimary: 'bg-gradient-to-b from-[#3b82f6] to-[#2563eb] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.25),0_6px_20px_-4px_rgba(37,99,235,0.55)] hover:brightness-110',
+    pill: 'bg-[#0f172a]/85 text-blue-200 border-white/12 shadow-sm',
+    softChip: 'bg-white/[0.06] text-slate-200 border border-white/[0.08]',
+    sparkStroke: '#3b82f6',
+    sparkStop: 'rgba(59, 130, 246, 0.30)',
+    sbTrack: '#0a101f',
+    sbThumb: 'rgba(59, 130, 246, 0.48)',
+    sbThumbHover: 'rgba(96, 165, 250, 0.85)',
   },
   light: {
     id: 'light',
@@ -345,6 +345,21 @@ const FALLBACK_FEATURED_PORT = {
 };
 
 const CHANGELOG = [
+  {
+    version: 'v2.0.3',
+    dateTr: '27 Kasım 2026',
+    dateEn: 'November 27, 2026',
+    itemsTr: [
+      'Yüzen cam üst menü (Floating Glass Navbar), elektrik mavisi parıltılı birincil butonlar, füme cam ikincil butonlar ve mobilde yüzen cam alt bar eklendi.',
+      'Soft Dark teması lacivert-gece + mavi/turuncu ambiyans ışıklı cam arayüze yükseltilip varsayılan tema yapıldı; Canlı Sohbet dahil tüm bileşenler uyumlu hale getirildi.',
+      'Vice Sunset ve Açık temaları ile tüm canlı otomasyonlar eksiksiz korundu.',
+    ],
+    itemsEn: [
+      'Introduced a Floating Glass Navbar, glowing electric-blue primary buttons, smoky glass secondary buttons, and a floating mobile glass dock.',
+      'Upgraded Soft Dark to a midnight-navy glass theme with dual blue/amber ambient glow and set it as default across all sections including Live Chat.',
+      'Preserved Vice Sunset, Light theme, and all live automations untouched.',
+    ],
+  },
   {
     version: 'v2.0.1',
     dateTr: '27 Kasım 2026',
@@ -882,7 +897,7 @@ function evaluateSystemForPort(gpuId, vramGb, ramGb, lang) {
 
 export default function HomePage() {
   const [lang, setLang] = useState('tr');
-  const [themeKey, setThemeKey] = useState('vice');
+  const [themeKey, setThemeKey] = useState('softdark');
   const [themeMenuOpen, setThemeMenuOpen] = useState(false);
   const [onlineMenuOpen, setOnlineMenuOpen] = useState(false);
   const [changelogOpen, setChangelogOpen] = useState(false);
@@ -975,7 +990,7 @@ export default function HomePage() {
   const [syncing, setSyncing] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  const theme = THEMES[themeKey] || THEMES.vice;
+  const theme = THEMES[themeKey] || THEMES.softdark;
   const isLight = themeKey === 'light';
 
   const onlineBtnClass = isLight
@@ -2195,7 +2210,7 @@ export default function HomePage() {
           left: 0;
           width: 48%;
           pointer-events: none;
-          background: linear-gradient(90deg, transparent, rgba(255, 79, 216, 0.32), rgba(56, 189, 248, 0.28), transparent);
+          background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.34), rgba(56, 189, 248, 0.30), transparent);
           animation: chatTabShimmer 4.8s ease-in-out infinite;
         }
         @media (prefers-reduced-motion: reduce) {
@@ -2235,8 +2250,9 @@ export default function HomePage() {
         }
       `}</style>
 
-      <header className={`sticky top-0 z-40 border-b backdrop-blur-md ${theme.card}`}>
-        <div className="max-w-4xl mx-auto px-3 sm:px-5 py-2 sm:py-2.5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+      <div className="sticky top-0 z-40 px-2.5 sm:px-5 pt-2 sm:pt-3 pb-1 pointer-events-none">
+      <header className={`pointer-events-auto max-w-4xl mx-auto rounded-2xl border backdrop-blur-xl transition-all duration-300 ${theme.stickyBar}`}>
+        <div className="px-3 sm:px-4 py-2 sm:py-2.5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2 min-w-0">
               <button
@@ -2395,10 +2411,11 @@ export default function HomePage() {
           </div>
         </div>
       </header>
+      </div>
 
       {/* MASAÜSTÜ 4 SEKMELİ UYGULAMA NAVİGASYONU */}
-      <nav className="hidden sm:block max-w-4xl mx-auto px-5 pt-4">
-        <div className={`grid grid-cols-4 gap-1.5 p-1.5 rounded-2xl border ${theme.card}`}>
+      <nav className="hidden sm:block max-w-4xl mx-auto px-5 pt-2.5">
+        <div className={`grid grid-cols-4 gap-1.5 p-1.5 rounded-2xl border backdrop-blur-xl ${theme.stickyBar}`}>
           {[
             { id: 'race', icon: Trophy, tr: 'Yarış Tablosu', en: 'Leaderboard' },
             { id: 'chat', icon: MessageCircle, tr: 'Canlı Sohbet', en: 'Live Chat' },
@@ -2419,8 +2436,10 @@ export default function HomePage() {
                     : isChatAttention
                       ? `overflow-hidden chat-tab-attention chat-tab-shimmer border ${
                           isLight
-                            ? 'border-fuchsia-300/80 bg-fuchsia-50/70 text-fuchsia-800 hover:bg-fuchsia-100/80'
-                            : 'border-fuchsia-400/40 bg-fuchsia-500/10 text-fuchsia-200 hover:bg-fuchsia-500/15'
+                            ? 'border-blue-300/80 bg-blue-50/80 text-blue-800 hover:bg-blue-100/80'
+                            : themeKey === 'vice'
+                              ? 'border-fuchsia-400/45 bg-fuchsia-500/12 text-fuchsia-200 hover:bg-fuchsia-500/18'
+                              : 'border-blue-400/45 bg-blue-500/12 text-blue-200 hover:bg-blue-500/18'
                         }`
                       : `${theme.muted} hover:bg-white/5`
                 }`}
@@ -4694,7 +4713,7 @@ export default function HomePage() {
       {/* MOBİL SABİT ALT UYGULAMA NAVİGASYON BARI */}
       {!chatFullscreen && !chatInputFocused && (
         <nav
-          className={`fixed bottom-0 inset-x-0 z-40 sm:hidden border-t backdrop-blur-lg px-2 py-1.5 ${theme.stickyBar}`}
+          className={`fixed bottom-2.5 inset-x-2.5 z-40 sm:hidden rounded-2xl border backdrop-blur-xl px-1.5 py-1.5 ${theme.stickyBar}`}
           aria-label="Mobil Menü"
         >
           <div className="grid grid-cols-4 gap-1">
@@ -4718,8 +4737,10 @@ export default function HomePage() {
                       : isChatAttention
                         ? `overflow-hidden chat-tab-attention chat-tab-shimmer border ${
                             isLight
-                              ? 'border-fuchsia-300/80 bg-fuchsia-50/80 text-fuchsia-800'
-                              : 'border-fuchsia-400/45 bg-fuchsia-500/15 text-fuchsia-200'
+                              ? 'border-blue-300/80 bg-blue-50/80 text-blue-800'
+                              : themeKey === 'vice'
+                                ? 'border-fuchsia-400/45 bg-fuchsia-500/15 text-fuchsia-200'
+                                : 'border-blue-400/45 bg-blue-500/15 text-blue-200'
                           }`
                         : theme.muted
                   }`}
