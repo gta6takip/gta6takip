@@ -45,7 +45,8 @@ import {
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
-const APP_VERSION = 'v1.1.2';
+const APP_VERSION = 'v1.1.3';
+const CHAT_CACHE_PREFIX = 'gta6takip_chat_cache_';
 const INITIAL_TEAMS_LIMIT = 5;
 const CHAT_COOLDOWN_SEC = 30;
 const CHAT_COOLDOWN_KEY = 'gta6takip_chat_cooldown_until';
@@ -302,6 +303,19 @@ const FALLBACK_NEWS = [
 ];
 
 const CHANGELOG = [
+  {
+    version: 'v1.1.3',
+    dateTr: '27 Kasım 2026',
+    dateEn: 'November 27, 2026',
+    itemsTr: [
+      'Canlı Sohbet koruması: 8 saniyelik zaman aşımı, otomatik 1 kez yeniden deneme, Tekrar Dene butonu ve tarayıcı önbelleği eklendi — anlık dalgalanmalarda artık "yükleniyor" ekranında takılı kalmıyor.',
+      'Teknik SEO paketi: Ana sayfaya net H1 başlığı, iç bağlantılar, sitemap.xml, robots.txt ve odak bilgi sayfaları eklendi.',
+    ],
+    itemsEn: [
+      'Live Chat resilience: Added 8s timeout, automatic retry, Try Again button, and local message cache so temporary hiccups never leave chat stuck loading.',
+      'Technical SEO pack: Added semantic H1 heading, internal links, sitemap.xml, robots.txt, and dedicated info pages.',
+    ],
+  },
   {
     version: 'v1.1.2',
     dateTr: '27 Kasım 2026',
@@ -642,6 +656,7 @@ export default function HomePage() {
   const chatRoomRef = useRef('tr');
   const [chatMessages, setChatMessages] = useState([]);
   const [chatLoading, setChatLoading] = useState(false);
+  const [chatLoadFailed, setChatLoadFailed] = useState(false);
   const [chatNick, setChatNick] = useState('');
   const [chatClientId, setChatClientId] = useState('');
   const [staffPinOpen, setStaffPinOpen] = useState(false);
@@ -826,22 +841,71 @@ export default function HomePage() {
 
   const fetchChatMessages = async (targetRoom = chatRoomRef.current) => {
     setChatLoading(true);
+    setChatLoadFailed(false);
+
+    // Sunucu yanıt verirken boş ekran yerine son önbellekteki mesajları anında göster
     try {
-      const res = await fetch(`/api/chat?room=${encodeURIComponent(targetRoom)}`, { cache: 'no-store' });
-      if (!res.ok) return;
-      const data = await res.json();
-      if (chatRoomRef.current === targetRoom) {
+      const cachedRaw = localStorage.getItem(`${CHAT_CACHE_PREFIX}${targetRoom}`);
+      if (cachedRaw) {
+        const cached = JSON.parse(cachedRaw);
+        if (Array.isArray(cached) && cached.length > 0 && chatRoomRef.current === targetRoom) {
+          setChatMessages((prev) => (prev.length === 0 ? cached : prev));
+        }
+      }
+    } catch {
+      // Depolama erişilemezse devam et
+    }
+
+    const loadOnce = async () => {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 8000);
+      try {
+        const res = await fetch(`/api/chat?room=${encodeURIComponent(targetRoom)}`, {
+          cache: 'no-store',
+          signal: controller.signal,
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return await res.json();
+      } finally {
+        clearTimeout(timeoutId);
+      }
+    };
+
+    try {
+      let data = null;
+      try {
+        data = await loadOnce();
+      } catch {
+        // Anlık bağlantı dalgalanmasında 1 kez otomatik tekrar dene
+        await new Promise((r) => setTimeout(r, 900));
+        data = await loadOnce();
+      }
+
+      if (chatRoomRef.current === targetRoom && data) {
         if (Array.isArray(data?.messages)) {
           forceScrollRef.current = true;
           setChatMessages(data.messages);
           setUnreadWhileScrolled(0);
+          try {
+            localStorage.setItem(
+              `${CHAT_CACHE_PREFIX}${targetRoom}`,
+              JSON.stringify(data.messages.slice(-30))
+            );
+          } catch {
+            // Yoksay
+          }
         }
         setPinnedNotice(data?.pinned || null);
+        setChatLoadFailed(false);
       }
     } catch {
-      // Sessizce geç
+      if (chatRoomRef.current === targetRoom) {
+        setChatLoadFailed(true);
+      }
     } finally {
-      setChatLoading(false);
+      if (chatRoomRef.current === targetRoom) {
+        setChatLoading(false);
+      }
     }
   };
 
@@ -1790,13 +1854,20 @@ export default function HomePage() {
         <section className={`rounded-2xl border p-4 sm:p-6 ${theme.card}`}>
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-5">
             <div className="space-y-3.5 flex-1">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className={`text-xs font-bold tracking-wider ${theme.accentText}`}>
-                  {lang === 'tr' ? 'GENEL İLERLEME' : 'OVERALL PROGRESS'}
-                </span>
-                <span className={`px-2 py-0.5 text-[11px] font-semibold rounded-full ${theme.softChip}`}>
-                  {totalEfforts} {lang === 'tr' ? 'Girişim' : 'Tracked'} · {bootingCount} Boot
-                </span>
+              <div className="space-y-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className={`text-xs font-bold tracking-wider ${theme.accentText}`}>
+                    {lang === 'tr' ? 'GENEL İLERLEME' : 'OVERALL PROGRESS'}
+                  </span>
+                  <span className={`px-2 py-0.5 text-[11px] font-semibold rounded-full ${theme.softChip}`}>
+                    {totalEfforts} {lang === 'tr' ? 'Girişim' : 'Tracked'} · {bootingCount} Boot
+                  </span>
+                </div>
+                <h1 className="text-sm sm:text-base font-black tracking-tight opacity-95">
+                  {lang === 'tr'
+                    ? 'GTA 6 PC Port Takip & Canlı İlerleme'
+                    : 'GTA VI PC Port Tracker & Live Progress'}
+                </h1>
               </div>
 
               {/* Yüzde + %100 İlerleme Dairesi + İstatistik Rozeti */}
@@ -2686,10 +2757,44 @@ export default function HomePage() {
                   onScroll={handleChatListScroll}
                   className={`gta-scroll rounded-2xl border p-3 max-h-80 overflow-y-auto space-y-2.5 ${theme.card}`}
                 >
+                  {chatLoadFailed && chatMessages.length > 0 && (
+                    <div className={`flex items-center justify-between gap-2 px-3 py-1.5 rounded-xl border text-[11px] ${theme.subCard}`}>
+                      <span className={theme.muted}>
+                        {isEnRoom
+                          ? 'Live refresh timed out (showing cached messages).'
+                          : 'Canlı yenileme gecikti (önbellekteki mesajlar gösteriliyor).'}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => fetchChatMessages(chatRoomRef.current)}
+                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg font-bold shrink-0 ${theme.btnPrimary}`}
+                      >
+                        <RefreshCw className="w-3 h-3" />
+                        <span>{isEnRoom ? 'Retry' : 'Tekrar Dene'}</span>
+                      </button>
+                    </div>
+                  )}
+
                   {chatLoading && chatMessages.length === 0 ? (
                     <p className={`text-xs text-center py-8 ${theme.muted}`}>
                       {isEnRoom ? 'Loading messages...' : 'Mesajlar yükleniyor...'}
                     </p>
+                  ) : chatLoadFailed && chatMessages.length === 0 ? (
+                    <div className="py-6 text-center space-y-2.5">
+                      <p className={`text-xs ${theme.muted}`}>
+                        {isEnRoom
+                          ? 'Connection timed out while loading messages.'
+                          : 'Bağlantı gecikti, mesajlar şu an alınamadı.'}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => fetchChatMessages(chatRoomRef.current)}
+                        className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold shadow-sm transition hover:brightness-110 ${theme.btnPrimary}`}
+                      >
+                        <RefreshCw className="w-3.5 h-3.5" />
+                        <span>{isEnRoom ? 'Try Again' : 'Tekrar Dene'}</span>
+                      </button>
+                    </div>
                   ) : chatMessages.length === 0 ? (
                     <p className={`text-xs text-center py-8 ${theme.muted}`}>
                       {isEnRoom
@@ -3171,6 +3276,15 @@ export default function HomePage() {
               <Share2 className={`w-3.5 h-3.5 ${theme.accentText}`} />
               <span>{copied ? (lang === 'tr' ? 'Kopyalandı' : 'Copied') : (lang === 'tr' ? 'Linki Kopyala' : 'Copy Link')}</span>
             </button>
+          </div>
+          <div className="flex items-center justify-center gap-3 flex-wrap text-[11px] font-semibold">
+            <a href="/gta-6-pc-ne-zaman-cikacak" className={`underline underline-offset-2 hover:opacity-100 opacity-80 ${theme.accentText}`}>
+              {lang === 'tr' ? 'GTA 6 PC Ne Zaman Çıkacak?' : 'When is GTA VI Coming to PC?'}
+            </a>
+            <span className="opacity-40">·</span>
+            <a href="/gta-6-kirildi-mi" className={`underline underline-offset-2 hover:opacity-100 opacity-80 ${theme.accentText}`}>
+              {lang === 'tr' ? 'GTA 6 Kırıldı mı?' : 'Is GTA VI Cracked?'}
+            </a>
           </div>
           <p className="max-w-2xl mx-auto leading-relaxed opacity-80">
             {lang === 'tr'
