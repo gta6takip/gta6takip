@@ -1,4 +1,12 @@
 import './globals.css';
+import { Space_Grotesk } from 'next/font/google';
+
+const brandFont = Space_Grotesk({
+  subsets: ['latin', 'latin-ext'],
+  weight: ['600', '700'],
+  variable: '--font-brand',
+  display: 'swap',
+});
 
 export const viewport = {
   themeColor: '#140b1e',
@@ -141,7 +149,7 @@ const jsonLd = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="tr">
+    <html lang="tr" className={brandFont.variable}>
       <body className="min-h-screen bg-[#090614] text-white antialiased selection:bg-pink-500 selection:text-white">
         <script
           type="application/ld+json"
