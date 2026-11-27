@@ -1,5 +1,31 @@
 import './globals.css';
-import { Space_Grotesk } from 'next/font/google';
+import {
+  Barlow_Condensed,
+  JetBrains_Mono,
+  Plus_Jakarta_Sans,
+  Space_Grotesk,
+} from 'next/font/google';
+
+const sansFont = Plus_Jakarta_Sans({
+  subsets: ['latin', 'latin-ext'],
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-sans',
+  display: 'swap',
+});
+
+const displayFont = Barlow_Condensed({
+  subsets: ['latin', 'latin-ext'],
+  weight: ['600', '700', '800'],
+  variable: '--font-display',
+  display: 'swap',
+});
+
+const monoFont = JetBrains_Mono({
+  subsets: ['latin', 'latin-ext'],
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-mono',
+  display: 'swap',
+});
 
 const brandFont = Space_Grotesk({
   subsets: ['latin', 'latin-ext'],
@@ -9,7 +35,7 @@ const brandFont = Space_Grotesk({
 });
 
 export const viewport = {
-  themeColor: '#140b1e',
+  themeColor: '#09090B',
   width: 'device-width',
   initialScale: 1,
 };
@@ -100,7 +126,7 @@ const jsonLd = {
       '@type': 'WebPage',
       name: 'GTA 6 PC Port Takip & Canlı İlerleme',
       url: 'https://gta6takip.vercel.app/',
-      dateModified: '2026-11-27T15:45:00+03:00',
+      dateModified: '2026-11-27T23:45:00+03:00',
       inLanguage: 'tr',
       isPartOf: {
         '@type': 'WebSite',
@@ -149,8 +175,14 @@ const jsonLd = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="tr" className={brandFont.variable}>
-      <body className="min-h-screen bg-[#090614] text-white antialiased selection:bg-pink-500 selection:text-white">
+    <html
+      lang="tr"
+      className={`${sansFont.variable} ${displayFont.variable} ${monoFont.variable} ${brandFont.variable}`}
+    >
+      <body
+        style={{ fontFamily: 'var(--font-sans), ui-sans-serif, system-ui, sans-serif' }}
+        className="min-h-screen bg-[#09090B] text-zinc-100 antialiased selection:bg-[#FF4D2E] selection:text-white"
+      >
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
