@@ -52,7 +52,7 @@ import {
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
-const APP_VERSION = 'v1.2.3';
+const APP_VERSION = 'v1.2.4';
 const CHAT_CACHE_PREFIX = 'gta6takip_chat_cache_';
 const INITIAL_TEAMS_LIMIT = 5;
 const CHAT_COOLDOWN_SEC = 30;
@@ -432,6 +432,19 @@ const FALLBACK_FEATURED_PORT = {
 };
 
 const CHANGELOG = [
+  {
+    version: 'v1.2.4',
+    dateTr: '27 Kasım 2026',
+    dateEn: 'November 27, 2026',
+    itemsTr: [
+      'Tam Ekran Sohbet üstündeki 20px boşluk (!mt-0) giderildi ve yeni mesaj geldikçe sohbetin en alta otomatik kayması düzeltildi.',
+      'Sunucu ve CPU tasarrufu: /api/sync 60sn kenar önbelleğine alındı, otomatik yenileme 5 dakikaya (300s) çıkarıldı, /api/chat yalnızca sohbet açıldığında çekilecek ve /api/geo oturum bazlı önbelleklenecek şekilde optimize edildi.',
+    ],
+    itemsEn: [
+      'Fixed the 20px top gap in Fullscreen Live Chat (!mt-0) and fixed reliable auto-scroll to newest messages.',
+      'Server & CPU optimization: Added 60s edge caching to /api/sync, adjusted auto-refresh to 300s, lazy-loaded /api/chat on open, and cached /api/geo in sessionStorage.',
+    ],
+  },
   {
     version: 'v1.2.3',
     dateTr: '27 Kasım 2026',
@@ -961,6 +974,7 @@ export default function HomePage() {
   const ownMsgIdsRef = useRef(new Set());
   const lastOwnSendAtRef = useRef(0);
   const forceScrollRef = useRef(false);
+  const isAtBottomRef = useRef(true);
   const chatSectionRef = useRef(null);
   const chatListRef = useRef(null);
   const chatEndRef = useRef(null);
@@ -988,7 +1002,7 @@ export default function HomePage() {
   const presenceChannelRef = useRef(null);
   const viewerCountryRef = useRef('TR');
   const [countryStats, setCountryStats] = useState([{ code: 'TR', count: 1 }]);
-  const [countdown, setCountdown] = useState(120);
+  const [countdown, setCountdown] = useState(300);
   const [syncing, setSyncing] = useState(false);
   const [copied, setCopied] = useState(false);
 
@@ -1341,9 +1355,7 @@ export default function HomePage() {
     }, 60);
   };
 
-  useEffect(() => {
-    fetchChatMessages(chatRoomRef.current);
-  }, []);
+  // /api/chat yalnızca kullanıcı sohbeti açtığında çekilir (CPU/kota tasarrufu)
 
   useEffect(() => {
     if (!supabaseClient) return undefined;
@@ -1413,27 +1425,37 @@ export default function HomePage() {
   }, [supabaseClient]);
 
   useEffect(() => {
-    if (!chatOpen || !chatEndRef.current) return;
-    const el = chatListRef.current;
-    const isNearBottom = !el || el.scrollHeight - el.scrollTop - el.clientHeight < 120;
-    if (forceScrollRef.current || isNearBottom) {
+    if (!chatOpen) return;
+    if (forceScrollRef.current || isAtBottomRef.current) {
       forceScrollRef.current = false;
+      isAtBottomRef.current = true;
       setUnreadWhileScrolled(0);
-      chatEndRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      requestAnimationFrame(() => {
+        const el = chatListRef.current;
+        if (el) {
+          el.scrollTop = el.scrollHeight;
+        }
+      });
     }
-  }, [chatMessages, chatOpen]);
+  }, [chatMessages, chatOpen, chatFullscreen]);
 
   const handleChatListScroll = () => {
     const el = chatListRef.current;
     if (!el) return;
-    if (el.scrollHeight - el.scrollTop - el.clientHeight < 80 && unreadWhileScrolled > 0) {
+    const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 90;
+    isAtBottomRef.current = nearBottom;
+    if (nearBottom && unreadWhileScrolled > 0) {
       setUnreadWhileScrolled(0);
     }
   };
 
   const handleScrollChatBottom = () => {
+    isAtBottomRef.current = true;
     setUnreadWhileScrolled(0);
-    chatEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    const el = chatListRef.current;
+    if (el) {
+      el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
+    }
   };
 
   const handleStartReply = (msg) => {
@@ -1757,7 +1779,7 @@ export default function HomePage() {
       // Mevcut veya yedek veri korunur
     } finally {
       setSyncing(false);
-      setCountdown(120);
+      setCountdown(300);
     }
   };
 
@@ -1772,7 +1794,7 @@ export default function HomePage() {
       setCountdown((prev) => {
         if (prev <= 1) {
           fetchSyncData();
-          return 120;
+          return 300;
         }
         return prev - 1;
       });
@@ -1797,11 +1819,17 @@ export default function HomePage() {
     const initPresence = async () => {
       let viewerCountry = localCountry;
       try {
-        const geoRes = await fetch('/api/geo', { cache: 'no-store' });
-        if (geoRes.ok) {
-          const geoJson = await geoRes.json();
-          if (geoJson?.country && /^[A-Z]{2}$/.test(geoJson.country)) {
-            viewerCountry = geoJson.country;
+        const cachedGeo = sessionStorage.getItem('gta6takip_geo_country');
+        if (cachedGeo && /^[A-Z]{2}$/.test(cachedGeo)) {
+          viewerCountry = cachedGeo;
+        } else {
+          const geoRes = await fetch('/api/geo', { cache: 'no-store' });
+          if (geoRes.ok) {
+            const geoJson = await geoRes.json();
+            if (geoJson?.country && /^[A-Z]{2}$/.test(geoJson.country)) {
+              viewerCountry = geoJson.country;
+              sessionStorage.setItem('gta6takip_geo_country', geoJson.country);
+            }
           }
         }
       } catch {
@@ -3211,7 +3239,7 @@ export default function HomePage() {
           id="canli-sohbet"
           className={
             chatFullscreen
-              ? `fixed top-0 left-0 right-0 bottom-0 z-[100] h-[100dvh] flex flex-col overflow-hidden ${theme.bg}`
+              ? `fixed inset-0 !mt-0 z-[100] h-[100dvh] flex flex-col overflow-hidden ${theme.bg}`
               : `rounded-2xl border overflow-hidden shadow-xl ${theme.card}`
           }
         >
@@ -3267,7 +3295,11 @@ export default function HomePage() {
           {chatOpen && (
             <button
               type="button"
-              onClick={() => setChatFullscreen((v) => !v)}
+              onClick={() => {
+                forceScrollRef.current = true;
+                isAtBottomRef.current = true;
+                setChatFullscreen((v) => !v);
+              }}
               className={`inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl text-[11px] font-black shrink-0 shadow-sm transition hover:scale-[1.03] ${theme.btnPrimary}`}
               title={chatFullscreen ? (lang === 'tr' ? 'Tam ekrandan çık' : 'Exit fullscreen') : (lang === 'tr' ? 'Rahat yazmak için tam ekran aç' : 'Open fullscreen chat')}
             >
