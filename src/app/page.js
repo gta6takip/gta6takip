@@ -45,7 +45,7 @@ import {
 
 export default function HomePage() {
   const [lang, setLang] = useState('tr');
-  const [themeKey, setThemeKey] = useState('carbon');
+  const [themeKey, setThemeKey] = useState('leonida');
   const [themeMenuOpen, setThemeMenuOpen] = useState(false);
   const [onlineMenuOpen, setOnlineMenuOpen] = useState(false);
   const [changelogOpen, setChangelogOpen] = useState(false);
@@ -172,11 +172,21 @@ export default function HomePage() {
     return () => mq.removeEventListener('change', apply);
   }, []);
 
-  // Sync data-theme attribute on <html>
+  // Sync data-theme attribute on <html> cleanly without desynced transition lag
   useEffect(() => {
-    if (typeof document !== 'undefined') {
-      document.documentElement.setAttribute('data-theme', themeKey);
-    }
+    if (typeof document === 'undefined') return undefined;
+    const root = document.documentElement;
+    root.classList.add('theme-switching');
+    root.setAttribute('data-theme', themeKey);
+    const raf1 = requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        root.classList.remove('theme-switching');
+      });
+    });
+    return () => {
+      cancelAnimationFrame(raf1);
+      root.classList.remove('theme-switching');
+    };
   }, [themeKey]);
 
   // Restore saved preferences
@@ -657,7 +667,9 @@ export default function HomePage() {
             verification: item.verification || '',
             approach: item.approach || '',
             highlights: Array.isArray(item.highlights) ? item.highlights : [],
+            highlightsTr: Array.isArray(item.highlightsTr) ? item.highlightsTr : [],
             blockers: Array.isArray(item.blockers) ? item.blockers : [],
+            blockersTr: Array.isArray(item.blockersTr) ? item.blockersTr : [],
           }))
           .sort((a, b) => b.progress - a.progress);
 

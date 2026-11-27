@@ -1,4 +1,4 @@
-export const APP_VERSION = 'v4.0.0';
+export const APP_VERSION = 'v4.1.0';
 export const SCORE_SNAPSHOT_KEY = 'gta6takip_prev_scores_v2';
 export const CHAT_CACHE_PREFIX = 'gta6takip_chat_cache_';
 export const INITIAL_TEAMS_LIMIT = 8;
@@ -11,31 +11,74 @@ export const CHAT_DOCK_KEY = 'gta6takip_chat_dock_open';
 export const CHAT_REACTION_EMOJIS = ['🔥', '👍', '😂'];
 
 export const THEMES = {
-  carbon: {
-    id: 'carbon',
-    label: { tr: 'Karbon (Koyu)', en: 'Carbon Dark' },
-    dot: '#F05232',
+  leonida: {
+    id: 'leonida',
+    group: 'dark',
+    label: { tr: 'Leonida Alacakaranlık', en: 'Leonida Twilight' },
+    sub: { tr: 'Mat gün batımı', en: 'Matte sunset' },
+    dot: '#E86A58',
+    swatches: ['#121116', '#18171E', '#E86A58'],
     isLight: false,
   },
-  slate: {
-    id: 'slate',
-    label: { tr: 'Arduvaz (Koyu)', en: 'Slate Dark' },
-    dot: '#38BDF8',
+  graphite: {
+    id: 'graphite',
+    group: 'dark',
+    label: { tr: 'Telemetri Grafit', en: 'Telemetry Graphite' },
+    sub: { tr: 'Nötr teknik koyu', en: 'Neutral dark' },
+    dot: '#E66435',
+    swatches: ['#0E1012', '#14171A', '#E66435'],
     isLight: false,
   },
-  light: {
-    id: 'light',
-    label: { tr: 'Stüdyo (Açık)', en: 'Studio Light' },
-    dot: '#DC4222',
+  kanagawa: {
+    id: 'kanagawa',
+    group: 'dark',
+    label: { tr: 'Gece Okyanusu', en: 'Kanagawa Ocean' },
+    sub: { tr: 'Dingin mavi-arduvaz', en: 'Calm indigo slate' },
+    dot: '#6FA8DC',
+    swatches: ['#141722', '#1B1F2D', '#6FA8DC'],
+    isLight: false,
+  },
+  'eyecare-dark': {
+    id: 'eyecare-dark',
+    group: 'eyecare',
+    label: { tr: 'Sıcak Mürekkep', en: 'Warm Ink' },
+    sub: { tr: 'Gece · Göz yormaz', en: 'Night · Low glare' },
+    dot: '#84A98C',
+    swatches: ['#1B1A18', '#22201D', '#84A98C'],
+    isLight: false,
+  },
+  'eyecare-sepia': {
+    id: 'eyecare-sepia',
+    group: 'eyecare',
+    label: { tr: 'Sepya Kâğıt', en: 'Sepia Paper' },
+    sub: { tr: 'E-Ink · Göz yormaz', en: 'E-Ink · Low glare' },
+    dot: '#B84E32',
+    swatches: ['#EFEADF', '#F7F3EA', '#B84E32'],
+    isLight: true,
+  },
+  daylight: {
+    id: 'daylight',
+    group: 'light',
+    label: { tr: 'Editoryal Gün Işığı', en: 'Editorial Daylight' },
+    sub: { tr: 'Modern dergi açık', en: 'Crisp studio light' },
+    dot: '#CC3D24',
+    swatches: ['#F3F2EE', '#FFFFFF', '#CC3D24'],
     isLight: true,
   },
 };
 
+export const THEME_GROUPS = [
+  { id: 'eyecare', tr: 'Göz Dostu', en: 'Eye Comfort' },
+  { id: 'dark', tr: 'Koyu Temalar', en: 'Dark Themes' },
+  { id: 'light', tr: 'Açık Tema', en: 'Light Theme' },
+];
+
 export function normalizeThemeKey(saved) {
   if (saved && THEMES[saved]) return saved;
-  if (saved === 'light') return 'light';
-  if (saved === 'ocean' || saved === 'slate') return 'slate';
-  return 'carbon';
+  if (saved === 'light') return 'daylight';
+  if (saved === 'slate' || saved === 'ocean') return 'kanagawa';
+  if (saved === 'carbon' || saved === 'softdark' || saved === 'dark') return 'graphite';
+  return 'leonida';
 }
 
 export const MILESTONES = [
@@ -169,6 +212,21 @@ export const FALLBACK_DMCA = [
 ];
 
 export const CHANGELOG = [
+  {
+    version: 'v4.1.0',
+    dateTr: '28 Kasım 2026',
+    dateEn: 'November 28, 2026',
+    itemsTr: [
+      'OKLCH & APCA renk bilimiyle kalibre edilmiş 6 yeni tema eklendi: Varsayılan Leonida Alacakaranlık, Telemetri Grafit, Gece Okyanusu, Editoryal Gün Işığı ve özel Göz Dostu temalar (Sıcak Mürekkep & Sepya Kâğıt).',
+      'Tema menüsü Göz Dostu / Koyu / Açık kategorileri ve canlı 3 renkli önizleme çipleriyle yenilendi.',
+      'Üst menü geniş ekranlarda ve 1280px dizüstülerde sıfır çakışma verecek şekilde optimize edildi; 1/2/3 sıralamalarına minimal geometrik simgeler eklendi.',
+    ],
+    itemsEn: [
+      'Added 6 OKLCH/APCA calibrated themes: Leonida Twilight (default), Telemetry Graphite, Kanagawa Ocean, Editorial Daylight, plus dedicated Eye-Comfort Warm Ink and Sepia Paper modes.',
+      'Upgraded the theme menu with Eye Comfort / Dark / Light grouping and 3-chip live swatches.',
+      'Refined responsive header spacing across 1024px–1536px viewports and added minimal geometric rank emblems.',
+    ],
+  },
   {
     version: 'v4.0.0',
     dateTr: '28 Kasım 2026',

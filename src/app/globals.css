@@ -2,107 +2,233 @@
 @tailwind components;
 @tailwind utilities;
 
+/* 1. LEONIDA ALACAKARANLIK (Default — GTA VI Matte Twilight Print) */
 :root,
-[data-theme="carbon"] {
-  --bg-canvas: #0b0c0e;
-  --bg-surface: #111317;
-  --bg-elevated: #171a20;
-  --bg-hover: #1d2129;
-  --bg-header: rgba(11, 12, 14, 0.92);
-  --border-subtle: #1f232b;
-  --border-default: #2a303b;
-  --border-strong: #3b4352;
-  --ink-primary: #f1f3f6;
-  --ink-secondary: #9aa3b2;
-  --ink-muted: #6c7688;
-  --accent: #f05232;
-  --accent-hover: #ff6445;
-  --accent-soft: rgba(240, 82, 50, 0.12);
-  --accent-border: rgba(240, 82, 50, 0.34);
+[data-theme="leonida"] {
+  --bg-canvas: #121116;
+  --bg-surface: #18171e;
+  --bg-elevated: #201f28;
+  --bg-hover: #292733;
+  --bg-header: rgba(18, 17, 22, 0.92);
+  --border-subtle: #282633;
+  --border-default: #373445;
+  --border-strong: #4b475e;
+  --ink-primary: #eae6f2;
+  --ink-secondary: #a29cb2;
+  --ink-muted: #756f87;
+  --accent: #e86a58;
+  --accent-hover: #f27c6b;
+  --accent-soft: rgba(232, 106, 88, 0.13);
+  --accent-border: rgba(232, 106, 88, 0.35);
   --accent-ink: #ffffff;
-  --active-pill-bg: #f1f3f6;
-  --active-pill-ink: #0b0c0e;
-  --msg-self-bg: rgba(240, 82, 50, 0.08);
-  --msg-self-bar: #f05232;
-  --msg-admin-bg: rgba(245, 158, 11, 0.08);
-  --msg-admin-bar: #f59e0b;
-  --msg-mod-bg: rgba(56, 189, 248, 0.08);
-  --msg-mod-bar: #38bdf8;
-  --msg-mention-bg: rgba(240, 82, 50, 0.16);
-  --msg-mention-ink: #ff8266;
-  --track-bg: #1e222b;
-  --scroll-track: #0d0f12;
-  --scroll-thumb: rgba(154, 163, 178, 0.24);
-  --scroll-thumb-hover: rgba(154, 163, 178, 0.45);
-  --shadow-popover: 0 16px 40px -12px rgba(0, 0, 0, 0.65);
+  --secondary: #4ba3b5;
+  --active-pill-bg: #eae6f2;
+  --active-pill-ink: #121116;
+  --msg-self-bg: rgba(232, 106, 88, 0.09);
+  --msg-self-bar: #e86a58;
+  --msg-admin-bg: rgba(235, 180, 82, 0.10);
+  --msg-admin-bar: #ebb452;
+  --msg-admin-ink: #f0c674;
+  --msg-mod-bg: rgba(75, 163, 181, 0.11);
+  --msg-mod-bar: #4ba3b5;
+  --msg-mod-ink: #7cc6d6;
+  --msg-mention-bg: rgba(232, 106, 88, 0.18);
+  --msg-mention-ink: #f59a8c;
+  --track-bg: #272532;
+  --scroll-track: #141319;
+  --scroll-thumb: rgba(162, 156, 178, 0.25);
+  --scroll-thumb-hover: rgba(232, 106, 88, 0.55);
+  --shadow-popover: 0 16px 40px -12px rgba(6, 5, 12, 0.72);
 }
 
-[data-theme="slate"] {
-  --bg-canvas: #0b0f17;
-  --bg-surface: #111722;
-  --bg-elevated: #161f2e;
-  --bg-hover: #1d283b;
-  --bg-header: rgba(11, 15, 23, 0.92);
-  --border-subtle: #1e293b;
-  --border-default: #2b394f;
-  --border-strong: #3c4f6b;
-  --ink-primary: #f1f5f9;
-  --ink-secondary: #94a3b8;
-  --ink-muted: #64748b;
-  --accent: #38bdf8;
-  --accent-hover: #56c9fa;
-  --accent-soft: rgba(56, 189, 248, 0.12);
-  --accent-border: rgba(56, 189, 248, 0.34);
-  --accent-ink: #06131f;
-  --active-pill-bg: #f1f5f9;
-  --active-pill-ink: #0b0f17;
-  --msg-self-bg: rgba(56, 189, 248, 0.08);
-  --msg-self-bar: #38bdf8;
-  --msg-admin-bg: rgba(245, 158, 11, 0.09);
-  --msg-admin-bar: #f59e0b;
-  --msg-mod-bg: rgba(129, 140, 248, 0.09);
-  --msg-mod-bar: #818cf8;
-  --msg-mention-bg: rgba(56, 189, 248, 0.16);
-  --msg-mention-ink: #7dd3fc;
-  --track-bg: #1e293b;
-  --scroll-track: #0b0f17;
-  --scroll-thumb: rgba(148, 163, 184, 0.24);
-  --scroll-thumb-hover: rgba(56, 189, 248, 0.5);
-  --shadow-popover: 0 16px 40px -12px rgba(2, 6, 23, 0.72);
+/* 2. GÖZ DOSTU KOYU: SICAK MÜREKKEP (Flexoki Dark + Everforest Eye Comfort) */
+[data-theme="eyecare-dark"] {
+  --bg-canvas: #1b1a18;
+  --bg-surface: #22201d;
+  --bg-elevated: #2a2723;
+  --bg-hover: #33302b;
+  --bg-header: rgba(27, 26, 24, 0.93);
+  --border-subtle: #322f29;
+  --border-default: #443f37;
+  --border-strong: #595248;
+  --ink-primary: #ddd6c7;
+  --ink-secondary: #a39a8b;
+  --ink-muted: #7a7265;
+  --accent: #84a98c;
+  --accent-hover: #96ba9e;
+  --accent-soft: rgba(132, 169, 140, 0.14);
+  --accent-border: rgba(132, 169, 140, 0.35);
+  --accent-ink: #141b16;
+  --secondary: #d4a359;
+  --active-pill-bg: #ddd6c7;
+  --active-pill-ink: #1b1a18;
+  --msg-self-bg: rgba(132, 169, 140, 0.09);
+  --msg-self-bar: #84a98c;
+  --msg-admin-bg: rgba(212, 163, 89, 0.11);
+  --msg-admin-bar: #d4a359;
+  --msg-admin-ink: #e2ba7b;
+  --msg-mod-bg: rgba(132, 169, 140, 0.12);
+  --msg-mod-bar: #84a98c;
+  --msg-mod-ink: #a4c4ab;
+  --msg-mention-bg: rgba(212, 163, 89, 0.18);
+  --msg-mention-ink: #e2ba7b;
+  --track-bg: #312e28;
+  --scroll-track: #1d1c19;
+  --scroll-thumb: rgba(163, 154, 139, 0.25);
+  --scroll-thumb-hover: rgba(132, 169, 140, 0.52);
+  --shadow-popover: 0 16px 40px -12px rgba(10, 9, 7, 0.68);
 }
 
-[data-theme="light"] {
-  --bg-canvas: #f5f5f2;
+/* 3. GÖZ DOSTU AÇIK: SEPYA KÂĞIT (Flexoki Paper + Kindle Sepia E-Ink) */
+[data-theme="eyecare-sepia"] {
+  --bg-canvas: #efeadf;
+  --bg-surface: #f7f3ea;
+  --bg-elevated: #eae4d6;
+  --bg-hover: #e1dac8;
+  --bg-header: rgba(239, 234, 223, 0.94);
+  --border-subtle: #ddd5c4;
+  --border-default: #c8bea8;
+  --border-strong: #afa38b;
+  --ink-primary: #2b2620;
+  --ink-secondary: #5e564b;
+  --ink-muted: #847a6c;
+  --accent: #b84e32;
+  --accent-hover: #a04127;
+  --accent-soft: rgba(184, 78, 50, 0.10);
+  --accent-border: rgba(184, 78, 50, 0.30);
+  --accent-ink: #fffdf9;
+  --secondary: #4e7358;
+  --active-pill-bg: #2b2620;
+  --active-pill-ink: #f7f3ea;
+  --msg-self-bg: rgba(184, 78, 50, 0.08);
+  --msg-self-bar: #b84e32;
+  --msg-admin-bg: rgba(180, 118, 22, 0.09);
+  --msg-admin-bar: #b47616;
+  --msg-admin-ink: #8c590c;
+  --msg-mod-bg: rgba(54, 108, 128, 0.09);
+  --msg-mod-bar: #366c80;
+  --msg-mod-ink: #285668;
+  --msg-mention-bg: rgba(184, 78, 50, 0.13);
+  --msg-mention-ink: #9e3d23;
+  --track-bg: #dfd8c7;
+  --scroll-track: #e8e2d4;
+  --scroll-thumb: rgba(43, 38, 32, 0.22);
+  --scroll-thumb-hover: rgba(184, 78, 50, 0.55);
+  --shadow-popover: 0 16px 36px -12px rgba(43, 38, 32, 0.16);
+}
+
+/* 4. TELEMETRİ GRAFİT (Refined Benchmark Dark) */
+[data-theme="graphite"] {
+  --bg-canvas: #0e1012;
+  --bg-surface: #14171a;
+  --bg-elevated: #1b1f24;
+  --bg-hover: #23282f;
+  --bg-header: rgba(14, 16, 18, 0.92);
+  --border-subtle: #23282f;
+  --border-default: #323943;
+  --border-strong: #46505e;
+  --ink-primary: #edf0f3;
+  --ink-secondary: #9aa3ae;
+  --ink-muted: #6b7480;
+  --accent: #e66435;
+  --accent-hover: #f27548;
+  --accent-soft: rgba(230, 100, 53, 0.13);
+  --accent-border: rgba(230, 100, 53, 0.34);
+  --accent-ink: #ffffff;
+  --secondary: #52a89c;
+  --active-pill-bg: #edf0f3;
+  --active-pill-ink: #0e1012;
+  --msg-self-bg: rgba(230, 100, 53, 0.09);
+  --msg-self-bar: #e66435;
+  --msg-admin-bg: rgba(234, 179, 8, 0.09);
+  --msg-admin-bar: #eab308;
+  --msg-admin-ink: #f5c451;
+  --msg-mod-bg: rgba(82, 168, 156, 0.10);
+  --msg-mod-bar: #52a89c;
+  --msg-mod-ink: #77c7bc;
+  --msg-mention-bg: rgba(230, 100, 53, 0.16);
+  --msg-mention-ink: #f48a63;
+  --track-bg: #23282f;
+  --scroll-track: #101215;
+  --scroll-thumb: rgba(154, 163, 174, 0.24);
+  --scroll-thumb-hover: rgba(230, 100, 53, 0.55);
+  --shadow-popover: 0 16px 40px -12px rgba(0, 0, 0, 0.72);
+}
+
+/* 5. GECE OKYANUSU (Kanagawa Wave / SteamDB Calm Indigo) */
+[data-theme="kanagawa"] {
+  --bg-canvas: #141722;
+  --bg-surface: #1b1f2d;
+  --bg-elevated: #23283a;
+  --bg-hover: #2c3248;
+  --bg-header: rgba(20, 23, 34, 0.92);
+  --border-subtle: #292f44;
+  --border-default: #3a425e;
+  --border-strong: #4e597c;
+  --ink-primary: #e2e4ec;
+  --ink-secondary: #9aa3bc;
+  --ink-muted: #6e7791;
+  --accent: #6fa8dc;
+  --accent-hover: #85b8e6;
+  --accent-soft: rgba(111, 168, 220, 0.14);
+  --accent-border: rgba(111, 168, 220, 0.34);
+  --accent-ink: #0b1522;
+  --secondary: #d9b675;
+  --active-pill-bg: #e2e4ec;
+  --active-pill-ink: #141722;
+  --msg-self-bg: rgba(111, 168, 220, 0.09);
+  --msg-self-bar: #6fa8dc;
+  --msg-admin-bg: rgba(217, 182, 117, 0.11);
+  --msg-admin-bar: #d9b675;
+  --msg-admin-ink: #e8c98f;
+  --msg-mod-bg: rgba(111, 168, 220, 0.12);
+  --msg-mod-bar: #6fa8dc;
+  --msg-mod-ink: #94c3ec;
+  --msg-mention-bg: rgba(111, 168, 220, 0.18);
+  --msg-mention-ink: #94c3ec;
+  --track-bg: #293045;
+  --scroll-track: #151824;
+  --scroll-thumb: rgba(154, 163, 188, 0.25);
+  --scroll-thumb-hover: rgba(111, 168, 220, 0.55);
+  --shadow-popover: 0 16px 40px -12px rgba(4, 7, 18, 0.72);
+}
+
+/* 6. EDİTORYAL GÜN IŞIĞI (Refined Magazine Daylight) */
+[data-theme="daylight"] {
+  --bg-canvas: #f3f2ee;
   --bg-surface: #ffffff;
-  --bg-elevated: #f8f8f5;
-  --bg-hover: #efefeb;
-  --bg-header: rgba(245, 245, 242, 0.94);
-  --border-subtle: #e6e6e1;
-  --border-default: #d5d5ce;
-  --border-strong: #b6b6ad;
-  --ink-primary: #121418;
-  --ink-secondary: #525866;
-  --ink-muted: #767e8d;
-  --accent: #dc4222;
-  --accent-hover: #c23518;
-  --accent-soft: rgba(220, 66, 34, 0.08);
-  --accent-border: rgba(220, 66, 34, 0.28);
+  --bg-elevated: #f7f6f2;
+  --bg-hover: #eceae3;
+  --bg-header: rgba(243, 242, 238, 0.94);
+  --border-subtle: #e3e1da;
+  --border-default: #cfcbc1;
+  --border-strong: #b2ada1;
+  --ink-primary: #15171a;
+  --ink-secondary: #525864;
+  --ink-muted: #7c8391;
+  --accent: #cc3d24;
+  --accent-hover: #b3321b;
+  --accent-soft: rgba(204, 61, 36, 0.09);
+  --accent-border: rgba(204, 61, 36, 0.28);
   --accent-ink: #ffffff;
-  --active-pill-bg: #121418;
+  --secondary: #256d7b;
+  --active-pill-bg: #15171a;
   --active-pill-ink: #ffffff;
-  --msg-self-bg: rgba(220, 66, 34, 0.06);
-  --msg-self-bar: #dc4222;
+  --msg-self-bg: rgba(204, 61, 36, 0.07);
+  --msg-self-bar: #cc3d24;
   --msg-admin-bg: rgba(217, 119, 6, 0.08);
   --msg-admin-bar: #d97706;
-  --msg-mod-bg: rgba(2, 132, 199, 0.07);
-  --msg-mod-bar: #0284c7;
-  --msg-mention-bg: rgba(220, 66, 34, 0.12);
-  --msg-mention-ink: #c23518;
-  --track-bg: #e5e5df;
-  --scroll-track: #efefeb;
-  --scroll-thumb: rgba(18, 20, 24, 0.2);
-  --scroll-thumb-hover: rgba(18, 20, 24, 0.4);
-  --shadow-popover: 0 16px 36px -12px rgba(15, 23, 42, 0.16);
+  --msg-admin-ink: #a16207;
+  --msg-mod-bg: rgba(37, 109, 123, 0.08);
+  --msg-mod-bar: #256d7b;
+  --msg-mod-ink: #1d5864;
+  --msg-mention-bg: rgba(204, 61, 36, 0.12);
+  --msg-mention-ink: #b2311a;
+  --track-bg: #e4e2da;
+  --scroll-track: #eceae3;
+  --scroll-thumb: rgba(21, 23, 26, 0.2);
+  --scroll-thumb-hover: rgba(21, 23, 26, 0.4);
+  --shadow-popover: 0 16px 36px -12px rgba(15, 23, 42, 0.15);
 }
 
 html,
@@ -110,7 +236,13 @@ body {
   background-color: var(--bg-canvas);
   color: var(--ink-primary);
   overflow-x: clip;
-  transition: background-color 180ms ease, color 180ms ease;
+}
+
+.theme-switching,
+.theme-switching *,
+.theme-switching *::before,
+.theme-switching *::after {
+  transition: none !important;
 }
 
 .font-display {

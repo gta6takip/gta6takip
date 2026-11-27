@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { translateBatchToTurkish } from '../../../lib/translate';
 
 export const dynamic = 'force-dynamic';
 
@@ -9,9 +10,21 @@ const TRACKER_URLS = [
 
 const SCARLETT_REPO = 'ZigZagBoi1/ScarlettPort';
 const SLAKTARN_REPO = 'Slaktarn700/SlaktarnVI';
-const GH_CACHE_TTL_MS = 5 * 60 * 1000;
+const GH_CACHE_TTL_MS = 10 * 60 * 1000;
 let scarlettCache = { ts: 0, data: null };
 let slaktarnCache = { ts: 0, data: null };
+
+function buildGitHubHeaders() {
+  const headers = {
+    'User-Agent': 'Mozilla/5.0 (compatible; gta6takip/4.1)',
+    Accept: 'application/vnd.github+json',
+  };
+  const token = (process.env.GITHUB_TOKEN || '').trim();
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+  return headers;
+}
 
 function computePortWatchScore(effort) {
   const g = effort?.gta || {};
@@ -135,10 +148,7 @@ async function fetchScarlettPortLive() {
     return scarlettCache.data;
   }
 
-  const headers = {
-    'User-Agent': 'Mozilla/5.0 (compatible; gta6takip/2.0)',
-    Accept: 'application/vnd.github+json',
-  };
+  const headers = buildGitHubHeaders();
 
   let repoInfo = null;
   let releaseInfo = null;
@@ -156,7 +166,7 @@ async function fetchScarlettPortLive() {
       cache: 'no-store',
     }),
     fetch(`https://raw.githubusercontent.com/${SCARLETT_REPO}/main/README.md?t=${now}`, {
-      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; gta6takip/2.0)' },
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; gta6takip/4.1)' },
       signal: AbortSignal.timeout(5000),
       cache: 'no-store',
     }),
@@ -172,11 +182,17 @@ async function fetchScarlettPortLive() {
     readmeText = await readmeRes.value.text().catch(() => '');
   }
 
-  const est = estimateScarlettFromReadme(readmeText);
-  const releaseTag = releaseInfo?.tag_name || 'v0.5.3';
-  const stars = Number(repoInfo?.stargazers_count) || 1007;
+  // If GitHub API rate-limited and we already have a real cached snapshot, keep it fresh
+  if (!repoInfo && !releaseInfo && !readmeText && scarlettCache.data) {
+    return scarlettCache.data;
+  }
+
+  const prev = scarlettCache.data;
+  const est = readmeText ? estimateScarlettFromReadme(readmeText) : prev || estimateScarlettFromReadme('');
+  const releaseTag = releaseInfo?.tag_name || prev?.releaseTag || 'v0.5.5';
+  const stars = Number(repoInfo?.stargazers_count) || prev?.stars || 1258;
   const updatedAt =
-    releaseInfo?.published_at || repoInfo?.pushed_at || new Date().toISOString();
+    releaseInfo?.published_at || repoInfo?.pushed_at || prev?.updatedAt || new Date().toISOString();
 
   const result = {
     name: 'ScarlettPort',
@@ -199,16 +215,25 @@ async function fetchScarlettPortLive() {
     hasLauncher: true,
     platformTag: '',
     highlights: [
+      'Prebuilt Windows launcher (ScarlettPort.exe) and runtime bundle requiring no compilation',
+      'Combines VIctory + XCL runtimes into one build with keyboard/mouse and DualSense support',
+      `Current README benchmark: ${est.fps} (Series S profile); community RX 9060 XT tests reach up to 22 FPS median`,
+    ],
+    highlightsTr: [
       'Derleme gerektirmeyen hazır Windows başlatıcısı (ScarlettPort.exe) ve runtime paketi',
       'VIctory + XCL çalışma zamanlarını tek yapıda birleştiriyor; klavye/fare ve DualSense desteği var',
-      'RTX 3060 (Series S profili) ile 3–4 FPS ışıklı dünya, topluluk RX 9060 XT testlerinde 22 FPS medyan',
+      `Güncel README ölçümü: ${est.fps} (Series S profili); topluluk RX 9060 XT testlerinde 22 FPS medyan`,
     ],
     blockers: [
+      'Shadowed areas are still dark and ray tracing is not enabled yet',
+      'Long-term stability and full story progression are not yet independently verified',
+    ],
+    blockersTr: [
       'Gölgeli alanlar henüz karanlık ve ışın izleme (ray tracing) aktif değil',
       'Uzun süreli kararlılık ve tam hikâye oynanışı henüz bağımsız doğrulanmadı',
     ],
-    summaryTr: `ScarlettPort (${releaseTag}), kaynak kod derlemeye gerek kalmadan hazır Windows başlatıcısı (ScarlettPort.exe) sunan ilk açık kaynak GTA VI PC port katmanı. VIctory + XCL altyapısını birleştiriyor; RTX 3060'ta 3–4 FPS, topluluk testlerinde RX 9060 XT ile 22 FPS'e kadar ulaşıyor.`,
-    summaryEn: `ScarlettPort (${releaseTag}) is the first open-source GTA VI PC port layer shipping a prebuilt Windows launcher (ScarlettPort.exe) combining VIctory + XCL runtimes.`,
+    summaryTr: `ScarlettPort (${releaseTag}), kaynak kod derlemeye gerek kalmadan hazır Windows başlatıcısı (ScarlettPort.exe) sunan ilk açık kaynak GTA VI PC port katmanı. VIctory + XCL altyapısını birleştiriyor; güncel README verisinde ${est.fps}, topluluk RX 9060 XT testlerinde 22 FPS'e kadar ulaşıyor.`,
+    summaryEn: `ScarlettPort (${releaseTag}) is the first open-source GTA VI PC port layer shipping a prebuilt Windows launcher (ScarlettPort.exe) combining VIctory + XCL runtimes (${est.fps}).`,
     isZortos: false,
   };
 
@@ -250,10 +275,7 @@ async function fetchSlaktarnLive() {
     return slaktarnCache.data;
   }
 
-  const headers = {
-    'User-Agent': 'Mozilla/5.0 (compatible; gta6takip/2.0)',
-    Accept: 'application/vnd.github+json',
-  };
+  const headers = buildGitHubHeaders();
 
   let repoInfo = null;
   let readmeText = '';
@@ -265,7 +287,7 @@ async function fetchSlaktarnLive() {
       cache: 'no-store',
     }),
     fetch(`https://raw.githubusercontent.com/${SLAKTARN_REPO}/main/README.md?t=${now}`, {
-      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; gta6takip/2.0)' },
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; gta6takip/4.1)' },
       signal: AbortSignal.timeout(5000),
       cache: 'no-store',
     }),
@@ -278,9 +300,14 @@ async function fetchSlaktarnLive() {
     readmeText = await readmeRes.value.text().catch(() => '');
   }
 
-  const est = estimateSlaktarnFromReadme(readmeText);
-  const stars = Number(repoInfo?.stargazers_count) || 92;
-  const updatedAt = repoInfo?.pushed_at || new Date().toISOString();
+  if (!repoInfo && !readmeText && slaktarnCache.data) {
+    return slaktarnCache.data;
+  }
+
+  const prev = slaktarnCache.data;
+  const est = readmeText ? estimateSlaktarnFromReadme(readmeText) : prev || estimateSlaktarnFromReadme('');
+  const stars = Number(repoInfo?.stargazers_count) || prev?.stars || 157;
+  const updatedAt = repoInfo?.pushed_at || prev?.updatedAt || new Date().toISOString();
 
   const result = {
     name: 'SlaktarnVI',
@@ -303,16 +330,25 @@ async function fetchSlaktarnLive() {
     hasLauncher: false,
     platformTag: 'Linux / Proton',
     highlights: [
+      'AMD Radeon RX 9070 XT on Linux / Steam Proton (1440p, FSR 4 Quality + Frame Generation)',
+      'Fixed 3 FPS drop during heist mission, stretched character bug, and face/clothing texture corruption',
+      'GPL-3.0 open source combining changes from Belobug, AvatarManz, DexNom, and fxceless',
+    ],
+    highlightsTr: [
       'Linux / Steam Proton üzerinde AMD Radeon RX 9070 XT (1440p, FSR 4 Quality + Frame Generation)',
       'Soygun görevindeki 3 FPS düşüşü, karakter uzama hatası ve yüz/kıyafet doku bozulmaları giderildi',
       'GPL-3.0 açık kaynak; Belobug, AvatarManz, DexNom ve fxceless değişikliklerini birleştiriyor',
     ],
     blockers: [
+      'Only tested on a single Linux machine; not yet verified on Windows',
+      'Steady 30 real FPS target and ray tracing are still disabled',
+    ],
+    blockersTr: [
       'Yalnızca tek bir Linux makinesinde test edildi; Windows üzerinde henüz doğrulanmadı',
       'Hedef sabit 30 gerçek FPS ve ray tracing henüz kapalı',
     ],
-    summaryTr: `SlaktarnVI (Valhalla), Linux / Steam Proton üzerinde AMD RX 9070 XT için optimize edilen açık kaynak VIctory forku (FSR 4 + Frame Generation, 19–25 FPS).`,
-    summaryEn: `SlaktarnVI (Valhalla) is an open-source VIctory fork tuned for Linux/Steam Proton on AMD RX 9070 XT (FSR 4 + Frame Generation, 19–25 FPS).`,
+    summaryTr: `SlaktarnVI (Valhalla), Linux / Steam Proton üzerinde AMD RX 9070 XT için optimize edilen açık kaynak VIctory forku (FSR 4 + Frame Generation, ${est.fps}).`,
+    summaryEn: `SlaktarnVI (Valhalla) is an open-source VIctory fork tuned for Linux/Steam Proton on AMD RX 9070 XT (FSR 4 + Frame Generation, ${est.fps}).`,
     isZortos: false,
   };
 
@@ -462,6 +498,54 @@ export async function GET() {
 
   mappedTeams = mappedTeams.sort((a, b) => b.progress - a.progress);
 
+  // Translate PortWatch English highlights, blockers, and DMCA notes to Turkish automatically
+  const stringsToTranslate = [];
+  for (const tm of mappedTeams) {
+    if (!Array.isArray(tm.highlightsTr) && Array.isArray(tm.highlights)) {
+      for (const h of tm.highlights) stringsToTranslate.push(h);
+    }
+    if (!Array.isArray(tm.blockersTr) && Array.isArray(tm.blockers)) {
+      for (const b of tm.blockers) stringsToTranslate.push(b);
+    }
+  }
+  for (const d of dmcaItems) {
+    if (d.note) stringsToTranslate.push(d.note);
+  }
+
+  const trMap = await translateBatchToTurkish(stringsToTranslate).catch(() => new Map());
+
+  mappedTeams = mappedTeams.map((tm) => ({
+    ...tm,
+    highlightsTr: Array.isArray(tm.highlightsTr)
+      ? tm.highlightsTr
+      : Array.isArray(tm.highlights)
+        ? tm.highlights.map((h) => trMap.get(h) || h)
+        : [],
+    blockersTr: Array.isArray(tm.blockersTr)
+      ? tm.blockersTr
+      : Array.isArray(tm.blockers)
+        ? tm.blockers.map((b) => trMap.get(b) || b)
+        : [],
+  }));
+
+  const localizedDmcaItems = dmcaItems.map((d) => ({
+    ...d,
+    note: trMap.get(d.note) || d.note,
+  }));
+
+  if (featuredPort) {
+    const matched = mappedTeams.find(
+      (t) => String(t.name || '').toLowerCase() === String(featuredPort.name || '').toLowerCase()
+    );
+    if (matched) {
+      featuredPort = {
+        ...featuredPort,
+        highlightsTr: featuredPort.highlightsTr || matched.highlightsTr,
+        blockersTr: featuredPort.blockersTr || matched.blockersTr,
+      };
+    }
+  }
+
   const top3 = mappedTeams.slice(0, 3);
   const top3Avg =
     top3.length > 0
@@ -515,7 +599,7 @@ export async function GET() {
       top3Avg,
       teams: mappedTeams,
       featuredPort,
-      dmcaItems,
+      dmcaItems: localizedDmcaItems,
       news,
     },
     {

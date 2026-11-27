@@ -12,10 +12,12 @@ import {
   Newspaper,
   PanelRightClose,
   PanelRightOpen,
+  Eye,
 } from 'lucide-react';
 import {
   APP_VERSION,
   THEMES,
+  THEME_GROUPS,
   getCountryLabel,
 } from '../lib/constants';
 import {
@@ -49,7 +51,58 @@ export function Header({
   chatDockOpen,
   onToggleChatDock,
 }) {
-  const theme = THEMES[themeKey] || THEMES.carbon;
+  const theme = THEMES[themeKey] || THEMES.leonida;
+
+  const renderThemePopover = () =>
+    themeMenuOpen && (
+      <div className="absolute right-0 mt-2 w-64 rounded-lg border border-default bg-surface p-1.5 shadow-popover z-50 space-y-2">
+        {THEME_GROUPS.map((grp) => {
+          const groupThemes = Object.values(THEMES).filter((t) => t.group === grp.id);
+          return (
+            <div key={grp.id} className="space-y-0.5">
+              <div className="px-2 py-1 flex items-center gap-1.5 text-[10px] font-tech uppercase tracking-wider text-ink-3">
+                {grp.id === 'eyecare' && <Eye className="w-3 h-3 text-emerald-500 shrink-0" />}
+                <span>{lang === 'tr' ? grp.tr : grp.en}</span>
+              </div>
+              {groupThemes.map((t) => {
+                const isSelected = themeKey === t.id;
+                return (
+                  <button
+                    key={t.id}
+                    type="button"
+                    onClick={() => onSelectTheme(t.id)}
+                    className={`w-full flex items-center justify-between gap-2 px-2 py-1.5 rounded-md text-left hover-surface ui-tactile ${
+                      isSelected ? 'bg-panel-tint text-ink' : 'text-ink-2'
+                    }`}
+                  >
+                    <span className="inline-flex items-center gap-2.5 min-w-0">
+                      <span className="inline-flex items-center gap-0.5 shrink-0">
+                        {t.swatches.map((hex, i) => (
+                          <span
+                            key={i}
+                            className="w-3 h-3 rounded-[3px] border border-black/20"
+                            style={{ backgroundColor: hex }}
+                          />
+                        ))}
+                      </span>
+                      <span className="min-w-0">
+                        <span className={`block text-xs truncate ${isSelected ? 'font-semibold text-ink' : 'font-medium'}`}>
+                          {t.label[lang]}
+                        </span>
+                        <span className="block text-[10px] text-ink-3 truncate">
+                          {t.sub[lang]}
+                        </span>
+                      </span>
+                    </span>
+                    {isSelected && <Check className="w-3.5 h-3.5 text-accent shrink-0" />}
+                  </button>
+                );
+              })}
+            </div>
+          );
+        })}
+      </div>
+    );
 
   const navItems = [
     { id: 'race', icon: Trophy, tr: 'Yarış Tablosu', en: 'Leaderboard' },
@@ -238,29 +291,7 @@ export function Header({
                 <span className="hidden 2xl:inline">{lang === 'tr' ? 'Tema' : 'Theme'}</span>
                 <ChevronDown className="w-3 h-3 text-ink-3" />
               </button>
-              {themeMenuOpen && (
-                <div className="absolute right-0 mt-2 w-44 rounded-lg border border-default bg-surface p-1 shadow-popover z-50">
-                  {Object.values(THEMES).map((t) => (
-                    <button
-                      key={t.id}
-                      type="button"
-                      onClick={() => onSelectTheme(t.id)}
-                      className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-md text-xs font-medium hover-surface ui-tactile ${
-                        themeKey === t.id ? 'text-ink font-semibold' : 'text-ink-2'
-                      }`}
-                    >
-                      <span className="inline-flex items-center gap-2">
-                        <span
-                          className="w-2.5 h-2.5 rounded-full shrink-0"
-                          style={{ backgroundColor: t.dot }}
-                        />
-                        {t.label[lang]}
-                      </span>
-                      {themeKey === t.id && <Check className="w-3.5 h-3.5 text-accent" />}
-                    </button>
-                  ))}
-                </div>
-              )}
+              {renderThemePopover()}
             </div>
 
             {/* PWA Install (Compact icon until wide desktop) */}
@@ -391,29 +422,7 @@ export function Header({
                 <span>{lang === 'tr' ? 'Tema' : 'Theme'}</span>
                 <ChevronDown className="w-3 h-3 text-ink-3" />
               </button>
-              {themeMenuOpen && (
-                <div className="absolute right-0 mt-1.5 w-44 rounded-lg border border-default bg-surface p-1 shadow-popover z-50">
-                  {Object.values(THEMES).map((t) => (
-                    <button
-                      key={t.id}
-                      type="button"
-                      onClick={() => onSelectTheme(t.id)}
-                      className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-md text-xs font-medium hover-surface ${
-                        themeKey === t.id ? 'text-ink font-semibold' : 'text-ink-2'
-                      }`}
-                    >
-                      <span className="inline-flex items-center gap-2">
-                        <span
-                          className="w-2.5 h-2.5 rounded-full shrink-0"
-                          style={{ backgroundColor: t.dot }}
-                        />
-                        {t.label[lang]}
-                      </span>
-                      {themeKey === t.id && <Check className="w-3.5 h-3.5 text-accent" />}
-                    </button>
-                  ))}
-                </div>
-              )}
+              {renderThemePopover()}
             </div>
 
             {!isStandalone && (

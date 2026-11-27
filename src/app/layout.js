@@ -35,7 +35,7 @@ const brandFont = Space_Grotesk({
 });
 
 export const viewport = {
-  themeColor: '#0B0C0E',
+  themeColor: '#121116',
   width: 'device-width',
   initialScale: 1,
 };
@@ -177,12 +177,12 @@ export default function RootLayout({ children }) {
   return (
     <html
       lang="tr"
-      data-theme="carbon"
+      data-theme="leonida"
       className={`${sansFont.variable} ${displayFont.variable} ${monoFont.variable} ${brandFont.variable}`}
     >
       <body
         style={{ fontFamily: 'var(--font-sans), ui-sans-serif, system-ui, sans-serif' }}
-        className="min-h-screen bg-canvas text-ink antialiased selection:bg-[#F05232] selection:text-white"
+        className="min-h-screen bg-canvas text-ink antialiased selection:bg-[var(--accent)] selection:text-[var(--accent-ink)]"
       >
         <script
           type="application/ld+json"

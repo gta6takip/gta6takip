@@ -31,6 +31,20 @@ export function TeamDetailModal({ team, lang, isLight, onClose }) {
   useEscapeClose(Boolean(team), onClose);
   if (!team) return null;
 
+  const displayHighlights =
+    lang === 'tr' && Array.isArray(team.highlightsTr) && team.highlightsTr.length > 0
+      ? team.highlightsTr
+      : Array.isArray(team.highlights)
+        ? team.highlights
+        : [];
+
+  const displayBlockers =
+    lang === 'tr' && Array.isArray(team.blockersTr) && team.blockersTr.length > 0
+      ? team.blockersTr
+      : Array.isArray(team.blockers)
+        ? team.blockers
+        : [];
+
   return (
     <div
       onClick={onClose}
@@ -102,22 +116,22 @@ export function TeamDetailModal({ team, lang, isLight, onClose }) {
         </div>
 
         {/* Summary fallback if no highlights/blockers */}
-        {(!team.highlights || team.highlights.length === 0) &&
-          (!team.blockers || team.blockers.length === 0) &&
+        {displayHighlights.length === 0 &&
+          displayBlockers.length === 0 &&
           (team.summaryTr || team.summaryEn) && (
             <p className="text-xs leading-relaxed text-ink-2 rounded-md border border-subtle bg-panel-tint p-3.5">
               {lang === 'tr' ? team.summaryTr : team.summaryEn}
             </p>
           )}
 
-        {team.highlights && team.highlights.length > 0 && (
+        {displayHighlights.length > 0 && (
           <div className="rounded-md border border-subtle bg-panel-tint p-3.5 space-y-2">
             <div className="flex items-center gap-1.5 text-xs font-semibold text-emerald-500">
               <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
               <span>{lang === 'tr' ? 'Neler Çalışıyor?' : 'What Works'}</span>
             </div>
             <ul className="space-y-1.5 text-xs leading-relaxed text-ink-2">
-              {team.highlights.map((h, i) => (
+              {displayHighlights.map((h, i) => (
                 <li key={i} className="flex items-start gap-2">
                   <span className="text-emerald-500 mt-0.5 shrink-0">•</span>
                   <span>{h}</span>
@@ -127,14 +141,14 @@ export function TeamDetailModal({ team, lang, isLight, onClose }) {
           </div>
         )}
 
-        {team.blockers && team.blockers.length > 0 && (
+        {displayBlockers.length > 0 && (
           <div className="rounded-md border border-subtle bg-panel-tint p-3.5 space-y-2">
             <div className="flex items-center gap-1.5 text-xs font-semibold text-amber-500">
               <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
               <span>{lang === 'tr' ? 'Eksik / Sorunlu Alanlar' : 'Current Blockers'}</span>
             </div>
             <ul className="space-y-1.5 text-xs leading-relaxed text-ink-2">
-              {team.blockers.map((b, i) => (
+              {displayBlockers.map((b, i) => (
                 <li key={i} className="flex items-start gap-2">
                   <span className="text-amber-500 mt-0.5 shrink-0">•</span>
                   <span>{b}</span>

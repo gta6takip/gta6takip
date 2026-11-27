@@ -373,9 +373,12 @@ export function LiveChat({
           className="w-full text-left px-3 py-2 border-b border-subtle flex items-start gap-2 text-[11px] shrink-0 transition-colors"
           style={{ backgroundColor: 'var(--msg-admin-bg)' }}
         >
-          <Pin className="w-3 h-3 mt-0.5 text-amber-500 shrink-0" />
+          <Pin className="w-3 h-3 mt-0.5 shrink-0" style={{ color: 'var(--msg-admin-bar)' }} />
           <div className={`min-w-0 flex-1 leading-snug ${pinExpanded ? '' : 'truncate'}`}>
-            <span className="font-tech font-bold uppercase tracking-wider text-amber-500 mr-1.5">
+            <span
+              className="font-tech font-bold uppercase tracking-wider mr-1.5"
+              style={{ color: 'var(--msg-admin-bar)' }}
+            >
               {isEnRoom ? 'PIN:' : 'DUYURU:'}
             </span>
             <span className="text-ink-2 font-medium break-words">{pinnedNotice.message}</span>
@@ -431,9 +434,9 @@ export function LiveChat({
               <button
                 type="button"
                 onClick={onRetryFetch}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold bg-active-pill"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-default bg-elevated text-xs font-semibold text-ink hover:border-strong hover-surface ui-tactile"
               >
-                <RefreshCw className="w-3.5 h-3.5" />
+                <RefreshCw className="w-3.5 h-3.5 text-ink-2" />
                 <span>{isEnRoom ? 'Try Again' : 'Tekrar Dene'}</span>
               </button>
             </div>
@@ -574,11 +577,25 @@ export function LiveChat({
                     <div className="flex items-start gap-2">
                       {/* Avatar */}
                       {isAdminMsg ? (
-                        <span className="w-5 h-5 mt-0.5 rounded-full bg-amber-500/15 border border-amber-500/35 text-amber-500 inline-flex items-center justify-center shrink-0">
+                        <span
+                          className="w-5 h-5 mt-0.5 rounded-full border inline-flex items-center justify-center shrink-0"
+                          style={{
+                            backgroundColor: 'var(--msg-admin-bg)',
+                            borderColor: 'var(--msg-admin-bar)',
+                            color: 'var(--msg-admin-bar)',
+                          }}
+                        >
                           <ShieldCheck className="w-3 h-3" />
                         </span>
                       ) : isModMsg ? (
-                        <span className="w-5 h-5 mt-0.5 rounded-full bg-sky-500/15 border border-sky-500/35 text-sky-400 inline-flex items-center justify-center shrink-0">
+                        <span
+                          className="w-5 h-5 mt-0.5 rounded-full border inline-flex items-center justify-center shrink-0"
+                          style={{
+                            backgroundColor: 'var(--msg-mod-bg)',
+                            borderColor: 'var(--msg-mod-bar)',
+                            color: 'var(--msg-mod-bar)',
+                          }}
+                        >
                           <Shield className="w-3 h-3" />
                         </span>
                       ) : (
@@ -595,16 +612,15 @@ export function LiveChat({
                             <button
                               type="button"
                               onClick={(e) => onMentionUser(e, m.nickname)}
-                              className={`text-[12px] font-semibold hover:underline underline-offset-2 truncate cursor-pointer ${
+                              style={
                                 isAdminMsg
-                                  ? isLight
-                                    ? 'text-amber-700 font-bold'
-                                    : 'text-amber-300 font-bold'
+                                  ? { color: 'var(--msg-admin-ink)' }
                                   : isModMsg
-                                    ? isLight
-                                      ? 'text-sky-700 font-bold'
-                                      : 'text-sky-300 font-bold'
-                                    : 'text-ink'
+                                    ? { color: 'var(--msg-mod-ink)' }
+                                    : undefined
+                              }
+                              className={`text-[12px] hover:underline underline-offset-2 truncate cursor-pointer ${
+                                isAdminMsg || isModMsg ? 'font-bold' : 'font-semibold text-ink'
                               }`}
                               title={isEnRoom ? 'Click to @mention' : '@etiketlemek için tıkla'}
                             >
@@ -612,12 +628,26 @@ export function LiveChat({
                             </button>
 
                             {isAdminMsg && (
-                              <span className="font-tech px-1 py-[0.5px] rounded text-[9px] font-bold bg-amber-500/20 text-amber-500 border border-amber-500/30">
+                              <span
+                                className="font-tech px-1 py-[0.5px] rounded text-[9px] font-bold border"
+                                style={{
+                                  backgroundColor: 'var(--msg-admin-bg)',
+                                  borderColor: 'var(--msg-admin-bar)',
+                                  color: 'var(--msg-admin-bar)',
+                                }}
+                              >
                                 ADMIN
                               </span>
                             )}
                             {isModMsg && (
-                              <span className="font-tech px-1 py-[0.5px] rounded text-[9px] font-bold bg-sky-500/20 text-sky-400 border border-sky-500/30">
+                              <span
+                                className="font-tech px-1 py-[0.5px] rounded text-[9px] font-bold border"
+                                style={{
+                                  backgroundColor: 'var(--msg-mod-bg)',
+                                  borderColor: 'var(--msg-mod-bar)',
+                                  color: 'var(--msg-mod-bar)',
+                                }}
+                              >
                                 MOD
                               </span>
                             )}
