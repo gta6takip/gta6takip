@@ -126,15 +126,15 @@ function getNickStyle(name, isLight) {
 }
 
 const IconAmd = ({ className = 'w-3.5 h-3.5 shrink-0' }) => (
-  &lt;svg viewBox=&quot;0 0 24 24&quot; className={className} fill=&quot;currentColor&quot; aria-hidden=&quot;true&quot;&gt;
-    &lt;path d=&quot;M18.324 9.137L24 14.813V0H9.187l5.676 5.676h3.461v3.461zM14.813 18.324H5.676V9.187L0 14.863V24h9.137l5.676-5.676z&quot; /&gt;
-  &lt;/svg&gt;
+  <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-hidden="true">
+    <path d="M18.324 9.137L24 14.813V0H9.187l5.676 5.676h3.461v3.461zM14.813 18.324H5.676V9.187L0 14.863V24h9.137l5.676-5.676z" />
+  </svg>
 );
 
 const IconNvidia = ({ className = 'w-3.5 h-3.5 shrink-0' }) => (
-  &lt;svg viewBox=&quot;0 0 24 24&quot; className={className} fill=&quot;currentColor&quot; aria-hidden=&quot;true&quot;&gt;
-    &lt;path d=&quot;M8.948 8.798v-1.43a6.7 6.7 0 0 1 .424-.018c3.922-.124 6.493 3.374 6.493 3.374s-2.774 3.851-5.75 3.851c-.398 0-.787-.062-1.167-.185v-4.34a3.01 3.01 0 0 1 2.752 1.724l2.044-1.724s-1.494-1.959-4.012-1.959c-.269 0-.531.02-.784.051v.656zm0-4.366v1.894c.14-.011.281-.017.424-.022 5.475-.176 9.048 4.492 9.048 4.492s-4.093 4.976-8.353 4.976c-.379 0-.751-.035-1.119-.098v1.186c.309.04.626.063.95.063 3.963 0 6.83-2.022 9.603-4.416.459.369 2.341 1.265 2.725 1.658-2.633 2.203-8.765 3.979-12.244 3.979-.338 0-.67-.016-.994-.047v1.727H24V4.432H8.948zm0 9.95v1.298c-3.779-.673-4.827-4.597-4.827-4.597s1.815-2.011 4.827-2.326v1.282c-.008 0-.016-.001-.024-.001-1.579-.191-2.815 1.285-2.815 1.285s.692 2.482 2.839 3.059zM2.393 10.94s2.241-3.307 6.555-3.635V6.05C3.97 6.451 0 10.654 0 10.654s2.348 6.798 8.948 7.428v-1.307c-4.832-.608-6.555-5.835-6.555-5.835z&quot; /&gt;
-  &lt;/svg&gt;
+  <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-hidden="true">
+    <path d="M8.948 8.798v-1.43a6.7 6.7 0 0 1 .424-.018c3.922-.124 6.493 3.374 6.493 3.374s-2.774 3.851-5.75 3.851c-.398 0-.787-.062-1.167-.185v-4.34a3.01 3.01 0 0 1 2.752 1.724l2.044-1.724s-1.494-1.959-4.012-1.959c-.269 0-.531.02-.784.051v.656zm0-4.366v1.894c.14-.011.281-.017.424-.022 5.475-.176 9.048 4.492 9.048 4.492s-4.093 4.976-8.353 4.976c-.379 0-.751-.035-1.119-.098v1.186c.309.04.626.063.95.063 3.963 0 6.83-2.022 9.603-4.416.459.369 2.341 1.265 2.725 1.658-2.633 2.203-8.765 3.979-12.244 3.979-.338 0-.67-.016-.994-.047v1.727H24V4.432H8.948zm0 9.95v1.298c-3.779-.673-4.827-4.597-4.827-4.597s1.815-2.011 4.827-2.326v1.282c-.008 0-.016-.001-.024-.001-1.579-.191-2.815 1.285-2.815 1.285s.692 2.482 2.839 3.059zM2.393 10.94s2.241-3.307 6.555-3.635V6.05C3.97 6.451 0 10.654 0 10.654s2.348 6.798 8.948 7.428v-1.307c-4.832-.608-6.555-5.835-6.555-5.835z" />
+  </svg>
 );
 
 const GpuBadgeIcons = ({ gpu, isLight }) => {
@@ -143,14 +143,14 @@ const GpuBadgeIcons = ({ gpu, isLight }) => {
   const hasNvidia = lower.includes('nvidia');
   if (!hasAmd && !hasNvidia) return null;
   return (
-    &lt;span className=&quot;inline-flex items-center gap-1 shrink-0&quot;&gt;
+    <span className="inline-flex items-center gap-1 shrink-0">
       {hasAmd && (
         <IconAmd className={`w-3 h-3 ${isLight ? 'text-[#c8102e]' : 'text-[#ff5c5c]'}`} />
       )}
       {hasNvidia && (
         <IconNvidia className={`w-3.5 h-3.5 ${isLight ? 'text-[#598c00]' : 'text-[#8ce000]'}`} />
       )}
-    &lt;/span&gt;
+    </span>
   );
 };
 
@@ -405,34 +405,34 @@ const COUNTRY_FALLBACK_NAMES = {
 };
 
 const FlagTR = ({ className = 'w-4 h-3 rounded-[2px] shrink-0' }) => (
-  &lt;svg viewBox=&quot;0 0 24 16&quot; className={className} aria-hidden=&quot;true&quot;&gt;
-    &lt;rect width=&quot;24&quot; height=&quot;16&quot; fill=&quot;#E30A17&quot; /&gt;
-    &lt;circle cx=&quot;9.5&quot; cy=&quot;8&quot; r=&quot;4.2&quot; fill=&quot;#FFFFFF&quot; /&gt;
-    &lt;circle cx=&quot;10.6&quot; cy=&quot;8&quot; r=&quot;3.4&quot; fill=&quot;#E30A17&quot; /&gt;
-    &lt;polygon points=&quot;15.2,8 13.7,8.5 14.3,7 13.3,5.8 14.8,5.9&quot; fill=&quot;#FFFFFF&quot; /&gt;
-  &lt;/svg&gt;
+  <svg viewBox="0 0 24 16" className={className} aria-hidden="true">
+    <rect width="24" height="16" fill="#E30A17" />
+    <circle cx="9.5" cy="8" r="4.2" fill="#FFFFFF" />
+    <circle cx="10.6" cy="8" r="3.4" fill="#E30A17" />
+    <polygon points="15.2,8 13.7,8.5 14.3,7 13.3,5.8 14.8,5.9" fill="#FFFFFF" />
+  </svg>
 );
 
 const FlagUS = ({ className = 'w-4 h-3 rounded-[2px] shrink-0' }) => (
-  &lt;svg viewBox=&quot;0 0 24 16&quot; className={className} aria-hidden=&quot;true&quot;&gt;
-    &lt;rect width=&quot;24&quot; height=&quot;16&quot; fill=&quot;#B22234&quot; /&gt;
-    &lt;rect y=&quot;2&quot; width=&quot;24&quot; height=&quot;2&quot; fill=&quot;#FFFFFF&quot; /&gt;
-    &lt;rect y=&quot;6&quot; width=&quot;24&quot; height=&quot;2&quot; fill=&quot;#FFFFFF&quot; /&gt;
-    &lt;rect y=&quot;10&quot; width=&quot;24&quot; height=&quot;2&quot; fill=&quot;#FFFFFF&quot; /&gt;
-    &lt;rect y=&quot;14&quot; width=&quot;24&quot; height=&quot;2&quot; fill=&quot;#FFFFFF&quot; /&gt;
-    &lt;rect width=&quot;10&quot; height=&quot;9&quot; fill=&quot;#3C3B6E&quot; /&gt;
-  &lt;/svg&gt;
+  <svg viewBox="0 0 24 16" className={className} aria-hidden="true">
+    <rect width="24" height="16" fill="#B22234" />
+    <rect y="2" width="24" height="2" fill="#FFFFFF" />
+    <rect y="6" width="24" height="2" fill="#FFFFFF" />
+    <rect y="10" width="24" height="2" fill="#FFFFFF" />
+    <rect y="14" width="24" height="2" fill="#FFFFFF" />
+    <rect width="10" height="9" fill="#3C3B6E" />
+  </svg>
 );
 
 const CountryFlag = ({ code }) => {
   const [imgFailed, setImgFailed] = useState(false);
   const cc = String(code || '').trim().toLowerCase();
 
-  if (cc === 'tr') return &lt;FlagTR className=&quot;w-5 h-3.5 rounded-[2px] shrink-0 shadow-sm&quot; /&gt;;
-  if (cc === 'us') return &lt;FlagUS className=&quot;w-5 h-3.5 rounded-[2px] shrink-0 shadow-sm&quot; /&gt;;
+  if (cc === 'tr') return <FlagTR className="w-5 h-3.5 rounded-[2px] shrink-0 shadow-sm" />;
+  if (cc === 'us') return <FlagUS className="w-5 h-3.5 rounded-[2px] shrink-0 shadow-sm" />;
 
   if (!/^[a-z]{2}$/.test(cc) || imgFailed) {
-    return &lt;Globe className=&quot;w-4 h-4 opacity-75 shrink-0&quot; aria-hidden=&quot;true&quot; /&gt;;
+    return <Globe className="w-4 h-4 opacity-75 shrink-0" aria-hidden="true" />;
   }
   return (
     <img
@@ -520,15 +520,15 @@ function formatChatTime(iso) {
 }
 
 const IconX = () => (
-  &lt;svg viewBox=&quot;0 0 24 24&quot; className=&quot;w-3.5 h-3.5 fill-current shrink-0&quot; aria-hidden=&quot;true&quot;&gt;
-    &lt;path d=&quot;M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z&quot; /&gt;
-  &lt;/svg&gt;
+  <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 fill-current shrink-0" aria-hidden="true">
+    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+  </svg>
 );
 
 const IconWhatsApp = () => (
-  &lt;svg viewBox=&quot;0 0 24 24&quot; className=&quot;w-3.5 h-3.5 fill-current shrink-0 text-emerald-400&quot; aria-hidden=&quot;true&quot;&gt;
-    &lt;path d=&quot;M12.031 2c-5.516 0-9.969 4.453-9.969 9.969 0 1.766.469 3.484 1.344 5l-1.406 5.156 5.281-1.375c1.469.797 3.109 1.219 4.75 1.219 5.516 0 9.969-4.453 9.969-9.969S17.547 2 12.031 2zm5.813 14.125c-.25.703-1.438 1.344-2 1.422-.516.078-1.172.109-1.891-.125-.438-.141-1-.328-1.719-.641-3.016-1.297-4.984-4.328-5.141-4.531-.156-.203-1.234-1.641-1.234-3.125s.781-2.219 1.063-2.516c.281-.297.609-.375.813-.375.203 0 .406.016.578.016.188 0 .438-.078.688.516.25.609.859 2.094.938 2.25.078.156.125.344.031.547-.094.203-.156.328-.297.5-.141.172-.313.391-.438.516-.156.141-.313.297-.141.594.172.297.781 1.281 1.672 2.078 1.156 1.031 2.125 1.344 2.422 1.5.297.156.469.125.641-.078.172-.203.734-.859.938-1.156.203-.297.406-.25.672-.156.266.094 1.703.813 2 .953.297.156.484.219.563.344.078.125.078.719-.172 1.422z&quot; /&gt;
-  &lt;/svg&gt;
+  <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 fill-current shrink-0 text-emerald-400" aria-hidden="true">
+    <path d="M12.031 2c-5.516 0-9.969 4.453-9.969 9.969 0 1.766.469 3.484 1.344 5l-1.406 5.156 5.281-1.375c1.469.797 3.109 1.219 4.75 1.219 5.516 0 9.969-4.453 9.969-9.969S17.547 2 12.031 2zm5.813 14.125c-.25.703-1.438 1.344-2 1.422-.516.078-1.172.109-1.891-.125-.438-.141-1-.328-1.719-.641-3.016-1.297-4.984-4.328-5.141-4.531-.156-.203-1.234-1.641-1.234-3.125s.781-2.219 1.063-2.516c.281-.297.609-.375.813-.375.203 0 .406.016.578.016.188 0 .438-.078.688.516.25.609.859 2.094.938 2.25.078.156.125.344.031.547-.094.203-.156.328-.297.5-.141.172-.313.391-.438.516-.156.141-.313.297-.141.594.172.297.781 1.281 1.672 2.078 1.156 1.031 2.125 1.344 2.422 1.5.297.156.469.125.641-.078.172-.203.734-.859.938-1.156.203-.297.406-.25.672-.156.266.094 1.703.813 2 .953.297.156.484.219.563.344.078.125.078.719-.172 1.422z" />
+  </svg>
 );
 
 function localizeDynamicText(text, lang) {
@@ -1753,27 +1753,27 @@ export default function HomePage() {
       <div className={`absolute right-0 mt-1.5 w-52 rounded-xl border p-2 shadow-2xl z-50 space-y-1 ${theme.menuBg}`}>
         <div className={`px-2 py-1 text-[10px] font-bold uppercase tracking-wider ${theme.muted}`}>
           {lang === 'tr' ? 'Bağlı Ülkeler' : 'Connected Countries'}
-        &lt;/div&gt;
+        </div>
         {countryStats.map((c) => (
           <div
             key={c.code}
             className={`flex items-center justify-between px-2 py-1.5 rounded-lg text-xs font-semibold ${theme.subCard}`}
           >
-            &lt;span className=&quot;inline-flex items-center gap-2 min-w-0&quot;&gt;
-              &lt;CountryFlag code={c.code} /&gt;
-              &lt;span className=&quot;truncate&quot;&gt;{getCountryLabel(c.code, lang)}&lt;/span&gt;
-            &lt;/span&gt;
-            <span className={`font-black shrink-0 ${theme.accentText}`}>{c.count}&lt;/span&gt;
-          &lt;/div&gt;
+            <span className="inline-flex items-center gap-2 min-w-0">
+              <CountryFlag code={c.code} />
+              <span className="truncate">{getCountryLabel(c.code, lang)}</span>
+            </span>
+            <span className={`font-black shrink-0 ${theme.accentText}`}>{c.count}</span>
+          </div>
         ))}
-      &lt;/div&gt;
+      </div>
     );
 
   const isEnRoom = chatRoom === 'en';
 
   return (
     <div className={`min-h-screen transition-colors duration-300 ${theme.bg}`}>
-      &lt;style&gt;{`
+      <style>{`
         @keyframes feedbackNudge {
           0%, 76%, 100% { transform: translateY(0) rotate(0deg); }
           80% { transform: translateY(-7px) rotate(-2.5deg); }
@@ -1814,7 +1814,7 @@ export default function HomePage() {
         html::-webkit-scrollbar-button, body::-webkit-scrollbar-button, .gta-scroll::-webkit-scrollbar-button {
           display: none;
         }
-      `}&lt;/style&gt;
+      `}</style>
 
       <header className={`sticky top-0 z-40 border-b backdrop-blur-md ${theme.card}`}>
         <div className="max-w-4xl mx-auto px-3 sm:px-5 py-2 sm:py-2.5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
