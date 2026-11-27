@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
-export const fetchCache = 'force-no-store';
 
 const TRACKER_URLS = [
   'https://portwatch-vi.xyz/data/tracker.json',
@@ -9,9 +8,9 @@ const TRACKER_URLS = [
 ];
 
 const SCARLETT_REPO = 'ZigZagBoi1/ScarlettPort';
-const SCARLETT_CACHE_TTL_MS = 5 * 60 * 1000;
-let scarlettCache = { ts: 0, data: null };
 const SLAKTARN_REPO = 'Slaktarn700/SlaktarnVI';
+const GH_CACHE_TTL_MS = 5 * 60 * 1000;
+let scarlettCache = { ts: 0, data: null };
 let slaktarnCache = { ts: 0, data: null };
 
 function computePortWatchScore(effort) {
@@ -89,20 +88,18 @@ function buildTurkishSummary(effort, progress, fps, gpu) {
   if (storyPct > 0) detailParts.push(`hikâye ilerlemesi %${storyPct}`);
   if (renderPct > 0) detailParts.push(`görüntü kalitesi %${renderPct}`);
   const detailStr = detailParts.length > 0 ? ` (${detailParts.join(', ')})` : '';
-  return `${effort.name} şu an %${progress} ile genel lider · ${fps} · ${gpu}${detailStr}. ${repoNote}`;
+  return `${effort.name} şu an %${progress} ile yarışta · ${fps} · ${gpu}${detailStr}. ${repoNote}`;
 }
 
 function estimateScarlettFromReadme(readmeText) {
   const text = String(readmeText || '');
   const lower = text.toLowerCase();
 
-  // README'deki aşama ve FPS bilgilerine göre PortWatch ölçeğine uyumlu dinamik tahmin
-  let score = 40; // loads(10) + boots(10) + menu(10) + world(10)
+  let score = 40;
   const litWorld = /lit world[^\n]*✅/i.test(text) || lower.includes('lit world renders');
   const playableVerified = /playable[^\n]*✅/i.test(text) && !lower.includes('not yet verified playable');
   const shadowedDone = /shadowed areas[^\n]*✅/i.test(text);
 
-  // Dünya içi FPS yakala (ör. "3-4 fps", "10 fps", "22 fps")
   let fpsVal = 4;
   let fpsLabel = '4 FPS (RTX 3060)';
   const worldFpsMatch =
@@ -134,12 +131,12 @@ function estimateScarlettFromReadme(readmeText) {
 
 async function fetchScarlettPortLive() {
   const now = Date.now();
-  if (scarlettCache.data && now - scarlettCache.ts < SCARLETT_CACHE_TTL_MS) {
+  if (scarlettCache.data && now - scarlettCache.ts < GH_CACHE_TTL_MS) {
     return scarlettCache.data;
   }
 
   const headers = {
-    'User-Agent': 'Mozilla/5.0 (compatible; gta6takip/1.2)',
+    'User-Agent': 'Mozilla/5.0 (compatible; gta6takip/2.0)',
     Accept: 'application/vnd.github+json',
   };
 
@@ -159,7 +156,7 @@ async function fetchScarlettPortLive() {
       cache: 'no-store',
     }),
     fetch(`https://raw.githubusercontent.com/${SCARLETT_REPO}/main/README.md?t=${now}`, {
-      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; gta6takip/1.2)' },
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; gta6takip/2.0)' },
       signal: AbortSignal.timeout(5000),
       cache: 'no-store',
     }),
@@ -177,7 +174,7 @@ async function fetchScarlettPortLive() {
 
   const est = estimateScarlettFromReadme(readmeText);
   const releaseTag = releaseInfo?.tag_name || 'v0.5.3';
-  const stars = Number(repoInfo?.stargazers_count) || 772;
+  const stars = Number(repoInfo?.stargazers_count) || 1007;
   const updatedAt =
     releaseInfo?.published_at || repoInfo?.pushed_at || new Date().toISOString();
 
@@ -188,17 +185,30 @@ async function fetchScarlettPortLive() {
     gpu: 'AMD / NVIDIA',
     type: 'open',
     stage: est.stage,
-    delta: releaseTag,
+    delta: '',
     url: `https://github.com/${SCARLETT_REPO}`,
     repo: SCARLETT_REPO,
     tier: 'tracked',
     updatedAt,
     releaseTag,
     stars,
+    commits7d: 0,
+    verification: 'self-reported',
+    approach: 'Compatibility layer (VIctory + XCL)',
     isEstimated: true,
     hasLauncher: true,
-    summaryTr: `ScarlettPort (${releaseTag}), kaynak kod derlemeye gerek kalmadan hazır Windows başlatıcısı (ScarlettPort.exe) sunan ilk açık kaynak GTA VI PC port katmanı. VIctory + XCL altyapısını birleştiriyor; RTX 3060'ta 3–4 FPS, topluluk testlerinde RX 9060 XT ile 22 FPS'e kadar ulaşıyor (oyun dosyaları dahil değildir).`,
-    summaryEn: `ScarlettPort (${releaseTag}) is the first open-source GTA VI PC port layer shipping a prebuilt Windows launcher (ScarlettPort.exe) combining VIctory + XCL runtimes. Reaches lit open world at 3–4 FPS on RTX 3060 and up to 22 FPS in community RX 9060 XT tests (bring your own game files).`,
+    platformTag: '',
+    highlights: [
+      'Derleme gerektirmeyen hazır Windows başlatıcısı (ScarlettPort.exe) ve runtime paketi',
+      'VIctory + XCL çalışma zamanlarını tek yapıda birleştiriyor; klavye/fare ve DualSense desteği var',
+      'RTX 3060 (Series S profili) ile 3–4 FPS ışıklı dünya, topluluk RX 9060 XT testlerinde 22 FPS medyan',
+    ],
+    blockers: [
+      'Gölgeli alanlar henüz karanlık ve ışın izleme (ray tracing) aktif değil',
+      'Uzun süreli kararlılık ve tam hikâye oynanışı henüz bağımsız doğrulanmadı',
+    ],
+    summaryTr: `ScarlettPort (${releaseTag}), kaynak kod derlemeye gerek kalmadan hazır Windows başlatıcısı (ScarlettPort.exe) sunan ilk açık kaynak GTA VI PC port katmanı. VIctory + XCL altyapısını birleştiriyor; RTX 3060'ta 3–4 FPS, topluluk testlerinde RX 9060 XT ile 22 FPS'e kadar ulaşıyor.`,
+    summaryEn: `ScarlettPort (${releaseTag}) is the first open-source GTA VI PC port layer shipping a prebuilt Windows launcher (ScarlettPort.exe) combining VIctory + XCL runtimes.`,
     isZortos: false,
   };
 
@@ -206,12 +216,10 @@ async function fetchScarlettPortLive() {
   return result;
 }
 
-
 function estimateSlaktarnFromReadme(readmeText) {
   const text = String(readmeText || '');
   const lower = text.toLowerCase();
 
-  // Linux/Proton + RX 9070 XT + FSR 4 + FG (19-25 FPS) bazlı PortWatch ölçeğine uyumlu tahmin
   let fpsLow = 19;
   let fpsHigh = 25;
   const fpsRangeMatch = text.match(/(\d{2})\s*[-–]\s*(\d{2})\s*fps/i);
@@ -221,13 +229,15 @@ function estimateSlaktarnFromReadme(readmeText) {
   }
 
   const has30Steady = /steady\s*30\s*(?:real\s*)?fps[^.\n]*fixed/i.test(lower);
-  const hasRt = lower.includes('ray tracing') && !lower.includes('no ray tracing') && !lower.includes('off until 30');
+  const hasRt =
+    lower.includes('ray tracing') &&
+    !lower.includes('no ray tracing') &&
+    !lower.includes('off until 30');
 
   let score = 50 + 0.5 * 17.5 + 0.7 * 12.5 + Math.min(1, fpsHigh / 30) * 10 + 0.45 * 10;
   if (has30Steady) score += 4;
   if (hasRt) score += 2.5;
 
-  // Bağımsız PortWatch doğrulaması henüz olmadığından konservatif tavan
   const progress = Math.min(84, Math.round(score * 10) / 10);
   const fps = fpsLow === fpsHigh ? `${fpsHigh} FPS` : `${fpsLow}-${fpsHigh} FPS`;
   const stage = 'Oynanabilir • Linux / Proton';
@@ -236,12 +246,12 @@ function estimateSlaktarnFromReadme(readmeText) {
 
 async function fetchSlaktarnLive() {
   const now = Date.now();
-  if (slaktarnCache.data && now - slaktarnCache.ts < SCARLETT_CACHE_TTL_MS) {
+  if (slaktarnCache.data && now - slaktarnCache.ts < GH_CACHE_TTL_MS) {
     return slaktarnCache.data;
   }
 
   const headers = {
-    'User-Agent': 'Mozilla/5.0 (compatible; gta6takip/1.2)',
+    'User-Agent': 'Mozilla/5.0 (compatible; gta6takip/2.0)',
     Accept: 'application/vnd.github+json',
   };
 
@@ -255,7 +265,7 @@ async function fetchSlaktarnLive() {
       cache: 'no-store',
     }),
     fetch(`https://raw.githubusercontent.com/${SLAKTARN_REPO}/main/README.md?t=${now}`, {
-      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; gta6takip/1.2)' },
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; gta6takip/2.0)' },
       signal: AbortSignal.timeout(5000),
       cache: 'no-store',
     }),
@@ -284,12 +294,25 @@ async function fetchSlaktarnLive() {
     repo: SLAKTARN_REPO,
     tier: 'tracked',
     updatedAt,
+    releaseTag: '',
     stars,
+    commits7d: 0,
+    verification: 'self-reported',
+    approach: 'Compatibility layer (VIctory / Proton)',
     isEstimated: true,
     hasLauncher: false,
     platformTag: 'Linux / Proton',
-    summaryTr: `SlaktarnVI (Valhalla), Linux / Steam Proton üzerinde AMD RX 9070 XT için optimize edilen açık kaynak VIctory forku (FSR 4 + Frame Generation, 19–25 FPS). Şu an tek makinede test edildiği için tahmini puanla takip ediliyor.`,
-    summaryEn: `SlaktarnVI (Valhalla) is an open-source VIctory fork tuned for Linux/Steam Proton on AMD RX 9070 XT (FSR 4 + Frame Generation, 19–25 FPS). Tracked with an estimated score until independently verified.`,
+    highlights: [
+      'Linux / Steam Proton üzerinde AMD Radeon RX 9070 XT (1440p, FSR 4 Quality + Frame Generation)',
+      'Soygun görevindeki 3 FPS düşüşü, karakter uzama hatası ve yüz/kıyafet doku bozulmaları giderildi',
+      'GPL-3.0 açık kaynak; Belobug, AvatarManz, DexNom ve fxceless değişikliklerini birleştiriyor',
+    ],
+    blockers: [
+      'Yalnızca tek bir Linux makinesinde test edildi; Windows üzerinde henüz doğrulanmadı',
+      'Hedef sabit 30 gerçek FPS ve ray tracing henüz kapalı',
+    ],
+    summaryTr: `SlaktarnVI (Valhalla), Linux / Steam Proton üzerinde AMD RX 9070 XT için optimize edilen açık kaynak VIctory forku (FSR 4 + Frame Generation, 19–25 FPS).`,
+    summaryEn: `SlaktarnVI (Valhalla) is an open-source VIctory fork tuned for Linux/Steam Proton on AMD RX 9070 XT (FSR 4 + Frame Generation, 19–25 FPS).`,
     isZortos: false,
   };
 
@@ -303,7 +326,7 @@ async function fetchTrackerJson() {
     try {
       const res = await fetch(`${baseUrl}?t=${bust}`, {
         headers: {
-          'User-Agent': 'Mozilla/5.0 (compatible; gta6takip/1.2)',
+          'User-Agent': 'Mozilla/5.0 (compatible; gta6takip/2.0)',
           Accept: 'application/json',
         },
         signal: AbortSignal.timeout(7000),
@@ -341,6 +364,17 @@ export async function GET() {
     (e) => (Number(e?.gta?.boots) || 0) >= 1
   ).length;
 
+  // Canlı DMCA / kaldırılan repo kayıtları (otomatik)
+  const dmcaItems = allEfforts
+    .filter((e) => Boolean(e?.nuked || e?.stats?.dmca))
+    .map((e) => ({
+      name: e.name,
+      date: e?.stats?.dmca?.date || e?.nuked?.at || '',
+      note: e?.nuked?.note || (e?.stats?.dmca ? 'Take-Two DMCA bildirimiyle GitHub üzerinden devre dışı bırakıldı.' : 'GitHub deposu kaldırıldı (404).'),
+      url: e?.stats?.dmca?.url || '',
+    }))
+    .slice(0, 6);
+
   let mappedTeams = allEfforts
     .filter((effort) => !effort?.nuked && !effort?.stats?.missing)
     .map((effort) => {
@@ -367,17 +401,22 @@ export async function GET() {
         repo: effort.repo || undefined,
         tier: effort.tier || 'watchlist',
         updatedAt: effort.stats?.pushedAt || effort.assessedAt || tracker.updated || '',
+        stars: Number(effort.stats?.stars) || 0,
+        commits7d: Number(effort.stats?.commits7d) || 0,
+        verification: effort.verification || '',
+        approach: effort.approach || '',
+        highlights: Array.isArray(effort.highlights) ? effort.highlights.slice(0, 6) : [],
+        blockers: Array.isArray(effort.blockers) ? effort.blockers.slice(0, 5) : [],
         summaryTr: buildTurkishSummary(effort, progress, fps, gpu),
         summaryEn: effort.summary || `${effort.name} leads at ${progress}% (${fps}, ${gpu}).`,
         isZortos: String(effort.name || '').toLowerCase() === 'zortos',
         isEstimated: false,
         hasLauncher: String(effort.repo || '').toLowerCase() === SCARLETT_REPO.toLowerCase(),
+        platformTag: String(effort.repo || '').toLowerCase() === SLAKTARN_REPO.toLowerCase() ? 'Linux / Proton' : '',
       };
     })
     .filter((t) => t.tier === 'tracked' || t.progress >= 2.5);
 
-  // ScarlettPort: PortWatch henüz resmi listeye eklemediyse GitHub canlı tahmini olarak ekle;
-  // eklediyse resmi PortWatch puanını koruyup sadece sürüm/yıldız/vitrin bilgisini zenginleştir.
   let featuredPort = scarlettLive;
   const existingScarlettIdx = mappedTeams.findIndex(
     (t) =>
@@ -390,7 +429,7 @@ export async function GET() {
     featuredPort = {
       ...official,
       releaseTag: scarlettLive?.releaseTag || 'v0.5.3',
-      stars: scarlettLive?.stars || 772,
+      stars: scarlettLive?.stars || official.stars || 1007,
       isEstimated: false,
       hasLauncher: true,
       summaryTr: scarlettLive?.summaryTr || official.summaryTr,
@@ -405,8 +444,6 @@ export async function GET() {
     mappedTeams.push(scarlettLive);
   }
 
-  // SlaktarnVI: PortWatch resmi listeye eklemediyse GitHub canlı tahmini olarak ekle;
-  // eklediyse çift kayıt oluşturmadan resmi PortWatch puanını koru.
   if (slaktarnLive) {
     const existingSlaktarnIdx = mappedTeams.findIndex(
       (t) =>
@@ -478,6 +515,7 @@ export async function GET() {
       top3Avg,
       teams: mappedTeams,
       featuredPort,
+      dmcaItems,
       news,
     },
     {
