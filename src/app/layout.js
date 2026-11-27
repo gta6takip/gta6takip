@@ -35,7 +35,7 @@ const brandFont = Space_Grotesk({
 });
 
 export const viewport = {
-  themeColor: '#09090B',
+  themeColor: '#0B0C0E',
   width: 'device-width',
   initialScale: 1,
 };
@@ -126,7 +126,7 @@ const jsonLd = {
       '@type': 'WebPage',
       name: 'GTA 6 PC Port Takip & Canlı İlerleme',
       url: 'https://gta6takip.vercel.app/',
-      dateModified: '2026-11-27T23:45:00+03:00',
+      dateModified: '2026-11-28T00:15:00+03:00',
       inLanguage: 'tr',
       isPartOf: {
         '@type': 'WebSite',
@@ -141,7 +141,7 @@ const jsonLd = {
           name: 'GTA 6 kırıldı mı ve şimdi son durum tam olarak nedir?',
           acceptedAnswer: {
             '@type': 'Answer',
-            text: 'GTA VI resmi PC sürümü henüz çıkmadı ve internetteki kurulum/crack .exe dosyaları sahtedir. Ancak sızdırılan Xbox Series yapısını PC uyumluluk katmanlarıyla çalıştıran PortWatch ekiplerinin en yakın yapıları hikâyenin %80 seviyesine ulaşıp 22–25 FPS civarında oynanabilir hale geldi.',
+            text: 'GTA VI resmi PC sürümü henüz çıkmadı ve internetteki kurulum/crack .exe dosyaları sahtedir. Ancak sızdırılan Xbox Series yapısını PC uyumluluk katmanlarıyla çalıştıran PortWatch ekiplerinin en yakın yapıları hikâyenin %80 seviyesine ulaşıp 20–25 FPS civarında oynanabilir hale geldi.',
           },
         },
         {
@@ -177,11 +177,12 @@ export default function RootLayout({ children }) {
   return (
     <html
       lang="tr"
+      data-theme="carbon"
       className={`${sansFont.variable} ${displayFont.variable} ${monoFont.variable} ${brandFont.variable}`}
     >
       <body
         style={{ fontFamily: 'var(--font-sans), ui-sans-serif, system-ui, sans-serif' }}
-        className="min-h-screen bg-[#09090B] text-zinc-100 antialiased selection:bg-[#FF4D2E] selection:text-white"
+        className="min-h-screen bg-canvas text-ink antialiased selection:bg-[#F05232] selection:text-white"
       >
         <script
           type="application/ld+json"

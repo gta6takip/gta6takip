@@ -49,9 +49,9 @@ async function getLiveSnapshot() {
       .sort((a, b) => b.progress - a.progress);
     const booting = efforts.filter((e) => (Number(e?.gta?.boots) || 0) >= 1).length;
     return {
-      total: efforts.length || 40,
-      booting: booting || 18,
-      leader: active[0] || { name: 'Belobug', progress: 91.3, fps: '22 FPS' },
+      total: efforts.length || 45,
+      booting: booting || 21,
+      leader: active[0] || { name: 'VIctory-NVIDIA', progress: 90.0, fps: '20 FPS' },
     };
   } catch {
     return null;
@@ -60,65 +60,73 @@ async function getLiveSnapshot() {
 
 export default async function Gta6PcReleasePage() {
   const snap = (await getLiveSnapshot()) || {
-    total: 40,
-    booting: 18,
-    leader: { name: 'Belobug', progress: 91.3, fps: '22 FPS' },
+    total: 45,
+    booting: 21,
+    leader: { name: 'VIctory-NVIDIA', progress: 90.0, fps: '20 FPS' },
   };
 
   return (
-    <main className="min-h-screen bg-[#140b1e] text-pink-50 px-4 py-8">
+    <main className="min-h-screen bg-canvas text-ink px-4 py-8 sm:py-12">
       <div className="max-w-3xl mx-auto space-y-6">
-        <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center justify-between gap-3">
           <Link
             href="/"
-            className="text-xs font-bold px-3 py-1.5 rounded-xl border border-pink-500/30 bg-[#1e112d] text-pink-300 hover:brightness-110 transition"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-md border border-subtle bg-surface text-ink-2 hover:text-ink hover:border-default ui-tactile"
           >
             ← Canlı Takipçiye Dön
           </Link>
-          <span className="text-xs font-semibold text-pink-200/70">GTA6takip · Canlı Özet</span>
+          <span className="font-tech text-[11px] uppercase tracking-wider text-ink-3">
+            GTA6takip · Canlı Özet
+          </span>
         </div>
 
-        <article className="rounded-2xl border border-pink-500/25 bg-[#1e112d]/95 p-5 sm:p-7 space-y-5">
-          <h1 className="text-2xl sm:text-3xl font-black tracking-tight bg-gradient-to-r from-pink-500 via-fuchsia-400 to-amber-400 bg-clip-text text-transparent">
-            GTA 6 PC Ne Zaman Çıkacak?
-          </h1>
+        <article className="rounded-lg border border-subtle bg-surface p-5 sm:p-8 space-y-6">
+          <header className="space-y-2 border-b border-subtle pb-5">
+            <div className="font-tech text-[11px] uppercase tracking-wider text-accent font-semibold">
+              Çıkış Takvimi & Port Durumu
+            </div>
+            <h1 className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight text-ink">
+              GTA 6 PC Ne Zaman Çıkacak?
+            </h1>
+          </header>
 
-          <p className="text-sm leading-relaxed text-pink-100/85">
-            Rockstar Games henüz <strong>resmi GTA VI PC sürümü</strong> için kesin bir çıkış tarihi
-            duyurmadı. Şirketin önceki oyunlarındaki konsol sonrası PC takvimine ve sektör
-            söylentilerine göre resmi PC sürümünün <strong>2027 başı</strong> civarında gelmesi
-            bekleniyor.
+          <p className="text-sm leading-relaxed text-ink-2">
+            Rockstar Games henüz <strong className="text-ink">resmi GTA VI PC sürümü</strong> için
+            kesin bir çıkış tarihi duyurmadı. Şirketin önceki oyunlarındaki konsol sonrası PC
+            takvimine ve sektör beklentilerine göre resmi PC sürümünün{' '}
+            <strong className="text-ink">2027 başı</strong> civarında gelmesi bekleniyor.
           </p>
 
-          <section className="rounded-xl border border-pink-500/20 bg-[#170c24] p-4 space-y-2">
-            <h2 className="text-sm font-black text-pink-400 uppercase tracking-wider">
+          <section className="rounded-md border border-subtle bg-panel-tint p-4 space-y-3">
+            <h2 className="font-tech text-xs font-bold text-ink uppercase tracking-wider">
               Topluluk PC Port Yarışında Son Durum (Canlı)
             </h2>
-            <p className="text-sm leading-relaxed text-pink-100/80">
+            <p className="text-sm leading-relaxed text-ink-2">
               Resmi sürüm beklenirken topluluk geliştiricileri sızdırılan Xbox Series yapısını PC
-              uyumluluk katmanlarıyla çalıştırmak için yarışıyor. PortWatch canlı verilerine göre
-              şu an <strong>{snap.total} girişim</strong> takip ediliyor ve{' '}
-              <strong>{snap.booting} proje</strong> oyunu PC&apos;de başlatabiliyor.
+              uyumluluk katmanlarıyla çalıştırmak için yarışıyor. PortWatch canlı verilerine göre şu
+              an <strong className="text-ink">{snap.total} girişim</strong> takip ediliyor ve{' '}
+              <strong className="text-ink">{snap.booting} proje</strong> oyunu PC&apos;de
+              başlatabiliyor.
             </p>
-            <p className="text-sm leading-relaxed text-pink-100/80">
-              Güncel lider <strong>{snap.leader.name}</strong> şu an{' '}
-              <strong>%{snap.leader.progress}</strong> ilerleme ve{' '}
-              <strong>{snap.leader.fps}</strong> civarı performansla ilk sırada. Ancak herkesin
-              tek tıkla kurup sorunsuz 30+ FPS oynayabileceği kararlı bir topluluk sürümü için
-              henüz kesin bir tarih bulunmuyor.
+            <p className="text-sm leading-relaxed text-ink-2">
+              Güncel lider <strong className="text-ink">{snap.leader.name}</strong> şu an{' '}
+              <strong className="font-tech text-accent">%{snap.leader.progress}</strong> ilerleme ve{' '}
+              <strong className="font-tech text-ink">{snap.leader.fps}</strong> civarı performansla
+              ilk sırada. Ancak herkesin tek tıkla kurup sorunsuz 30+ FPS oynayabileceği kararlı bir
+              topluluk sürümü için henüz kesin bir tarih bulunmuyor.
             </p>
           </section>
 
-          <div className="flex flex-wrap gap-3 pt-2">
+          <div className="flex flex-wrap gap-2.5 pt-2">
             <Link
               href="/"
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-black bg-gradient-to-r from-pink-500 to-amber-400 text-zinc-950 hover:brightness-110 transition"
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-md text-xs font-semibold bg-accent ui-tactile"
             >
               Canlı Liderlik Tablosunu ve FPS Değerlerini Gör →
             </Link>
             <Link
               href="/gta-6-kirildi-mi"
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold border border-pink-500/30 bg-[#170c24] text-pink-200 hover:brightness-110 transition"
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-md text-xs font-semibold border border-default bg-elevated text-ink-2 hover:text-ink ui-tactile"
             >
               GTA 6 Kırıldı mı?
             </Link>
