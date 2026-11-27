@@ -42,10 +42,15 @@ import {
   Monitor,
   Crown,
   BarChart3,
+  Download,
+  Smartphone,
+  Sparkles,
+  Star,
+  Rocket,
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
-const APP_VERSION = 'v1.1.4';
+const APP_VERSION = 'v1.2.0';
 const CHAT_CACHE_PREFIX = 'gta6takip_chat_cache_';
 const INITIAL_TEAMS_LIMIT = 5;
 const CHAT_COOLDOWN_SEC = 30;
@@ -161,13 +166,17 @@ const THEMES = {
     dot: '#ec4899',
     bg: 'bg-[#140b1e] text-pink-50',
     card: 'bg-[#1e112d]/95 border-pink-500/25',
+    cardHover: 'hover:border-pink-400/60 hover:shadow-[0_0_24px_rgba(236,72,153,0.22)]',
+    heroGlow: 'shadow-[0_0_40px_rgba(236,72,153,0.18)] bg-gradient-to-br from-[#231236] via-[#1e112d] to-[#19102b]',
+    leaderGlow: 'ring-1 ring-pink-400/55 shadow-[0_0_28px_rgba(236,72,153,0.24)]',
     menuBg: 'bg-[#1e112d] border-pink-500/35',
     subCard: 'bg-[#170c24] border-pink-500/20',
+    stickyBar: 'bg-[#140b1e]/90 border-pink-500/20',
     muted: 'text-pink-200/70',
     accentText: 'text-pink-400',
     accentBg: 'bg-pink-500',
-    accentGradient: 'from-pink-500 via-fuchsia-400 to-amber-400',
-    btnPrimary: 'bg-gradient-to-r from-pink-500 to-amber-400 text-zinc-950 hover:brightness-110',
+    accentGradient: 'from-pink-500 via-purple-400 to-amber-400',
+    btnPrimary: 'bg-gradient-to-r from-pink-500 via-fuchsia-500 to-amber-400 text-zinc-950 hover:brightness-110',
     pill: 'bg-pink-950/60 text-pink-200 border-pink-500/30',
     softChip: 'bg-pink-500/12 text-pink-200/90',
     sparkStroke: '#f472b6',
@@ -176,14 +185,68 @@ const THEMES = {
     sbThumb: 'rgba(236, 72, 153, 0.48)',
     sbThumbHover: 'rgba(244, 114, 182, 0.85)',
   },
+  neonvice: {
+    id: 'neonvice',
+    label: { tr: 'Neon Vice', en: 'Neon Vice' },
+    dot: '#a855f7',
+    bg: 'bg-[#0b0616] text-fuchsia-50',
+    card: 'bg-[#140a26]/95 border-purple-500/30',
+    cardHover: 'hover:border-cyan-400/60 hover:shadow-[0_0_26px_rgba(34,211,238,0.22)]',
+    heroGlow: 'shadow-[0_0_46px_rgba(168,85,247,0.26)] bg-gradient-to-br from-[#1d0d38] via-[#130a24] to-[#0a1a2a]',
+    leaderGlow: 'ring-1 ring-cyan-400/60 shadow-[0_0_30px_rgba(168,85,247,0.32)]',
+    menuBg: 'bg-[#140a26] border-purple-500/40',
+    subCard: 'bg-[#0f081d] border-purple-500/25',
+    stickyBar: 'bg-[#0b0616]/90 border-purple-500/25',
+    muted: 'text-purple-200/75',
+    accentText: 'text-cyan-300',
+    accentBg: 'bg-purple-500',
+    accentGradient: 'from-pink-500 via-purple-500 to-cyan-400',
+    btnPrimary: 'bg-gradient-to-r from-pink-500 via-purple-500 to-cyan-400 text-zinc-950 hover:brightness-110',
+    pill: 'bg-purple-950/70 text-cyan-200 border-purple-400/40',
+    softChip: 'bg-purple-500/15 text-purple-100/90',
+    sparkStroke: '#22d3ee',
+    sparkStop: 'rgba(168, 85, 247, 0.36)',
+    sbTrack: '#0f081d',
+    sbThumb: 'rgba(168, 85, 247, 0.55)',
+    sbThumbHover: 'rgba(34, 211, 238, 0.85)',
+  },
+  softdark: {
+    id: 'softdark',
+    label: { tr: 'Soft Dark', en: 'Soft Dark' },
+    dot: '#818cf8',
+    bg: 'bg-[#12141c] text-slate-100',
+    card: 'bg-[#191c27]/95 border-slate-700/60',
+    cardHover: 'hover:border-indigo-400/50 hover:shadow-[0_0_22px_rgba(129,140,248,0.16)]',
+    heroGlow: 'shadow-[0_0_34px_rgba(129,140,248,0.14)] bg-gradient-to-br from-[#1d2030] via-[#191c27] to-[#161a24]',
+    leaderGlow: 'ring-1 ring-indigo-400/50 shadow-[0_0_22px_rgba(129,140,248,0.2)]',
+    menuBg: 'bg-[#191c27] border-slate-700',
+    subCard: 'bg-[#141720] border-slate-700/50',
+    stickyBar: 'bg-[#12141c]/90 border-slate-700/50',
+    muted: 'text-slate-400',
+    accentText: 'text-indigo-300',
+    accentBg: 'bg-indigo-400',
+    accentGradient: 'from-indigo-400 via-purple-400 to-cyan-300',
+    btnPrimary: 'bg-gradient-to-r from-indigo-400 to-cyan-300 text-zinc-950 hover:brightness-105',
+    pill: 'bg-indigo-950/60 text-indigo-200 border-indigo-400/30',
+    softChip: 'bg-slate-800/80 text-slate-200',
+    sparkStroke: '#818cf8',
+    sparkStop: 'rgba(129, 140, 248, 0.28)',
+    sbTrack: '#141720',
+    sbThumb: 'rgba(129, 140, 248, 0.45)',
+    sbThumbHover: 'rgba(165, 180, 252, 0.8)',
+  },
   light: {
     id: 'light',
     label: { tr: 'Açık', en: 'Light' },
     dot: '#ea580c',
     bg: 'bg-zinc-50 text-zinc-900',
     card: 'bg-white border-zinc-200 shadow-sm',
+    cardHover: 'hover:border-orange-300 hover:shadow-md',
+    heroGlow: 'shadow-md bg-gradient-to-br from-white via-orange-50/40 to-amber-50/40',
+    leaderGlow: 'ring-1 ring-orange-400/60 shadow-md',
     menuBg: 'bg-white border-zinc-200',
     subCard: 'bg-zinc-100/80 border-zinc-200',
+    stickyBar: 'bg-zinc-50/92 border-zinc-200',
     muted: 'text-zinc-600',
     accentText: 'text-orange-600',
     accentBg: 'bg-orange-600',
@@ -203,8 +266,12 @@ const THEMES = {
     dot: '#f97316',
     bg: 'bg-[#0b0d12] text-zinc-100',
     card: 'bg-[#131722] border-zinc-800/90',
+    cardHover: 'hover:border-orange-400/50 hover:shadow-[0_0_22px_rgba(249,115,22,0.18)]',
+    heroGlow: 'shadow-[0_0_34px_rgba(249,115,22,0.14)] bg-gradient-to-br from-[#171b27] via-[#131722] to-[#12141c]',
+    leaderGlow: 'ring-1 ring-orange-400/55 shadow-[0_0_24px_rgba(249,115,22,0.22)]',
     menuBg: 'bg-[#131722] border-zinc-700',
     subCard: 'bg-[#0f131c] border-zinc-800/80',
+    stickyBar: 'bg-[#0b0d12]/90 border-zinc-800/80',
     muted: 'text-zinc-400',
     accentText: 'text-orange-400',
     accentBg: 'bg-orange-500',
@@ -224,8 +291,12 @@ const THEMES = {
     dot: '#22d3ee',
     bg: 'bg-[#07111a] text-cyan-50',
     card: 'bg-[#0d1b28] border-cyan-500/25',
+    cardHover: 'hover:border-cyan-400/60 hover:shadow-[0_0_24px_rgba(34,211,238,0.2)]',
+    heroGlow: 'shadow-[0_0_38px_rgba(34,211,238,0.16)] bg-gradient-to-br from-[#0f2233] via-[#0d1b28] to-[#081622]',
+    leaderGlow: 'ring-1 ring-cyan-400/55 shadow-[0_0_26px_rgba(34,211,238,0.24)]',
     menuBg: 'bg-[#0d1b28] border-cyan-500/35',
     subCard: 'bg-[#09141f] border-cyan-500/20',
+    stickyBar: 'bg-[#07111a]/90 border-cyan-500/20',
     muted: 'text-cyan-200/70',
     accentText: 'text-cyan-400',
     accentBg: 'bg-cyan-400',
@@ -245,8 +316,12 @@ const THEMES = {
     dot: '#60a5fa',
     bg: 'bg-[#090f1d] text-slate-100',
     card: 'bg-[#10192d] border-blue-500/25',
+    cardHover: 'hover:border-blue-400/60 hover:shadow-[0_0_24px_rgba(96,165,250,0.2)]',
+    heroGlow: 'shadow-[0_0_38px_rgba(96,165,250,0.16)] bg-gradient-to-br from-[#13203b] via-[#10192d] to-[#0d1527]',
+    leaderGlow: 'ring-1 ring-blue-400/55 shadow-[0_0_26px_rgba(96,165,250,0.24)]',
     menuBg: 'bg-[#10192d] border-blue-500/35',
     subCard: 'bg-[#0c1324] border-blue-500/20',
+    stickyBar: 'bg-[#090f1d]/90 border-blue-500/20',
     muted: 'text-slate-400',
     accentText: 'text-blue-400',
     accentBg: 'bg-blue-500',
@@ -302,7 +377,43 @@ const FALLBACK_NEWS = [
   { tagTr: 'GÜNCEL', tagEn: 'LIVE', tr: 'PortWatch üzerinde 40 girişim takip ediliyor; 18 proje oyunu başlatabiliyor (İlk 3 ort. %89.3).', en: '40 total efforts tracked on PortWatch, with 18 booting GTA VI (Top-3 avg 89.3%).' },
 ];
 
+const FALLBACK_FEATURED_PORT = {
+  name: 'ScarlettPort',
+  progress: 48.0,
+  fps: '3-4 FPS (RTX 3060)',
+  gpu: 'AMD / NVIDIA',
+  type: 'open',
+  stage: 'Oyun Dünyası • Hazır Launcher',
+  releaseTag: 'v0.5.3',
+  stars: 772,
+  url: 'https://github.com/ZigZagBoi1/ScarlettPort',
+  repo: 'ZigZagBoi1/ScarlettPort',
+  isEstimated: true,
+  hasLauncher: true,
+  summaryTr:
+    'Kaynak kod derlemeye gerek kalmadan hazır Windows başlatıcısı (ScarlettPort.exe) sunan ilk açık kaynak GTA VI PC port katmanı. VIctory + XCL altyapısını birleştiriyor; RTX 3060\'ta 3–4 FPS, topluluk testlerinde RX 9060 XT ile 22 FPS\'e kadar ulaşıyor.',
+  summaryEn:
+    'First open-source GTA VI PC port layer shipping a prebuilt Windows launcher (ScarlettPort.exe) combining VIctory + XCL runtimes. Reaches lit open world at 3–4 FPS on RTX 3060 and up to 22 FPS in community RX 9060 XT tests.',
+};
+
 const CHANGELOG = [
+  {
+    version: 'v1.2.0',
+    dateTr: '27 Kasım 2026',
+    dateEn: 'November 27, 2026',
+    itemsTr: [
+      'ScarlettPort otomatik GitHub takibi + "Öne Çıkan Yeni Port" vitrin kartı eklendi (sürüm, yıldız, aşama ve tahmini bar otomatik güncellenir).',
+      'Mobilde "Uygulama Olarak Ekle" (PWA) butonu ve özel Vice Sunset GTA6takip ana ekran ikonu eklendi.',
+      'Canlı Sohbette sitede çevrimiçi olanlar ile sohbeti açanlar ayrıldı; sabit "50 Mesaj" kaldırılıp "30 Saniye Koruması Aktif" rozeti eklendi ve "+X yeni" uyarısı tüm temalara uyumlu hale getirildi.',
+      'Neon Vice ve Soft Dark temaları eklendi; ana kart ve #1 lider vurgusu, kart hover glow/scale, animasyonlu progress bar ve mobilde sticky filtre şeridi devreye alındı.',
+    ],
+    itemsEn: [
+      'Added live automatic GitHub tracking for ScarlettPort plus a dedicated Featured New Port showcase card.',
+      'Added mobile "Install App" (PWA) support with a custom Vice Sunset GTA6takip home-screen icon.',
+      'Separated total site online users from active Live Chat users, replaced the static "50 Messages" chip with "30s Protection Active", and theme-matched the "+X new" badge.',
+      'Added Neon Vice and Soft Dark themes, hero & leader glow, card hover glow/scale, animated progress bars, and a mobile sticky filter strip.',
+    ],
+  },
   {
     version: 'v1.1.4',
     dateTr: '27 Kasım 2026',
@@ -788,6 +899,14 @@ export default function HomePage() {
   const [top3Avg, setTop3Avg] = useState(89.3);
   const [lastSyncAt, setLastSyncAt] = useState('');
   const [onlineCount, setOnlineCount] = useState(1);
+  const [chatActiveCount, setChatActiveCount] = useState(0);
+  const [featuredPort, setFeaturedPort] = useState(FALLBACK_FEATURED_PORT);
+  const [installPrompt, setInstallPrompt] = useState(null);
+  const [isStandalone, setIsStandalone] = useState(false);
+  const [isIosDevice, setIsIosDevice] = useState(false);
+  const [iosGuideOpen, setIosGuideOpen] = useState(false);
+  const presenceChannelRef = useRef(null);
+  const viewerCountryRef = useRef('TR');
   const [countryStats, setCountryStats] = useState([{ code: 'TR', count: 1 }]);
   const [countdown, setCountdown] = useState(120);
   const [syncing, setSyncing] = useState(false);
@@ -830,7 +949,62 @@ export default function HomePage() {
     if (chatOpen) {
       setUnreadWhileClosed(0);
     }
+    if (presenceChannelRef.current) {
+      presenceChannelRef.current
+        .track({
+          online_at: new Date().toISOString(),
+          country: viewerCountryRef.current || 'TR',
+          in_chat: chatOpen,
+        })
+        .catch(() => {});
+    }
   }, [chatOpen]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+    const standalone =
+      window.matchMedia?.('(display-mode: standalone)')?.matches ||
+      window.navigator?.standalone === true;
+    setIsStandalone(Boolean(standalone));
+    const ua = window.navigator?.userAgent || '';
+    setIsIosDevice(/iphone|ipad|ipod/i.test(ua));
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch(() => {});
+    }
+
+    const onBeforeInstall = (e) => {
+      e.preventDefault();
+      setInstallPrompt(e);
+    };
+    const onAppInstalled = () => {
+      setInstallPrompt(null);
+      setIsStandalone(true);
+    };
+    window.addEventListener('beforeinstallprompt', onBeforeInstall);
+    window.addEventListener('appinstalled', onAppInstalled);
+    return () => {
+      window.removeEventListener('beforeinstallprompt', onBeforeInstall);
+      window.removeEventListener('appinstalled', onAppInstalled);
+    };
+  }, []);
+
+  const handleInstallPwa = async () => {
+    if (installPrompt) {
+      try {
+        installPrompt.prompt();
+        const choice = await installPrompt.userChoice;
+        if (choice?.outcome === 'accepted') {
+          setInstallPrompt(null);
+          setIsStandalone(true);
+        }
+      } catch {
+        // Yoksay
+      }
+      return;
+    }
+    setIosGuideOpen(true);
+  };
 
   useEffect(() => {
     chatRoomRef.current = chatRoom;
@@ -1461,6 +1635,9 @@ export default function HomePage() {
             summaryTr: item.summaryTr || '',
             summaryEn: item.summaryEn || '',
             isZortos: Boolean(item.isZortos),
+            isEstimated: Boolean(item.isEstimated),
+            hasLauncher: Boolean(item.hasLauncher),
+            releaseTag: item.releaseTag || '',
           }))
           .sort((a, b) => b.progress - a.progress);
 
@@ -1478,6 +1655,9 @@ export default function HomePage() {
       }
       if (Array.isArray(data?.news) && data.news.length > 0) {
         setNews(data.news);
+      }
+      if (data?.featuredPort && data.featuredPort.name) {
+        setFeaturedPort(data.featuredPort);
       }
     } catch {
       // Mevcut veya yedek veri korunur
@@ -1548,12 +1728,15 @@ export default function HomePage() {
             const count = entries.length;
             if (count > 0) {
               setOnlineCount(count);
+              let inChatCnt = 0;
               const countsMap = {};
               for (const presList of entries) {
                 const latest = Array.isArray(presList) ? presList[presList.length - 1] : null;
                 const code = String(latest?.country || 'TR').toUpperCase();
                 countsMap[code] = (countsMap[code] || 0) + 1;
+                if (latest?.in_chat) inChatCnt += 1;
               }
+              setChatActiveCount(inChatCnt);
               const sortedStats = Object.entries(countsMap)
                 .map(([code, cnt]) => ({ code, count: cnt }))
                 .sort((a, b) => b.count - a.count);
@@ -1562,9 +1745,12 @@ export default function HomePage() {
           })
           .subscribe(async (status) => {
             if (status === 'SUBSCRIBED') {
+              presenceChannelRef.current = channel;
+              viewerCountryRef.current = viewerCountry;
               await channel.track({
                 online_at: new Date().toISOString(),
                 country: viewerCountry,
+                in_chat: chatOpenRef.current,
               });
             }
           });
@@ -1577,6 +1763,7 @@ export default function HomePage() {
 
     return () => {
       cancelled = true;
+      if (presenceChannelRef.current === channel) presenceChannelRef.current = null;
       if (channel) channel.unsubscribe();
     };
   }, [supabaseClient]);
@@ -1785,6 +1972,18 @@ export default function HomePage() {
           0%, 100% { opacity: 1; transform: scale(1); }
           50% { opacity: 0.3; transform: scale(0.84); }
         }
+        @keyframes barShimmer {
+          0% { transform: translateX(-120%); }
+          100% { transform: translateX(260%); }
+        }
+        .progress-shimmer::after {
+          content: '';
+          position: absolute;
+          inset: 0;
+          width: 45%;
+          background: linear-gradient(90deg, transparent, rgba(255,255,255,0.35), transparent);
+          animation: barShimmer 2.8s ease-in-out infinite;
+        }
         .no-scrollbar {
           -ms-overflow-style: none;
           scrollbar-width: none;
@@ -1925,6 +2124,18 @@ export default function HomePage() {
               )}
             </div>
 
+            {!isStandalone && (
+              <button
+                type="button"
+                onClick={handleInstallPwa}
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-extrabold shadow-sm transition hover:scale-[1.03] ${theme.btnPrimary}`}
+                title={lang === 'tr' ? 'Telefonuna uygulama olarak ekle' : 'Install as App'}
+              >
+                <Smartphone className="w-3.5 h-3.5 shrink-0" />
+                <span>{lang === 'tr' ? 'Uygulama Ekle' : 'Install App'}</span>
+              </button>
+            )}
+
             <button
               type="button"
               onClick={fetchSyncData}
@@ -1940,7 +2151,7 @@ export default function HomePage() {
 
       <main className="max-w-4xl mx-auto px-3 sm:px-5 py-5 space-y-5">
         {/* ÜST ÖZET KARTI */}
-        <section className={`rounded-2xl border p-4 sm:p-6 ${theme.card}`}>
+        <section className={`rounded-2xl border p-4 sm:p-6 transition-all duration-300 ${theme.card} ${theme.heroGlow || ''}`}>
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-5">
             <div className="space-y-3.5 flex-1">
               <div className="space-y-1">
@@ -2047,7 +2258,7 @@ export default function HomePage() {
                   <span>{lang === 'tr' ? 'Canlı Sohbet' : 'Live Chat'}</span>
                   <span className="inline-flex items-center gap-1 opacity-90">
                     <span className={`w-1.5 h-1.5 rounded-full animate-pulse ${onlineDotClass}`} />
-                    {onlineCount} {lang === 'tr' ? 'Aktif' : 'Active'}
+                    {Math.max(chatActiveCount, chatOpen ? 1 : 0)} {lang === 'tr' ? 'Sohbette' : 'In Chat'}
                   </span>
                 </button>
               </div>
@@ -2146,6 +2357,97 @@ export default function HomePage() {
             })}
           </div>
         </section>
+
+        {/* ÖNE ÇIKAN YENİ PORT VİTRİNİ (SCARLETTPORT — OTOMATİK GİTHUB SENKRONU) */}
+        {featuredPort && (
+          <section className={`rounded-2xl border p-4 sm:p-5 transition-all duration-300 ${theme.card} ${theme.heroGlow || ''}`}>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="space-y-1.5 min-w-0 flex-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black tracking-wider ${theme.btnPrimary}`}>
+                    <Rocket className="w-3 h-3 shrink-0" />
+                    {lang === 'tr' ? 'ÖNE ÇIKAN YENİ PORT' : 'FEATURED NEW PORT'}
+                  </span>
+                  {featuredPort.releaseTag && (
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${theme.pill}`}>
+                      {featuredPort.releaseTag}
+                    </span>
+                  )}
+                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                    isLight ? 'bg-violet-100 text-violet-900' : 'bg-purple-500/20 text-purple-200 border border-purple-400/35'
+                  }`}>
+                    <Download className="w-3 h-3 shrink-0" />
+                    {lang === 'tr' ? 'Hazır Launcher' : 'Prebuilt Launcher'}
+                  </span>
+                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold ${theme.softChip}`}>
+                    <Sparkles className="w-3 h-3 shrink-0" />
+                    {featuredPort.isEstimated
+                      ? lang === 'tr'
+                        ? 'GitHub Canlı · Tahmini'
+                        : 'Live GitHub · Estimated'
+                      : lang === 'tr'
+                        ? 'PortWatch Onaylı'
+                        : 'PortWatch Verified'}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2.5 flex-wrap pt-0.5">
+                  <h2 className="text-base sm:text-lg font-black tracking-tight">{featuredPort.name}</h2>
+                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold ${theme.softChip}`}>
+                    <Monitor className={`w-3 h-3 shrink-0 ${theme.accentText}`} />
+                    <span>{localizeDynamicText(featuredPort.fps, lang)}</span>
+                  </span>
+                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold ${theme.softChip}`}>
+                    <GpuBadgeIcons gpu={featuredPort.gpu} isLight={isLight} />
+                    <span>{featuredPort.gpu}</span>
+                  </span>
+                  {featuredPort.stars > 0 && (
+                    <span className={`inline-flex items-center gap-1 text-[11px] font-bold ${isLight ? 'text-amber-700' : 'text-amber-300'}`}>
+                      <Star className="w-3 h-3 fill-current shrink-0" />
+                      {featuredPort.stars}
+                    </span>
+                  )}
+                </div>
+
+                <p className={`text-xs leading-relaxed ${theme.muted}`}>
+                  {lang === 'tr' ? featuredPort.summaryTr : featuredPort.summaryEn}
+                </p>
+              </div>
+
+              <div className="flex sm:flex-col items-center sm:items-end justify-between gap-2 shrink-0 sm:w-44">
+                <div className="text-left sm:text-right">
+                  <div className={`text-2xl font-black tabular-nums ${theme.accentText}`}>
+                    {lang === 'tr' ? `%${featuredPort.progress}` : `${featuredPort.progress}%`}
+                  </div>
+                  <div className={`text-[10px] font-semibold ${theme.muted}`}>
+                    {featuredPort.isEstimated
+                      ? lang === 'tr'
+                        ? 'Tahmini İlerleme'
+                        : 'Est. Progress'
+                      : lang === 'tr'
+                        ? 'PortWatch Puanı'
+                        : 'PortWatch Score'}
+                  </div>
+                </div>
+                <div className="w-28 sm:w-full relative h-2 rounded-full bg-zinc-700/35 overflow-hidden">
+                  <div
+                    className={`relative progress-shimmer h-full rounded-full bg-gradient-to-r ${theme.accentGradient} transition-all duration-700`}
+                    style={{ width: `${Math.min(100, Math.max(5, Number(featuredPort.progress) || 48))}%` }}
+                  />
+                </div>
+                <a
+                  href={featuredPort.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition hover:scale-[1.03] ${theme.subCard}`}
+                >
+                  <span>GitHub</span>
+                  <ExternalLink className="w-3.5 h-3.5" />
+                </a>
+              </div>
+            </div>
+          </section>
+        )}
 
         <section className={`rounded-xl border p-3.5 ${theme.card}`}>
           <div className="flex items-center gap-2 flex-wrap text-xs">
@@ -2351,8 +2653,8 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* Satır 2: Mobilde Tek Satır Kaydırılabilir Filtre Şeridi + Masaüstünde Görünüm Geçişi */}
-            <div className="flex items-center justify-between gap-2">
+            {/* Satır 2: Mobilde Sticky Tek Satır Kaydırılabilir Filtre Şeridi + Masaüstünde Görünüm Geçişi */}
+            <div className={`sticky top-[78px] sm:static z-30 -mx-3 px-3 py-1.5 sm:mx-0 sm:px-0 sm:py-0 backdrop-blur-md sm:backdrop-blur-none border-b sm:border-b-0 flex items-center justify-between gap-2 ${theme.stickyBar || ''}`}>
               <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto sm:overflow-visible sm:flex-wrap no-scrollbar -mx-3 px-3 sm:mx-0 sm:px-0 py-0.5 sm:py-0 w-full sm:w-auto">
                 <div className={`inline-flex shrink-0 rounded-lg border p-0.5 text-[11px] font-bold ${theme.subCard}`}>
                   <button
@@ -2483,8 +2785,8 @@ export default function HomePage() {
                 return (
                   <article
                     key={team.name}
-                    className={`rounded-xl border px-3 py-2.5 transition flex flex-col sm:flex-row sm:items-center justify-between gap-2 ${theme.card} ${
-                      rank === 1 ? 'ring-1 ring-orange-500/40' : ''
+                    className={`rounded-xl border px-3 py-2.5 transition-all duration-200 hover:scale-[1.008] flex flex-col sm:flex-row sm:items-center justify-between gap-2 ${theme.card} ${theme.cardHover || ''} ${
+                      rank === 1 ? (theme.leaderGlow || 'ring-1 ring-orange-500/40') : ''
                     }`}
                   >
                     <div className="flex items-center gap-2 min-w-0 flex-wrap">
@@ -2525,7 +2827,7 @@ export default function HomePage() {
                     <div className="flex items-center gap-2.5 w-full sm:w-auto sm:shrink-0">
                       <div className="flex-1 sm:flex-none sm:w-28 h-2 rounded-full bg-zinc-700/35 overflow-hidden">
                         <div
-                          className={`h-full rounded-full bg-gradient-to-r ${theme.accentGradient}`}
+                          className={`relative progress-shimmer h-full rounded-full bg-gradient-to-r ${theme.accentGradient} transition-all duration-700`}
                           style={{ width: `${barWidth}%` }}
                         />
                       </div>
@@ -2548,8 +2850,8 @@ export default function HomePage() {
               return (
                 <article
                   key={team.name}
-                  className={`rounded-2xl border p-3.5 sm:p-4 transition ${theme.card} ${
-                    rank === 1 ? 'ring-1 ring-orange-500/40' : ''
+                  className={`rounded-2xl border p-3.5 sm:p-4 transition-all duration-200 hover:scale-[1.008] ${theme.card} ${theme.cardHover || ''} ${
+                    rank === 1 ? (theme.leaderGlow || 'ring-1 ring-orange-500/40') : ''
                   }`}
                 >
                   <div className="flex items-center justify-between gap-2">
@@ -2577,11 +2879,19 @@ export default function HomePage() {
                         </span>
                       )}
 
-                      <span className={`hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold shrink-0 ${theme.softChip}`}>
+                      <span className={`hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-bold shrink-0 border ${
+                        team.type === 'private'
+                          ? isLight
+                            ? 'bg-amber-100 text-amber-900 border-amber-300'
+                            : 'bg-amber-500/15 text-amber-300 border-amber-400/35'
+                          : isLight
+                            ? 'bg-emerald-100 text-emerald-900 border-emerald-300'
+                            : 'bg-emerald-500/15 text-emerald-300 border-emerald-400/35'
+                      }`}>
                         {team.type === 'private' ? (
-                          <Lock className="w-3 h-3 opacity-80" />
+                          <Lock className="w-3 h-3 shrink-0" />
                         ) : (
-                          <Code2 className="w-3 h-3 opacity-80" />
+                          <Code2 className="w-3 h-3 shrink-0" />
                         )}
                         <span>
                           {team.type === 'private'
@@ -2593,6 +2903,21 @@ export default function HomePage() {
                               : 'Open Source'}
                         </span>
                       </span>
+                      {team.hasLauncher && (
+                        <span className={`hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold shrink-0 border ${
+                          isLight
+                            ? 'bg-violet-100 text-violet-900 border-violet-300'
+                            : 'bg-purple-500/20 text-purple-200 border-purple-400/40'
+                        }`}>
+                          <Download className="w-2.5 h-2.5 shrink-0" />
+                          <span>Launcher</span>
+                        </span>
+                      )}
+                      {team.isEstimated && (
+                        <span className={`hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold shrink-0 ${theme.softChip}`}>
+                          <span>{lang === 'tr' ? 'Tahmini' : 'Est.'}</span>
+                        </span>
+                      )}
 
                       {team.delta && (
                         <span className={`hidden sm:inline text-[11px] font-bold shrink-0 ${isLight ? 'text-emerald-700' : 'text-emerald-400'}`}>
@@ -2650,14 +2975,25 @@ export default function HomePage() {
                       </span>
                     )}
                     {team.stage && (
-                      <span className={theme.muted}>{localizeDynamicText(team.stage, lang)}</span>
+                      <span className={
+                        team.progress >= 50
+                          ? `inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-bold border ${
+                              isLight
+                                ? 'bg-cyan-100 text-cyan-900 border-cyan-300'
+                                : 'bg-cyan-500/15 text-cyan-300 border-cyan-400/35'
+                            }`
+                          : theme.muted
+                      }>
+                        {team.progress >= 50 && <Sparkles className="w-3 h-3 shrink-0" />}
+                        <span>{localizeDynamicText(team.stage, lang)}</span>
+                      </span>
                     )}
                   </div>
 
                   <div className="mt-3 space-y-2">
                     <div className="relative h-2.5 w-full rounded-full bg-zinc-700/35 overflow-hidden">
                       <div
-                        className={`h-full rounded-full bg-gradient-to-r ${theme.accentGradient} transition-all duration-500`}
+                        className={`relative progress-shimmer h-full rounded-full bg-gradient-to-r ${theme.accentGradient} transition-all duration-700`}
                         style={{ width: `${barWidth}%` }}
                       />
                     </div>
@@ -2773,13 +3109,14 @@ export default function HomePage() {
               </span>
               <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${onlineBtnClass}`}>
                 <span className={`w-1.5 h-1.5 rounded-full animate-pulse ${onlineDotClass}`} />
-                {onlineCount} {lang === 'tr' ? 'Aktif' : 'Active'}
+                {Math.max(chatActiveCount, chatOpen ? 1 : 0)} {lang === 'tr' ? 'Sohbette' : 'In Chat'}
               </span>
-              <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${theme.softChip}`}>
-                {chatMessages.length} {isEnRoom ? 'Messages · 30s Limit' : 'Mesaj · 30sn Korumalı'}
+              <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${theme.pill}`}>
+                <ShieldCheck className={`w-3 h-3 shrink-0 ${theme.accentText}`} />
+                <span>{isEnRoom ? '30s Protection Active' : '30 Saniye Koruması Aktif'}</span>
               </span>
               {!chatOpen && unreadWhileClosed > 0 && (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black bg-pink-500 text-white animate-pulse shadow-sm">
+                <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black shadow-sm animate-pulse ${theme.btnPrimary}`}>
                   +{unreadWhileClosed} {lang === 'tr' ? 'yeni' : 'new'}
                 </span>
               )}
@@ -3671,6 +4008,58 @@ export default function HomePage() {
                 </div>
               ))}
             </div>
+          </div>
+        </div>
+      )}
+      {iosGuideOpen && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className={`w-full max-w-sm rounded-2xl border p-5 space-y-4 ${theme.menuBg}`}>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Smartphone className={`w-4 h-4 ${theme.accentText}`} />
+                <h3 className="text-base font-black">
+                  {lang === 'tr' ? 'Uygulama Olarak Ekle' : 'Install as App'}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIosGuideOpen(false)}
+                className={`p-1 rounded-lg border ${theme.subCard}`}
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className={`rounded-xl border p-3.5 space-y-2 text-xs leading-relaxed ${theme.subCard}`}>
+              {isIosDevice ? (
+                <>
+                  <p className="font-bold">
+                    {lang === 'tr' ? 'iPhone / iPad (Safari):' : 'iPhone / iPad (Safari):'}
+                  </p>
+                  <ol className={`list-decimal pl-4 space-y-1 ${theme.muted}`}>
+                    <li>{lang === 'tr' ? 'Alttaki Paylaş (kare + yukarı ok) simgesine dokun.' : 'Tap the Share icon at the bottom.'}</li>
+                    <li>{lang === 'tr' ? 'Açılan menüden "Ana Ekrana Ekle" seçeneğine bas.' : 'Select "Add to Home Screen".'}</li>
+                    <li>{lang === 'tr' ? 'Sağ üstten "Ekle" dediğinde GTA6takip logosu ana ekranına gelir.' : 'Tap "Add" to place the GTA6takip icon on your home screen.'}</li>
+                  </ol>
+                </>
+              ) : (
+                <>
+                  <p className="font-bold">
+                    {lang === 'tr' ? 'Android Chrome / Masaüstü:' : 'Android Chrome / Desktop:'}
+                  </p>
+                  <ol className={`list-decimal pl-4 space-y-1 ${theme.muted}`}>
+                    <li>{lang === 'tr' ? 'Tarayıcının sağ üstündeki menü (⋮) simgesine dokun.' : 'Open the browser menu (⋮).'}</li>
+                    <li>{lang === 'tr' ? '"Ana ekrana ekle" veya "Uygulamayı yükle" seçeneğine bas.' : 'Tap "Add to Home screen" or "Install app".'}</li>
+                  </ol>
+                </>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={() => setIosGuideOpen(false)}
+              className={`w-full py-2 rounded-xl text-xs font-black ${theme.btnPrimary}`}
+            >
+              {lang === 'tr' ? 'Anladım' : 'Got it'}
+            </button>
           </div>
         </div>
       )}
