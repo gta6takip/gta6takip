@@ -1,11 +1,10 @@
-```javascript
 import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
 
 const TRACKER_URLS = [
-  'https://portwatch-vi.xyz/data/tracker.json',
-  'https://raw.githubusercontent.com/4lwayz/portwatch-vi/main/data/tracker.json',
+  '[https://portwatch-vi.xyz/data/tracker.json](https://portwatch-vi.xyz/data/tracker.json)',
+  '[https://raw.githubusercontent.com/4lwayz/portwatch-vi/main/data/tracker.json](https://raw.githubusercontent.com/4lwayz/portwatch-vi/main/data/tracker.json)',
 ];
 
 function computePortWatchScore(effort) {
@@ -38,7 +37,6 @@ function computePortWatchScore(effort) {
       typeof g.stability === 'number' && !Number.isNaN(g.stability)
         ? Math.min(1, Math.max(0, g.stability))
         : 0;
-    // PortWatch resmi ağırlıkları: Hikâye %17.5, Görüntü %12.5, FPS %10, Kararlılık %10
     score += story * 17.5 + render * 12.5 + fpsNorm * 10 + stab * 10;
   }
 
@@ -122,7 +120,6 @@ export async function GET() {
 
   const allEfforts = tracker.efforts;
   const totalEfforts = allEfforts.length;
-  // PortWatch ile birebir uyumlu: yalnızca oyunu gerçekten boot edebilen projeler sayılır
   const bootingCount = allEfforts.filter(
     (e) => (Number(e?.gta?.boots) || 0) >= 1
   ).length;
@@ -138,8 +135,8 @@ export async function GET() {
           : effort.approach || (isOpen ? 'Açık Kaynak' : 'Özel Yapı');
       const fps = buildFpsLabel(effort);
       const url = isOpen
-        ? `https://github.com/${effort.repo}`
-        : effort.proof?.url || 'https://portwatch-vi.xyz/#race';
+        ? `[https://github.com/$](https://github.com/$){effort.repo}`
+        : effort.proof?.url || '[https://portwatch-vi.xyz/#race](https://portwatch-vi.xyz/#race)';
 
       return {
         name: effort.name,
@@ -222,4 +219,3 @@ export async function GET() {
     }
   );
 }
-```
