@@ -58,7 +58,7 @@ import {
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
-const APP_VERSION = 'v2.0.1';
+const APP_VERSION = 'v2.0.2';
 const SCORE_SNAPSHOT_KEY = 'gta6takip_prev_scores_v2';
 const CHAT_CACHE_PREFIX = 'gta6takip_chat_cache_';
 const INITIAL_TEAMS_LIMIT = 5;
@@ -2173,18 +2173,6 @@ export default function HomePage() {
           background: linear-gradient(90deg, transparent, rgba(255,255,255,0.35), transparent);
           animation: barShimmer 2.8s ease-in-out infinite;
         }
-        @keyframes tickerScroll {
-          0% { transform: translateX(0); }
-          100% { transform: translateX(-50%); }
-        }
-        .ticker-track {
-          display: flex;
-          width: max-content;
-          animation: tickerScroll 30s linear infinite;
-        }
-        .ticker-track:hover {
-          animation-play-state: paused;
-        }
         @keyframes chatTabNudge {
           0%, 72%, 100% { transform: translateY(0); }
           77% { transform: translateY(-4px); }
@@ -2407,41 +2395,6 @@ export default function HomePage() {
           </div>
         </div>
       </header>
-
-      {/* CANLI KAYAN HABER BANDI (TICKER) */}
-      <div className={`border-b overflow-hidden py-1.5 text-[11px] font-semibold ${theme.subCard}`}>
-        <div className="ticker-track">
-          {[0, 1].map((dup) => (
-            <div key={dup} className="flex items-center gap-6 pr-6 whitespace-nowrap">
-              <span className="inline-flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
-                <strong className={theme.accentText}>#{1} {leader.name}</strong>
-                <span>{lang === 'tr' ? `%${leader.progress} (${localizeDynamicText(leader.fps, 'tr')})` : `${leader.progress}% (${localizeDynamicText(leader.fps, 'en')})`}</span>
-              </span>
-              <span className="opacity-35">•</span>
-              <span className="inline-flex items-center gap-1.5">
-                <Rocket className={`w-3 h-3 ${theme.accentText}`} />
-                <span>
-                  ScarlettPort {featuredPort?.releaseTag || 'v0.5.3'} · ★ {featuredPort?.stars || 1007} · %{featuredPort?.progress || 50.8}
-                </span>
-              </span>
-              <span className="opacity-35">•</span>
-              <span>
-                {lang === 'tr'
-                  ? `SlaktarnVI (Linux/Proton · FSR 4) aktif listede`
-                  : `SlaktarnVI (Linux/Proton · FSR 4) tracked live`}
-              </span>
-              <span className="opacity-35">•</span>
-              <span>
-                {lang === 'tr'
-                  ? `${totalEfforts} Girişim · ${bootingCount} Boot · İlk 3 Ort. %${top3Avg}`
-                  : `${totalEfforts} Tracked · ${bootingCount} Boot · Top-3 Avg ${top3Avg}%`}
-              </span>
-              <span className="opacity-35">•</span>
-            </div>
-          ))}
-        </div>
-      </div>
 
       {/* MASAÜSTÜ 4 SEKMELİ UYGULAMA NAVİGASYONU */}
       <nav className="hidden sm:block max-w-4xl mx-auto px-5 pt-4">
