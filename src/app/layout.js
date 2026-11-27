@@ -1,7 +1,26 @@
 import './globals.css';
 
+export const viewport = {
+  themeColor: '#140b1e',
+  width: 'device-width',
+  initialScale: 1,
+};
+
 export const metadata = {
   metadataBase: new URL('https://gta6takip.vercel.app'),
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'GTA6takip',
+  },
+  icons: {
+    icon: [
+      { url: '/icon-192.png', sizes: '192x192', type: 'image/png' },
+      { url: '/icon-512.png', sizes: '512x512', type: 'image/png' },
+    ],
+    apple: [{ url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' }],
+  },
   title: {
     default: 'GTA6takip | GTA 6 PC Port Takip, Tracker & Çıkış Durumu',
     template: '%s | GTA6takip',
@@ -73,7 +92,7 @@ const jsonLd = {
       '@type': 'WebPage',
       name: 'GTA 6 PC Port Takip & Canlı İlerleme',
       url: 'https://gta6takip.vercel.app/',
-      dateModified: '2026-11-27T11:00:00+03:00',
+      dateModified: '2026-11-27T15:45:00+03:00',
       inLanguage: 'tr',
       isPartOf: {
         '@type': 'WebSite',
