@@ -49,10 +49,17 @@ import {
   Rocket,
   Maximize2,
   Minimize2,
+  Trophy,
+  Newspaper,
+  CheckCircle2,
+  AlertTriangle,
+  SmilePlus,
+  GitCommit,
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
-const APP_VERSION = 'v1.2.5';
+const APP_VERSION = 'v2.0.0';
+const SCORE_SNAPSHOT_KEY = 'gta6takip_prev_scores_v2';
 const CHAT_CACHE_PREFIX = 'gta6takip_chat_cache_';
 const INITIAL_TEAMS_LIMIT = 5;
 const CHAT_COOLDOWN_SEC = 20;
@@ -199,14 +206,16 @@ const THEMES = {
     id: 'vice',
     label: { tr: 'Vice Sunset', en: 'Vice Sunset' },
     dot: '#ec4899',
-    bg: 'bg-[#140b1e] text-pink-50',
-    card: 'bg-[#1e112d]/95 border-pink-500/25',
+    bg: 'bg-[#12091c] text-pink-50',
+    backdropGlow: 'radial-gradient(ellipse 80% 40% at 50% -10%, rgba(236,72,153,0.18), transparent 70%)',
+    card: 'bg-[#1b0f2a]/95 border-pink-500/25',
     cardHover: 'hover:border-pink-400/60 hover:shadow-[0_0_24px_rgba(236,72,153,0.22)]',
-    heroGlow: 'shadow-[0_0_40px_rgba(236,72,153,0.18)] bg-gradient-to-br from-[#231236] via-[#1e112d] to-[#19102b]',
-    leaderGlow: 'ring-1 ring-pink-400/55 shadow-[0_0_28px_rgba(236,72,153,0.24)]',
-    menuBg: 'bg-[#1e112d] border-pink-500/35',
-    subCard: 'bg-[#170c24] border-pink-500/20',
-    stickyBar: 'bg-[#140b1e]/90 border-pink-500/20',
+    heroGlow: 'shadow-[0_0_44px_rgba(236,72,153,0.18)] bg-gradient-to-br from-[#231236] via-[#1b0f2a] to-[#160d24]',
+    leaderGlow: 'ring-1 ring-pink-400/55 shadow-[0_0_26px_rgba(236,72,153,0.24)]',
+    menuBg: 'bg-[#1b0f2a] border-pink-500/35',
+    subCard: 'bg-[#150b21] border-pink-500/20',
+    stickyBar: 'bg-[#12091c]/92 border-pink-500/20',
+    selfMsgBg: 'bg-pink-500/10 border-l-2 border-pink-400',
     muted: 'text-pink-200/70',
     accentText: 'text-pink-400',
     accentBg: 'bg-pink-500',
@@ -216,22 +225,51 @@ const THEMES = {
     softChip: 'bg-pink-500/12 text-pink-200/90',
     sparkStroke: '#f472b6',
     sparkStop: 'rgba(244, 114, 182, 0.32)',
-    sbTrack: '#170c24',
+    sbTrack: '#150b21',
     sbThumb: 'rgba(236, 72, 153, 0.48)',
     sbThumbHover: 'rgba(244, 114, 182, 0.85)',
+  },
+  softdark: {
+    id: 'softdark',
+    label: { tr: 'Soft Dark', en: 'Soft Dark' },
+    dot: '#818cf8',
+    bg: 'bg-[#11131a] text-slate-100',
+    backdropGlow: 'radial-gradient(ellipse 80% 40% at 50% -10%, rgba(129,140,248,0.16), transparent 70%)',
+    card: 'bg-[#181b25]/95 border-slate-700/60',
+    cardHover: 'hover:border-indigo-400/55 hover:shadow-[0_0_22px_rgba(129,140,248,0.16)]',
+    heroGlow: 'shadow-[0_0_38px_rgba(129,140,248,0.14)] bg-gradient-to-br from-[#1d2130] via-[#181b25] to-[#141720]',
+    leaderGlow: 'ring-1 ring-indigo-400/50 shadow-[0_0_22px_rgba(129,140,248,0.2)]',
+    menuBg: 'bg-[#181b25] border-slate-700',
+    subCard: 'bg-[#13161f] border-slate-700/50',
+    stickyBar: 'bg-[#11131a]/92 border-slate-700/50',
+    selfMsgBg: 'bg-indigo-500/12 border-l-2 border-indigo-400',
+    muted: 'text-slate-400',
+    accentText: 'text-indigo-300',
+    accentBg: 'bg-indigo-400',
+    accentGradient: 'from-indigo-400 via-purple-400 to-cyan-300',
+    btnPrimary: 'bg-gradient-to-r from-indigo-400 to-cyan-300 text-zinc-950 hover:brightness-105',
+    pill: 'bg-indigo-950/60 text-indigo-200 border-indigo-400/30',
+    softChip: 'bg-slate-800/80 text-slate-200',
+    sparkStroke: '#818cf8',
+    sparkStop: 'rgba(129, 140, 248, 0.28)',
+    sbTrack: '#13161f',
+    sbThumb: 'rgba(129, 140, 248, 0.45)',
+    sbThumbHover: 'rgba(165, 180, 252, 0.8)',
   },
   light: {
     id: 'light',
     label: { tr: 'Açık', en: 'Light' },
     dot: '#ea580c',
-    bg: 'bg-zinc-50 text-zinc-900',
-    card: 'bg-white border-zinc-200 shadow-sm',
+    bg: 'bg-[#f8f9fb] text-zinc-900',
+    backdropGlow: 'radial-gradient(ellipse 80% 40% at 50% -10%, rgba(234,88,12,0.08), transparent 70%)',
+    card: 'bg-white border-zinc-200/90 shadow-sm',
     cardHover: 'hover:border-orange-300 hover:shadow-md',
     heroGlow: 'shadow-md bg-gradient-to-br from-white via-orange-50/40 to-amber-50/40',
     leaderGlow: 'ring-1 ring-orange-400/60 shadow-md',
     menuBg: 'bg-white border-zinc-200',
     subCard: 'bg-zinc-100/80 border-zinc-200',
-    stickyBar: 'bg-zinc-50/92 border-zinc-200',
+    stickyBar: 'bg-[#f8f9fb]/92 border-zinc-200',
+    selfMsgBg: 'bg-orange-50 border-l-2 border-orange-500',
     muted: 'text-zinc-600',
     accentText: 'text-orange-600',
     accentBg: 'bg-orange-600',
@@ -244,131 +282,6 @@ const THEMES = {
     sbTrack: '#f4f4f5',
     sbThumb: 'rgba(234, 88, 12, 0.42)',
     sbThumbHover: 'rgba(234, 88, 12, 0.78)',
-  },
-  dark: {
-    id: 'dark',
-    label: { tr: 'Koyu', en: 'Dark' },
-    dot: '#f97316',
-    bg: 'bg-[#0b0d12] text-zinc-100',
-    card: 'bg-[#131722] border-zinc-800/90',
-    cardHover: 'hover:border-orange-400/50 hover:shadow-[0_0_22px_rgba(249,115,22,0.18)]',
-    heroGlow: 'shadow-[0_0_34px_rgba(249,115,22,0.14)] bg-gradient-to-br from-[#171b27] via-[#131722] to-[#12141c]',
-    leaderGlow: 'ring-1 ring-orange-400/55 shadow-[0_0_24px_rgba(249,115,22,0.22)]',
-    menuBg: 'bg-[#131722] border-zinc-700',
-    subCard: 'bg-[#0f131c] border-zinc-800/80',
-    stickyBar: 'bg-[#0b0d12]/90 border-zinc-800/80',
-    muted: 'text-zinc-400',
-    accentText: 'text-orange-400',
-    accentBg: 'bg-orange-500',
-    accentGradient: 'from-orange-500 via-amber-400 to-yellow-400',
-    btnPrimary: 'bg-gradient-to-r from-orange-500 to-amber-500 text-zinc-950 hover:brightness-110',
-    pill: 'bg-zinc-800/80 text-zinc-300 border-zinc-700/70',
-    softChip: 'bg-zinc-800/70 text-zinc-300',
-    sparkStroke: '#fb923c',
-    sparkStop: 'rgba(251, 146, 60, 0.32)',
-    sbTrack: '#0f131c',
-    sbThumb: 'rgba(249, 115, 22, 0.48)',
-    sbThumbHover: 'rgba(251, 146, 60, 0.85)',
-  },
-  leonida: {
-    id: 'leonida',
-    label: { tr: 'Leonida Neon', en: 'Leonida Neon' },
-    dot: '#22d3ee',
-    bg: 'bg-[#07111a] text-cyan-50',
-    card: 'bg-[#0d1b28] border-cyan-500/25',
-    cardHover: 'hover:border-cyan-400/60 hover:shadow-[0_0_24px_rgba(34,211,238,0.2)]',
-    heroGlow: 'shadow-[0_0_38px_rgba(34,211,238,0.16)] bg-gradient-to-br from-[#0f2233] via-[#0d1b28] to-[#081622]',
-    leaderGlow: 'ring-1 ring-cyan-400/55 shadow-[0_0_26px_rgba(34,211,238,0.24)]',
-    menuBg: 'bg-[#0d1b28] border-cyan-500/35',
-    subCard: 'bg-[#09141f] border-cyan-500/20',
-    stickyBar: 'bg-[#07111a]/90 border-cyan-500/20',
-    muted: 'text-cyan-200/70',
-    accentText: 'text-cyan-400',
-    accentBg: 'bg-cyan-400',
-    accentGradient: 'from-cyan-400 via-teal-300 to-emerald-400',
-    btnPrimary: 'bg-gradient-to-r from-cyan-400 to-emerald-400 text-zinc-950 hover:brightness-110',
-    pill: 'bg-cyan-950/60 text-cyan-200 border-cyan-500/30',
-    softChip: 'bg-cyan-500/12 text-cyan-200/90',
-    sparkStroke: '#22d3ee',
-    sparkStop: 'rgba(34, 211, 238, 0.30)',
-    sbTrack: '#09141f',
-    sbThumb: 'rgba(34, 211, 238, 0.48)',
-    sbThumbHover: 'rgba(34, 211, 238, 0.85)',
-  },
-  neonvice: {
-    id: 'neonvice',
-    label: { tr: 'Neon Vice', en: 'Neon Vice' },
-    dot: '#a855f7',
-    bg: 'bg-[#0b0616] text-fuchsia-50',
-    card: 'bg-[#140a26]/95 border-purple-500/30',
-    cardHover: 'hover:border-cyan-400/60 hover:shadow-[0_0_26px_rgba(34,211,238,0.22)]',
-    heroGlow: 'shadow-[0_0_46px_rgba(168,85,247,0.26)] bg-gradient-to-br from-[#1d0d38] via-[#130a24] to-[#0a1a2a]',
-    leaderGlow: 'ring-1 ring-cyan-400/60 shadow-[0_0_30px_rgba(168,85,247,0.32)]',
-    menuBg: 'bg-[#140a26] border-purple-500/40',
-    subCard: 'bg-[#0f081d] border-purple-500/25',
-    stickyBar: 'bg-[#0b0616]/90 border-purple-500/25',
-    muted: 'text-purple-200/75',
-    accentText: 'text-cyan-300',
-    accentBg: 'bg-purple-500',
-    accentGradient: 'from-pink-500 via-purple-500 to-cyan-400',
-    btnPrimary: 'bg-gradient-to-r from-pink-500 via-purple-500 to-cyan-400 text-zinc-950 hover:brightness-110',
-    pill: 'bg-purple-950/70 text-cyan-200 border-purple-400/40',
-    softChip: 'bg-purple-500/15 text-purple-100/90',
-    sparkStroke: '#22d3ee',
-    sparkStop: 'rgba(168, 85, 247, 0.36)',
-    sbTrack: '#0f081d',
-    sbThumb: 'rgba(168, 85, 247, 0.55)',
-    sbThumbHover: 'rgba(34, 211, 238, 0.85)',
-  },
-  ocean: {
-    id: 'ocean',
-    label: { tr: 'Ocean Drive', en: 'Ocean Drive' },
-    dot: '#60a5fa',
-    bg: 'bg-[#090f1d] text-slate-100',
-    card: 'bg-[#10192d] border-blue-500/25',
-    cardHover: 'hover:border-blue-400/60 hover:shadow-[0_0_24px_rgba(96,165,250,0.2)]',
-    heroGlow: 'shadow-[0_0_38px_rgba(96,165,250,0.16)] bg-gradient-to-br from-[#13203b] via-[#10192d] to-[#0d1527]',
-    leaderGlow: 'ring-1 ring-blue-400/55 shadow-[0_0_26px_rgba(96,165,250,0.24)]',
-    menuBg: 'bg-[#10192d] border-blue-500/35',
-    subCard: 'bg-[#0c1324] border-blue-500/20',
-    stickyBar: 'bg-[#090f1d]/90 border-blue-500/20',
-    muted: 'text-slate-400',
-    accentText: 'text-blue-400',
-    accentBg: 'bg-blue-500',
-    accentGradient: 'from-blue-400 via-indigo-400 to-violet-400',
-    btnPrimary: 'bg-gradient-to-r from-blue-400 to-violet-400 text-zinc-950 hover:brightness-110',
-    pill: 'bg-blue-950/60 text-blue-200 border-blue-500/30',
-    softChip: 'bg-blue-500/12 text-blue-200/90',
-    sparkStroke: '#60a5fa',
-    sparkStop: 'rgba(96, 165, 250, 0.30)',
-    sbTrack: '#0c1324',
-    sbThumb: 'rgba(96, 165, 250, 0.48)',
-    sbThumbHover: 'rgba(96, 165, 250, 0.85)',
-  },
-  softdark: {
-    id: 'softdark',
-    label: { tr: 'Soft Dark', en: 'Soft Dark' },
-    dot: '#818cf8',
-    bg: 'bg-[#12141c] text-slate-100',
-    card: 'bg-[#191c27]/95 border-slate-700/60',
-    cardHover: 'hover:border-indigo-400/50 hover:shadow-[0_0_22px_rgba(129,140,248,0.16)]',
-    heroGlow: 'shadow-[0_0_34px_rgba(129,140,248,0.14)] bg-gradient-to-br from-[#1d2030] via-[#191c27] to-[#161a24]',
-    leaderGlow: 'ring-1 ring-indigo-400/50 shadow-[0_0_22px_rgba(129,140,248,0.2)]',
-    menuBg: 'bg-[#191c27] border-slate-700',
-    subCard: 'bg-[#141720] border-slate-700/50',
-    stickyBar: 'bg-[#12141c]/90 border-slate-700/50',
-    muted: 'text-slate-400',
-    accentText: 'text-indigo-300',
-    accentBg: 'bg-indigo-400',
-    accentGradient: 'from-indigo-400 via-purple-400 to-cyan-300',
-    btnPrimary: 'bg-gradient-to-r from-indigo-400 to-cyan-300 text-zinc-950 hover:brightness-105',
-    pill: 'bg-indigo-950/60 text-indigo-200 border-indigo-400/30',
-    softChip: 'bg-slate-800/80 text-slate-200',
-    sparkStroke: '#818cf8',
-    sparkStop: 'rgba(129, 140, 248, 0.28)',
-    sbTrack: '#141720',
-    sbThumb: 'rgba(129, 140, 248, 0.45)',
-    sbThumbHover: 'rgba(165, 180, 252, 0.8)',
   },
 };
 
@@ -432,6 +345,23 @@ const FALLBACK_FEATURED_PORT = {
 };
 
 const CHANGELOG = [
+  {
+    version: 'v2.0.0',
+    dateTr: '27 Kasım 2026',
+    dateEn: 'November 27, 2026',
+    itemsTr: [
+      'Yeni 4 Sekmeli Uygulama Mimarisi: Mobilde sabit alt navigasyon barı ile Yarış · Sohbet · Sistem Testi · Haber & DMCA sekmeleri.',
+      'Üstte Kayan Canlı Haber Bandı, 3\'lü Podyum (#1/#2/#3) ve kartlara tıklayınca açılan Ekip Detay Çekmecesi (Neler Çalışıyor / Neler Hâlâ Bozuk) eklendi.',
+      'Discord/Twitch tarzı sadeleştirilmiş Canlı Sohbet: Çerçeve yığını kaldırıldı, ardışık mesajlar gruplandı, boş tepkiler gizlendi ve kendi mesajların sol şeritle ayrıldı.',
+      '3 imza tema (Vice Sunset, Soft Dark, Açık), son ziyarete göre otomatik +X% değişim rozeti ve canlı DMCA verisi eklendi.',
+    ],
+    itemsEn: [
+      'New 4-Tab App Architecture with a mobile bottom navigation bar (Race · Live Chat · System Check · News & DMCA).',
+      'Added a live scrolling News Ticker, Top-3 Podium cards, and a clickable Team Detail Drawer (What works / Blockers).',
+      'Streamlined Discord/Twitch-style Live Chat: removed heavy nested borders, grouped consecutive messages, hid empty reaction buttons, and highlighted own messages.',
+      'Focused on 3 handcrafted signature themes (Vice Sunset, Soft Dark, Light) plus automatic score delta badges and live DMCA feed.',
+    ],
+  },
   {
     version: 'v1.2.5',
     dateTr: '27 Kasım 2026',
@@ -946,6 +876,11 @@ export default function HomePage() {
   const [gpuFilter, setGpuFilter] = useState('all');
   const [teamSearch, setTeamSearch] = useState('');
   const [showAllTeams, setShowAllTeams] = useState(false);
+  const [activeTab, setActiveTab] = useState('race');
+  const [selectedTeam, setSelectedTeam] = useState(null);
+  const [activeMsgActionId, setActiveMsgActionId] = useState(null);
+  const [prevScores, setPrevScores] = useState({});
+  const [dmcaItems, setDmcaItems] = useState([]);
   const [compactView, setCompactView] = useState(false);
   const [sysCheckOpen, setSysCheckOpen] = useState(false);
   const [sysGpu, setSysGpu] = useState('rtx3050');
@@ -1138,7 +1073,20 @@ export default function HomePage() {
   useEffect(() => {
     try {
       const savedTheme = localStorage.getItem('gta6takip_theme');
-      if (savedTheme && THEMES[savedTheme]) setThemeKey(savedTheme);
+      if (savedTheme && THEMES[savedTheme]) {
+        setThemeKey(savedTheme);
+      } else if (savedTheme === 'dark' || savedTheme === 'ocean' || savedTheme === 'leonida') {
+        setThemeKey('softdark');
+      } else if (savedTheme === 'neonvice') {
+        setThemeKey('vice');
+      }
+      const prevSnapRaw = localStorage.getItem(SCORE_SNAPSHOT_KEY);
+      if (prevSnapRaw) {
+        const parsedSnap = JSON.parse(prevSnapRaw);
+        if (parsedSnap && parsedSnap.scores && typeof parsedSnap.scores === 'object') {
+          setPrevScores(parsedSnap.scores);
+        }
+      }
       const savedLang = localStorage.getItem('gta6takip_lang');
       if (savedLang === 'tr' || savedLang === 'en') {
         setLang(savedLang);
@@ -1358,14 +1306,24 @@ export default function HomePage() {
     };
   }, [themeMenuOpen, onlineMenuOpen]);
 
+  const handleSelectTab = (tabId) => {
+    setActiveTab(tabId);
+    if (tabId === 'chat') {
+      forceScrollRef.current = true;
+      isAtBottomRef.current = true;
+      setChatOpen(true);
+      setUnreadWhileClosed(0);
+      fetchChatMessages(chatRoomRef.current);
+    } else {
+      setChatFullscreen(false);
+    }
+    if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
   const handleJumpToChat = () => {
-    forceScrollRef.current = true;
-    setChatOpen(true);
-    setUnreadWhileClosed(0);
-    fetchChatMessages(chatRoomRef.current);
-    setTimeout(() => {
-      chatSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }, 60);
+    handleSelectTab('chat');
   };
 
   // /api/chat yalnızca kullanıcı sohbeti açtığında çekilir (CPU/kota tasarrufu)
@@ -1768,10 +1726,36 @@ export default function HomePage() {
             hasLauncher: Boolean(item.hasLauncher),
             releaseTag: item.releaseTag || '',
             platformTag: item.platformTag || '',
+            stars: Number(item.stars) || 0,
+            commits7d: Number(item.commits7d) || 0,
+            verification: item.verification || '',
+            approach: item.approach || '',
+            highlights: Array.isArray(item.highlights) ? item.highlights : [],
+            blockers: Array.isArray(item.blockers) ? item.blockers : [],
           }))
           .sort((a, b) => b.progress - a.progress);
 
         setTeams(normalized);
+        try {
+          const existingRaw = localStorage.getItem(SCORE_SNAPSHOT_KEY);
+          const existing = existingRaw ? JSON.parse(existingRaw) : null;
+          const ageMs = existing?.ts ? Date.now() - Number(existing.ts) : Infinity;
+          if (!existing || ageMs > 6 * 60 * 60 * 1000) {
+            const scoreMap = {};
+            for (const tm of normalized) {
+              scoreMap[tm.name] = tm.progress;
+            }
+            if (existing?.scores) {
+              setPrevScores(existing.scores);
+            }
+            localStorage.setItem(
+              SCORE_SNAPSHOT_KEY,
+              JSON.stringify({ ts: Date.now(), scores: scoreMap })
+            );
+          }
+        } catch {
+          // Depolama erişilemezse geç
+        }
       }
 
       if (typeof data?.totalEfforts === 'number' && data.totalEfforts > 0) {
@@ -1788,6 +1772,9 @@ export default function HomePage() {
       }
       if (data?.featuredPort && data.featuredPort.name) {
         setFeaturedPort(data.featuredPort);
+      }
+      if (Array.isArray(data?.dmcaItems) && data.dmcaItems.length > 0) {
+        setDmcaItems(data.dmcaItems);
       }
     } catch {
       // Mevcut veya yedek veri korunur
@@ -2095,7 +2082,7 @@ export default function HomePage() {
   const isEnRoom = chatRoom === 'en';
 
   return (
-    <div className={`min-h-screen transition-colors duration-300 ${theme.bg}`}>
+    <div className={`min-h-screen transition-colors duration-300 ${theme.bg}`} style={{ backgroundImage: theme.backdropGlow }}>
       <style>{`
         @keyframes feedbackNudge {
           0%, 76%, 100% { transform: translateY(0) rotate(0deg); }
@@ -2119,6 +2106,18 @@ export default function HomePage() {
           width: 45%;
           background: linear-gradient(90deg, transparent, rgba(255,255,255,0.35), transparent);
           animation: barShimmer 2.8s ease-in-out infinite;
+        }
+        @keyframes tickerScroll {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(-50%); }
+        }
+        .ticker-track {
+          display: flex;
+          width: max-content;
+          animation: tickerScroll 30s linear infinite;
+        }
+        .ticker-track:hover {
+          animation-play-state: paused;
         }
         .no-scrollbar {
           -ms-overflow-style: none;
@@ -2312,9 +2311,82 @@ export default function HomePage() {
         </div>
       </header>
 
+      {/* CANLI KAYAN HABER BANDI (TICKER) */}
+      <div className={`border-b overflow-hidden py-1.5 text-[11px] font-semibold ${theme.subCard}`}>
+        <div className="ticker-track">
+          {[0, 1].map((dup) => (
+            <div key={dup} className="flex items-center gap-6 pr-6 whitespace-nowrap">
+              <span className="inline-flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+                <strong className={theme.accentText}>#{1} {leader.name}</strong>
+                <span>{lang === 'tr' ? `%${leader.progress} (${localizeDynamicText(leader.fps, 'tr')})` : `${leader.progress}% (${localizeDynamicText(leader.fps, 'en')})`}</span>
+              </span>
+              <span className="opacity-35">•</span>
+              <span className="inline-flex items-center gap-1.5">
+                <Rocket className={`w-3 h-3 ${theme.accentText}`} />
+                <span>
+                  ScarlettPort {featuredPort?.releaseTag || 'v0.5.3'} · ★ {featuredPort?.stars || 1007} · %{featuredPort?.progress || 50.8}
+                </span>
+              </span>
+              <span className="opacity-35">•</span>
+              <span>
+                {lang === 'tr'
+                  ? `SlaktarnVI (Linux/Proton · FSR 4) aktif listede`
+                  : `SlaktarnVI (Linux/Proton · FSR 4) tracked live`}
+              </span>
+              <span className="opacity-35">•</span>
+              <span>
+                {lang === 'tr'
+                  ? `${totalEfforts} Girişim · ${bootingCount} Boot · İlk 3 Ort. %${top3Avg}`
+                  : `${totalEfforts} Tracked · ${bootingCount} Boot · Top-3 Avg ${top3Avg}%`}
+              </span>
+              <span className="opacity-35">•</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* MASAÜSTÜ 4 SEKMELİ UYGULAMA NAVİGASYONU */}
+      <nav className="hidden sm:block max-w-4xl mx-auto px-5 pt-4">
+        <div className={`grid grid-cols-4 gap-1.5 p-1.5 rounded-2xl border ${theme.card}`}>
+          {[
+            { id: 'race', icon: Trophy, tr: 'Yarış Tablosu', en: 'Leaderboard' },
+            { id: 'chat', icon: MessageCircle, tr: 'Canlı Sohbet', en: 'Live Chat' },
+            { id: 'system', icon: Cpu, tr: 'Sistem Testi', en: 'System Check' },
+            { id: 'news', icon: Newspaper, tr: 'Haber & DMCA', en: 'News & DMCA' },
+          ].map((tab) => {
+            const IconComp = tab.icon;
+            const active = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => handleSelectTab(tab.id)}
+                className={`relative flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-extrabold transition ${
+                  active ? `${theme.btnPrimary} shadow-sm` : `${theme.muted} hover:bg-white/5`
+                }`}
+              >
+                <IconComp className="w-3.5 h-3.5 shrink-0" />
+                <span>{lang === 'tr' ? tab.tr : tab.en}</span>
+                {tab.id === 'chat' && unreadWhileClosed > 0 && activeTab !== 'chat' && (
+                  <span className={`px-1.5 py-0.2 rounded-full text-[9px] font-black ${theme.btnPrimary}`}>
+                    +{unreadWhileClosed}
+                  </span>
+                )}
+                {tab.id === 'chat' && unreadWhileClosed === 0 && (
+                  <span className={`text-[10px] font-bold ${active ? 'opacity-90' : theme.accentText}`}>
+                    ({Math.max(chatActiveCount, chatOpen ? 1 : 0)})
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </nav>
+
       <main className="max-w-4xl mx-auto px-3 sm:px-5 py-5 space-y-5">
-        {/* ÜST ÖZET KARTI */}
-        <section className={`rounded-2xl border p-4 sm:p-6 transition-all duration-300 ${theme.card} ${theme.heroGlow || ''}`}>
+        {/* ÜST ÖZET KARTI — YARIŞ SEKMESİ */}
+        {activeTab === 'race' && (<section className={`rounded-2xl border p-4 sm:p-6 transition-all duration-300 ${theme.card} ${theme.heroGlow || ''}`}>
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-5">
             <div className="space-y-3.5 flex-1">
               <div className="space-y-1">
@@ -2425,6 +2497,33 @@ export default function HomePage() {
                   </span>
                 </button>
               </div>
+
+              {/* 3'LÜ PODYUM (#1 / #2 / #3) — TIKLANABİLİR DETAY ÇEKMECESİ */}
+              <div className="grid grid-cols-3 gap-2 pt-1">
+                {[leader, secondTeam, thirdTeam].filter(Boolean).map((pTeam, pIdx) => (
+                  <button
+                    key={pTeam.name}
+                    type="button"
+                    onClick={() => setSelectedTeam({ ...pTeam, globalRank: pIdx + 1 })}
+                    className={`text-left rounded-xl border px-2.5 py-2 transition hover:scale-[1.02] ${theme.subCard} ${
+                      pIdx === 0 ? 'ring-1 ring-amber-400/45' : ''
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-1 text-[10px] font-black">
+                      <span className={pIdx === 0 ? 'text-amber-400' : theme.muted}>
+                        #{pIdx + 1}
+                      </span>
+                      <span className={`tabular-nums ${theme.accentText}`}>
+                        {lang === 'tr' ? `%${pTeam.progress}` : `${pTeam.progress}%`}
+                      </span>
+                    </div>
+                    <div className="text-xs font-extrabold truncate mt-0.5">{pTeam.name}</div>
+                    <div className={`text-[10px] truncate ${theme.muted}`}>
+                      {localizeDynamicText(pTeam.fps, lang)}
+                    </div>
+                  </button>
+                ))}
+              </div>
             </div>
 
             <div className={`rounded-xl border p-3.5 md:w-60 shrink-0 ${theme.subCard}`}>
@@ -2483,8 +2582,10 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* SON GELİŞMELER — MOBİLDE YATAY KAYDIRILABİLİR (SWIPE), MASAÜSTÜNDE 3 SÜTUN */}
-        <section className="space-y-2.5">
+        )}
+
+        {/* SON GELİŞMELER — HABER & DMCA SEKMESİ */}
+        {activeTab === 'news' && (<section className="space-y-2.5">
           <div className="flex items-center justify-between gap-2">
             <h2 className="text-sm font-bold tracking-wider opacity-80">
               {lang === 'tr' ? 'SON GELİŞMELER' : 'LATEST UPDATES'}
@@ -2521,8 +2622,10 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* ÖNE ÇIKAN YENİ PORT VİTRİNİ (SCARLETTPORT — OTOMATİK GİTHUB SENKRONU) */}
-        {featuredPort && (
+        )}
+
+        {/* ÖNE ÇIKAN YENİ PORT VİTRİNİ — YARIŞ SEKMESİ */}
+        {activeTab === 'race' && featuredPort && (
           <section className={`rounded-2xl border p-4 sm:p-5 transition-all duration-300 ${theme.card} ${theme.heroGlow || ''}`}>
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="space-y-1.5 min-w-0 flex-1">
@@ -2613,6 +2716,8 @@ export default function HomePage() {
           </section>
         )}
 
+        {activeTab === 'system' && (
+        <div className="space-y-4">
         <section className={`rounded-xl border p-3.5 ${theme.card}`}>
           <div className="flex items-center gap-2 flex-wrap text-xs">
             <span className="font-bold opacity-85">
@@ -2651,7 +2756,7 @@ export default function HomePage() {
             )}
           </button>
 
-          {sysCheckOpen && (() => {
+          {(sysCheckOpen || activeTab === 'system') && (() => {
             const evalRes = evaluateSystemForPort(sysGpu, sysVram, sysRam, lang);
             const badgeTone =
               evalRes.level === 'high' || evalRes.level === 'good'
@@ -2754,7 +2859,11 @@ export default function HomePage() {
           })()}
         </section>
 
-        {/* AKTİF EKİPLER — MOBİLDE SIKI TEK ŞERİT FİLTRE, MASAÜSTÜNDE 2 SATIR */}
+        </div>
+        )}
+
+        {/* AKTİF EKİPLER — YARIŞ SEKMESİ */}
+        {activeTab === 'race' && (
         <section className="space-y-3">
           <div className="space-y-2">
             {/* Satır 1: Başlık + (Mobilde Görünüm İkonu) + Arama Kutusu */}
@@ -2944,6 +3053,12 @@ export default function HomePage() {
               const barWidth = Math.min(100, Math.max(2, team.progress));
               const updatedText = formatTeamUpdated(team.updatedAt || lastSyncAt, lang);
               const leaderSummary = rank === 1 ? buildLeaderSummary(team, lang) : '';
+              const prevVal = prevScores[team.name];
+              const diffVal =
+                typeof prevVal === 'number' && team.progress > prevVal
+                  ? Number((team.progress - prevVal).toFixed(1))
+                  : 0;
+              const deltaText = team.delta || (diffVal > 0 ? `+${diffVal}%` : '');
 
               if (compactView) {
                 return (
@@ -3032,9 +3147,14 @@ export default function HomePage() {
                         style={{ animation: 'slowPulse 2.6s ease-in-out infinite' }}
                         title={lang === 'tr' ? 'Canlı takip' : 'Live tracked'}
                       />
-                      <h3 className="text-base sm:text-lg font-extrabold tracking-tight truncate">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedTeam(team)}
+                        className="text-base sm:text-lg font-extrabold tracking-tight truncate hover:underline underline-offset-2 text-left cursor-pointer"
+                        title={lang === 'tr' ? 'Ekip detaylarını gör' : 'View team details'}
+                      >
                         {team.name}
-                      </h3>
+                      </button>
 
                       {isHot && (
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black tracking-wider shrink-0 bg-gradient-to-r from-red-500 via-orange-500 to-amber-400 text-zinc-950 shadow-[0_0_16px_rgba(249,115,22,0.75)] animate-pulse">
@@ -3092,9 +3212,9 @@ export default function HomePage() {
                         </span>
                       )}
 
-                      {team.delta && (
+                      {deltaText && (
                         <span className={`hidden sm:inline text-[11px] font-bold shrink-0 ${isLight ? 'text-emerald-700' : 'text-emerald-400'}`}>
-                          ▲ {team.delta}
+                          ▲ {deltaText}
                         </span>
                       )}
                     </div>
@@ -3103,6 +3223,14 @@ export default function HomePage() {
                       <span className={`text-base sm:text-xl font-black tabular-nums ${theme.accentText}`}>
                         {lang === 'tr' ? `%${team.progress}` : `${team.progress}%`}
                       </span>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedTeam(team)}
+                        className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg border text-[11px] font-bold transition hover:brightness-110 ${theme.pill}`}
+                      >
+                        <Info className="w-3 h-3" />
+                        <span className="hidden sm:inline">{lang === 'tr' ? 'Detay' : 'Details'}</span>
+                      </button>
                       <a
                         href={team.url}
                         target="_blank"
@@ -3142,9 +3270,9 @@ export default function HomePage() {
                             : 'Open Source'}
                       </span>
                     </span>
-                    {team.delta && (
+                    {deltaText && (
                       <span className={`sm:hidden text-[11px] font-bold ${isLight ? 'text-emerald-700' : 'text-emerald-400'}`}>
-                        ▲ {team.delta}
+                        ▲ {deltaText}
                       </span>
                     )}
                     {team.stage && (
@@ -3256,7 +3384,10 @@ export default function HomePage() {
           )}
         </section>
 
-        {/* MODERN CANLI SOHBET KUTUSU — NORMAL + İSTEĞE BAĞLI TAM EKRAN (100dvh) */}
+        )}
+
+        {/* MODERN CANLI SOHBET KUTUSU — SOHBET SEKMESİ */}
+        {activeTab === 'chat' && (
         <section
           ref={chatSectionRef}
           id="canli-sohbet"
@@ -3593,7 +3724,18 @@ export default function HomePage() {
                         : 'Henüz mesaj yok. İlk mesajı sen yaz!'}
                     </p>
                   ) : (
-                    chatMessages.map((m) => {
+                    chatMessages.map((m, msgIdx) => {
+                      const prevMsg = msgIdx > 0 ? chatMessages[msgIdx - 1] : null;
+                      const prevTime = prevMsg?.created_at ? new Date(prevMsg.created_at).getTime() : 0;
+                      const currTime = m.created_at ? new Date(m.created_at).getTime() : 0;
+                      const isGrouped =
+                        Boolean(prevMsg) &&
+                        !m.reply_to_nick &&
+                        !m.reply_to_text &&
+                        String(prevMsg.nickname || '').trim().toLowerCase() ===
+                          String(m.nickname || '').trim().toLowerCase() &&
+                        Math.abs(currTime - prevTime) < 5 * 60 * 1000;
+
                       const isAdminMsg =
                         String(m.nickname || '').trim().toLowerCase() === 'batmancodex' || m.role === 'admin';
                       const isModMsg = !isAdminMsg && m.role === 'mod';
@@ -3603,183 +3745,191 @@ export default function HomePage() {
                         chatNick.trim().length >= 2 &&
                         String(m.nickname || '').trim().toLowerCase() === chatNick.trim().toLowerCase();
                       const reactionsObj = m.reactions && typeof m.reactions === 'object' ? m.reactions : {};
+                      const activeReactions = CHAT_REACTION_EMOJIS.filter((em) => (Number(reactionsObj[em]) || 0) > 0);
+                      const actionsOpen = activeMsgActionId === m.id;
 
                       return (
                         <div
                           key={m.id}
-                          className={`rounded-2xl border px-3.5 py-2.5 text-xs transition ${theme.subCard} ${
-                            isAdminMsg
-                              ? isLight
-                                ? 'ring-1 ring-amber-400/70 bg-amber-50/70'
-                                : 'ring-1 ring-amber-400/45 shadow-[0_0_16px_rgba(251,191,36,0.12)]'
-                              : isModMsg
+                          onClick={() => setActiveMsgActionId((prev) => (prev === m.id ? null : m.id))}
+                          className={`group relative rounded-xl px-2.5 ${isGrouped ? 'py-0.5 mt-0' : 'pt-2 pb-1.5 mt-1.5'} text-xs transition ${
+                            isSelf
+                              ? theme.selfMsgBg || 'bg-pink-500/10 border-l-2 border-pink-400'
+                              : isAdminMsg
                                 ? isLight
-                                  ? 'ring-1 ring-sky-400/70 bg-sky-50/70'
-                                  : 'ring-1 ring-sky-400/40 shadow-[0_0_14px_rgba(56,189,248,0.12)]'
-                                : isSelf
+                                  ? 'bg-amber-50/70 border-l-2 border-amber-400'
+                                  : 'bg-amber-500/8 border-l-2 border-amber-400'
+                                : isModMsg
                                   ? isLight
-                                    ? 'ring-1 ring-orange-400/50'
-                                    : 'ring-1 ring-white/15'
-                                  : 'hover:border-white/20'
+                                    ? 'bg-sky-50/70 border-l-2 border-sky-400'
+                                    : 'bg-sky-500/8 border-l-2 border-sky-400'
+                                  : 'hover:bg-white/[0.04]'
                           }`}
                         >
                           {(m.reply_to_nick || m.reply_to_text) && (
                             <div
-                              className={`mb-2 px-2.5 py-1.5 rounded-xl border-l-2 text-[11px] flex items-start gap-1.5 ${
+                              className={`mb-1 px-2 py-1 rounded-lg border-l-2 text-[11px] flex items-center gap-1.5 ${
                                 isLight
-                                  ? 'bg-zinc-200/75 border-orange-500 text-zinc-700'
-                                  : 'bg-black/30 border-current/70 opacity-90'
+                                  ? 'bg-zinc-200/70 border-orange-500 text-zinc-700'
+                                  : 'bg-black/25 border-current/60 opacity-85'
                               }`}
                             >
-                              <Reply className={`w-3 h-3 mt-0.5 shrink-0 ${theme.accentText}`} />
-                              <div className="min-w-0 truncate">
-                                <span className={`font-bold ${theme.accentText}`}>
-                                  @{m.reply_to_nick || (isEnRoom ? 'User' : 'Kullanıcı')}
-                                </span>
-                                <span className="mx-1 opacity-50">·</span>
-                                <span className="opacity-80">{m.reply_to_text}</span>
-                              </div>
+                              <Reply className={`w-3 h-3 shrink-0 ${theme.accentText}`} />
+                              <span className={`font-bold shrink-0 ${theme.accentText}`}>
+                                @{m.reply_to_nick || (isEnRoom ? 'User' : 'Kullanıcı')}
+                              </span>
+                              <span className="truncate opacity-80">{m.reply_to_text}</span>
                             </div>
                           )}
 
-                          <div className="flex items-center justify-between gap-2 mb-1.5 flex-wrap">
-                            <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
-                              {isAdminMsg ? (
-                                <button
-                                  type="button"
-                                  onClick={(e) => handleMentionUser(e, m.nickname)}
-                                  className="cursor-pointer inline-flex items-center gap-1.5 pl-1 pr-2.5 py-0.5 rounded-full border text-[11px] font-black shadow-sm bg-gradient-to-r from-amber-500/25 via-pink-500/20 to-amber-400/25 border-amber-400/60 text-amber-200 hover:brightness-110 transition"
-                                  title={isEnRoom ? 'Click to @mention' : 'Etiketlemek için tıkla'}
-                                >
-                                  <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 text-zinc-950 shrink-0">
-                                    <ShieldCheck className="w-2.5 h-2.5" />
-                                  </span>
-                                  <span className={isLight ? 'text-amber-950' : 'text-amber-100'}>
-                                    {m.nickname}
-                                  </span>
-                                  <BadgeCheck className="w-3.5 h-3.5 text-sky-400 shrink-0" />
-                                  <span className="px-1.5 py-[1px] rounded-full text-[9px] font-black tracking-wider bg-amber-400 text-zinc-950">
-                                    ADMIN
-                                  </span>
-                                </button>
-                              ) : isModMsg ? (
-                                <button
-                                  type="button"
-                                  onClick={(e) => handleMentionUser(e, m.nickname)}
-                                  className={`cursor-pointer inline-flex items-center gap-1.5 pl-1 pr-2.5 py-0.5 rounded-full border text-[11px] font-black shadow-sm hover:brightness-110 transition ${
-                                    isLight
-                                      ? 'bg-sky-100 border-sky-400 text-sky-950'
-                                      : 'bg-gradient-to-r from-sky-500/25 via-cyan-500/20 to-emerald-500/20 border-sky-400/60 text-sky-100'
-                                  }`}
-                                  title={isEnRoom ? 'Click to @mention' : 'Etiketlemek için tıkla'}
-                                >
-                                  <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-gradient-to-br from-sky-400 to-cyan-500 text-zinc-950 shrink-0">
-                                    <Shield className="w-2.5 h-2.5 fill-current" />
-                                  </span>
-                                  <span>{m.nickname}</span>
-                                  <span className="px-1.5 py-[1px] rounded-full text-[9px] font-black tracking-wider bg-sky-400 text-zinc-950">
-                                    {isEnRoom ? 'MOD' : 'MODERATÖR'}
-                                  </span>
-                                </button>
-                              ) : (
-                                <button
-                                  type="button"
-                                  onClick={(e) => handleMentionUser(e, m.nickname)}
-                                  className={`cursor-pointer inline-flex items-center gap-1.5 pl-1 pr-2.5 py-0.5 rounded-full border text-[11px] font-extrabold max-w-full hover:brightness-110 transition ${nickStyle.pill}`}
-                                  title={isEnRoom ? 'Click to @mention' : 'Etiketlemek için tıkla'}
-                                >
-                                  <span
-                                    className={`inline-flex items-center justify-center w-4 h-4 rounded-full text-[9px] font-black shrink-0 shadow-inner ${nickStyle.avatar}`}
+                          {!isGrouped && (
+                            <div className="flex items-center justify-between gap-2 mb-0.5">
+                              <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
+                                {isAdminMsg ? (
+                                  <button
+                                    type="button"
+                                    onClick={(e) => handleMentionUser(e, m.nickname)}
+                                    className="cursor-pointer inline-flex items-center gap-1 font-black text-[12px] hover:underline"
+                                    title={isEnRoom ? 'Click to @mention' : 'Etiketlemek için tıkla'}
                                   >
-                                    {initial}
-                                  </span>
-                                  <span className="truncate">{m.nickname}</span>
-                                </button>
-                              )}
-                            </div>
+                                    <ShieldCheck className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                                    <span className={isLight ? 'text-amber-800' : 'text-amber-200'}>{m.nickname}</span>
+                                    <BadgeCheck className="w-3.5 h-3.5 text-sky-400 shrink-0" />
+                                    <span className="px-1.5 py-[1px] rounded text-[9px] font-black bg-amber-400 text-zinc-950">
+                                      ADMIN
+                                    </span>
+                                  </button>
+                                ) : isModMsg ? (
+                                  <button
+                                    type="button"
+                                    onClick={(e) => handleMentionUser(e, m.nickname)}
+                                    className="cursor-pointer inline-flex items-center gap-1 font-black text-[12px] hover:underline"
+                                    title={isEnRoom ? 'Click to @mention' : 'Etiketlemek için tıkla'}
+                                  >
+                                    <Shield className="w-3.5 h-3.5 text-sky-400 shrink-0" />
+                                    <span className={isLight ? 'text-sky-800' : 'text-sky-200'}>{m.nickname}</span>
+                                    <span className="px-1.5 py-[1px] rounded text-[9px] font-black bg-sky-400 text-zinc-950">
+                                      {isEnRoom ? 'MOD' : 'MODERATÖR'}
+                                    </span>
+                                  </button>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    onClick={(e) => handleMentionUser(e, m.nickname)}
+                                    className="cursor-pointer inline-flex items-center gap-1.5 font-extrabold text-[12px] max-w-full hover:underline"
+                                    title={isEnRoom ? 'Click to @mention' : 'Etiketlemek için tıkla'}
+                                  >
+                                    <span
+                                      className={`inline-flex items-center justify-center w-4 h-4 rounded-full text-[9px] font-black shrink-0 ${nickStyle.avatar}`}
+                                    >
+                                      {initial}
+                                    </span>
+                                    <span className="truncate">{m.nickname}</span>
+                                  </button>
+                                )}
+                                <span className={`text-[10px] font-medium tabular-nums opacity-65 ${theme.muted}`}>
+                                  {formatChatTime(m.created_at)}
+                                </span>
+                              </div>
 
-                            <div className="flex items-center gap-1.5 shrink-0 flex-wrap">
-                              <span className={`text-[10px] font-medium tabular-nums ${theme.muted}`}>
-                                {formatChatTime(m.created_at)} {isEnRoom ? 'TRT' : 'TSİ'}
-                              </span>
                               <button
                                 type="button"
-                                onClick={() => handleStartReply(m)}
-                                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold transition opacity-80 hover:opacity-100 ${theme.softChip}`}
-                                title={isEnRoom ? 'Reply to this message' : 'Bu mesajı yanıtla'}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setActiveMsgActionId((prev) => (prev === m.id ? null : m.id));
+                                }}
+                                className={`p-1 rounded-md opacity-55 hover:opacity-100 transition ${theme.muted}`}
+                                aria-label="Mesaj işlemleri"
+                                title={isEnRoom ? 'React / Reply' : 'Tepki / Yanıtla'}
                               >
-                                <Reply className="w-2.5 h-2.5" />
-                                <span>{isEnRoom ? 'Reply' : 'Yanıtla'}</span>
+                                <SmilePlus className="w-3.5 h-3.5" />
                               </button>
-
-                              {staffModeActive && !isAdminMsg && (
-                                <>
-                                  <button
-                                    type="button"
-                                    disabled={clearingId === m.id || banningId === m.id}
-                                    onClick={() => handleClearMessage(m)}
-                                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-[10px] font-bold transition disabled:opacity-50 ${
-                                      isLight
-                                        ? 'border-amber-400 bg-amber-100 text-amber-900 hover:bg-amber-200'
-                                        : 'border-amber-400/50 bg-amber-500/20 text-amber-200 hover:bg-amber-500/35'
-                                    }`}
-                                    title={
-                                      isEnRoom
-                                        ? 'Delete this message only'
-                                        : 'Kullanıcıyı banlamadan sadece bu mesajı sil'
-                                    }
-                                  >
-                                    <Trash2 className="w-2.5 h-2.5" />
-                                    <span>{clearingId === m.id ? '...' : isEnRoom ? 'Clear' : 'Temizle'}</span>
-                                  </button>
-                                  <button
-                                    type="button"
-                                    disabled={banningId === m.id || clearingId === m.id}
-                                    onClick={() => handleBanMessage(m)}
-                                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-[10px] font-bold transition disabled:opacity-50 ${
-                                      isLight
-                                        ? 'border-red-400 bg-red-100 text-red-900 hover:bg-red-200'
-                                        : 'border-red-500/50 bg-red-500/20 text-red-300 hover:bg-red-500/35'
-                                    }`}
-                                    title={
-                                      isEnRoom
-                                        ? 'Permanently ban user and delete messages'
-                                        : 'Kullanıcıyı kalıcı banla ve mesajlarını sil'
-                                    }
-                                  >
-                                    <Ban className="w-2.5 h-2.5" />
-                                    <span>{banningId === m.id ? '...' : isEnRoom ? 'Ban' : 'Banla'}</span>
-                                  </button>
-                                </>
-                              )}
                             </div>
-                          </div>
+                          )}
 
-                          <p className="leading-relaxed break-words pl-1 text-[12.5px]">{m.message}</p>
+                          <p className={`leading-snug break-words text-[13px] ${isGrouped ? 'pl-5' : 'pl-0.5'}`}>
+                            {m.message}
+                          </p>
 
-                          {/* Mini Emoji Tepkileri */}
-                          <div className="mt-1.5 pl-1 flex items-center gap-1 flex-wrap">
-                            {CHAT_REACTION_EMOJIS.map((emoji) => {
-                              const cnt = Number(reactionsObj[emoji]) || 0;
-                              const reacted = Boolean(myReactions[`${m.id}:${emoji}`]);
-                              return (
+                          {/* Sadece en az 1 oy alan tepkiler görünür (sıfır kalabalık!) */}
+                          {activeReactions.length > 0 && (
+                            <div className={`mt-1 flex items-center gap-1 flex-wrap ${isGrouped ? 'pl-5' : ''}`}>
+                              {activeReactions.map((emoji) => {
+                                const cnt = Number(reactionsObj[emoji]) || 0;
+                                const reacted = Boolean(myReactions[`${m.id}:${emoji}`]);
+                                return (
+                                  <button
+                                    key={emoji}
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleToggleReaction(m, emoji);
+                                    }}
+                                    className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold transition ${
+                                      reacted ? `${theme.btnPrimary} shadow-sm` : `${theme.softChip} hover:opacity-100`
+                                    }`}
+                                  >
+                                    <span>{emoji}</span>
+                                    <span className="tabular-nums">{cnt}</span>
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          )}
+
+                          {/* Kompakt Aksiyon Barı (Hover veya Dokununca Açılır) */}
+                          <div
+                            onClick={(e) => e.stopPropagation()}
+                            className={`mt-1.5 items-center gap-1 flex-wrap ${
+                              actionsOpen ? 'flex' : 'hidden group-hover:flex'
+                            } ${isGrouped ? 'pl-5' : ''}`}
+                          >
+                            {CHAT_REACTION_EMOJIS.map((emoji) => (
+                              <button
+                                key={emoji}
+                                type="button"
+                                onClick={() => {
+                                  handleToggleReaction(m, emoji);
+                                  setActiveMsgActionId(null);
+                                }}
+                                className={`px-1.5 py-0.5 rounded-full text-[11px] transition hover:scale-110 ${theme.softChip}`}
+                              >
+                                {emoji}
+                              </button>
+                            ))}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                handleStartReply(m);
+                                setActiveMsgActionId(null);
+                              }}
+                              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold transition ${theme.softChip}`}
+                            >
+                              <Reply className="w-2.5 h-2.5" />
+                              <span>{isEnRoom ? 'Reply' : 'Yanıtla'}</span>
+                            </button>
+                            {staffModeActive && !isAdminMsg && (
+                              <>
                                 <button
-                                  key={emoji}
                                   type="button"
-                                  onClick={() => handleToggleReaction(m, emoji)}
-                                  className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold transition ${
-                                    reacted
-                                      ? `${theme.btnPrimary} shadow-sm`
-                                      : cnt > 0
-                                        ? `${theme.softChip} opacity-95 hover:opacity-100`
-                                        : `${theme.softChip} opacity-45 hover:opacity-90`
-                                  }`}
+                                  disabled={clearingId === m.id || banningId === m.id}
+                                  onClick={() => handleClearMessage(m)}
+                                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border border-amber-400/50 bg-amber-500/20 text-amber-300 text-[10px] font-bold"
                                 >
-                                  <span>{emoji}</span>
-                                  {cnt > 0 && <span className="tabular-nums">{cnt}</span>}
+                                  <Trash2 className="w-2.5 h-2.5" />
+                                  <span>{clearingId === m.id ? '...' : isEnRoom ? 'Clear' : 'Temizle'}</span>
                                 </button>
-                              );
-                            })}
+                                <button
+                                  type="button"
+                                  disabled={banningId === m.id || clearingId === m.id}
+                                  onClick={() => handleBanMessage(m)}
+                                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border border-red-500/50 bg-red-500/20 text-red-300 text-[10px] font-bold"
+                                >
+                                  <Ban className="w-2.5 h-2.5" />
+                                  <span>{banningId === m.id ? '...' : isEnRoom ? 'Ban' : 'Banla'}</span>
+                                </button>
+                              </>
+                            )}
                           </div>
                         </div>
                       );
@@ -3966,6 +4116,10 @@ export default function HomePage() {
           )}
         </section>
 
+        )}
+
+        {activeTab === 'news' && (
+        <div className="space-y-4">
         <section className={`rounded-2xl border p-4 space-y-2.5 ${theme.card}`}>
           <div className="flex items-center gap-2">
             <HelpCircle className={`w-4 h-4 ${theme.accentText} shrink-0`} />
@@ -4062,7 +4216,10 @@ export default function HomePage() {
           )}
         </section>
 
-        <footer className={`pt-2 pb-24 sm:pb-16 space-y-4 text-center text-xs ${theme.muted}`}>
+        </div>
+        )}
+
+        <footer className={`pt-4 pb-28 sm:pb-14 space-y-4 text-center text-xs ${theme.muted}`}>
           <div className="flex items-center justify-center gap-2 flex-wrap">
             <a
               href="https://x.com/batmancodex"
@@ -4127,7 +4284,7 @@ export default function HomePage() {
           aria-label={lang === 'tr' ? 'Tavsiye / Fikir' : 'Feedback / Idea'}
           title={lang === 'tr' ? 'Tavsiye / Fikir' : 'Feedback / Idea'}
           style={{ animation: 'feedbackNudge 4s ease-in-out infinite' }}
-          className={`fixed bottom-4 left-3 sm:bottom-5 sm:left-4 z-40 inline-flex items-center justify-center gap-1.5 w-10 h-10 sm:w-auto sm:h-auto sm:px-3.5 sm:py-2.5 rounded-full shadow-lg text-xs font-extrabold transition hover:scale-105 ${theme.btnPrimary}`}
+          className={`fixed bottom-20 left-3 sm:bottom-5 sm:left-4 z-40 inline-flex items-center justify-center gap-1.5 w-10 h-10 sm:w-auto sm:h-auto sm:px-3.5 sm:py-2.5 rounded-full shadow-lg text-xs font-extrabold transition hover:scale-105 ${theme.btnPrimary}`}
         >
           <MessageSquarePlus className="w-4 h-4 shrink-0" />
           <span className="hidden sm:inline">{lang === 'tr' ? 'Tavsiye / Fikir' : 'Feedback / Idea'}</span>
@@ -4139,7 +4296,7 @@ export default function HomePage() {
           type="button"
           onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
           aria-label={lang === 'tr' ? 'Yukarı çık' : 'Back to top'}
-          className={`fixed bottom-4 right-3 sm:bottom-5 sm:right-4 z-40 w-10 h-10 sm:w-11 sm:h-11 inline-flex items-center justify-center rounded-full shadow-lg transition hover:scale-110 ${theme.btnPrimary}`}
+          className={`fixed bottom-20 right-3 sm:bottom-5 sm:right-4 z-40 w-10 h-10 sm:w-11 sm:h-11 inline-flex items-center justify-center rounded-full shadow-lg transition hover:scale-110 ${theme.btnPrimary}`}
         >
           <ArrowUp className="w-4 h-4 sm:w-5 sm:h-5" />
         </button>
@@ -4333,6 +4490,163 @@ export default function HomePage() {
             >
               {lang === 'tr' ? 'Anladım' : 'Got it'}
             </button>
+          </div>
+        </div>
+      )}
+      {/* MOBİL SABİT ALT UYGULAMA NAVİGASYON BARI */}
+      {!chatFullscreen && !chatInputFocused && (
+        <nav
+          className={`fixed bottom-0 inset-x-0 z-40 sm:hidden border-t backdrop-blur-lg px-2 py-1.5 ${theme.stickyBar}`}
+          aria-label="Mobil Menü"
+        >
+          <div className="grid grid-cols-4 gap-1">
+            {[
+              { id: 'race', icon: Trophy, tr: 'Yarış', en: 'Race' },
+              { id: 'chat', icon: MessageCircle, tr: 'Sohbet', en: 'Chat' },
+              { id: 'system', icon: Cpu, tr: 'Sistem', en: 'System' },
+              { id: 'news', icon: Newspaper, tr: 'Haber', en: 'News' },
+            ].map((tab) => {
+              const IconComp = tab.icon;
+              const active = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => handleSelectTab(tab.id)}
+                  className={`relative flex flex-col items-center justify-center gap-0.5 py-1.5 rounded-xl text-[10px] font-extrabold transition ${
+                    active ? theme.btnPrimary : theme.muted
+                  }`}
+                >
+                  <IconComp className="w-4 h-4 shrink-0" />
+                  <span>{lang === 'tr' ? tab.tr : tab.en}</span>
+                  {tab.id === 'chat' && unreadWhileClosed > 0 && activeTab !== 'chat' && (
+                    <span className="absolute top-0.5 right-3 px-1 rounded-full text-[8px] font-black bg-red-500 text-white">
+                      +{unreadWhileClosed}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </nav>
+      )}
+
+      {/* EKİP DETAY ÇEKMECESİ (TEAM DETAIL DRAWER) */}
+      {selectedTeam && (
+        <div
+          onClick={() => setSelectedTeam(null)}
+          className="fixed inset-0 z-[90] bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className={`gta-scroll w-full sm:max-w-lg rounded-t-3xl sm:rounded-2xl border p-5 space-y-4 max-h-[85dvh] overflow-y-auto ${theme.menuBg}`}
+          >
+            <div className="flex items-start justify-between gap-2">
+              <div className="space-y-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  {selectedTeam.globalRank && (
+                    <span className={`px-2 py-0.5 rounded-md text-xs font-black ${theme.btnPrimary}`}>
+                      #{selectedTeam.globalRank}
+                    </span>
+                  )}
+                  <h3 className="text-lg font-black truncate">{selectedTeam.name}</h3>
+                  <span className={`text-base font-black tabular-nums ${theme.accentText}`}>
+                    {lang === 'tr' ? `%${selectedTeam.progress}` : `${selectedTeam.progress}%`}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 flex-wrap text-[11px]">
+                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md font-semibold ${theme.softChip}`}>
+                    <Monitor className="w-3 h-3" />
+                    {localizeDynamicText(selectedTeam.fps, lang)}
+                  </span>
+                  {selectedTeam.gpu && (
+                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md font-semibold ${theme.softChip}`}>
+                      <GpuBadgeIcons gpu={selectedTeam.gpu} isLight={isLight} />
+                      {localizeDynamicText(selectedTeam.gpu, lang)}
+                    </span>
+                  )}
+                  {selectedTeam.stars > 0 && (
+                    <span className={`inline-flex items-center gap-1 font-bold ${isLight ? 'text-amber-700' : 'text-amber-300'}`}>
+                      <Star className="w-3 h-3 fill-current" />
+                      {selectedTeam.stars}
+                    </span>
+                  )}
+                  {selectedTeam.commits7d > 0 && (
+                    <span className={`inline-flex items-center gap-1 font-semibold ${theme.muted}`}>
+                      <GitCommit className="w-3 h-3" />
+                      {selectedTeam.commits7d} (7g)
+                    </span>
+                  )}
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedTeam(null)}
+                className={`p-1.5 rounded-xl border shrink-0 ${theme.subCard}`}
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="relative h-2.5 w-full rounded-full bg-zinc-700/35 overflow-hidden">
+              <div
+                className={`relative progress-shimmer h-full rounded-full bg-gradient-to-r ${theme.accentGradient}`}
+                style={{ width: `${Math.min(100, Math.max(2, selectedTeam.progress))}%` }}
+              />
+            </div>
+
+            {selectedTeam.highlights && selectedTeam.highlights.length > 0 && (
+              <div className={`rounded-xl border p-3.5 space-y-2 ${theme.subCard}`}>
+                <div className="flex items-center gap-1.5 text-xs font-black text-emerald-400">
+                  <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+                  <span>{lang === 'tr' ? 'Neler Çalışıyor?' : 'What Works'}</span>
+                </div>
+                <ul className={`space-y-1.5 text-xs leading-relaxed ${theme.muted}`}>
+                  {selectedTeam.highlights.map((h, i) => (
+                    <li key={i} className="flex items-start gap-1.5">
+                      <span className="text-emerald-400 mt-0.5">•</span>
+                      <span>{h}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {selectedTeam.blockers && selectedTeam.blockers.length > 0 && (
+              <div className={`rounded-xl border p-3.5 space-y-2 ${theme.subCard}`}>
+                <div className="flex items-center gap-1.5 text-xs font-black text-amber-400">
+                  <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                  <span>{lang === 'tr' ? 'Neler Hâlâ Eksik / Sorunlu?' : 'Current Blockers'}</span>
+                </div>
+                <ul className={`space-y-1.5 text-xs leading-relaxed ${theme.muted}`}>
+                  {selectedTeam.blockers.map((b, i) => (
+                    <li key={i} className="flex items-start gap-1.5">
+                      <span className="text-amber-400 mt-0.5">•</span>
+                      <span>{b}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            <div className="flex items-center gap-2 pt-1">
+              <a
+                href={selectedTeam.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`flex-1 py-2.5 px-4 rounded-xl text-xs font-black inline-flex items-center justify-center gap-1.5 transition hover:brightness-110 ${theme.btnPrimary}`}
+              >
+                <span>{lang === 'tr' ? 'GitHub / Kaynağa Git' : 'Open GitHub / Source'}</span>
+                <ExternalLink className="w-3.5 h-3.5" />
+              </a>
+              <button
+                type="button"
+                onClick={() => setSelectedTeam(null)}
+                className={`py-2.5 px-4 rounded-xl border text-xs font-bold ${theme.subCard}`}
+              >
+                {lang === 'tr' ? 'Kapat' : 'Close'}
+              </button>
+            </div>
           </div>
         </div>
       )}
