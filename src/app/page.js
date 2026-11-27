@@ -58,7 +58,7 @@ import {
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
-const APP_VERSION = 'v3.0.0';
+const APP_VERSION = 'v3.1.0';
 const SCORE_SNAPSHOT_KEY = 'gta6takip_prev_scores_v2';
 const CHAT_CACHE_PREFIX = 'gta6takip_chat_cache_';
 const INITIAL_TEAMS_LIMIT = 5;
@@ -206,28 +206,28 @@ const THEMES = {
     id: 'softdark',
     label: { tr: 'Telemetri Koyu', en: 'Telemetry Dark' },
     dot: '#FF4D2E',
-    bg: 'bg-[#09090B] text-zinc-100',
+    bg: 'bg-[#0C0C0E] text-[#E8E8EC]',
     backdropGlow: 'none',
-    card: 'bg-[#101013] border-[#232329]',
-    cardHover: 'hover:border-[#3F3F48] hover:bg-[#141418]',
+    card: 'bg-[#131316] border-[#24242A]',
+    cardHover: 'hover:border-[#383842] hover:bg-[#18181D]',
     heroGlow: '',
-    leaderGlow: 'border-[#FF4D2E]/60',
-    menuBg: 'bg-[#121216] border-[#2A2A32] shadow-lg',
-    subCard: 'bg-[#141418] border-[#232329]',
-    stickyBar: 'bg-[#09090B]/95 border-[#232329]',
+    leaderGlow: 'border-[#FF4D2E]/65',
+    menuBg: 'bg-[#202026] border-[#32323B] shadow-xl',
+    subCard: 'bg-[#1A1A1F] border-[#282830]',
+    stickyBar: 'bg-[#0C0C0E]/96 border-[#24242A]',
     selfMsgBg: 'bg-[#FF4D2E]/10 border-l-2 border-[#FF4D2E]',
-    muted: 'text-zinc-400',
-    accentText: 'text-[#FF4D2E]',
+    muted: 'text-[#9B9BA6]',
+    accentText: 'text-[#FF5A3D]',
     accentBg: 'bg-[#FF4D2E]',
     accentGradient: 'from-[#FF4D2E] to-[#FF6B4A]',
-    btnPrimary: 'bg-[#FF4D2E] text-white font-bold hover:bg-[#FF6247]',
-    pill: 'bg-[#16161B] text-zinc-200 border-[#2A2A32]',
-    softChip: 'bg-[#18181E] text-zinc-300 border border-[#272730]',
-    sparkStroke: '#FF4D2E',
-    sparkStop: 'rgba(255, 77, 46, 0.22)',
-    sbTrack: '#0C0C0F',
-    sbThumb: 'rgba(161, 161, 170, 0.35)',
-    sbThumbHover: 'rgba(255, 77, 46, 0.75)',
+    btnPrimary: 'bg-[#FF4D2E] text-[#FFFDFC] font-semibold hover:bg-[#FF6044] active:scale-[0.97]',
+    pill: 'bg-[#1A1A1F] text-[#DCDCE2] border-[#2C2C35]',
+    softChip: 'bg-[#1C1C22] text-[#D4D4DC] border border-[#2A2A33]',
+    sparkStroke: '#FF5A3D',
+    sparkStop: 'rgba(255, 77, 46, 0.18)',
+    sbTrack: '#0E0E11',
+    sbThumb: 'rgba(155, 155, 166, 0.34)',
+    sbThumbHover: 'rgba(255, 90, 61, 0.75)',
   },
   vice: {
     id: 'vice',
@@ -345,6 +345,21 @@ const FALLBACK_FEATURED_PORT = {
 };
 
 const CHANGELOG = [
+  {
+    version: "v3.1.0",
+    dateTr: "27 Kasım 2026",
+    dateEn: "November 27, 2026",
+    itemsTr: [
+      "Katmanlı koyu yüzey basamakları (#0C0C0E -> #131316 -> #1A1A1F -> #202026) ve göz yormayan kırık beyaz (#E8E8EC) metin kontrastı uygulandı.",
+      "Üst menüdeki 01/02/03/04 numaraları kaldırılıp ince çizgili (1.75px) simge butonlarına geçildi; sürekli zıplama animasyonları yerine 160ms keskin dokunsal geçişler eklendi.",
+      "Haber & DMCA kategorilerine ve kartlarına anlamlı simgeler (Basın için gazete, DMCA için yasal kilit, Sürüm için kod, Reddit için sohbet) eklendi.",
+    ],
+    itemsEn: [
+      "Applied layered dark surface stepping (#0C0C0E -> #131316 -> #1A1A1F -> #202026) and soft off-white (#E8E8EC) text for low eye strain.",
+      "Replaced numeric 01/02/03/04 menu labels with crisp 1.75px stroke icon buttons and replaced endless bounce loops with restrained 160ms tactile transitions.",
+      "Added semantic icons (newspaper for Press, legal lock for DMCA, code for Releases, chat for Reddit) across News & DMCA filters and cards.",
+    ],
+  },
   {
     version: "v3.0.0",
     dateTr: "27 Kasım 2026",
@@ -2214,30 +2229,14 @@ export default function HomePage() {
           font-family: var(--font-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
           font-variant-numeric: tabular-nums;
         }
-        @keyframes chatTabNudge {
-          0%, 76%, 100% { transform: translateY(0); }
-          81% { transform: translateY(-3px); }
-          86% { transform: translateY(0); }
-          90% { transform: translateY(-1.5px); }
-          94% { transform: translateY(0); }
+        .ui-tactile {
+          transition: background-color 160ms cubic-bezier(0.23, 1, 0.32, 1),
+                      border-color 160ms cubic-bezier(0.23, 1, 0.32, 1),
+                      color 160ms cubic-bezier(0.23, 1, 0.32, 1),
+                      transform 140ms cubic-bezier(0.23, 1, 0.32, 1);
         }
-        @keyframes chatTabShimmer {
-          0%, 58% { transform: translateX(-140%) skewX(-18deg); }
-          100% { transform: translateX(260%) skewX(-18deg); }
-        }
-        .chat-tab-attention {
-          animation: chatTabNudge 8s ease-in-out infinite;
-        }
-        .chat-tab-shimmer::after {
-          content: '';
-          position: absolute;
-          top: 0;
-          bottom: 0;
-          left: 0;
-          width: 42%;
-          pointer-events: none;
-          background: linear-gradient(90deg, transparent, rgba(255, 77, 46, 0.22), transparent);
-          animation: chatTabShimmer 5.2s ease-in-out infinite;
+        .ui-tactile:active {
+          transform: scale(0.97);
         }
         button:focus-visible,
         a:focus-visible,
@@ -2438,48 +2437,50 @@ export default function HomePage() {
         </div>
       </header>
 
-      {/* MASAÜSTÜ MİMARİ ALT-ÇİZGİLİ NAVİGASYON */}
+      {/* MASAÜSTÜ SİMGE BUTONLU NAVİGASYON */}
       <nav className={`hidden sm:block border-b ${theme.card}`}>
-        <div className="max-w-5xl mx-auto px-6 flex items-center gap-1">
+        <div className="max-w-5xl mx-auto px-6 py-2 flex items-center gap-1.5">
           {[
-            { id: 'race', code: '01', tr: 'Yarış Tablosu', en: 'Leaderboard' },
-            { id: 'chat', code: '02', tr: 'Canlı Sohbet', en: 'Live Chat' },
-            { id: 'system', code: '03', tr: 'Sistem Testi', en: 'System Check' },
-            { id: 'news', code: '04', tr: 'Haber & DMCA', en: 'News & DMCA' },
+            { id: 'race', icon: Trophy, tr: 'Yarış Tablosu', en: 'Leaderboard' },
+            { id: 'chat', icon: MessageCircle, tr: 'Canlı Sohbet', en: 'Live Chat' },
+            { id: 'system', icon: Cpu, tr: 'Sistem Testi', en: 'System Check' },
+            { id: 'news', icon: Newspaper, tr: 'Haber & DMCA', en: 'News & DMCA' },
           ].map((tab) => {
+            const IconComp = tab.icon;
             const active = activeTab === tab.id;
-            const isChatAttention = tab.id === 'chat' && !active && !hasVisitedChat;
             return (
               <button
                 key={tab.id}
                 type="button"
                 onClick={() => handleSelectTab(tab.id)}
-                className={`relative flex items-center gap-2 py-3 px-4 text-xs font-bold tracking-wide transition-colors border-b-2 -mb-px ${
+                className={`ui-tactile relative inline-flex items-center gap-2 py-2 px-3.5 rounded-md text-xs font-semibold border ${
                   active
-                    ? `border-[#FF4D2E] ${isLight ? 'text-[#111113]' : 'text-white'}`
-                    : isChatAttention
-                      ? `overflow-hidden chat-tab-attention chat-tab-shimmer border-transparent ${isLight ? 'text-[#111113]' : 'text-zinc-200'} hover:border-zinc-500`
-                      : `border-transparent ${theme.muted} hover:${isLight ? 'text-[#111113]' : 'text-zinc-100'}`
+                    ? isLight
+                      ? 'bg-[#111113] text-white border-[#111113]'
+                      : 'bg-[#1E1E24] text-[#F4F4F6] border-[#383844]'
+                    : `border-transparent ${theme.muted} ${isLight ? 'hover:bg-[#EFECE4] hover:text-[#111113]' : 'hover:bg-[#19191F] hover:text-[#E8E8EC]'}`
                 }`}
               >
-                <span className={`font-tech text-[10px] ${active ? theme.accentText : 'opacity-50'}`}>
-                  {tab.code}
-                </span>
+                {active && (
+                  <span className="absolute bottom-0 inset-x-3 h-[2px] bg-[#FF4D2E] rounded-full" />
+                )}
+                <IconComp
+                  strokeWidth={1.75}
+                  className={`w-3.5 h-3.5 shrink-0 ${active ? theme.accentText : 'opacity-75'}`}
+                />
                 <span>{lang === 'tr' ? tab.tr : tab.en}</span>
-                {tab.id === 'chat' && !active && (
-                  <span className="relative flex h-1.5 w-1.5 shrink-0">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                    <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500" />
-                  </span>
-                )}
-                {tab.id === 'chat' && unreadWhileClosed > 0 && activeTab !== 'chat' && (
-                  <span className="font-tech px-1.5 py-0.5 rounded-sm text-[9px] font-bold bg-[#FF4D2E] text-white">
-                    +{unreadWhileClosed}
-                  </span>
-                )}
-                {tab.id === 'chat' && unreadWhileClosed === 0 && (
-                  <span className={`font-tech text-[10px] ${active ? theme.accentText : 'opacity-65'}`}>
-                    [{Math.max(chatActiveCount, chatOpen ? 1 : 0)}]
+                {tab.id === 'chat' && (
+                  <span className="inline-flex items-center gap-1.5 ml-0.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+                    {unreadWhileClosed > 0 && !active ? (
+                      <span className="font-tech px-1.5 py-0.2 rounded-sm text-[9px] font-bold bg-[#FF4D2E] text-white">
+                        +{unreadWhileClosed}
+                      </span>
+                    ) : (
+                      <span className={`font-tech text-[10px] ${active ? 'text-[#E8E8EC]/80' : 'opacity-70'}`}>
+                        {Math.max(chatActiveCount, chatOpen ? 1 : 0)}
+                      </span>
+                    )}
                   </span>
                 )}
               </button>
@@ -2639,7 +2640,7 @@ export default function HomePage() {
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
                       <span className={`font-tech text-[11px] font-bold ${pIdx === 0 ? theme.accentText : theme.muted}`}>
-                        0{pIdx + 1}
+                        #{pIdx + 1}
                       </span>
                       <span className="text-xs sm:text-sm font-bold truncate group-hover:underline">
                         {pTeam.name}
@@ -2676,33 +2677,37 @@ export default function HomePage() {
           const categoryMeta = (cat) => {
             if (cat === 'dmca') {
               return {
+                icon: Lock,
                 label: lang === 'tr' ? 'DMCA Radarı' : 'DMCA Radar',
                 cls: isLight
-                  ? 'bg-red-100 text-red-800 border-red-300'
-                  : 'bg-red-500/15 text-red-300 border-red-500/35',
+                  ? 'bg-red-50 text-red-700 border-red-200'
+                  : 'bg-red-500/10 text-red-300 border-red-500/25',
               };
             }
             if (cat === 'release') {
               return {
+                icon: Code2,
                 label: lang === 'tr' ? 'Sürüm & Kod' : 'Release & Code',
                 cls: isLight
-                  ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
-                  : 'bg-emerald-500/15 text-emerald-300 border-emerald-500/35',
+                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                  : 'bg-emerald-500/10 text-emerald-300 border-emerald-500/25',
               };
             }
             if (cat === 'community') {
               return {
+                icon: MessageCircle,
                 label: 'Reddit',
                 cls: isLight
-                  ? 'bg-orange-100 text-orange-800 border-orange-300'
-                  : 'bg-orange-500/15 text-orange-300 border-orange-500/35',
+                  ? 'bg-amber-50 text-amber-800 border-amber-200'
+                  : 'bg-amber-500/10 text-amber-300 border-amber-500/25',
               };
             }
             return {
+              icon: Newspaper,
               label: lang === 'tr' ? 'Basın' : 'Press',
               cls: isLight
-                ? 'bg-sky-100 text-sky-800 border-sky-300'
-                : 'bg-sky-500/15 text-sky-300 border-sky-500/35',
+                ? 'bg-sky-50 text-sky-700 border-sky-200'
+                : 'bg-sky-500/10 text-sky-300 border-sky-500/25',
             };
           };
 
@@ -2710,25 +2715,22 @@ export default function HomePage() {
             <section className="space-y-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
-                  <span className="relative flex h-2.5 w-2.5 shrink-0">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500" />
-                  </span>
-                  <h2 className="text-sm sm:text-base font-black tracking-wide">
-                    {lang === 'tr' ? 'CANLI SON GELİŞMELER & DMCA AKIŞI' : 'LIVE NEWS & DMCA FEED'}
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+                  <h2 className="text-sm sm:text-base font-bold tracking-tight">
+                    {lang === 'tr' ? 'Canlı Son Gelişmeler & DMCA Akışı' : 'Live News & DMCA Feed'}
                   </h2>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${theme.pill}`}>
-                    {lang === 'tr' ? 'TR Otomatik Akış' : 'EN Live Feed'}
+                  <span className={`font-tech text-[10px] font-medium px-2 py-0.5 rounded-sm border ${theme.pill}`}>
+                    {lang === 'tr' ? 'TR · OTOMATİK' : 'EN · AUTO'}
                   </span>
                   <button
                     type="button"
                     onClick={() => fetchLiveNewsFeed(lang, true)}
                     disabled={newsFeedLoading}
-                    className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold border transition ${theme.pill} hover:opacity-85 disabled:opacity-50`}
+                    className={`ui-tactile inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-semibold border ${theme.pill} hover:border-[#FF4D2E]/60 disabled:opacity-50`}
                   >
-                    <RefreshCw className={`w-3 h-3 ${newsFeedLoading ? 'animate-spin' : ''}`} />
+                    <RefreshCw strokeWidth={1.75} className={`w-3 h-3 ${newsFeedLoading ? 'animate-spin' : ''}`} />
                     <span>{lang === 'tr' ? 'Yenile' : 'Refresh'}</span>
                   </button>
                 </div>
@@ -2736,24 +2738,28 @@ export default function HomePage() {
 
               <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar -mx-3 px-3 sm:mx-0 sm:px-0 pb-0.5">
                 {[
-                  { id: 'all', tr: 'Tümü', en: 'All', count: feedCounts.all },
-                  { id: 'press', tr: 'Basın', en: 'Press', count: feedCounts.press },
-                  { id: 'release', tr: 'Sürüm & Kod', en: 'Releases', count: feedCounts.release },
-                  { id: 'community', tr: 'Reddit', en: 'Reddit', count: feedCounts.community },
-                  { id: 'dmca', tr: 'DMCA Radarı', en: 'DMCA Radar', count: feedCounts.dmca },
+                  { id: 'all', icon: Globe, tr: 'Tümü', en: 'All', count: feedCounts.all },
+                  { id: 'press', icon: Newspaper, tr: 'Basın', en: 'Press', count: feedCounts.press },
+                  { id: 'release', icon: Code2, tr: 'Sürüm & Kod', en: 'Releases', count: feedCounts.release },
+                  { id: 'community', icon: MessageCircle, tr: 'Reddit', en: 'Reddit', count: feedCounts.community },
+                  { id: 'dmca', icon: Lock, tr: 'DMCA Radarı', en: 'DMCA Radar', count: feedCounts.dmca },
                 ].map((cat) => {
+                  const CatIcon = cat.icon;
                   const isCatActive = newsFeedCategory === cat.id;
                   return (
                     <button
                       key={cat.id}
                       type="button"
                       onClick={() => setNewsFeedCategory(cat.id)}
-                      className={`shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-extrabold border transition ${
-                        isCatActive ? `${theme.btnPrimary} border-transparent` : `${theme.card} ${theme.muted} hover:opacity-90`
+                      className={`ui-tactile shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-semibold border ${
+                        isCatActive
+                          ? `${theme.btnPrimary} border-transparent`
+                          : `${theme.card} ${theme.muted} ${isLight ? 'hover:text-[#111113] hover:border-[#B9B7AE]' : 'hover:text-[#E8E8EC] hover:border-[#383844]'}`
                       }`}
                     >
+                      <CatIcon strokeWidth={1.75} className="w-3.5 h-3.5 shrink-0" />
                       <span>{lang === 'tr' ? cat.tr : cat.en}</span>
-                      <span className={`text-[10px] font-black tabular-nums ${isCatActive ? 'opacity-90' : 'opacity-65'}`}>
+                      <span className={`font-tech text-[10px] ${isCatActive ? 'opacity-90' : 'opacity-65'}`}>
                         {cat.count}
                       </span>
                     </button>
@@ -2784,18 +2790,19 @@ export default function HomePage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
                   {filteredFeedItems.map((item) => {
                     const meta = categoryMeta(item.category);
+                    const MetaIcon = meta.icon;
                     return (
                       <a
                         key={item.id}
                         href={item.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className={`group flex flex-col justify-between gap-2 rounded-md border p-3.5 transition hover:-translate-y-0.5 ${theme.card}`}
+                        className={`ui-tactile group flex flex-col justify-between gap-2 rounded-md border p-3.5 ${theme.card} ${theme.cardHover}`}
                       >
                         <div className="space-y-1.5">
                           <div className="flex items-center justify-between gap-2">
-                            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black border ${meta.cls}`}>
-                              <span className="w-1.5 h-1.5 rounded-full bg-current" />
+                            <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-sm text-[10px] font-semibold border ${meta.cls}`}>
+                              <MetaIcon strokeWidth={1.75} className="w-3 h-3 shrink-0" />
                               {meta.label}
                             </span>
                             <span className={`inline-flex items-center gap-1 text-[10px] font-semibold ${theme.muted}`}>
@@ -4718,21 +4725,16 @@ export default function HomePage() {
                   key={tab.id}
                   type="button"
                   onClick={() => handleSelectTab(tab.id)}
-                  className={`relative flex flex-col items-center justify-center gap-1 py-2.5 min-h-[52px] text-[10px] font-bold tracking-wide transition-colors border-t-2 -mt-px ${
+                  className={`ui-tactile relative flex flex-col items-center justify-center gap-1 py-2.5 min-h-[52px] text-[10px] font-semibold tracking-wide border-t-2 -mt-px ${
                     active
                       ? `border-[#FF4D2E] ${theme.accentText}`
-                      : isChatAttention
-                        ? `overflow-hidden chat-tab-attention chat-tab-shimmer border-transparent ${isLight ? 'text-[#111113]' : 'text-zinc-200'}`
-                        : `border-transparent ${theme.muted}`
+                      : `border-transparent ${theme.muted}`
                   }`}
                 >
                   {tab.id === 'chat' && !active && unreadWhileClosed === 0 && (
-                    <span className="absolute top-1 right-4 flex h-2 w-2">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                      <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
-                    </span>
+                    <span className="absolute top-2 right-5 w-1.5 h-1.5 rounded-full bg-emerald-500" />
                   )}
-                  <IconComp className="w-4 h-4 shrink-0" />
+                  <IconComp strokeWidth={1.75} className="w-4 h-4 shrink-0" />
                   <span>{lang === 'tr' ? tab.tr : tab.en}</span>
                   {tab.id === 'chat' && unreadWhileClosed > 0 && activeTab !== 'chat' && (
                     <span className="absolute top-0.5 right-3 px-1 rounded-full text-[8px] font-black bg-red-500 text-white">
