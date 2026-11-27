@@ -45,7 +45,7 @@ import {
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
-const APP_VERSION = 'v1.1.3';
+const APP_VERSION = 'v1.1.4';
 const CHAT_CACHE_PREFIX = 'gta6takip_chat_cache_';
 const INITIAL_TEAMS_LIMIT = 5;
 const CHAT_COOLDOWN_SEC = 30;
@@ -126,15 +126,15 @@ function getNickStyle(name, isLight) {
 }
 
 const IconAmd = ({ className = 'w-3.5 h-3.5 shrink-0' }) => (
-  <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-hidden="true">
-    <path d="M18.324 9.137L24 14.813V0H9.187l5.676 5.676h3.461v3.461zM14.813 18.324H5.676V9.187L0 14.863V24h9.137l5.676-5.676z" />
-  </svg>
+  &lt;svg viewBox=&quot;0 0 24 24&quot; className={className} fill=&quot;currentColor&quot; aria-hidden=&quot;true&quot;&gt;
+    &lt;path d=&quot;M18.324 9.137L24 14.813V0H9.187l5.676 5.676h3.461v3.461zM14.813 18.324H5.676V9.187L0 14.863V24h9.137l5.676-5.676z&quot; /&gt;
+  &lt;/svg&gt;
 );
 
 const IconNvidia = ({ className = 'w-3.5 h-3.5 shrink-0' }) => (
-  <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-hidden="true">
-    <path d="M8.948 8.798v-1.43a6.7 6.7 0 0 1 .424-.018c3.922-.124 6.493 3.374 6.493 3.374s-2.774 3.851-5.75 3.851c-.398 0-.787-.062-1.167-.185v-4.34a3.01 3.01 0 0 1 2.752 1.724l2.044-1.724s-1.494-1.959-4.012-1.959c-.269 0-.531.02-.784.051v.656zm0-4.366v1.894c.14-.011.281-.017.424-.022 5.475-.176 9.048 4.492 9.048 4.492s-4.093 4.976-8.353 4.976c-.379 0-.751-.035-1.119-.098v1.186c.309.04.626.063.95.063 3.963 0 6.83-2.022 9.603-4.416.459.369 2.341 1.265 2.725 1.658-2.633 2.203-8.765 3.979-12.244 3.979-.338 0-.67-.016-.994-.047v1.727H24V4.432H8.948zm0 9.95v1.298c-3.779-.673-4.827-4.597-4.827-4.597s1.815-2.011 4.827-2.326v1.282c-.008 0-.016-.001-.024-.001-1.579-.191-2.815 1.285-2.815 1.285s.692 2.482 2.839 3.059zM2.393 10.94s2.241-3.307 6.555-3.635V6.05C3.97 6.451 0 10.654 0 10.654s2.348 6.798 8.948 7.428v-1.307c-4.832-.608-6.555-5.835-6.555-5.835z" />
-  </svg>
+  &lt;svg viewBox=&quot;0 0 24 24&quot; className={className} fill=&quot;currentColor&quot; aria-hidden=&quot;true&quot;&gt;
+    &lt;path d=&quot;M8.948 8.798v-1.43a6.7 6.7 0 0 1 .424-.018c3.922-.124 6.493 3.374 6.493 3.374s-2.774 3.851-5.75 3.851c-.398 0-.787-.062-1.167-.185v-4.34a3.01 3.01 0 0 1 2.752 1.724l2.044-1.724s-1.494-1.959-4.012-1.959c-.269 0-.531.02-.784.051v.656zm0-4.366v1.894c.14-.011.281-.017.424-.022 5.475-.176 9.048 4.492 9.048 4.492s-4.093 4.976-8.353 4.976c-.379 0-.751-.035-1.119-.098v1.186c.309.04.626.063.95.063 3.963 0 6.83-2.022 9.603-4.416.459.369 2.341 1.265 2.725 1.658-2.633 2.203-8.765 3.979-12.244 3.979-.338 0-.67-.016-.994-.047v1.727H24V4.432H8.948zm0 9.95v1.298c-3.779-.673-4.827-4.597-4.827-4.597s1.815-2.011 4.827-2.326v1.282c-.008 0-.016-.001-.024-.001-1.579-.191-2.815 1.285-2.815 1.285s.692 2.482 2.839 3.059zM2.393 10.94s2.241-3.307 6.555-3.635V6.05C3.97 6.451 0 10.654 0 10.654s2.348 6.798 8.948 7.428v-1.307c-4.832-.608-6.555-5.835-6.555-5.835z&quot; /&gt;
+  &lt;/svg&gt;
 );
 
 const GpuBadgeIcons = ({ gpu, isLight }) => {
@@ -143,14 +143,14 @@ const GpuBadgeIcons = ({ gpu, isLight }) => {
   const hasNvidia = lower.includes('nvidia');
   if (!hasAmd && !hasNvidia) return null;
   return (
-    <span className="inline-flex items-center gap-1 shrink-0">
+    &lt;span className=&quot;inline-flex items-center gap-1 shrink-0&quot;&gt;
       {hasAmd && (
         <IconAmd className={`w-3 h-3 ${isLight ? 'text-[#c8102e]' : 'text-[#ff5c5c]'}`} />
       )}
       {hasNvidia && (
         <IconNvidia className={`w-3.5 h-3.5 ${isLight ? 'text-[#598c00]' : 'text-[#8ce000]'}`} />
       )}
-    </span>
+    &lt;/span&gt;
   );
 };
 
@@ -304,6 +304,21 @@ const FALLBACK_NEWS = [
 
 const CHANGELOG = [
   {
+    version: 'v1.1.4',
+    dateTr: '27 Kasım 2026',
+    dateEn: 'November 27, 2026',
+    itemsTr: [
+      'Yeni "Sistemim GTA 6 Portunu Açar mı?" aracı eklendi: RTX 3050 Ti, RTX 4060, RX 6700 XT gibi popüler GPU, VRAM ve RAM seçimleriyle anlık port uyumluluk değerlendirmesi.',
+      'Canlı Sohbette boşluklu ve rakamlı rumuz/küfür kaçakları kapatıldı, sunucu mesaj çekimi paralel hale getirildi.',
+      'PortWatch veri senkronizasyonundaki sunucu önbelleği kaldırılarak anlık güncelleme hızlandırıldı.',
+    ],
+    itemsEn: [
+      'Added interactive "Can My PC Run the GTA VI Port?" checker covering popular GPUs, VRAM, and RAM against live PortWatch hardware tests.',
+      'Hardened Live Chat profanity filter against spaced/phonetic nickname bypasses and parallelized server message fetching.',
+      'Eliminated server fetch caching in /api/sync so PortWatch updates reflect immediately.',
+    ],
+  },
+  {
     version: 'v1.1.3',
     dateTr: '27 Kasım 2026',
     dateEn: 'November 27, 2026',
@@ -390,34 +405,34 @@ const COUNTRY_FALLBACK_NAMES = {
 };
 
 const FlagTR = ({ className = 'w-4 h-3 rounded-[2px] shrink-0' }) => (
-  <svg viewBox="0 0 24 16" className={className} aria-hidden="true">
-    <rect width="24" height="16" fill="#E30A17" />
-    <circle cx="9.5" cy="8" r="4.2" fill="#FFFFFF" />
-    <circle cx="10.6" cy="8" r="3.4" fill="#E30A17" />
-    <polygon points="15.2,8 13.7,8.5 14.3,7 13.3,5.8 14.8,5.9" fill="#FFFFFF" />
-  </svg>
+  &lt;svg viewBox=&quot;0 0 24 16&quot; className={className} aria-hidden=&quot;true&quot;&gt;
+    &lt;rect width=&quot;24&quot; height=&quot;16&quot; fill=&quot;#E30A17&quot; /&gt;
+    &lt;circle cx=&quot;9.5&quot; cy=&quot;8&quot; r=&quot;4.2&quot; fill=&quot;#FFFFFF&quot; /&gt;
+    &lt;circle cx=&quot;10.6&quot; cy=&quot;8&quot; r=&quot;3.4&quot; fill=&quot;#E30A17&quot; /&gt;
+    &lt;polygon points=&quot;15.2,8 13.7,8.5 14.3,7 13.3,5.8 14.8,5.9&quot; fill=&quot;#FFFFFF&quot; /&gt;
+  &lt;/svg&gt;
 );
 
 const FlagUS = ({ className = 'w-4 h-3 rounded-[2px] shrink-0' }) => (
-  <svg viewBox="0 0 24 16" className={className} aria-hidden="true">
-    <rect width="24" height="16" fill="#B22234" />
-    <rect y="2" width="24" height="2" fill="#FFFFFF" />
-    <rect y="6" width="24" height="2" fill="#FFFFFF" />
-    <rect y="10" width="24" height="2" fill="#FFFFFF" />
-    <rect y="14" width="24" height="2" fill="#FFFFFF" />
-    <rect width="10" height="9" fill="#3C3B6E" />
-  </svg>
+  &lt;svg viewBox=&quot;0 0 24 16&quot; className={className} aria-hidden=&quot;true&quot;&gt;
+    &lt;rect width=&quot;24&quot; height=&quot;16&quot; fill=&quot;#B22234&quot; /&gt;
+    &lt;rect y=&quot;2&quot; width=&quot;24&quot; height=&quot;2&quot; fill=&quot;#FFFFFF&quot; /&gt;
+    &lt;rect y=&quot;6&quot; width=&quot;24&quot; height=&quot;2&quot; fill=&quot;#FFFFFF&quot; /&gt;
+    &lt;rect y=&quot;10&quot; width=&quot;24&quot; height=&quot;2&quot; fill=&quot;#FFFFFF&quot; /&gt;
+    &lt;rect y=&quot;14&quot; width=&quot;24&quot; height=&quot;2&quot; fill=&quot;#FFFFFF&quot; /&gt;
+    &lt;rect width=&quot;10&quot; height=&quot;9&quot; fill=&quot;#3C3B6E&quot; /&gt;
+  &lt;/svg&gt;
 );
 
 const CountryFlag = ({ code }) => {
   const [imgFailed, setImgFailed] = useState(false);
   const cc = String(code || '').trim().toLowerCase();
 
-  if (cc === 'tr') return <FlagTR className="w-5 h-3.5 rounded-[2px] shrink-0 shadow-sm" />;
-  if (cc === 'us') return <FlagUS className="w-5 h-3.5 rounded-[2px] shrink-0 shadow-sm" />;
+  if (cc === 'tr') return &lt;FlagTR className=&quot;w-5 h-3.5 rounded-[2px] shrink-0 shadow-sm&quot; /&gt;;
+  if (cc === 'us') return &lt;FlagUS className=&quot;w-5 h-3.5 rounded-[2px] shrink-0 shadow-sm&quot; /&gt;;
 
   if (!/^[a-z]{2}$/.test(cc) || imgFailed) {
-    return <Globe className="w-4 h-4 opacity-75 shrink-0" aria-hidden="true" />;
+    return &lt;Globe className=&quot;w-4 h-4 opacity-75 shrink-0&quot; aria-hidden=&quot;true&quot; /&gt;;
   }
   return (
     <img
@@ -505,15 +520,15 @@ function formatChatTime(iso) {
 }
 
 const IconX = () => (
-  <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 fill-current shrink-0" aria-hidden="true">
-    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-  </svg>
+  &lt;svg viewBox=&quot;0 0 24 24&quot; className=&quot;w-3.5 h-3.5 fill-current shrink-0&quot; aria-hidden=&quot;true&quot;&gt;
+    &lt;path d=&quot;M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z&quot; /&gt;
+  &lt;/svg&gt;
 );
 
 const IconWhatsApp = () => (
-  <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 fill-current shrink-0 text-emerald-400" aria-hidden="true">
-    <path d="M12.031 2c-5.516 0-9.969 4.453-9.969 9.969 0 1.766.469 3.484 1.344 5l-1.406 5.156 5.281-1.375c1.469.797 3.109 1.219 4.75 1.219 5.516 0 9.969-4.453 9.969-9.969S17.547 2 12.031 2zm5.813 14.125c-.25.703-1.438 1.344-2 1.422-.516.078-1.172.109-1.891-.125-.438-.141-1-.328-1.719-.641-3.016-1.297-4.984-4.328-5.141-4.531-.156-.203-1.234-1.641-1.234-3.125s.781-2.219 1.063-2.516c.281-.297.609-.375.813-.375.203 0 .406.016.578.016.188 0 .438-.078.688.516.25.609.859 2.094.938 2.25.078.156.125.344.031.547-.094.203-.156.328-.297.5-.141.172-.313.391-.438.516-.156.141-.313.297-.141.594.172.297.781 1.281 1.672 2.078 1.156 1.031 2.125 1.344 2.422 1.5.297.156.469.125.641-.078.172-.203.734-.859.938-1.156.203-.297.406-.25.672-.156.266.094 1.703.813 2 .953.297.156.484.219.563.344.078.125.078.719-.172 1.422z" />
-  </svg>
+  &lt;svg viewBox=&quot;0 0 24 24&quot; className=&quot;w-3.5 h-3.5 fill-current shrink-0 text-emerald-400&quot; aria-hidden=&quot;true&quot;&gt;
+    &lt;path d=&quot;M12.031 2c-5.516 0-9.969 4.453-9.969 9.969 0 1.766.469 3.484 1.344 5l-1.406 5.156 5.281-1.375c1.469.797 3.109 1.219 4.75 1.219 5.516 0 9.969-4.453 9.969-9.969S17.547 2 12.031 2zm5.813 14.125c-.25.703-1.438 1.344-2 1.422-.516.078-1.172.109-1.891-.125-.438-.141-1-.328-1.719-.641-3.016-1.297-4.984-4.328-5.141-4.531-.156-.203-1.234-1.641-1.234-3.125s.781-2.219 1.063-2.516c.281-.297.609-.375.813-.375.203 0 .406.016.578.016.188 0 .438-.078.688.516.25.609.859 2.094.938 2.25.078.156.125.344.031.547-.094.203-.156.328-.297.5-.141.172-.313.391-.438.516-.156.141-.313.297-.141.594.172.297.781 1.281 1.672 2.078 1.156 1.031 2.125 1.344 2.422 1.5.297.156.469.125.641-.078.172-.203.734-.859.938-1.156.203-.297.406-.25.672-.156.266.094 1.703.813 2 .953.297.156.484.219.563.344.078.125.078.719-.172 1.422z&quot; /&gt;
+  &lt;/svg&gt;
 );
 
 function localizeDynamicText(text, lang) {
@@ -635,6 +650,76 @@ function getNewsBadgeStyle(tagRaw, isLight) {
     : 'bg-red-500/20 text-red-300 border-red-400/50 shadow-[0_0_12px_rgba(248,113,113,0.5)] animate-pulse';
 }
 
+const GPU_PRESETS = [
+  { id: 'rx9070xt', label: 'AMD RX 9070 XT / 9070', vendor: 'amd', tier: 4, defaultVram: 16 },
+  { id: 'rx7900xtx', label: 'AMD RX 7900 XTX / 7900 XT', vendor: 'amd', tier: 4, defaultVram: 16 },
+  { id: 'rx7800xt', label: 'AMD RX 7800 XT / 7700 XT', vendor: 'amd', tier: 3, defaultVram: 12 },
+  { id: 'rx6700xt', label: 'AMD RX 6800 / 6700 XT', vendor: 'amd', tier: 3, defaultVram: 12 },
+  { id: 'rx6600', label: 'AMD RX 6600 / 6600 XT', vendor: 'amd', tier: 2, defaultVram: 8 },
+  { id: 'rtx5080', label: 'NVIDIA RTX 5090 / 5080 / 5070', vendor: 'nvidia', tier: 4, defaultVram: 16 },
+  { id: 'rtx5060', label: 'NVIDIA RTX 5060 / 5060 Ti', vendor: 'nvidia', tier: 3, defaultVram: 12 },
+  { id: 'rtx4080', label: 'NVIDIA RTX 4090 / 4080 / 4070 Ti', vendor: 'nvidia', tier: 4, defaultVram: 16 },
+  { id: 'rtx4070', label: 'NVIDIA RTX 4070 / 4060 Ti', vendor: 'nvidia', tier: 3, defaultVram: 12 },
+  { id: 'rtx4060', label: 'NVIDIA RTX 4060 / 4050', vendor: 'nvidia', tier: 2, defaultVram: 8 },
+  { id: 'rtx3080', label: 'NVIDIA RTX 3080 / 3090', vendor: 'nvidia', tier: 3, defaultVram: 12 },
+  { id: 'rtx3060', label: 'NVIDIA RTX 3060 / 3060 Ti', vendor: 'nvidia', tier: 2, defaultVram: 8 },
+  { id: 'rtx3050', label: 'NVIDIA RTX 3050 / 3050 Ti', vendor: 'nvidia', tier: 1, defaultVram: 4 },
+  { id: 'rtx2060', label: 'NVIDIA RTX 2070 / 2060', vendor: 'nvidia', tier: 1, defaultVram: 6 },
+  { id: 'gtx1650', label: 'NVIDIA GTX 1660 / 1650 Ti / 1060', vendor: 'nvidia', tier: 1, defaultVram: 4 },
+  { id: 'igpu', label: 'Dahili GPU (Intel HD / UHD / Iris / Vega)', vendor: 'igpu', tier: 0, defaultVram: 4 },
+];
+
+function evaluateSystemForPort(gpuId, vramGb, ramGb, lang) {
+  const gpu = GPU_PRESETS.find((g) => g.id === gpuId) || GPU_PRESETS[12];
+  const isTr = lang === 'tr';
+
+  if (gpu.tier === 0 || vramGb <= 6) {
+    return {
+      level: 'low',
+      badge: isTr ? 'Şu An Portlarda Yetersiz' : 'Not Enough for Current Ports',
+      fps: isTr ? 'Açılmaz / Çökme Riski' : 'Won’t Boot / Crash Likely',
+      text: isTr
+        ? `Mevcut resmi olmayan portlar henüz optimize olmadığı için 12+ GB VRAM ve 30+ GB RAM tüketiyor. ${gpu.label} (${vramGb} GB VRAM, ${ramGb} GB RAM) ile oyun dünyasına girerken bellek taşması/çökme yaşanır. Resmi PC sürümü çıktığında çok daha düşük gereksinimlerle optimize edilecektir.`
+        : `Current unofficial ports are unoptimized and consume 12+ GB VRAM and 30+ GB RAM. With ${gpu.label} (${vramGb} GB VRAM, ${ramGb} GB RAM), crashes or out-of-memory errors are expected in-world. The official PC release will be far better optimized.`,
+      watchTeam: gpu.vendor === 'amd' ? 'Belobug / AvatarManz' : 'Kelvaroq / hyphennn',
+    };
+  }
+
+  if (vramGb <= 8 || ramGb <= 16) {
+    return {
+      level: 'mid',
+      badge: isTr ? 'Sınırda · Menü / İlk Sahne' : 'Borderline · Menu / First Scene',
+      fps: isTr ? 'Tahmini 3–10 FPS' : 'Est. 3–10 FPS',
+      text: isTr
+        ? `${gpu.label} (${vramGb} GB VRAM, ${ramGb} GB RAM) ile ana menü ve ilk iç mekân sahneleri denenebilir; ancak 16 GB RAM ve 8 GB VRAM şu an açık dünyada ciddi takılma ve bellek sınırı yaratıyor. Bellek optimizasyonu güncellemelerini beklemek en sağlıklısı.`
+        : `${gpu.label} (${vramGb} GB VRAM, ${ramGb} GB RAM) may reach menus or early indoor scenes, but 8 GB VRAM / 16 GB RAM hits heavy memory limits in open world right now. Wait for memory optimization updates.`,
+      watchTeam: gpu.vendor === 'amd' ? 'Belobug / AvatarManz (AMD)' : 'Kelvaroq / hyphennn (NVIDIA)',
+    };
+  }
+
+  if (gpu.vendor === 'amd') {
+    return {
+      level: 'high',
+      badge: isTr ? 'En Uyumlu Profil (AMD)' : 'Best Match (AMD)',
+      fps: gpu.tier >= 4 ? (isTr ? 'Tahmini 16–22+ FPS' : 'Est. 16–22+ FPS') : (isTr ? 'Tahmini 10–16 FPS' : 'Est. 10–16 FPS'),
+      text: isTr
+        ? `Konsollar AMD RDNA2 mimarisi kullandığı için ${gpu.label} (${vramGb} GB VRAM, ${ramGb} GB RAM) şu an port yarışında en avantajlı yapı. Açık kaynak lideri Belobug (22 FPS) ve AvatarManz (16 FPS) doğrudan bu donanım sınıfında test ediliyor.`
+        : `Because consoles use AMD RDNA2 graphics, ${gpu.label} (${vramGb} GB VRAM, ${ramGb} GB RAM) is currently the strongest hardware match. Open-source leaders Belobug (22 FPS) and AvatarManz (16 FPS) target this exact tier.`,
+      watchTeam: 'Belobug / AvatarManz (AMD)',
+    };
+  }
+
+  return {
+    level: 'good',
+    badge: isTr ? 'Oynanabilir Seviye (NVIDIA)' : 'Playable Tier (NVIDIA)',
+    fps: gpu.tier >= 4 ? (isTr ? 'Tahmini 12–24 FPS' : 'Est. 12–24 FPS') : (isTr ? 'Tahmini 8–15 FPS' : 'Est. 8–15 FPS'),
+    text: isTr
+      ? `${gpu.label} (${vramGb} GB VRAM, ${ramGb} GB RAM) bellek eşiğini rahatça karşılıyor. NVIDIA kartlarda ekstra RDNA2→DXIL shader dönüşümü gerektiği için AMD'ye kıyasla biraz daha değişken FPS görülse de Kelvaroq ve RTX 50 serisi testleri hızla ilerliyor.`
+      : `${gpu.label} (${vramGb} GB VRAM, ${ramGb} GB RAM) comfortably clears current memory demands. NVIDIA requires extra RDNA2-to-DXIL shader translation, so FPS varies more than AMD, though Kelvaroq and RTX 50-series builds are advancing quickly.`,
+    watchTeam: 'Kelvaroq / darkworldhm (NVIDIA)',
+  };
+}
+
 export default function HomePage() {
   const [lang, setLang] = useState('tr');
   const [themeKey, setThemeKey] = useState('vice');
@@ -649,6 +734,10 @@ export default function HomePage() {
   const [teamSearch, setTeamSearch] = useState('');
   const [showAllTeams, setShowAllTeams] = useState(false);
   const [compactView, setCompactView] = useState(false);
+  const [sysCheckOpen, setSysCheckOpen] = useState(false);
+  const [sysGpu, setSysGpu] = useState('rtx3050');
+  const [sysVram, setSysVram] = useState(4);
+  const [sysRam, setSysRam] = useState(16);
 
   const [chatOpen, setChatOpen] = useState(false);
   const chatOpenRef = useRef(false);
@@ -1664,27 +1753,27 @@ export default function HomePage() {
       <div className={`absolute right-0 mt-1.5 w-52 rounded-xl border p-2 shadow-2xl z-50 space-y-1 ${theme.menuBg}`}>
         <div className={`px-2 py-1 text-[10px] font-bold uppercase tracking-wider ${theme.muted}`}>
           {lang === 'tr' ? 'Bağlı Ülkeler' : 'Connected Countries'}
-        </div>
+        &lt;/div&gt;
         {countryStats.map((c) => (
           <div
             key={c.code}
             className={`flex items-center justify-between px-2 py-1.5 rounded-lg text-xs font-semibold ${theme.subCard}`}
           >
-            <span className="inline-flex items-center gap-2 min-w-0">
-              <CountryFlag code={c.code} />
-              <span className="truncate">{getCountryLabel(c.code, lang)}</span>
-            </span>
-            <span className={`font-black shrink-0 ${theme.accentText}`}>{c.count}</span>
-          </div>
+            &lt;span className=&quot;inline-flex items-center gap-2 min-w-0&quot;&gt;
+              &lt;CountryFlag code={c.code} /&gt;
+              &lt;span className=&quot;truncate&quot;&gt;{getCountryLabel(c.code, lang)}&lt;/span&gt;
+            &lt;/span&gt;
+            <span className={`font-black shrink-0 ${theme.accentText}`}>{c.count}&lt;/span&gt;
+          &lt;/div&gt;
         ))}
-      </div>
+      &lt;/div&gt;
     );
 
   const isEnRoom = chatRoom === 'en';
 
   return (
     <div className={`min-h-screen transition-colors duration-300 ${theme.bg}`}>
-      <style>{`
+      &lt;style&gt;{`
         @keyframes feedbackNudge {
           0%, 76%, 100% { transform: translateY(0) rotate(0deg); }
           80% { transform: translateY(-7px) rotate(-2.5deg); }
@@ -1725,7 +1814,7 @@ export default function HomePage() {
         html::-webkit-scrollbar-button, body::-webkit-scrollbar-button, .gta-scroll::-webkit-scrollbar-button {
           display: none;
         }
-      `}</style>
+      `}&lt;/style&gt;
 
       <header className={`sticky top-0 z-40 border-b backdrop-blur-md ${theme.card}`}>
         <div className="max-w-4xl mx-auto px-3 sm:px-5 py-2 sm:py-2.5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
@@ -2071,6 +2160,132 @@ export default function HomePage() {
             <span className={`px-2 py-0.5 rounded-md font-medium ${theme.softChip}`}>RTX 4070: 3-10 FPS</span>
             <span className={`px-2 py-0.5 rounded-md font-medium ${theme.softChip}`}>RTX 5060 Ti: 4 FPS</span>
           </div>
+        </section>
+
+        {/* SİSTEMİM GTA 6 PORTUNU AÇAR MI? (CANLI UYUMLULUK TESTİ) */}
+        <section className={`rounded-2xl border overflow-hidden ${theme.card}`}>
+          <button
+            type="button"
+            onClick={() => setSysCheckOpen((v) => !v)}
+            className="w-full px-4 py-3 flex items-center justify-between gap-2 text-left hover:bg-white/5 transition"
+          >
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <Cpu className={`w-4 h-4 ${theme.accentText} shrink-0`} />
+              <span className="text-xs sm:text-sm font-black tracking-tight">
+                {lang === 'tr' ? 'Sistemim GTA 6 Portunu Açar mı?' : 'Can My PC Run the GTA VI Port?'}
+              </span>
+              <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${theme.softChip}`}>
+                {lang === 'tr' ? 'GPU · VRAM · RAM Testi' : 'GPU · VRAM · RAM Check'}
+              </span>
+            </div>
+            {sysCheckOpen ? (
+              <ChevronUp className="w-4 h-4 shrink-0 opacity-80" />
+            ) : (
+              <ChevronDown className="w-4 h-4 shrink-0 opacity-80" />
+            )}
+          </button>
+
+          {sysCheckOpen && (() => {
+            const evalRes = evaluateSystemForPort(sysGpu, sysVram, sysRam, lang);
+            const badgeTone =
+              evalRes.level === 'high' || evalRes.level === 'good'
+                ? isLight
+                  ? 'bg-emerald-100 text-emerald-900 border-emerald-300'
+                  : 'bg-emerald-500/20 text-emerald-300 border-emerald-400/40'
+                : evalRes.level === 'mid'
+                  ? isLight
+                    ? 'bg-amber-100 text-amber-900 border-amber-300'
+                    : 'bg-amber-500/20 text-amber-300 border-amber-400/40'
+                  : isLight
+                    ? 'bg-red-100 text-red-900 border-red-300'
+                    : 'bg-red-500/20 text-red-300 border-red-400/40';
+
+            return (
+              <div className={`px-4 pb-4 pt-3 border-t space-y-3 text-xs ${theme.subCard}`}>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                  <div className="space-y-1">
+                    <label className={`block text-[11px] font-bold ${theme.muted}`}>
+                      {lang === 'tr' ? 'Ekran Kartı (GPU)' : 'Graphics Card (GPU)'}
+                    </label>
+                    <select
+                      value={sysGpu}
+                      onChange={(e) => {
+                        const nextId = e.target.value;
+                        setSysGpu(nextId);
+                        const preset = GPU_PRESETS.find((g) => g.id === nextId);
+                        if (preset) setSysVram(preset.defaultVram);
+                      }}
+                      className={`w-full rounded-xl border px-2.5 py-2 text-xs font-semibold outline-none ${theme.menuBg}`}
+                    >
+                      {GPU_PRESETS.map((g) => (
+                        <option key={g.id} value={g.id}>
+                          {g.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className={`block text-[11px] font-bold ${theme.muted}`}>VRAM</label>
+                    <select
+                      value={sysVram}
+                      onChange={(e) => setSysVram(Number(e.target.value))}
+                      className={`w-full rounded-xl border px-2.5 py-2 text-xs font-semibold outline-none ${theme.menuBg}`}
+                    >
+                      {[4, 6, 8, 12, 16].map((v) => (
+                        <option key={v} value={v}>
+                          {v === 16 ? '16 GB+' : `${v} GB`}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className={`block text-[11px] font-bold ${theme.muted}`}>
+                      {lang === 'tr' ? 'Sistem RAM' : 'System RAM'}
+                    </label>
+                    <select
+                      value={sysRam}
+                      onChange={(e) => setSysRam(Number(e.target.value))}
+                      className={`w-full rounded-xl border px-2.5 py-2 text-xs font-semibold outline-none ${theme.menuBg}`}
+                    >
+                      {[8, 16, 32, 64].map((r) => (
+                        <option key={r} value={r}>
+                          {r === 64 ? '64 GB+' : `${r} GB`}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className={`rounded-xl border p-3.5 space-y-2 ${theme.card}`}>
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-black border ${badgeTone}`}>
+                      {evalRes.badge}
+                    </span>
+                    <span className={`inline-flex items-center gap-1 text-xs font-black ${theme.accentText}`}>
+                      <Monitor className="w-3.5 h-3.5" />
+                      {evalRes.fps}
+                    </span>
+                  </div>
+                  <p className={`leading-relaxed ${theme.muted}`}>{evalRes.text}</p>
+                  <div className="flex items-center justify-between gap-2 flex-wrap pt-1 text-[11px]">
+                    <span>
+                      <strong className={theme.accentText}>
+                        {lang === 'tr' ? 'Takip Edilecek Hat: ' : 'Recommended Track: '}
+                      </strong>
+                      <span className="font-semibold">{evalRes.watchTeam}</span>
+                    </span>
+                    <span className={`opacity-75 ${theme.muted}`}>
+                      {lang === 'tr'
+                        ? '*Resmi olmayan PortWatch testlerine dayalı tahmindir.'
+                        : '*Estimate based on unofficial PortWatch tests.'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
         </section>
 
         {/* AKTİF EKİPLER — MOBİLDE SIKI TEK ŞERİT FİLTRE, MASAÜSTÜNDE 2 SATIR */}
