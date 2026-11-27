@@ -2,6 +2,7 @@ import crypto from 'crypto';
 import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
+export const fetchCache = 'force-no-store';
 
 const COOLDOWN_SECONDS = 30;
 const COOLDOWN_MS = COOLDOWN_SECONDS * 1000;
@@ -206,7 +207,7 @@ function containsLink(raw) {
 }
 
 const STRICT_SUBSTRING_ROOTS = [
-  'siktir', 'sikim', 'sikeyim', 'sikerim', 'sikis', 'siken', 'sikik', 'siktig',
+  'siktir', 'sikim', 'sikeyim', 'sikerim', 'sikis', 'siken', 'sikik', 'siktig', 'sikici',
   'orospu', 'orosbu', 'ocu', 'piclik', 'kahpe', 'kaltak', 'yavsak',
   'yarrak', 'yarak', 'amcik', 'amina', 'amini', 'aminakoy',
   'gotveren', 'gotune', 'gotunu', 'gavat', 'pezevenk', 'ibne', 'ipne', 'pust',
@@ -235,6 +236,26 @@ const RESERVED_SUBSTRINGS = [
 ];
 
 function containsProfanity(raw) {
+  const cleanedRaw = stripInvisible(raw)
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/ı/g, 'i')
+    .replace(/ğ/g, 'g')
+    .replace(/ü/g, 'u')
+    .replace(/ş/g, 's')
+    .replace(/ö/g, 'o')
+    .replace(/ç/g, 'c');
+
+  // Boşluk veya noktalama ile bölünmüş ya da fonetik rakamlı kaçak küfürler (örn. "P iç", "S2ci", "s 2 k", "a m k")
+  if (/(?:^|[\s._-])p[\s._-]*[i1!|][\s._-]*c(?:$|[\s._-]|ler|lik|i|in|e)/i.test(cleanedRaw)) return true;
+  if (/(?:^|[\s._-])s[\s._-]*2[\s._-]*(?:ci|cu|k|m|s|y|tir)/i.test(cleanedRaw)) return true;
+  if (/(?:^|[\s._-])g[\s._-]*[o0][\s._-]*t(?:$|[\s._-]|u|un|ler|veren)/i.test(cleanedRaw)) return true;
+  if (/(?:^|[\s._-])s[\s._-]*[i1!|][\s._-]*k(?:$|[\s._-]|er|im|is|ik|tir|en|ici)/i.test(cleanedRaw)) return true;
+  if (/(?:^|[\s._-])[a4@][\s._-]*m[\s._-]*k(?:$|[\s._-])/i.test(cleanedRaw)) return true;
+  if (/(?:^|[\s._-])[o0][\s._-]*c(?:$|[\s._-])/i.test(cleanedRaw)) return true;
+  if (/(?:^|[\s._-])[a4@][\s._-]*q(?:$|[\s._-])/i.test(cleanedRaw)) return true;
+
   const norm = normalizeText(raw);
   const words = norm.split(/[^a-z]+/).filter(Boolean);
 
@@ -251,10 +272,6 @@ function containsProfanity(raw) {
   for (const root of STRICT_SUBSTRING_ROOTS) {
     if (squashed.includes(root) || squashedCollapsed.includes(root)) return true;
   }
-
-  if (/(?:^|\s)[a4]\s*[\.\-\*_]\s*m\s*[\.\-\*_]?\s*k(?:\s|$)/i.test(norm)) return true;
-  if (/(?:^|\s)o\s*[\.\-\*_]\s*c(?:\s|$)/i.test(norm)) return true;
-  if (/(?:^|\s)a\s*[\.\-\*_]\s*q(?:\s|$)/i.test(norm)) return true;
 
   return false;
 }
@@ -290,6 +307,7 @@ async function verifyTurnstileIfConfigured(token, ip) {
     const res = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
       method: 'POST',
       body: form,
+      signal: AbortSignal.timeout(5000),
     });
     const data = await res.json().catch(() => null);
     return Boolean(data?.success);
@@ -308,54 +326,59 @@ export async function GET(request) {
     const { searchParams } = new URL(request.url);
     const room = normalizeRoom(searchParams.get('room'));
 
-    let res = await fetch(
-      `${cfg.url}/rest/v1/chat_messages?select=id,nickname,message,created_at,reply_to_id,reply_to_nick,reply_to_text,room,role,reactions&room=eq.${room}&order=created_at.desc&limit=50`,
-      { headers: cfg.headers, cache: 'no-store' }
-    );
-
-    if (!res.ok) {
-      const errText = await res.text().catch(() => '');
-      if (errText.includes('reactions') || errText.includes('role')) {
-        res = await fetch(
-          `${cfg.url}/rest/v1/chat_messages?select=id,nickname,message,created_at,reply_to_id,reply_to_nick,reply_to_text,room&room=eq.${room}&order=created_at.desc&limit=50`,
-          { headers: cfg.headers, cache: 'no-store' }
-        );
-      } else {
-        return NextResponse.json(
-          { error: `Mesajlar yüklenemedi: ${errText.slice(0, 120)}`, messages: [] },
-          { status: 500 }
-        );
+    const fetchMessages = async () => {
+      let res = await fetch(
+        `${cfg.url}/rest/v1/chat_messages?select=id,nickname,message,created_at,reply_to_id,reply_to_nick,reply_to_text,room,role,reactions&room=eq.${room}&order=created_at.desc&limit=50`,
+        { headers: cfg.headers, cache: 'no-store', signal: AbortSignal.timeout(6500) }
+      );
+      if (!res.ok) {
+        const errText = await res.text().catch(() => '');
+        if (errText.includes('reactions') || errText.includes('role')) {
+          res = await fetch(
+            `${cfg.url}/rest/v1/chat_messages?select=id,nickname,message,created_at,reply_to_id,reply_to_nick,reply_to_text,room&room=eq.${room}&order=created_at.desc&limit=50`,
+            { headers: cfg.headers, cache: 'no-store', signal: AbortSignal.timeout(6500) }
+          );
+        } else {
+          return { ok: false, errText };
+        }
       }
-    }
+      if (!res.ok) {
+        const errText = await res.text().catch(() => '');
+        return { ok: false, errText };
+      }
+      const data = await res.json().catch(() => []);
+      return { ok: true, data: Array.isArray(data) ? data.reverse() : [] };
+    };
 
-    if (!res.ok) {
-      const errText = await res.text().catch(() => '');
+    const fetchPinned = async () => {
+      try {
+        const pinRes = await fetch(
+          `${cfg.url}/rest/v1/chat_pins?select=message,updated_by,updated_at&room=eq.${room}&limit=1`,
+          { headers: cfg.headers, cache: 'no-store', signal: AbortSignal.timeout(4500) }
+        );
+        if (pinRes.ok) {
+          const pinArr = await pinRes.json().catch(() => []);
+          if (Array.isArray(pinArr) && pinArr[0]?.message) {
+            return pinArr[0];
+          }
+        }
+      } catch {
+        // chat_pins yavaşlasa veya yoksa sohbeti engelleme
+      }
+      return null;
+    };
+
+    const [msgResult, pinned] = await Promise.all([fetchMessages(), fetchPinned()]);
+
+    if (!msgResult.ok) {
       return NextResponse.json(
-        { error: `Mesajlar yüklenemedi: ${errText.slice(0, 120)}`, messages: [] },
+        { error: `Mesajlar yüklenemedi: ${String(msgResult.errText || '').slice(0, 120)}`, messages: [] },
         { status: 500 }
       );
     }
 
-    const data = await res.json().catch(() => []);
-
-    let pinned = null;
-    try {
-      const pinRes = await fetch(
-        `${cfg.url}/rest/v1/chat_pins?select=message,updated_by,updated_at&room=eq.${room}&limit=1`,
-        { headers: cfg.headers, cache: 'no-store' }
-      );
-      if (pinRes.ok) {
-        const pinArr = await pinRes.json().catch(() => []);
-        if (Array.isArray(pinArr) && pinArr[0]?.message) {
-          pinned = pinArr[0];
-        }
-      }
-    } catch {
-      // chat_pins tablosu yoksa sessizce geç
-    }
-
     return NextResponse.json(
-      { messages: Array.isArray(data) ? data.reverse() : [], room, pinned },
+      { messages: msgResult.data, room, pinned },
       { status: 200 }
     );
   } catch {
