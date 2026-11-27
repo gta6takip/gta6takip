@@ -39,10 +39,13 @@ import {
   Search,
   List,
   LayoutGrid,
+  Monitor,
+  Crown,
+  BarChart3,
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
-const APP_VERSION = 'v1.1.0';
+const APP_VERSION = 'v1.1.1';
 const INITIAL_TEAMS_LIMIT = 5;
 const CHAT_COOLDOWN_SEC = 30;
 const CHAT_COOLDOWN_KEY = 'gta6takip_chat_cooldown_until';
@@ -132,6 +135,23 @@ const IconNvidia = ({ className = 'w-3.5 h-3.5 shrink-0' }) => (
     <path d="M8.948 8.798v-1.43a6.7 6.7 0 0 1 .424-.018c3.922-.124 6.493 3.374 6.493 3.374s-2.774 3.851-5.75 3.851c-.398 0-.787-.062-1.167-.185v-4.34a3.01 3.01 0 0 1 2.752 1.724l2.044-1.724s-1.494-1.959-4.012-1.959c-.269 0-.531.02-.784.051v.656zm0-4.366v1.894c.14-.011.281-.017.424-.022 5.475-.176 9.048 4.492 9.048 4.492s-4.093 4.976-8.353 4.976c-.379 0-.751-.035-1.119-.098v1.186c.309.04.626.063.95.063 3.963 0 6.83-2.022 9.603-4.416.459.369 2.341 1.265 2.725 1.658-2.633 2.203-8.765 3.979-12.244 3.979-.338 0-.67-.016-.994-.047v1.727H24V4.432H8.948zm0 9.95v1.298c-3.779-.673-4.827-4.597-4.827-4.597s1.815-2.011 4.827-2.326v1.282c-.008 0-.016-.001-.024-.001-1.579-.191-2.815 1.285-2.815 1.285s.692 2.482 2.839 3.059zM2.393 10.94s2.241-3.307 6.555-3.635V6.05C3.97 6.451 0 10.654 0 10.654s2.348 6.798 8.948 7.428v-1.307c-4.832-.608-6.555-5.835-6.555-5.835z" />
   </svg>
 );
+
+const GpuBadgeIcons = ({ gpu, isLight }) => {
+  const lower = String(gpu || '').toLowerCase();
+  const hasAmd = lower.includes('amd');
+  const hasNvidia = lower.includes('nvidia');
+  if (!hasAmd && !hasNvidia) return null;
+  return (
+    <span className="inline-flex items-center gap-1 shrink-0">
+      {hasAmd && (
+        <IconAmd className={`w-3 h-3 ${isLight ? 'text-[#c8102e]' : 'text-[#ff5c5c]'}`} />
+      )}
+      {hasNvidia && (
+        <IconNvidia className={`w-3.5 h-3.5 ${isLight ? 'text-[#598c00]' : 'text-[#8ce000]'}`} />
+      )}
+    </span>
+  );
+};
 
 const THEMES = {
   vice: {
@@ -260,8 +280,6 @@ const FALLBACK_TEAMS = [
     stage: 'Oynanabilir • Hikâye %80',
     updatedAt: '2026-11-26T00:57:17Z',
     url: 'https://github.com/Belobug/VIctory-Belobug-AMD',
-    summaryTr: 'Belobug şu an %91.3 ile genel lider · 22 FPS · AMD (hikâye ilerlemesi %80, görüntü kalitesi %80). Açık kaynak (Belobug/VIctory-Belobug-AMD).',
-    summaryEn: 'Belobug leads at 91.3% (22 FPS, AMD, 80% story, 80% rendering) as an open-source VIctory fork on GitHub.',
   },
   { name: 'CGBJ', progress: 89.6, fps: '25 FPS', gpu: 'Özel Yapı', type: 'private', stage: 'Oynanabilir • Hikâye %80', updatedAt: '2026-11-26', url: 'https://portwatch-vi.xyz/#race' },
   { name: 'NotNozy', progress: 87.1, fps: '16 FPS', gpu: 'AMD', type: 'private', stage: 'Oynanabilir • Hikâye %80', updatedAt: '2026-11-26', url: 'https://portwatch-vi.xyz/#race' },
@@ -285,18 +303,31 @@ const FALLBACK_NEWS = [
 
 const CHANGELOG = [
   {
+    version: 'v1.1.1',
+    dateTr: '27 Kasım 2026',
+    dateEn: 'November 27, 2026',
+    itemsTr: [
+      'Üst özet kartına %100 hedef halkası, istatistik simgeli "İlk 3 Ort." rozeti ve kral taçlı parlayan Zirve Lider vurgusu eklendi.',
+      'Ekip kartlarında CANLI yazısı kaldırılıp her geliştiricinin başına yavaşça yanıp sönen kırmızı nokta eklendi; HOT yalnızca #1 liderde kaldı.',
+      'FPS etiketlerine ekran (monitör) simgesi, AMD/NVIDIA kartlarına marka logoları eklendi ve #1 liderin Aşama Özeti oyuncu dilinde sadeleştirildi.',
+    ],
+    itemsEn: [
+      'Added a 100% circular progress ring, stats-badged Top-3 Average, and glowing crowned Top Leader to the hero summary card.',
+      'Replaced the flashing LIVE badge with a gentle slow-pulsing red dot next to every team; kept HOT exclusive to #1.',
+      'Added monitor icons for FPS, brand logos for AMD/NVIDIA cards, and a clearer gamer-friendly Stage Summary for #1.',
+    ],
+  },
+  {
     version: 'v1.1.0',
     dateTr: '27 Kasım 2026',
     dateEn: 'November 27, 2026',
     itemsTr: [
       'Arayüz Cilası: Aktif Ekipler başlık ve arama çubuğu sıfır kaymalı 2 satırlı düzene alındı; tek tıkla "Kompakt / Detaylı" görünüm geçişi eklendi.',
       'Masaüstü ve mobilde varsayılan İlk 5 ekip + "Tüm Ekipleri Göster" butonuyla Canlı Sohbete ve SSS bölümüne erişim çok daha rahat hale getirildi.',
-      'Ekip kartlarındaki ikincil etiketler sadeleştirildi ve üst özet kartına nefes alanı eklendi.',
     ],
     itemsEn: [
       'UI Polish: Moved Active Efforts header, search, and filters to a rock-solid 2-row layout and added a Compact / Detailed view toggle.',
       'Defaulted both desktop and mobile to Top 5 teams with a "Show All Teams" toggle for quicker access to Live Chat and FAQ.',
-      'Softened secondary badge borders on team cards and improved top hero card spacing.',
     ],
   },
   {
@@ -306,25 +337,10 @@ const CHANGELOG = [
     itemsTr: [
       'Canlı Sohbette kullanıcı adına tıklayarak @etiketle akışı düzeltildi; emoji tepkileri tarayıcıda kalıcı hale getirilip sunucuda hız sınırıyla korundu.',
       'Sekme arka plandayken 120sn otomatik veri yenilemesini duraklatan performans optimizasyonu eklendi.',
-      'Aktif Ekipler bölümüne hızlı isim / GPU arama kutusu eklendi.',
     ],
     itemsEn: [
       'Fixed click-to-@mention in Live Chat; persisted emoji reactions locally and added server-side reaction rate limiting.',
       'Paused 120s auto-sync while tab is in the background to cut server load and save battery.',
-      'Added a compact team / GPU search input to Active Efforts.',
-    ],
-  },
-  {
-    version: 'v1.0.49',
-    dateTr: '27 Kasım 2026',
-    dateEn: 'November 27, 2026',
-    itemsTr: [
-      'Canlı Sohbete sabitlenmiş duyuru şeridi, mini emoji tepkileri (🔥 👍 😂) ve kapalıyken okunmamış mesaj sayacı eklendi.',
-      'Sunucuya isteğe bağlı Cloudflare Turnstile bot doğrulama desteği eklendi.',
-    ],
-    itemsEn: [
-      'Added pinned announcement banner, mini emoji reactions (🔥 👍 😂), and unread badge when chat is collapsed.',
-      'Added optional server-side Cloudflare Turnstile bot verification support.',
     ],
   },
 ];
@@ -525,6 +541,29 @@ function localizeDynamicText(text, lang) {
     .replace(/%(\d+(?:[.,]\d+)?)/g, '$1%');
 }
 
+function buildLeaderSummary(team, lang) {
+  const fpsStr = localizeDynamicText(team.fps || '—', lang);
+  const gpuStr = team.gpu ? localizeDynamicText(team.gpu, lang) : '';
+  const stageStr = team.stage ? localizeDynamicText(team.stage, lang) : '';
+  const isOpen = team.type !== 'private';
+
+  if (lang === 'tr') {
+    const gpuPhrase = gpuStr ? `${gpuStr} ekran kartlarında ` : '';
+    const openPhrase = isOpen
+      ? 'Kodları GitHub üzerinden herkese açık geliştiriliyor'
+      : 'Şu an kapalı (özel) bir geliştirme yapısı olarak ilerliyor';
+    const stagePhrase = stageStr ? ` (${stageStr})` : '';
+    return `${team.name}, %${team.progress} ilerleme ile şu an yarışta 1. sırada. Oyun ${gpuPhrase}ortalama ${fpsStr} civarında oynanabiliyor${stagePhrase} — yani siyah ekran ve çökme dönemi geride kaldı. ${openPhrase}; ancak herkesin tek tıkla kurup sorunsuz oynayabileceği stabil 30+ FPS seviyesine henüz ulaşılmadı.`;
+  }
+
+  const gpuPhraseEn = gpuStr ? `on ${gpuStr} GPUs ` : '';
+  const openPhraseEn = isOpen
+    ? 'Its source code is publicly developed on GitHub'
+    : 'It is currently developed as a private build';
+  const stagePhraseEn = stageStr ? ` (${stageStr})` : '';
+  return `${team.name} leads the race at ${team.progress}%. GTA VI runs ${gpuPhraseEn}at around ${fpsStr}${stagePhraseEn}, meaning actual gameplay is working past menus and crashes. ${openPhraseEn}, though a smooth, public 30+ FPS build for everyone is still ahead.`;
+}
+
 function cleanNestedParens(text) {
   return String(text || '').replace(/\(([^()]+)\s*\(([^()]+)\)\)/g, '($1 · $2)');
 }
@@ -644,14 +683,6 @@ export default function HomePage() {
 
   const onlineDotClass = isLight ? 'bg-emerald-600' : 'bg-emerald-400';
 
-  const liveBadgeClass = isLight
-    ? 'bg-red-100 text-red-800 border-red-300 animate-pulse'
-    : 'bg-red-500/20 text-red-300 border-red-400/50 shadow-[0_0_12px_rgba(248,113,113,0.55)] animate-pulse';
-
-  const liveDotClass = isLight
-    ? 'bg-red-600'
-    : 'bg-red-400 shadow-[0_0_6px_rgba(248,113,113,0.9)]';
-
   const faqLiveBadgeClass = isLight
     ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
     : 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30';
@@ -659,6 +690,10 @@ export default function HomePage() {
   const dmcaBadgeClass = isLight
     ? 'bg-amber-100 text-amber-900 border-amber-300'
     : 'bg-amber-500/15 text-amber-400 border-amber-500/30';
+
+  const leaderGlowClass = isLight
+    ? 'text-amber-700 font-black drop-shadow-[0_0_6px_rgba(217,119,6,0.35)]'
+    : 'text-amber-300 font-black drop-shadow-[0_0_10px_rgba(251,191,36,0.75)]';
 
   const supabaseClient = useMemo(() => {
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -1389,6 +1424,12 @@ export default function HomePage() {
   const peakFps = useMemo(() => extractPeakFps(teams), [teams]);
   const fpsPct = Math.min(100, Math.round((peakFps / 30) * 100));
 
+  const leaderPct = Math.min(100, Math.max(0, Number(leader.progress) || 0));
+  const remainingPct = Math.max(0, 100 - leaderPct).toFixed(1).replace(/\.0$/, '');
+  const ringRadius = 26;
+  const ringCircumference = 2 * Math.PI * ringRadius;
+  const ringOffset = ringCircumference * (1 - leaderPct / 100);
+
   const rankedTeams = useMemo(
     () => teams.map((t, i) => ({ ...t, globalRank: i + 1 })),
     [teams]
@@ -1572,6 +1613,10 @@ export default function HomePage() {
           90% { transform: translateY(-4px) rotate(-1.5deg); }
           95% { transform: translateY(0) rotate(0deg); }
         }
+        @keyframes slowPulse {
+          0%, 100% { opacity: 1; transform: scale(1); }
+          50% { opacity: 0.3; transform: scale(0.84); }
+        }
         html, body, .gta-scroll {
           scrollbar-width: thin;
           scrollbar-color: ${theme.sbThumb} ${theme.sbTrack};
@@ -1719,30 +1764,73 @@ export default function HomePage() {
       </header>
 
       <main className="max-w-4xl mx-auto px-3 sm:px-5 py-5 space-y-5">
+        {/* ÜST ÖZET KARTI */}
         <section className={`rounded-2xl border p-4 sm:p-6 ${theme.card}`}>
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-5">
-            <div className="space-y-3 flex-1">
+            <div className="space-y-3.5 flex-1">
               <div className="flex items-center gap-2 flex-wrap">
                 <span className={`text-xs font-bold tracking-wider ${theme.accentText}`}>
-                  {lang === 'tr' ? 'GENEL İLERLEME · EN YAKIN YAPI' : 'OVERALL PROGRESS · CLOSEST EFFORT'}
+                  {lang === 'tr' ? 'GENEL İLERLEME' : 'OVERALL PROGRESS'}
                 </span>
                 <span className={`px-2 py-0.5 text-[11px] font-semibold rounded-full ${theme.softChip}`}>
                   {totalEfforts} {lang === 'tr' ? 'Girişim' : 'Tracked'} · {bootingCount} Boot
                 </span>
               </div>
 
-              <div className="flex items-baseline gap-3 flex-wrap">
-                <span className="text-3xl sm:text-4xl font-black tracking-tight">
-                  {lang === 'tr' ? `%${leader.progress}` : `${leader.progress}%`}
-                </span>
-                <span className={`text-sm font-semibold ${theme.muted}`}>
-                  {lang === 'tr' ? 'Lider:' : 'Leader:'}{' '}
-                  <strong className={theme.accentText}>{leader.name}</strong> ·{' '}
-                  {lang === 'tr' ? `İlk 3 ort. %${top3Avg}` : `Top-3 avg ${top3Avg}%`}
-                </span>
+              {/* Yüzde + %100 İlerleme Dairesi + İstatistik Rozeti */}
+              <div className="flex items-center gap-4 flex-wrap">
+                <div className="relative w-16 h-16 shrink-0 flex items-center justify-center">
+                  <svg viewBox="0 0 64 64" className="w-16 h-16 -rotate-90" aria-label={`%${leaderPct}`}>
+                    <circle
+                      cx="32"
+                      cy="32"
+                      r={ringRadius}
+                      fill="none"
+                      stroke="currentColor"
+                      strokeOpacity="0.14"
+                      strokeWidth="5.5"
+                    />
+                    <circle
+                      cx="32"
+                      cy="32"
+                      r={ringRadius}
+                      fill="none"
+                      stroke={theme.sparkStroke}
+                      strokeWidth="5.5"
+                      strokeLinecap="round"
+                      strokeDasharray={ringCircumference}
+                      strokeDashoffset={ringOffset}
+                    />
+                  </svg>
+                  <span className="absolute text-[10px] font-black tabular-nums opacity-85">
+                    /100
+                  </span>
+                </div>
+
+                <div className="space-y-1">
+                  <div className="flex items-baseline gap-2.5 flex-wrap">
+                    <span className="text-3xl sm:text-4xl font-black tracking-tight tabular-nums">
+                      {lang === 'tr' ? `%${leader.progress}` : `${leader.progress}%`}
+                    </span>
+                    <span className={`text-xs font-semibold ${theme.muted}`}>
+                      {lang === 'tr'
+                        ? `%100'e ${remainingPct} puan kaldı`
+                        : `${remainingPct}% left to 100%`}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold ${theme.softChip}`}>
+                      <BarChart3 className={`w-3.5 h-3.5 shrink-0 ${theme.accentText}`} />
+                      <span>
+                        {lang === 'tr' ? `İlk 3 Ort. %${top3Avg}` : `Top-3 Avg ${top3Avg}%`}
+                      </span>
+                    </span>
+                  </div>
+                </div>
               </div>
 
-              <div className="flex items-center gap-2 flex-wrap pt-1.5">
+              <div className="flex items-center gap-2 flex-wrap pt-1">
                 <div className={`inline-flex items-center gap-2 px-2.5 py-1.5 rounded-xl border text-xs ${theme.subCard}`}>
                   <Target className={`w-3.5 h-3.5 ${theme.accentText}`} />
                   <span className="font-semibold">
@@ -1758,11 +1846,11 @@ export default function HomePage() {
                 </div>
 
                 <div className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-xs ${theme.subCard}`}>
-                  <Flame className="w-3.5 h-3.5 text-amber-500" />
+                  <Crown className="w-3.5 h-3.5 text-amber-400 shrink-0 drop-shadow-[0_0_6px_rgba(251,191,36,0.75)]" />
                   <span className={theme.muted}>
                     {lang === 'tr' ? 'Zirve Lider:' : 'Top Leader:'}
                   </span>
-                  <span className="font-bold">{fastestTeam.name}</span>
+                  <span className={leaderGlowClass}>{fastestTeam.name}</span>
                   <span className={isLight ? 'text-emerald-700 font-bold' : 'text-emerald-400 font-bold'}>
                     {lang === 'tr' ? `%${fastestTeam.progress}` : `${fastestTeam.progress}%`}
                   </span>
@@ -2029,18 +2117,10 @@ export default function HomePage() {
           <div className={compactView ? 'space-y-1.5' : 'space-y-3'}>
             {visibleTeams.map((team) => {
               const rank = team.globalRank;
-              const isTop3 = rank <= 3;
               const isHot = rank === 1;
               const barWidth = Math.min(100, Math.max(2, team.progress));
               const updatedText = formatTeamUpdated(team.updatedAt || lastSyncAt, lang);
-              const leaderSummary =
-                rank === 1
-                  ? lang === 'tr'
-                    ? team.summaryTr ||
-                      `${team.name} şu an %${team.progress} ile genel lider (${localizeDynamicText(team.fps, 'tr')}).`
-                    : team.summaryEn ||
-                      `${team.name} currently leads at ${team.progress}% (${localizeDynamicText(team.fps, 'en')}).`
-                  : '';
+              const leaderSummary = rank === 1 ? buildLeaderSummary(team, lang) : '';
 
               if (compactView) {
                 return (
@@ -2058,13 +2138,20 @@ export default function HomePage() {
                       >
                         #{rank}
                       </span>
+                      <span
+                        className="w-2 h-2 rounded-full bg-red-500 shrink-0 shadow-[0_0_6px_rgba(239,68,68,0.75)]"
+                        style={{ animation: 'slowPulse 2.6s ease-in-out infinite' }}
+                        title={lang === 'tr' ? 'Canlı takip' : 'Live tracked'}
+                      />
                       <h3 className="text-sm font-extrabold tracking-tight truncate">{team.name}</h3>
-                      <span className={`px-2 py-0.5 rounded-md text-[10px] font-semibold ${theme.softChip}`}>
-                        {localizeDynamicText(team.fps, lang)}
+                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold ${theme.softChip}`}>
+                        <Monitor className="w-2.5 h-2.5 opacity-80 shrink-0" />
+                        <span>{localizeDynamicText(team.fps, lang)}</span>
                       </span>
                       {team.gpu && (
-                        <span className={`px-2 py-0.5 rounded-md text-[10px] font-medium ${theme.softChip}`}>
-                          {localizeDynamicText(team.gpu, lang)}
+                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium ${theme.softChip}`}>
+                          <GpuBadgeIcons gpu={team.gpu} isLight={isLight} />
+                          <span>{localizeDynamicText(team.gpu, lang)}</span>
                         </span>
                       )}
                       <span className={`text-[10px] ${theme.muted}`}>
@@ -2117,6 +2204,11 @@ export default function HomePage() {
                       >
                         #{rank}
                       </span>
+                      <span
+                        className="w-2 h-2 rounded-full bg-red-500 shrink-0 shadow-[0_0_8px_rgba(239,68,68,0.8)]"
+                        style={{ animation: 'slowPulse 2.6s ease-in-out infinite' }}
+                        title={lang === 'tr' ? 'Canlı takip' : 'Live tracked'}
+                      />
                       <h3 className="text-base sm:text-lg font-extrabold tracking-tight">
                         {team.name}
                       </h3>
@@ -2125,13 +2217,6 @@ export default function HomePage() {
                         <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black tracking-wider bg-gradient-to-r from-red-500 via-orange-500 to-amber-400 text-zinc-950 shadow-[0_0_16px_rgba(249,115,22,0.75)] animate-pulse">
                           <Flame className="w-3 h-3 fill-current" />
                           HOT
-                        </span>
-                      )}
-
-                      {isTop3 && (
-                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-black tracking-wider border ${liveBadgeClass}`}>
-                          <span className={`w-1.5 h-1.5 rounded-full ${liveDotClass}`} />
-                          {lang === 'tr' ? 'CANLI' : 'LIVE'}
                         </span>
                       )}
 
@@ -2176,12 +2261,14 @@ export default function HomePage() {
                   </div>
 
                   <div className="flex items-center gap-2 flex-wrap mt-2 text-xs">
-                    <span className={`px-2 py-0.5 rounded-md font-semibold ${theme.softChip}`}>
-                      {localizeDynamicText(team.fps, lang)}
+                    <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md font-semibold ${theme.softChip}`}>
+                      <Monitor className={`w-3.5 h-3.5 shrink-0 ${theme.accentText}`} />
+                      <span>{localizeDynamicText(team.fps, lang)}</span>
                     </span>
                     {team.gpu && (
-                      <span className={`px-2 py-0.5 rounded-md ${theme.softChip}`}>
-                        {localizeDynamicText(team.gpu, lang)}
+                      <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md font-semibold ${theme.softChip}`}>
+                        <GpuBadgeIcons gpu={team.gpu} isLight={isLight} />
+                        <span>{localizeDynamicText(team.gpu, lang)}</span>
                       </span>
                     )}
                     {team.stage && (
@@ -2220,7 +2307,7 @@ export default function HomePage() {
                   </div>
 
                   {leaderSummary && (
-                    <div className={`mt-3 rounded-xl border px-3 py-2 text-xs leading-relaxed flex items-start gap-2 ${theme.subCard}`}>
+                    <div className={`mt-3 rounded-xl border px-3.5 py-2.5 text-xs leading-relaxed flex items-start gap-2 ${theme.subCard}`}>
                       <Info className={`w-3.5 h-3.5 mt-0.5 shrink-0 ${theme.accentText}`} />
                       <p className={theme.muted}>
                         <strong className={theme.accentText}>
