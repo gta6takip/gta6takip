@@ -11,6 +11,8 @@ const TRACKER_URLS = [
 const SCARLETT_REPO = 'ZigZagBoi1/ScarlettPort';
 const SCARLETT_CACHE_TTL_MS = 5 * 60 * 1000;
 let scarlettCache = { ts: 0, data: null };
+const SLAKTARN_REPO = 'Slaktarn700/SlaktarnVI';
+let slaktarnCache = { ts: 0, data: null };
 
 function computePortWatchScore(effort) {
   const g = effort?.gta || {};
@@ -204,6 +206,97 @@ async function fetchScarlettPortLive() {
   return result;
 }
 
+
+function estimateSlaktarnFromReadme(readmeText) {
+  const text = String(readmeText || '');
+  const lower = text.toLowerCase();
+
+  // Linux/Proton + RX 9070 XT + FSR 4 + FG (19-25 FPS) bazlı PortWatch ölçeğine uyumlu tahmin
+  let fpsLow = 19;
+  let fpsHigh = 25;
+  const fpsRangeMatch = text.match(/(\d{2})\s*[-–]\s*(\d{2})\s*fps/i);
+  if (fpsRangeMatch) {
+    fpsLow = Number(fpsRangeMatch[1]) || 19;
+    fpsHigh = Number(fpsRangeMatch[2]) || 25;
+  }
+
+  const has30Steady = /steady\s*30\s*(?:real\s*)?fps[^.\n]*fixed/i.test(lower);
+  const hasRt = lower.includes('ray tracing') && !lower.includes('no ray tracing') && !lower.includes('off until 30');
+
+  let score = 50 + 0.5 * 17.5 + 0.7 * 12.5 + Math.min(1, fpsHigh / 30) * 10 + 0.45 * 10;
+  if (has30Steady) score += 4;
+  if (hasRt) score += 2.5;
+
+  // Bağımsız PortWatch doğrulaması henüz olmadığından konservatif tavan
+  const progress = Math.min(84, Math.round(score * 10) / 10);
+  const fps = fpsLow === fpsHigh ? `${fpsHigh} FPS` : `${fpsLow}-${fpsHigh} FPS`;
+  const stage = 'Oynanabilir • Linux / Proton';
+  return { progress, fps, stage };
+}
+
+async function fetchSlaktarnLive() {
+  const now = Date.now();
+  if (slaktarnCache.data && now - slaktarnCache.ts < SCARLETT_CACHE_TTL_MS) {
+    return slaktarnCache.data;
+  }
+
+  const headers = {
+    'User-Agent': 'Mozilla/5.0 (compatible; gta6takip/1.2)',
+    Accept: 'application/vnd.github+json',
+  };
+
+  let repoInfo = null;
+  let readmeText = '';
+
+  const [repoRes, readmeRes] = await Promise.allSettled([
+    fetch(`https://api.github.com/repos/${SLAKTARN_REPO}`, {
+      headers,
+      signal: AbortSignal.timeout(5000),
+      cache: 'no-store',
+    }),
+    fetch(`https://raw.githubusercontent.com/${SLAKTARN_REPO}/main/README.md?t=${now}`, {
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; gta6takip/1.2)' },
+      signal: AbortSignal.timeout(5000),
+      cache: 'no-store',
+    }),
+  ]);
+
+  if (repoRes.status === 'fulfilled' && repoRes.value.ok) {
+    repoInfo = await repoRes.value.json().catch(() => null);
+  }
+  if (readmeRes.status === 'fulfilled' && readmeRes.value.ok) {
+    readmeText = await readmeRes.value.text().catch(() => '');
+  }
+
+  const est = estimateSlaktarnFromReadme(readmeText);
+  const stars = Number(repoInfo?.stargazers_count) || 92;
+  const updatedAt = repoInfo?.pushed_at || new Date().toISOString();
+
+  const result = {
+    name: 'SlaktarnVI',
+    progress: est.progress,
+    fps: est.fps,
+    gpu: 'AMD',
+    type: 'open',
+    stage: est.stage,
+    delta: '',
+    url: `https://github.com/${SLAKTARN_REPO}`,
+    repo: SLAKTARN_REPO,
+    tier: 'tracked',
+    updatedAt,
+    stars,
+    isEstimated: true,
+    hasLauncher: false,
+    platformTag: 'Linux / Proton',
+    summaryTr: `SlaktarnVI (Valhalla), Linux / Steam Proton üzerinde AMD RX 9070 XT için optimize edilen açık kaynak VIctory forku (FSR 4 + Frame Generation, 19–25 FPS). Şu an tek makinede test edildiği için tahmini puanla takip ediliyor.`,
+    summaryEn: `SlaktarnVI (Valhalla) is an open-source VIctory fork tuned for Linux/Steam Proton on AMD RX 9070 XT (FSR 4 + Frame Generation, 19–25 FPS). Tracked with an estimated score until independently verified.`,
+    isZortos: false,
+  };
+
+  slaktarnCache = { ts: now, data: result };
+  return result;
+}
+
 async function fetchTrackerJson() {
   const bust = Date.now();
   for (const baseUrl of TRACKER_URLS) {
@@ -229,9 +322,10 @@ async function fetchTrackerJson() {
 }
 
 export async function GET() {
-  const [tracker, scarlettLive] = await Promise.all([
+  const [tracker, scarlettLive, slaktarnLive] = await Promise.all([
     fetchTrackerJson(),
     fetchScarlettPortLive().catch(() => null),
+    fetchSlaktarnLive().catch(() => null),
   ]);
 
   if (!tracker) {
@@ -309,6 +403,24 @@ export async function GET() {
     };
   } else if (scarlettLive) {
     mappedTeams.push(scarlettLive);
+  }
+
+  // SlaktarnVI: PortWatch resmi listeye eklemediyse GitHub canlı tahmini olarak ekle;
+  // eklediyse çift kayıt oluşturmadan resmi PortWatch puanını koru.
+  if (slaktarnLive) {
+    const existingSlaktarnIdx = mappedTeams.findIndex(
+      (t) =>
+        String(t.repo || '').toLowerCase() === SLAKTARN_REPO.toLowerCase() ||
+        String(t.name || '').toLowerCase() === 'slaktarnvi'
+    );
+    if (existingSlaktarnIdx >= 0) {
+      mappedTeams[existingSlaktarnIdx] = {
+        ...mappedTeams[existingSlaktarnIdx],
+        platformTag: 'Linux / Proton',
+      };
+    } else {
+      mappedTeams.push(slaktarnLive);
+    }
   }
 
   mappedTeams = mappedTeams.sort((a, b) => b.progress - a.progress);
