@@ -58,7 +58,7 @@ import {
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
-const APP_VERSION = 'v2.1.0';
+const APP_VERSION = 'v3.0.0';
 const SCORE_SNAPSHOT_KEY = 'gta6takip_prev_scores_v2';
 const CHAT_CACHE_PREFIX = 'gta6takip_chat_cache_';
 const INITIAL_TEAMS_LIMIT = 5;
@@ -202,86 +202,86 @@ const GpuBadgeIcons = ({ gpu, isLight }) => {
 };
 
 const THEMES = {
-  vice: {
-    id: 'vice',
-    label: { tr: 'Vice Sunset', en: 'Vice Sunset' },
-    dot: '#ec4899',
-    bg: 'bg-[#12091c] text-pink-50',
-    backdropGlow: 'radial-gradient(ellipse 80% 40% at 50% -10%, rgba(236,72,153,0.18), transparent 70%)',
-    card: 'bg-[#1b0f2a]/90 backdrop-blur-xl border-pink-500/25 shadow-[inset_0_1px_0_rgba(255,255,255,0.07),0_10px_32px_rgba(0,0,0,0.34)]',
-    cardHover: 'hover:border-pink-400/60 hover:shadow-[0_0_24px_rgba(236,72,153,0.22)]',
-    heroGlow: 'shadow-[0_0_44px_rgba(236,72,153,0.18)] bg-gradient-to-br from-[#231236] via-[#1b0f2a] to-[#160d24]',
-    leaderGlow: 'ring-1 ring-pink-400/55 shadow-[0_0_26px_rgba(236,72,153,0.24)]',
-    menuBg: 'bg-[#1b0f2a] border-pink-500/35',
-    subCard: 'bg-[#150b21] border-pink-500/20',
-    stickyBar: 'bg-[#12091c]/92 border-pink-500/20',
-    selfMsgBg: 'bg-pink-500/10 border-l-2 border-pink-400',
-    muted: 'text-pink-200/70',
-    accentText: 'text-pink-400',
-    accentBg: 'bg-pink-500',
-    accentGradient: 'from-pink-500 via-purple-400 to-amber-400',
-    btnPrimary: 'bg-gradient-to-r from-pink-500 via-fuchsia-500 to-amber-400 text-zinc-950 hover:brightness-110',
-    pill: 'bg-pink-950/60 text-pink-200 border-pink-500/30',
-    softChip: 'bg-pink-500/12 text-pink-200/90',
-    sparkStroke: '#f472b6',
-    sparkStop: 'rgba(244, 114, 182, 0.32)',
-    sbTrack: '#150b21',
-    sbThumb: 'rgba(236, 72, 153, 0.48)',
-    sbThumbHover: 'rgba(244, 114, 182, 0.85)',
-  },
   softdark: {
     id: 'softdark',
-    label: { tr: 'Soft Dark', en: 'Soft Dark' },
-    dot: '#3b82f6',
-    bg: 'bg-[#060b17] text-slate-100',
-    backdropGlow: 'radial-gradient(ellipse 52% 45% at 16% 18%, rgba(37,99,235,0.26), transparent 72%), radial-gradient(ellipse 46% 42% at 84% 34%, rgba(234,88,12,0.19), transparent 72%)',
-    card: 'bg-[#0c1324]/78 backdrop-blur-xl border-white/[0.10] shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_10px_36px_rgba(0,0,0,0.40)]',
-    cardHover: 'hover:border-blue-400/45 hover:bg-[#111b32]/85 hover:shadow-[0_0_26px_rgba(59,130,246,0.18)]',
-    heroGlow: 'shadow-[0_12px_44px_rgba(0,0,0,0.45)] bg-gradient-to-br from-[#0f1930]/85 via-[#0b1222]/80 to-[#111624]/75',
-    leaderGlow: 'ring-1 ring-blue-400/45 shadow-[0_0_28px_rgba(59,130,246,0.22)]',
-    menuBg: 'bg-[#0b1222]/95 backdrop-blur-xl border-white/12 shadow-2xl',
-    subCard: 'bg-white/[0.045] border-white/[0.10] backdrop-blur-md',
-    stickyBar: 'bg-[#091020]/82 backdrop-blur-xl border-white/[0.11] shadow-[0_10px_34px_rgba(0,0,0,0.52)]',
-    selfMsgBg: 'bg-blue-500/12 border-l-2 border-blue-400',
-    muted: 'text-slate-300/80',
-    accentText: 'text-blue-400',
-    accentBg: 'bg-blue-500',
-    accentGradient: 'from-blue-500 via-sky-400 to-orange-400',
-    btnPrimary: 'bg-gradient-to-b from-[#3b82f6] to-[#2563eb] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.25),0_6px_20px_-4px_rgba(37,99,235,0.55)] hover:brightness-110',
-    pill: 'bg-[#0f172a]/85 text-blue-200 border-white/12 shadow-sm',
-    softChip: 'bg-white/[0.06] text-slate-200 border border-white/[0.08]',
-    sparkStroke: '#3b82f6',
-    sparkStop: 'rgba(59, 130, 246, 0.30)',
-    sbTrack: '#0a101f',
-    sbThumb: 'rgba(59, 130, 246, 0.48)',
-    sbThumbHover: 'rgba(96, 165, 250, 0.85)',
+    label: { tr: 'Telemetri Koyu', en: 'Telemetry Dark' },
+    dot: '#FF4D2E',
+    bg: 'bg-[#09090B] text-zinc-100',
+    backdropGlow: 'none',
+    card: 'bg-[#101013] border-[#232329]',
+    cardHover: 'hover:border-[#3F3F48] hover:bg-[#141418]',
+    heroGlow: '',
+    leaderGlow: 'border-[#FF4D2E]/60',
+    menuBg: 'bg-[#121216] border-[#2A2A32] shadow-lg',
+    subCard: 'bg-[#141418] border-[#232329]',
+    stickyBar: 'bg-[#09090B]/95 border-[#232329]',
+    selfMsgBg: 'bg-[#FF4D2E]/10 border-l-2 border-[#FF4D2E]',
+    muted: 'text-zinc-400',
+    accentText: 'text-[#FF4D2E]',
+    accentBg: 'bg-[#FF4D2E]',
+    accentGradient: 'from-[#FF4D2E] to-[#FF6B4A]',
+    btnPrimary: 'bg-[#FF4D2E] text-white font-bold hover:bg-[#FF6247]',
+    pill: 'bg-[#16161B] text-zinc-200 border-[#2A2A32]',
+    softChip: 'bg-[#18181E] text-zinc-300 border border-[#272730]',
+    sparkStroke: '#FF4D2E',
+    sparkStop: 'rgba(255, 77, 46, 0.22)',
+    sbTrack: '#0C0C0F',
+    sbThumb: 'rgba(161, 161, 170, 0.35)',
+    sbThumbHover: 'rgba(255, 77, 46, 0.75)',
+  },
+  vice: {
+    id: 'vice',
+    label: { tr: 'Vice Baskı', en: 'Vice Print' },
+    dot: '#FF5A5F',
+    bg: 'bg-[#110D10] text-stone-100',
+    backdropGlow: 'none',
+    card: 'bg-[#171216] border-[#2B2028]',
+    cardHover: 'hover:border-[#493442] hover:bg-[#1C161B]',
+    heroGlow: '',
+    leaderGlow: 'border-[#FF5A5F]/60',
+    menuBg: 'bg-[#1A1419] border-[#33252F] shadow-lg',
+    subCard: 'bg-[#1C161B] border-[#2B2028]',
+    stickyBar: 'bg-[#110D10]/95 border-[#2B2028]',
+    selfMsgBg: 'bg-[#FF5A5F]/10 border-l-2 border-[#FF5A5F]',
+    muted: 'text-stone-400',
+    accentText: 'text-[#FF5A5F]',
+    accentBg: 'bg-[#FF5A5F]',
+    accentGradient: 'from-[#FF5A5F] to-[#14B8A6]',
+    btnPrimary: 'bg-[#FF5A5F] text-white font-bold hover:bg-[#FF7074]',
+    pill: 'bg-[#20181E] text-stone-200 border-[#362732]',
+    softChip: 'bg-[#221920] text-stone-300 border border-[#32242E]',
+    sparkStroke: '#FF5A5F',
+    sparkStop: 'rgba(255, 90, 95, 0.22)',
+    sbTrack: '#130F12',
+    sbThumb: 'rgba(255, 90, 95, 0.38)',
+    sbThumbHover: 'rgba(255, 90, 95, 0.75)',
   },
   light: {
     id: 'light',
-    label: { tr: 'Açık', en: 'Light' },
-    dot: '#ea580c',
-    bg: 'bg-[#f8f9fb] text-zinc-900',
-    backdropGlow: 'radial-gradient(ellipse 80% 40% at 50% -10%, rgba(234,88,12,0.08), transparent 70%)',
-    card: 'bg-white border-zinc-200/90 shadow-sm',
-    cardHover: 'hover:border-orange-300 hover:shadow-md',
-    heroGlow: 'shadow-md bg-gradient-to-br from-white via-orange-50/40 to-amber-50/40',
-    leaderGlow: 'ring-1 ring-orange-400/60 shadow-md',
-    menuBg: 'bg-white border-zinc-200',
-    subCard: 'bg-zinc-100/80 border-zinc-200',
-    stickyBar: 'bg-[#f8f9fb]/92 border-zinc-200',
-    selfMsgBg: 'bg-orange-50 border-l-2 border-orange-500',
-    muted: 'text-zinc-600',
-    accentText: 'text-orange-600',
-    accentBg: 'bg-orange-600',
-    accentGradient: 'from-orange-600 via-amber-500 to-yellow-500',
-    btnPrimary: 'bg-gradient-to-r from-orange-600 to-amber-500 text-white hover:brightness-105',
-    pill: 'bg-zinc-100 text-zinc-700 border-zinc-300',
-    softChip: 'bg-zinc-100 text-zinc-700',
-    sparkStroke: '#ea580c',
-    sparkStop: 'rgba(234, 88, 12, 0.22)',
-    sbTrack: '#f4f4f5',
-    sbThumb: 'rgba(234, 88, 12, 0.42)',
-    sbThumbHover: 'rgba(234, 88, 12, 0.78)',
+    label: { tr: 'Editoryal Açık', en: 'Editorial Light' },
+    dot: '#E03E22',
+    bg: 'bg-[#F5F4EF] text-[#111113]',
+    backdropGlow: 'none',
+    card: 'bg-white border-[#DDDCD5]',
+    cardHover: 'hover:border-[#B9B7AE] hover:bg-[#FAF9F6]',
+    heroGlow: '',
+    leaderGlow: 'border-[#E03E22]/70',
+    menuBg: 'bg-white border-[#D6D5CE] shadow-md',
+    subCard: 'bg-[#F7F6F2] border-[#E2E1DA]',
+    stickyBar: 'bg-[#F5F4EF]/95 border-[#DDDCD5]',
+    selfMsgBg: 'bg-[#E03E22]/8 border-l-2 border-[#E03E22]',
+    muted: 'text-[#5C5B56]',
+    accentText: 'text-[#E03E22]',
+    accentBg: 'bg-[#E03E22]',
+    accentGradient: 'from-[#E03E22] to-[#F05A3E]',
+    btnPrimary: 'bg-[#111113] text-white font-bold hover:bg-[#E03E22]',
+    pill: 'bg-[#EFECE4] text-[#222225] border-[#D6D4CC]',
+    softChip: 'bg-[#F1EFE9] text-[#353430] border border-[#DDDCD4]',
+    sparkStroke: '#E03E22',
+    sparkStop: 'rgba(224, 62, 34, 0.16)',
+    sbTrack: '#ECEAE3',
+    sbThumb: 'rgba(17, 17, 19, 0.25)',
+    sbThumbHover: 'rgba(224, 62, 34, 0.7)',
   },
 };
 
@@ -345,6 +345,21 @@ const FALLBACK_FEATURED_PORT = {
 };
 
 const CHANGELOG = [
+  {
+    version: "v3.0.0",
+    dateTr: "27 Kasım 2026",
+    dateEn: "November 27, 2026",
+    itemsTr: [
+      "Telemetri & Benchmark Terminali tasarımı: Bulanık cam, neon gölge ve yuvarlak kart yığını kaldırıldı; keskin 1px mimari çizgiler, mat zemin ve tek imza Sinyal Mercan (#FF4D2E) aksanına geçildi.",
+      "Özgün 3 fontlu tipografi sistemi: Dev rakamlar için Barlow Condensed, FPS ve veriler için JetBrains Mono, metinler için Plus Jakarta Sans eklendi.",
+      "Yeni 20 segmentli hassas ilerleme göstergesi, çizgi bölmeli 3'lü Podyum şeridi, düz alt-çizgili üst navigasyon ve sadeleştirilmiş 3 mimari tema (Telemetri Koyu, Vice Baskı, Editoryal Açık).",
+    ],
+    itemsEn: [
+      "Telemetry & Benchmark Terminal redesign: removed blurry glassmorphism and neon glows in favor of sharp 1px architectural hairlines, matte surfaces, and Signal Coral (#FF4D2E).",
+      "3-font typographic system: Barlow Condensed for display telemetry, JetBrains Mono for FPS/commits/metrics, and Plus Jakarta Sans for clean body copy.",
+      "Added a 20-segment precision progress meter, hairline-divided Top-3 Podium strip, underline tab navigation, and 3 bespoke architectural themes.",
+    ],
+  },
   {
     version: 'v2.1.0',
     dateTr: '27 Kasım 2026',
@@ -2191,31 +2206,27 @@ export default function HomePage() {
           0%, 100% { opacity: 1; transform: scale(1); }
           50% { opacity: 0.3; transform: scale(0.84); }
         }
-        @keyframes barShimmer {
-          0% { transform: translateX(-120%); }
-          100% { transform: translateX(260%); }
+        .font-display {
+          font-family: var(--font-display), var(--font-brand), ui-sans-serif, system-ui, sans-serif;
+          font-variant-numeric: tabular-nums;
         }
-        .progress-shimmer::after {
-          content: '';
-          position: absolute;
-          inset: 0;
-          width: 45%;
-          background: linear-gradient(90deg, transparent, rgba(255,255,255,0.35), transparent);
-          animation: barShimmer 2.8s ease-in-out infinite;
+        .font-tech {
+          font-family: var(--font-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
+          font-variant-numeric: tabular-nums;
         }
         @keyframes chatTabNudge {
-          0%, 72%, 100% { transform: translateY(0); }
-          77% { transform: translateY(-4px); }
-          82% { transform: translateY(0); }
-          87% { transform: translateY(-2.5px); }
-          92% { transform: translateY(0); }
+          0%, 76%, 100% { transform: translateY(0); }
+          81% { transform: translateY(-3px); }
+          86% { transform: translateY(0); }
+          90% { transform: translateY(-1.5px); }
+          94% { transform: translateY(0); }
         }
         @keyframes chatTabShimmer {
-          0%, 52% { transform: translateX(-140%) skewX(-18deg); }
+          0%, 58% { transform: translateX(-140%) skewX(-18deg); }
           100% { transform: translateX(260%) skewX(-18deg); }
         }
         .chat-tab-attention {
-          animation: chatTabNudge 7.5s ease-in-out infinite;
+          animation: chatTabNudge 8s ease-in-out infinite;
         }
         .chat-tab-shimmer::after {
           content: '';
@@ -2223,16 +2234,16 @@ export default function HomePage() {
           top: 0;
           bottom: 0;
           left: 0;
-          width: 48%;
+          width: 42%;
           pointer-events: none;
-          background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.34), rgba(56, 189, 248, 0.30), transparent);
-          animation: chatTabShimmer 4.8s ease-in-out infinite;
+          background: linear-gradient(90deg, transparent, rgba(255, 77, 46, 0.22), transparent);
+          animation: chatTabShimmer 5.2s ease-in-out infinite;
         }
         button:focus-visible,
         a:focus-visible,
         input:focus-visible,
         select:focus-visible {
-          outline: 2px solid rgba(59, 130, 246, 0.75);
+          outline: 2px solid #FF4D2E;
           outline-offset: 2px;
         }
         @media (prefers-reduced-motion: reduce) {
@@ -2272,9 +2283,8 @@ export default function HomePage() {
         }
       `}</style>
 
-      <div className="sticky top-0 z-40 px-2.5 sm:px-5 pt-2 sm:pt-3 pb-1 pointer-events-none">
-      <header className={`pointer-events-auto max-w-4xl mx-auto rounded-2xl border backdrop-blur-xl transition-all duration-300 ${theme.stickyBar}`}>
-        <div className="px-3 sm:px-4 py-2 sm:py-2.5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+      <header className={`sticky top-0 z-40 border-b ${theme.stickyBar}`}>
+        <div className="max-w-5xl mx-auto px-3 sm:px-6 py-2.5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2 min-w-0">
               <button
@@ -2288,13 +2298,7 @@ export default function HomePage() {
                   style={{ fontFamily: 'var(--font-brand), ui-sans-serif, system-ui, sans-serif' }}
                   className="inline-flex items-baseline leading-none select-none"
                 >
-                  <span
-                    className={`font-bold tracking-[-0.03em] text-[19px] sm:text-[21px] bg-clip-text text-transparent bg-gradient-to-r ${
-                      isLight
-                        ? 'from-pink-600 via-fuchsia-600 to-orange-500'
-                        : 'from-cyan-300 via-pink-400 to-amber-300'
-                    }`}
-                  >
+                  <span className={`font-display font-extrabold tracking-tight text-[22px] sm:text-[24px] ${theme.accentText}`}>
                     GTA6
                   </span>
                   <span
@@ -2428,23 +2432,21 @@ export default function HomePage() {
               className={`inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1.5 rounded-lg border text-xs font-semibold whitespace-nowrap transition ${theme.subCard}`}
             >
               <RefreshCw className={`w-3.5 h-3.5 ${syncing ? 'animate-spin' : ''}`} />
-              <span>{countdown}s</span>
+              <span className="font-tech">{countdown}s</span>
             </button>
           </div>
         </div>
       </header>
-      </div>
 
-      {/* MASAÜSTÜ 4 SEKMELİ UYGULAMA NAVİGASYONU */}
-      <nav className="hidden sm:block max-w-4xl mx-auto px-5 pt-2.5">
-        <div className={`grid grid-cols-4 gap-1.5 p-1.5 rounded-2xl border backdrop-blur-xl ${theme.stickyBar}`}>
+      {/* MASAÜSTÜ MİMARİ ALT-ÇİZGİLİ NAVİGASYON */}
+      <nav className={`hidden sm:block border-b ${theme.card}`}>
+        <div className="max-w-5xl mx-auto px-6 flex items-center gap-1">
           {[
-            { id: 'race', icon: Trophy, tr: 'Yarış Tablosu', en: 'Leaderboard' },
-            { id: 'chat', icon: MessageCircle, tr: 'Canlı Sohbet', en: 'Live Chat' },
-            { id: 'system', icon: Cpu, tr: 'Sistem Testi', en: 'System Check' },
-            { id: 'news', icon: Newspaper, tr: 'Haber & DMCA', en: 'News & DMCA' },
+            { id: 'race', code: '01', tr: 'Yarış Tablosu', en: 'Leaderboard' },
+            { id: 'chat', code: '02', tr: 'Canlı Sohbet', en: 'Live Chat' },
+            { id: 'system', code: '03', tr: 'Sistem Testi', en: 'System Check' },
+            { id: 'news', code: '04', tr: 'Haber & DMCA', en: 'News & DMCA' },
           ].map((tab) => {
-            const IconComp = tab.icon;
             const active = activeTab === tab.id;
             const isChatAttention = tab.id === 'chat' && !active && !hasVisitedChat;
             return (
@@ -2452,36 +2454,32 @@ export default function HomePage() {
                 key={tab.id}
                 type="button"
                 onClick={() => handleSelectTab(tab.id)}
-                className={`relative flex items-center justify-center gap-2 py-2.5 px-3.5 rounded-xl text-xs font-extrabold transition-all duration-200 active:scale-[0.97] ${
+                className={`relative flex items-center gap-2 py-3 px-4 text-xs font-bold tracking-wide transition-colors border-b-2 -mb-px ${
                   active
-                    ? `${theme.btnPrimary} shadow-sm`
+                    ? `border-[#FF4D2E] ${isLight ? 'text-[#111113]' : 'text-white'}`
                     : isChatAttention
-                      ? `overflow-hidden chat-tab-attention chat-tab-shimmer border ${
-                          isLight
-                            ? 'border-blue-300/80 bg-blue-50/80 text-blue-800 hover:bg-blue-100/80'
-                            : themeKey === 'vice'
-                              ? 'border-fuchsia-400/45 bg-fuchsia-500/12 text-fuchsia-200 hover:bg-fuchsia-500/18'
-                              : 'border-blue-400/45 bg-blue-500/12 text-blue-200 hover:bg-blue-500/18'
-                        }`
-                      : `${theme.muted} hover:bg-white/5`
+                      ? `overflow-hidden chat-tab-attention chat-tab-shimmer border-transparent ${isLight ? 'text-[#111113]' : 'text-zinc-200'} hover:border-zinc-500`
+                      : `border-transparent ${theme.muted} hover:${isLight ? 'text-[#111113]' : 'text-zinc-100'}`
                 }`}
               >
+                <span className={`font-tech text-[10px] ${active ? theme.accentText : 'opacity-50'}`}>
+                  {tab.code}
+                </span>
+                <span>{lang === 'tr' ? tab.tr : tab.en}</span>
                 {tab.id === 'chat' && !active && (
-                  <span className="relative flex h-2 w-2 shrink-0">
+                  <span className="relative flex h-1.5 w-1.5 shrink-0">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+                    <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500" />
                   </span>
                 )}
-                <IconComp className="w-3.5 h-3.5 shrink-0" />
-                <span>{lang === 'tr' ? tab.tr : tab.en}</span>
                 {tab.id === 'chat' && unreadWhileClosed > 0 && activeTab !== 'chat' && (
-                  <span className={`px-1.5 py-0.2 rounded-full text-[9px] font-black ${theme.btnPrimary}`}>
+                  <span className="font-tech px-1.5 py-0.5 rounded-sm text-[9px] font-bold bg-[#FF4D2E] text-white">
                     +{unreadWhileClosed}
                   </span>
                 )}
                 {tab.id === 'chat' && unreadWhileClosed === 0 && (
-                  <span className={`text-[10px] font-bold ${active ? 'opacity-90' : theme.accentText}`}>
-                    ({Math.max(chatActiveCount, chatOpen ? 1 : 0)})
+                  <span className={`font-tech text-[10px] ${active ? theme.accentText : 'opacity-65'}`}>
+                    [{Math.max(chatActiveCount, chatOpen ? 1 : 0)}]
                   </span>
                 )}
               </button>
@@ -2490,229 +2488,174 @@ export default function HomePage() {
         </div>
       </nav>
 
-      <main className="max-w-4xl mx-auto px-3 sm:px-5 py-5 space-y-5">
-        {/* ÜST ÖZET KARTI — YARIŞ SEKMESİ */}
-        {activeTab === 'race' && (<section className={`rounded-2xl border p-4 sm:p-6 transition-all duration-300 ${theme.card} ${theme.heroGlow || ''}`}>
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-5">
-            <div className="space-y-3.5 flex-1">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className={`text-xs font-bold tracking-wider ${theme.accentText}`}>
-                    {lang === 'tr' ? 'GENEL İLERLEME' : 'OVERALL PROGRESS'}
-                  </span>
-                  <span className={`px-2 py-0.5 text-[11px] font-semibold rounded-full ${theme.softChip}`}>
-                    {totalEfforts} {lang === 'tr' ? 'Girişim' : 'Tracked'} · {bootingCount} Boot
-                  </span>
-                </div>
-                <h1 className="text-base sm:text-lg font-black tracking-tight opacity-95">
-                  {lang === 'tr'
-                    ? 'GTA 6 PC Port Takip & Canlı İlerleme'
-                    : 'GTA VI PC Port Tracker & Live Progress'}
-                </h1>
+      <main className="max-w-5xl mx-auto px-3 sm:px-6 py-5 space-y-5">
+        {/* ÜST TELEMETRİ PANOSU — YARIŞ SEKMESİ */}
+        {activeTab === 'race' && (
+          <section className={`rounded-md border overflow-hidden ${theme.card}`}>
+            {/* Üst telemetri durum şeridi */}
+            <div className={`px-4 sm:px-5 py-2 border-b flex flex-wrap items-center justify-between gap-2 text-[11px] font-tech ${theme.subCard}`}>
+              <div className="flex items-center gap-2">
+                <span className="inline-block w-2 h-2 rounded-full bg-[#FF4D2E]" />
+                <span className="font-bold tracking-wider uppercase">
+                  {lang === 'tr' ? 'PORTWATCH // CANLI TELEMETRİ' : 'PORTWATCH // LIVE TELEMETRY'}
+                </span>
               </div>
+              <div className={`flex items-center gap-3 ${theme.muted}`}>
+                <span>{totalEfforts} {lang === 'tr' ? 'GİRİŞİM' : 'EFFORTS'}</span>
+                <span className="opacity-35">/</span>
+                <span>{bootingCount} BOOT</span>
+                <span className="opacity-35">/</span>
+                <span>{lang === 'tr' ? `İLK 3 ORT. %${top3Avg}` : `TOP-3 AVG ${top3Avg}%`}</span>
+              </div>
+            </div>
 
-              {/* Yüzde + %100 İlerleme Dairesi + İstatistik Rozeti */}
-              <div className="flex items-center gap-4 flex-wrap">
-                <div className="relative w-16 h-16 shrink-0 flex items-center justify-center">
-                  <svg viewBox="0 0 64 64" className={`w-16 h-16 -rotate-90 ${!isLight ? 'drop-shadow-[0_0_10px_rgba(59,130,246,0.35)]' : ''}`} aria-label={`%${leaderPct}`}>
-                    <circle
-                      cx="32"
-                      cy="32"
-                      r={ringRadius}
-                      fill="none"
-                      stroke="currentColor"
-                      strokeOpacity="0.14"
-                      strokeWidth="5.5"
-                    />
-                    <circle
-                      cx="32"
-                      cy="32"
-                      r={ringRadius}
-                      fill="none"
-                      stroke={theme.sparkStroke}
-                      strokeWidth="5.5"
-                      strokeLinecap="round"
-                      strokeDasharray={ringCircumference}
-                      strokeDashoffset={ringOffset}
-                    />
-                  </svg>
-                  <div className="absolute inset-0 flex flex-col items-center justify-center leading-none">
-                    <span className="text-[13px] font-black tabular-nums tracking-tight">
-                      {lang === 'tr' ? `%${Math.round(leader.progress)}` : `${Math.round(leader.progress)}%`}
-                    </span>
-                    <span className="text-[8px] font-bold opacity-60 mt-0.5">/100</span>
-                  </div>
-                </div>
-
-                <div className="space-y-1">
-                  <div className="flex items-baseline gap-2.5 flex-wrap">
-                    <span className={`text-3xl sm:text-4xl font-black tracking-tight tabular-nums ${!isLight ? `bg-clip-text text-transparent bg-gradient-to-r ${theme.accentGradient}` : ''}`}>
+            {/* Ana metrik + 20 segmentli hassas bar + sparkline */}
+            <div className="p-4 sm:p-6 grid grid-cols-1 md:grid-cols-12 gap-5 items-center">
+              <div className="md:col-span-8 space-y-4">
+                <div>
+                  <h1 className={`text-xs sm:text-sm font-semibold tracking-wide uppercase ${theme.muted}`}>
+                    {lang === 'tr'
+                      ? 'GTA 6 PC Port İlerleme & Performans Endeksi'
+                      : 'GTA VI PC Port Progress & Performance Index'}
+                  </h1>
+                  <div className="flex items-baseline gap-3.5 mt-1 flex-wrap">
+                    <span className="font-display text-5xl sm:text-6xl font-extrabold leading-none tracking-tight">
                       {lang === 'tr' ? `%${leader.progress}` : `${leader.progress}%`}
                     </span>
-                    <span className={`text-xs font-semibold ${theme.muted}`}>
-                      {lang === 'tr'
-                        ? `%100'e ${remainingPct} puan kaldı`
-                        : `${remainingPct}% left to 100%`}
-                    </span>
+                    <div className="space-y-0.5">
+                      <div className="text-xs sm:text-sm font-bold flex items-center gap-1.5">
+                        <span className={theme.accentText}>#01 {leader.name}</span>
+                        <span className={`font-tech text-[11px] ${theme.muted}`}>
+                          ({localizeDynamicText(leader.fps, lang)})
+                        </span>
+                      </div>
+                      <div className={`font-tech text-[11px] ${theme.muted}`}>
+                        {lang === 'tr'
+                          ? `100% hedefine ${remainingPct} puan kaldı`
+                          : `${remainingPct} pts remaining to 100%`}
+                      </div>
+                    </div>
                   </div>
+                </div>
 
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold ${theme.softChip}`}>
-                      <BarChart3 className={`w-3.5 h-3.5 shrink-0 ${theme.accentText}`} />
-                      <span>
-                        {lang === 'tr' ? `İlk 3 Ort. %${top3Avg}` : `Top-3 Avg ${top3Avg}%`}
-                      </span>
-                    </span>
+                {/* 20 segmentli donanım/telemetri ilerleme barı */}
+                <div className="space-y-1.5">
+                  <div className="grid grid-cols-20 gap-1" style={{ gridTemplateColumns: 'repeat(20, minmax(0, 1fr))' }}>
+                    {Array.from({ length: 20 }).map((_, segIdx) => {
+                      const filledSegments = Math.round((Number(leader.progress) || 0) / 5);
+                      const isFilled = segIdx < filledSegments;
+                      return (
+                        <div
+                          key={segIdx}
+                          className={`h-2.5 rounded-[1px] transition-colors ${
+                            isFilled
+                              ? theme.accentBg
+                              : isLight
+                                ? 'bg-[#E5E3DB]'
+                                : 'bg-[#22222A]'
+                          }`}
+                        />
+                      );
+                    })}
                   </div>
+                  <div className={`flex items-center justify-between font-tech text-[10px] ${theme.muted}`}>
+                    <span>0%</span>
+                    <span>25%</span>
+                    <span>50%</span>
+                    <span>75%</span>
+                    <span className={theme.accentText}>100%</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 flex-wrap pt-0.5">
+                  <div className={`inline-flex items-center gap-2 px-2.5 py-1 rounded-sm border text-[11px] font-tech ${theme.subCard}`}>
+                    <span className={theme.muted}>{lang === 'tr' ? '30 FPS BARAJI' : '30 FPS TARGET'}</span>
+                    <span className="font-bold">{peakFps}/30</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleJumpToChat}
+                    className={`inline-flex items-center gap-2 px-3 py-1 rounded-sm border text-[11px] font-bold transition ${theme.subCard} hover:border-[#FF4D2E]`}
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                    <span>{lang === 'tr' ? 'Canlı Sohbet' : 'Live Chat'}</span>
+                    <span className={`font-tech ${theme.accentText}`}>
+                      {Math.max(chatActiveCount, chatOpen ? 1 : 0)}
+                    </span>
+                  </button>
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 flex-wrap pt-1">
-                <div className={`inline-flex items-center gap-2 px-2.5 py-1.5 rounded-xl border text-xs ${theme.subCard}`}>
-                  <Target className={`w-3.5 h-3.5 ${theme.accentText}`} />
-                  <span className="font-semibold">
-                    {lang === 'tr' ? '30 FPS Barajı:' : '30 FPS Target:'}
+              {/* Sağ mini trend paneli */}
+              <div className={`md:col-span-4 rounded-sm border p-3.5 space-y-2 ${theme.subCard}`}>
+                <div className="flex items-center justify-between font-tech text-[10px]">
+                  <span className={`uppercase tracking-wider ${theme.muted}`}>
+                    {lang === 'tr' ? 'GÜNLÜK EĞİLİM' : 'DAILY TREND'}
                   </span>
-                  <span className="font-bold">{peakFps} / 30 FPS</span>
-                  <div className="w-14 h-1.5 rounded-full bg-zinc-700/60 overflow-hidden">
-                    <div
-                      className={`h-full rounded-full bg-gradient-to-r ${theme.accentGradient}`}
-                      style={{ width: `${fpsPct}%` }}
+                  <span className={`font-bold ${theme.accentText}`}>0% → {leader.progress}%</span>
+                </div>
+                <div className="relative w-full h-14">
+                  <svg
+                    viewBox="0 0 220 56"
+                    preserveAspectRatio="none"
+                    className="w-full h-full overflow-visible"
+                    aria-label="Progress Sparkline"
+                  >
+                    <defs>
+                      <linearGradient id="sparkFill" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor={theme.sparkStop} />
+                        <stop offset="100%" stopColor="rgba(0,0,0,0)" />
+                      </linearGradient>
+                    </defs>
+                    <polygon points={sparkPoints.area} fill="url(#sparkFill)" />
+                    <polyline
+                      fill="none"
+                      stroke={theme.sparkStroke}
+                      strokeWidth="2"
+                      strokeLinejoin="round"
+                      strokeLinecap="round"
+                      points={sparkPoints.line}
                     />
-                  </div>
+                  </svg>
                 </div>
-
-                <div className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-xs ${theme.subCard}`}>
-                  <Crown className="w-3.5 h-3.5 text-amber-400 shrink-0 drop-shadow-[0_0_6px_rgba(251,191,36,0.75)]" />
-                  <span className={theme.muted}>
-                    {lang === 'tr' ? 'Zirve Lider:' : 'Top Leader:'}
-                  </span>
-                  <span className={leaderGlowClass}>{leader.name}</span>
-                  <span className={isLight ? 'text-emerald-700 font-bold' : 'text-emerald-400 font-bold'}>
-                    {lang === 'tr' ? `%${leader.progress}` : `${leader.progress}%`}
-                  </span>
+                <div className={`font-tech text-[10px] flex items-center justify-between border-t pt-2 ${isLight ? 'border-[#E2E1DA]' : 'border-[#232329]'} ${theme.muted}`}>
+                  <span>{lang === 'tr' ? 'LİDER GPU' : 'LEADER GPU'}</span>
+                  <span className="truncate max-w-[140px] font-semibold">{leader.gpu}</span>
                 </div>
+              </div>
+            </div>
 
+            {/* 3'LÜ PODYUM — ÇİZGİ BÖLMELİ F1 ZAMANLAMA ŞERİDİ */}
+            <div className={`grid grid-cols-1 sm:grid-cols-3 border-t divide-y sm:divide-y-0 sm:divide-x ${isLight ? 'border-[#DDDCD5] divide-[#DDDCD5]' : 'border-[#232329] divide-[#232329]'}`}>
+              {[leader, secondTeam, thirdTeam].filter(Boolean).map((pTeam, pIdx) => (
                 <button
+                  key={pTeam.name}
                   type="button"
-                  onClick={handleJumpToChat}
-                  className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-xs font-bold transition hover:scale-[1.02] ${onlineBtnClass}`}
+                  onClick={() => setSelectedTeam({ ...pTeam, globalRank: pIdx + 1 })}
+                  className={`group text-left px-4 py-3 transition-colors flex items-center justify-between gap-3 ${
+                    isLight ? 'hover:bg-[#FAF9F6]' : 'hover:bg-[#16161C]'
+                  }`}
                 >
-                  <MessageCircle className="w-3.5 h-3.5" />
-                  <span>{lang === 'tr' ? 'Canlı Sohbet' : 'Live Chat'}</span>
-                  <span className="inline-flex items-center gap-1 opacity-90">
-                    <span className={`w-1.5 h-1.5 rounded-full animate-pulse ${onlineDotClass}`} />
-                    {Math.max(chatActiveCount, chatOpen ? 1 : 0)} {lang === 'tr' ? 'Sohbette' : 'In Chat'}
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className={`font-tech text-[11px] font-bold ${pIdx === 0 ? theme.accentText : theme.muted}`}>
+                        0{pIdx + 1}
+                      </span>
+                      <span className="text-xs sm:text-sm font-bold truncate group-hover:underline">
+                        {pTeam.name}
+                      </span>
+                    </div>
+                    <div className={`font-tech text-[10px] truncate mt-0.5 ${theme.muted}`}>
+                      {localizeDynamicText(pTeam.fps, lang)} · {pTeam.gpu}
+                    </div>
+                  </div>
+                  <span className={`font-display text-2xl font-extrabold shrink-0 ${pIdx === 0 ? theme.accentText : ''}`}>
+                    {lang === 'tr' ? `%${pTeam.progress}` : `${pTeam.progress}%`}
                   </span>
                 </button>
-              </div>
-
-              {/* 3'LÜ PODYUM (#1 / #2 / #3) — CAM METRİK KARTLARI */}
-              <div className="grid grid-cols-3 gap-2.5 pt-1.5">
-                {[leader, secondTeam, thirdTeam].filter(Boolean).map((pTeam, pIdx) => {
-                  const rankBadge =
-                    pIdx === 0
-                      ? isLight
-                        ? 'bg-amber-100 text-amber-800 border-amber-300'
-                        : 'bg-amber-500/15 text-amber-300 border-amber-400/35'
-                      : pIdx === 1
-                        ? isLight
-                          ? 'bg-sky-100 text-sky-800 border-sky-300'
-                          : 'bg-sky-500/15 text-sky-300 border-sky-400/30'
-                        : isLight
-                          ? 'bg-orange-100 text-orange-800 border-orange-300'
-                          : 'bg-orange-500/15 text-orange-300 border-orange-400/30';
-                  return (
-                    <button
-                      key={pTeam.name}
-                      type="button"
-                      onClick={() => setSelectedTeam({ ...pTeam, globalRank: pIdx + 1 })}
-                      className={`group text-left rounded-2xl border p-2.5 sm:p-3 transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.98] ${theme.subCard} ${
-                        pIdx === 0
-                          ? !isLight
-                            ? 'ring-1 ring-blue-400/35 shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]'
-                            : 'ring-1 ring-amber-400/50'
-                          : !isLight
-                            ? 'shadow-[inset_0_1px_0_rgba(255,255,255,0.07)]'
-                            : ''
-                      }`}
-                    >
-                      <div className="flex items-center justify-between gap-1">
-                        <span className={`px-1.5 py-0.5 rounded-md text-[10px] font-black border ${rankBadge}`}>
-                          #{pIdx + 1}
-                        </span>
-                        <span className={`text-sm sm:text-base font-black tabular-nums tracking-tight ${theme.accentText}`}>
-                          {lang === 'tr' ? `%${pTeam.progress}` : `${pTeam.progress}%`}
-                        </span>
-                      </div>
-                      <div className="text-xs sm:text-[13px] font-extrabold truncate mt-1.5 group-hover:underline">
-                        {pTeam.name}
-                      </div>
-                      <div className={`text-[10px] sm:text-[11px] truncate mt-0.5 ${theme.muted}`}>
-                        {localizeDynamicText(pTeam.fps, lang)}
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
+              ))}
             </div>
-
-            <div className={`rounded-xl border p-3.5 md:w-60 shrink-0 ${theme.subCard}`}>
-              <div className="flex items-center justify-between text-[11px] font-semibold mb-1.5">
-                <span className={`inline-flex items-center gap-1 ${theme.muted}`}>
-                  <TrendingUp className={`w-3.5 h-3.5 ${theme.accentText}`} />
-                  {lang === 'tr' ? 'Günlük Yükseliş' : 'Daily Trend'}
-                </span>
-                <span className={theme.accentText}>0% → {leader.progress}%</span>
-              </div>
-              <div className="relative w-full h-12">
-                <svg
-                  viewBox="0 0 220 56"
-                  preserveAspectRatio="none"
-                  className="w-full h-full overflow-visible"
-                  aria-label="Progress Sparkline"
-                >
-                  <defs>
-                    <linearGradient id="sparkFill" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor={theme.sparkStop} />
-                      <stop offset="100%" stopColor="rgba(0,0,0,0)" />
-                    </linearGradient>
-                  </defs>
-                  <polygon points={sparkPoints.area} fill="url(#sparkFill)" />
-                  <polyline
-                    fill="none"
-                    stroke={theme.sparkStroke}
-                    strokeWidth="2.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    vectorEffect="non-scaling-stroke"
-                    points={sparkPoints.line}
-                  />
-                </svg>
-                {sparkPoints.pts.map((p, idx) => (
-                  <span
-                    key={p.label}
-                    className={`pointer-events-none absolute rounded-full -translate-x-1/2 -translate-y-1/2 ${
-                      idx === sparkPoints.pts.length - 1 ? 'w-2.5 h-2.5' : 'w-1.5 h-1.5'
-                    }`}
-                    style={{
-                      left: `${(p.x / 220) * 100}%`,
-                      top: `${(p.y / 56) * 100}%`,
-                      backgroundColor: theme.sparkStroke,
-                    }}
-                  />
-                ))}
-              </div>
-              <div className={`flex justify-between text-[10px] mt-1 ${theme.muted}`}>
-                <span>{sparkPoints.pts[0].label}</span>
-                <span>{sparkPoints.pts[1].label}</span>
-                <span>{sparkPoints.pts[2].label}</span>
-                <span className={`font-bold ${theme.accentText}`}>{sparkPoints.pts[3].label}</span>
-              </div>
-            </div>
-          </div>
-        </section>
-
+          </section>
         )}
 
         {/* SON GELİŞMELER — HABER & DMCA SEKMESİ */}
@@ -2821,7 +2764,7 @@ export default function HomePage() {
               {newsFeedLoading && allFeedItems.length === 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
                   {[0, 1, 2, 3].map((sk) => (
-                    <div key={sk} className={`rounded-2xl border p-3.5 space-y-2 animate-pulse ${theme.card}`}>
+                    <div key={sk} className={`rounded-md border p-3.5 space-y-2 animate-pulse ${theme.card}`}>
                       <div className="flex items-center justify-between">
                         <div className="h-4 w-20 rounded-full bg-current opacity-15" />
                         <div className="h-3 w-14 rounded bg-current opacity-10" />
@@ -2832,7 +2775,7 @@ export default function HomePage() {
                   ))}
                 </div>
               ) : filteredFeedItems.length === 0 ? (
-                <div className={`rounded-2xl border p-5 text-center text-xs ${theme.card} ${theme.muted}`}>
+                <div className={`rounded-md border p-5 text-center text-xs ${theme.card} ${theme.muted}`}>
                   {lang === 'tr'
                     ? 'Bu kategoride şimdilik yeni kayıt görünmüyor. Diğer sekmelere bakabilir veya akışı yenileyebilirsin.'
                     : 'No items in this category right now. Try switching categories or refreshing the feed.'}
@@ -2847,7 +2790,7 @@ export default function HomePage() {
                         href={item.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className={`group flex flex-col justify-between gap-2 rounded-2xl border p-3.5 transition hover:-translate-y-0.5 ${theme.card}`}
+                        className={`group flex flex-col justify-between gap-2 rounded-md border p-3.5 transition hover:-translate-y-0.5 ${theme.card}`}
                       >
                         <div className="space-y-1.5">
                           <div className="flex items-center justify-between gap-2">
@@ -2887,7 +2830,7 @@ export default function HomePage() {
 
         {/* ÖNE ÇIKAN YENİ PORT VİTRİNİ — YARIŞ SEKMESİ */}
         {activeTab === 'race' && featuredPort && (
-          <section className={`rounded-2xl border p-4 sm:p-5 transition-all duration-300 ${theme.card} ${theme.heroGlow || ''}`}>
+          <section className={`rounded-md border p-4 sm:p-5 transition-all duration-300 ${theme.card} ${theme.heroGlow || ''}`}>
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="space-y-1.5 min-w-0 flex-1">
                 <div className="flex items-center gap-2 flex-wrap">
@@ -2959,7 +2902,7 @@ export default function HomePage() {
                 </div>
                 <div className="w-28 sm:w-full relative h-2 rounded-full bg-zinc-700/35 overflow-hidden">
                   <div
-                    className={`relative progress-shimmer h-full rounded-full bg-gradient-to-r ${theme.accentGradient} transition-all duration-700`}
+                    className={`relative h-full rounded-full bg-gradient-to-r ${theme.accentGradient} transition-all duration-700`}
                     style={{ width: `${Math.min(100, Math.max(5, Number(featuredPort.progress) || 48))}%` }}
                   />
                 </div>
@@ -2995,7 +2938,7 @@ export default function HomePage() {
         </section>
 
         {/* SİSTEMİM GTA 6 PORTUNU AÇAR MI? (CANLI UYUMLULUK TESTİ) */}
-        <section className={`rounded-2xl border overflow-hidden ${theme.card}`}>
+        <section className={`rounded-md border overflow-hidden ${theme.card}`}>
           <button
             type="button"
             onClick={() => setSysCheckOpen((v) => !v)}
@@ -3367,7 +3310,7 @@ export default function HomePage() {
                     <div className="flex items-center gap-2.5 w-full sm:w-auto sm:shrink-0">
                       <div className="flex-1 sm:flex-none sm:w-28 h-2 rounded-full bg-zinc-700/35 overflow-hidden">
                         <div
-                          className={`relative progress-shimmer h-full rounded-full bg-gradient-to-r ${theme.accentGradient} transition-all duration-700`}
+                          className={`relative h-full rounded-full bg-gradient-to-r ${theme.accentGradient} transition-all duration-700`}
                           style={{ width: `${barWidth}%` }}
                         />
                       </div>
@@ -3390,7 +3333,7 @@ export default function HomePage() {
               return (
                 <article
                   key={team.name}
-                  className={`rounded-2xl border p-3.5 sm:p-4 transition-all duration-200 hover:scale-[1.008] ${theme.card} ${theme.cardHover || ''} ${
+                  className={`rounded-md border p-3.5 sm:p-4 transition-all duration-200 hover:scale-[1.008] ${theme.card} ${theme.cardHover || ''} ${
                     rank === 1 ? (theme.leaderGlow || 'ring-1 ring-orange-500/40') : ''
                   }`}
                 >
@@ -3555,7 +3498,7 @@ export default function HomePage() {
                   <div className="mt-3 space-y-2">
                     <div className="relative h-2.5 w-full rounded-full bg-zinc-700/35 overflow-hidden">
                       <div
-                        className={`relative progress-shimmer h-full rounded-full bg-gradient-to-r ${theme.accentGradient} transition-all duration-700`}
+                        className={`relative h-full rounded-full bg-gradient-to-r ${theme.accentGradient} transition-all duration-700`}
                         style={{ width: `${barWidth}%` }}
                       />
                     </div>
@@ -3612,7 +3555,7 @@ export default function HomePage() {
             })}
 
             {filteredTeams.length === 0 && (
-              <div className={`rounded-2xl border p-6 text-center text-xs ${theme.card} ${theme.muted}`}>
+              <div className={`rounded-md border p-6 text-center text-xs ${theme.card} ${theme.muted}`}>
                 {lang === 'tr' ? 'Aramana uyan ekip bulunamadı.' : 'No teams match your search.'}
               </div>
             )}
@@ -3655,7 +3598,7 @@ export default function HomePage() {
           className={
             chatFullscreen
               ? `fixed inset-0 !mt-0 z-[100] h-[100dvh] flex flex-col overflow-hidden ${theme.bg}`
-              : `rounded-2xl border overflow-hidden shadow-xl ${theme.card}`
+              : `rounded-md border overflow-hidden shadow-xl ${theme.card}`
           }
         >
           {chatOpen && <div className={`h-0.5 w-full bg-gradient-to-r ${theme.accentGradient}`} />}
@@ -3937,7 +3880,7 @@ export default function HomePage() {
                   className={`gta-scroll overflow-y-auto space-y-2 ${
                     chatFullscreen
                       ? 'flex-1 min-h-0 px-3 py-2.5'
-                      : `rounded-2xl border p-3 max-h-80 sm:max-h-[420px] ${theme.card}`
+                      : `rounded-md border p-3 max-h-80 sm:max-h-[420px] ${theme.card}`
                   }`}
                 >
                   {chatLoadFailed && chatMessages.length > 0 && (
@@ -4266,7 +4209,7 @@ export default function HomePage() {
                   <div
                     className={`${
                       chatNick.trim().length >= 2 && !nickEditing ? 'hidden sm:flex' : 'flex'
-                    } sm:w-44 items-center gap-2 rounded-2xl border px-3 py-2 transition focus-within:ring-2 focus-within:ring-pink-500/35 ${theme.card}`}
+                    } sm:w-44 items-center gap-2 rounded-md border px-3 py-2 transition focus-within:ring-2 focus-within:ring-pink-500/35 ${theme.card}`}
                   >
                     <span className={`inline-flex items-center justify-center w-5 h-5 rounded-full shrink-0 border ${theme.pill}`}>
                       {isTypingAdminNick ? <ShieldCheck className="w-3 h-3 text-amber-400" /> : <User className="w-3 h-3" />}
@@ -4287,7 +4230,7 @@ export default function HomePage() {
                   </div>
 
                   <div
-                    className={`flex-1 flex items-center gap-1.5 rounded-2xl border p-1.5 pl-3 transition focus-within:ring-2 focus-within:ring-pink-500/35 ${theme.card}`}
+                    className={`flex-1 flex items-center gap-1.5 rounded-md border p-1.5 pl-3 transition focus-within:ring-2 focus-within:ring-pink-500/35 ${theme.card}`}
                   >
                     <input
                       ref={chatInputRef}
@@ -4381,7 +4324,7 @@ export default function HomePage() {
 
         {activeTab === 'news' && (
         <div className="space-y-4">
-        <section className={`rounded-2xl border p-4 space-y-2.5 ${theme.card}`}>
+        <section className={`rounded-md border p-4 space-y-2.5 ${theme.card}`}>
           <div className="flex items-center gap-2">
             <HelpCircle className={`w-4 h-4 ${theme.accentText} shrink-0`} />
             <h2 className="text-xs sm:text-sm font-bold tracking-wider">
@@ -4426,7 +4369,7 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section className={`rounded-2xl border overflow-hidden ${theme.card}`}>
+        <section className={`rounded-md border overflow-hidden ${theme.card}`}>
           <button
             type="button"
             onClick={() => setRadarOpen((v) => !v)}
@@ -4565,7 +4508,7 @@ export default function HomePage() {
 
       {feedbackOpen && (
         <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className={`w-full max-w-md rounded-2xl border p-5 space-y-4 ${theme.menuBg}`}>
+          <div className={`w-full max-w-md rounded-md border p-5 space-y-4 ${theme.menuBg}`}>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <MessageSquarePlus className={`w-4 h-4 ${theme.accentText}`} />
@@ -4671,7 +4614,7 @@ export default function HomePage() {
 
       {changelogOpen && (
         <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className={`gta-scroll w-full max-w-lg rounded-2xl border p-5 space-y-4 max-h-[85vh] overflow-y-auto ${theme.menuBg}`}>
+          <div className={`gta-scroll w-full max-w-lg rounded-md border p-5 space-y-4 max-h-[85vh] overflow-y-auto ${theme.menuBg}`}>
             <div className="flex items-center justify-between">
               <h3 className="text-base font-black">
                 {lang === 'tr' ? 'Sürüm Notları' : 'Release Notes'}
@@ -4704,7 +4647,7 @@ export default function HomePage() {
       )}
       {iosGuideOpen && (
         <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className={`w-full max-w-sm rounded-2xl border p-5 space-y-4 ${theme.menuBg}`}>
+          <div className={`w-full max-w-sm rounded-md border p-5 space-y-4 ${theme.menuBg}`}>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Smartphone className={`w-4 h-4 ${theme.accentText}`} />
@@ -4757,10 +4700,10 @@ export default function HomePage() {
       {/* MOBİL SABİT ALT UYGULAMA NAVİGASYON BARI */}
       {!chatFullscreen && !chatInputFocused && (
         <nav
-          className={`fixed bottom-2.5 inset-x-2.5 z-40 sm:hidden rounded-2xl border backdrop-blur-xl px-1.5 py-1.5 ${theme.stickyBar}`}
+          className={`fixed bottom-0 inset-x-0 z-40 sm:hidden border-t ${theme.stickyBar}`}
           aria-label="Mobil Menü"
         >
-          <div className="grid grid-cols-4 gap-1">
+          <div className="grid grid-cols-4">
             {[
               { id: 'race', icon: Trophy, tr: 'Yarış', en: 'Race' },
               { id: 'chat', icon: MessageCircle, tr: 'Sohbet', en: 'Chat' },
@@ -4775,18 +4718,12 @@ export default function HomePage() {
                   key={tab.id}
                   type="button"
                   onClick={() => handleSelectTab(tab.id)}
-                  className={`relative flex flex-col items-center justify-center gap-0.5 py-2 min-h-[46px] rounded-xl text-[10px] font-extrabold transition-all duration-200 active:scale-[0.96] ${
+                  className={`relative flex flex-col items-center justify-center gap-1 py-2.5 min-h-[52px] text-[10px] font-bold tracking-wide transition-colors border-t-2 -mt-px ${
                     active
-                      ? theme.btnPrimary
+                      ? `border-[#FF4D2E] ${theme.accentText}`
                       : isChatAttention
-                        ? `overflow-hidden chat-tab-attention chat-tab-shimmer border ${
-                            isLight
-                              ? 'border-blue-300/80 bg-blue-50/80 text-blue-800'
-                              : themeKey === 'vice'
-                                ? 'border-fuchsia-400/45 bg-fuchsia-500/15 text-fuchsia-200'
-                                : 'border-blue-400/45 bg-blue-500/15 text-blue-200'
-                          }`
-                        : theme.muted
+                        ? `overflow-hidden chat-tab-attention chat-tab-shimmer border-transparent ${isLight ? 'text-[#111113]' : 'text-zinc-200'}`
+                        : `border-transparent ${theme.muted}`
                   }`}
                 >
                   {tab.id === 'chat' && !active && unreadWhileClosed === 0 && (
@@ -4817,7 +4754,7 @@ export default function HomePage() {
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className={`gta-scroll w-full sm:max-w-lg rounded-t-3xl sm:rounded-2xl border p-5 space-y-4 max-h-[85dvh] overflow-y-auto ${theme.menuBg}`}
+            className={`gta-scroll w-full sm:max-w-lg rounded-t-3xl sm:rounded-md border p-5 space-y-4 max-h-[85dvh] overflow-y-auto ${theme.menuBg}`}
           >
             <div className="flex items-start justify-between gap-2">
               <div className="space-y-1 min-w-0">
@@ -4868,7 +4805,7 @@ export default function HomePage() {
 
             <div className="relative h-2.5 w-full rounded-full bg-zinc-700/35 overflow-hidden">
               <div
-                className={`relative progress-shimmer h-full rounded-full bg-gradient-to-r ${theme.accentGradient}`}
+                className={`relative h-full rounded-full bg-gradient-to-r ${theme.accentGradient}`}
                 style={{ width: `${Math.min(100, Math.max(2, selectedTeam.progress))}%` }}
               />
             </div>
