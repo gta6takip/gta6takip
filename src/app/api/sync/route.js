@@ -8,6 +8,10 @@ const TRACKER_URLS = [
   'https://raw.githubusercontent.com/4lwayz/portwatch-vi/main/data/tracker.json',
 ];
 
+const SCARLETT_REPO = 'ZigZagBoi1/ScarlettPort';
+const SCARLETT_CACHE_TTL_MS = 5 * 60 * 1000;
+let scarlettCache = { ts: 0, data: null };
+
 function computePortWatchScore(effort) {
   const g = effort?.gta || {};
   const base =
@@ -86,13 +90,127 @@ function buildTurkishSummary(effort, progress, fps, gpu) {
   return `${effort.name} şu an %${progress} ile genel lider · ${fps} · ${gpu}${detailStr}. ${repoNote}`;
 }
 
+function estimateScarlettFromReadme(readmeText) {
+  const text = String(readmeText || '');
+  const lower = text.toLowerCase();
+
+  // README'deki aşama ve FPS bilgilerine göre PortWatch ölçeğine uyumlu dinamik tahmin
+  let score = 40; // loads(10) + boots(10) + menu(10) + world(10)
+  const litWorld = /lit world[^\n]*✅/i.test(text) || lower.includes('lit world renders');
+  const playableVerified = /playable[^\n]*✅/i.test(text) && !lower.includes('not yet verified playable');
+  const shadowedDone = /shadowed areas[^\n]*✅/i.test(text);
+
+  // Dünya içi FPS yakala (ör. "3-4 fps", "10 fps", "22 fps")
+  let fpsVal = 4;
+  let fpsLabel = '4 FPS (RTX 3060)';
+  const worldFpsMatch =
+    text.match(/lit world[^.\n]*?(\d{1,2})(?:\s*[-–]\s*(\d{1,2}))?\s*fps/i) ||
+    text.match(/speed:\s*about\s*(\d{1,2})(?:\s*[-–]\s*(\d{1,2}))?\s*fps/i);
+
+  if (worldFpsMatch) {
+    const low = Number(worldFpsMatch[1]) || 3;
+    const high = Number(worldFpsMatch[2]) || low;
+    fpsVal = high;
+    fpsLabel = low === high ? `${high} FPS` : `${low}-${high} FPS`;
+  }
+
+  if (playableVerified) {
+    score = 50 + Math.min(1, fpsVal / 30) * 10 + (shadowedDone ? 12 : 8) + 6;
+  } else {
+    if (litWorld) score += 6;
+    if (shadowedDone) score += 4;
+    score += Math.min(6, (fpsVal / 30) * 6);
+  }
+
+  const progress = Math.min(95, Math.round(score * 10) / 10);
+  const stage = playableVerified
+    ? 'Oynanabilir • Hazır Launcher'
+    : 'Oyun Dünyası • Hazır Launcher';
+
+  return { progress, fps: fpsLabel, stage };
+}
+
+async function fetchScarlettPortLive() {
+  const now = Date.now();
+  if (scarlettCache.data && now - scarlettCache.ts < SCARLETT_CACHE_TTL_MS) {
+    return scarlettCache.data;
+  }
+
+  const headers = {
+    'User-Agent': 'Mozilla/5.0 (compatible; gta6takip/1.2)',
+    Accept: 'application/vnd.github+json',
+  };
+
+  let repoInfo = null;
+  let releaseInfo = null;
+  let readmeText = '';
+
+  const [repoRes, relRes, readmeRes] = await Promise.allSettled([
+    fetch(`https://api.github.com/repos/${SCARLETT_REPO}`, {
+      headers,
+      signal: AbortSignal.timeout(5000),
+      cache: 'no-store',
+    }),
+    fetch(`https://api.github.com/repos/${SCARLETT_REPO}/releases/latest`, {
+      headers,
+      signal: AbortSignal.timeout(5000),
+      cache: 'no-store',
+    }),
+    fetch(`https://raw.githubusercontent.com/${SCARLETT_REPO}/main/README.md?t=${now}`, {
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; gta6takip/1.2)' },
+      signal: AbortSignal.timeout(5000),
+      cache: 'no-store',
+    }),
+  ]);
+
+  if (repoRes.status === 'fulfilled' && repoRes.value.ok) {
+    repoInfo = await repoRes.value.json().catch(() => null);
+  }
+  if (relRes.status === 'fulfilled' && relRes.value.ok) {
+    releaseInfo = await relRes.value.json().catch(() => null);
+  }
+  if (readmeRes.status === 'fulfilled' && readmeRes.value.ok) {
+    readmeText = await readmeRes.value.text().catch(() => '');
+  }
+
+  const est = estimateScarlettFromReadme(readmeText);
+  const releaseTag = releaseInfo?.tag_name || 'v0.5.3';
+  const stars = Number(repoInfo?.stargazers_count) || 772;
+  const updatedAt =
+    releaseInfo?.published_at || repoInfo?.pushed_at || new Date().toISOString();
+
+  const result = {
+    name: 'ScarlettPort',
+    progress: est.progress,
+    fps: est.fps,
+    gpu: 'AMD / NVIDIA',
+    type: 'open',
+    stage: est.stage,
+    delta: releaseTag,
+    url: `https://github.com/${SCARLETT_REPO}`,
+    repo: SCARLETT_REPO,
+    tier: 'tracked',
+    updatedAt,
+    releaseTag,
+    stars,
+    isEstimated: true,
+    hasLauncher: true,
+    summaryTr: `ScarlettPort (${releaseTag}), kaynak kod derlemeye gerek kalmadan hazır Windows başlatıcısı (ScarlettPort.exe) sunan ilk açık kaynak GTA VI PC port katmanı. VIctory + XCL altyapısını birleştiriyor; RTX 3060'ta 3–4 FPS, topluluk testlerinde RX 9060 XT ile 22 FPS'e kadar ulaşıyor (oyun dosyaları dahil değildir).`,
+    summaryEn: `ScarlettPort (${releaseTag}) is the first open-source GTA VI PC port layer shipping a prebuilt Windows launcher (ScarlettPort.exe) combining VIctory + XCL runtimes. Reaches lit open world at 3–4 FPS on RTX 3060 and up to 22 FPS in community RX 9060 XT tests (bring your own game files).`,
+    isZortos: false,
+  };
+
+  scarlettCache = { ts: now, data: result };
+  return result;
+}
+
 async function fetchTrackerJson() {
   const bust = Date.now();
   for (const baseUrl of TRACKER_URLS) {
     try {
       const res = await fetch(`${baseUrl}?t=${bust}`, {
         headers: {
-          'User-Agent': 'Mozilla/5.0 (compatible; gta6takip/1.1)',
+          'User-Agent': 'Mozilla/5.0 (compatible; gta6takip/1.2)',
           Accept: 'application/json',
         },
         signal: AbortSignal.timeout(7000),
@@ -111,7 +229,10 @@ async function fetchTrackerJson() {
 }
 
 export async function GET() {
-  const tracker = await fetchTrackerJson();
+  const [tracker, scarlettLive] = await Promise.all([
+    fetchTrackerJson(),
+    fetchScarlettPortLive().catch(() => null),
+  ]);
 
   if (!tracker) {
     return NextResponse.json(
@@ -126,7 +247,7 @@ export async function GET() {
     (e) => (Number(e?.gta?.boots) || 0) >= 1
   ).length;
 
-  const mappedTeams = allEfforts
+  let mappedTeams = allEfforts
     .filter((effort) => !effort?.nuked && !effort?.stats?.missing)
     .map((effort) => {
       const progress = computePortWatchScore(effort);
@@ -155,10 +276,42 @@ export async function GET() {
         summaryTr: buildTurkishSummary(effort, progress, fps, gpu),
         summaryEn: effort.summary || `${effort.name} leads at ${progress}% (${fps}, ${gpu}).`,
         isZortos: String(effort.name || '').toLowerCase() === 'zortos',
+        isEstimated: false,
+        hasLauncher: String(effort.repo || '').toLowerCase() === SCARLETT_REPO.toLowerCase(),
       };
     })
-    .filter((t) => t.tier === 'tracked' || t.progress >= 2.5)
-    .sort((a, b) => b.progress - a.progress);
+    .filter((t) => t.tier === 'tracked' || t.progress >= 2.5);
+
+  // ScarlettPort: PortWatch henüz resmi listeye eklemediyse GitHub canlı tahmini olarak ekle;
+  // eklediyse resmi PortWatch puanını koruyup sadece sürüm/yıldız/vitrin bilgisini zenginleştir.
+  let featuredPort = scarlettLive;
+  const existingScarlettIdx = mappedTeams.findIndex(
+    (t) =>
+      String(t.repo || '').toLowerCase() === SCARLETT_REPO.toLowerCase() ||
+      String(t.name || '').toLowerCase() === 'scarlettport'
+  );
+
+  if (existingScarlettIdx >= 0) {
+    const official = mappedTeams[existingScarlettIdx];
+    featuredPort = {
+      ...official,
+      releaseTag: scarlettLive?.releaseTag || 'v0.5.3',
+      stars: scarlettLive?.stars || 772,
+      isEstimated: false,
+      hasLauncher: true,
+      summaryTr: scarlettLive?.summaryTr || official.summaryTr,
+      summaryEn: scarlettLive?.summaryEn || official.summaryEn,
+    };
+    mappedTeams[existingScarlettIdx] = {
+      ...official,
+      releaseTag: featuredPort.releaseTag,
+      hasLauncher: true,
+    };
+  } else if (scarlettLive) {
+    mappedTeams.push(scarlettLive);
+  }
+
+  mappedTeams = mappedTeams.sort((a, b) => b.progress - a.progress);
 
   const top3 = mappedTeams.slice(0, 3);
   const top3Avg =
@@ -212,6 +365,7 @@ export async function GET() {
       bootingCount,
       top3Avg,
       teams: mappedTeams,
+      featuredPort,
       news,
     },
     {
