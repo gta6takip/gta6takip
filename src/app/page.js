@@ -45,7 +45,7 @@ import {
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
-const APP_VERSION = 'v1.1.1';
+const APP_VERSION = 'v1.1.2';
 const INITIAL_TEAMS_LIMIT = 5;
 const CHAT_COOLDOWN_SEC = 30;
 const CHAT_COOLDOWN_KEY = 'gta6takip_chat_cooldown_until';
@@ -302,6 +302,21 @@ const FALLBACK_NEWS = [
 ];
 
 const CHANGELOG = [
+  {
+    version: 'v1.1.2',
+    dateTr: '27 Kasım 2026',
+    dateEn: 'November 27, 2026',
+    itemsTr: [
+      'Mobil görünüm cilası: Sol alttaki Tavsiye / Fikir butonu mobilde yuvarlak ikon butonuna alındı, alt boşluk artırılarak içerik üstüne binme giderildi.',
+      'Kompakt listede ilerleme çubuğu mobilde tam genişliğe yayıldı; Günlük Yükseliş grafiği kartın iki ucuna tam hizalandı.',
+      'Mobil filtre şeridi sıkılaştırıldı, uzun ekip adlarında başlık rozeti alt satıra alınarak tek satır korundu ve Son Gelişmeler kartları mobilde yatay kaydırılabilir yapıldı.',
+    ],
+    itemsEn: [
+      'Mobile polish: Switched the floating Feedback button to a compact circular icon on mobile with extra footer padding to eliminate content overlap.',
+      'Expanded the Compact view progress bar across full mobile width and stretched the Daily Trend sparkline edge-to-edge.',
+      'Tightened mobile filter controls, kept team card headers single-line on mobile, and made Latest Updates horizontally swipeable on mobile.',
+    ],
+  },
   {
     version: 'v1.1.1',
     dateTr: '27 Kasım 2026',
@@ -1533,13 +1548,13 @@ export default function HomePage() {
   const sparkPoints = useMemo(() => {
     const endPct = Math.min(100, Math.max(50, leader.progress));
     const pts = [
-      { x: 10, y: 50 - (0 / 100) * 40, label: lang === 'tr' ? '23 Kas' : 'Nov 23', val: '0%' },
-      { x: 76, y: 50 - (40 / 100) * 40, label: lang === 'tr' ? '24 Kas' : 'Nov 24', val: '40%' },
-      { x: 142, y: 50 - (61 / 100) * 40, label: lang === 'tr' ? '25 Kas' : 'Nov 25', val: '61%' },
-      { x: 208, y: 50 - (endPct / 100) * 40, label: lang === 'tr' ? 'Bugün' : 'Today', val: `${endPct}%` },
+      { x: 6, y: 50 - (0 / 100) * 40, label: lang === 'tr' ? '23 Kas' : 'Nov 23', val: '0%' },
+      { x: 75, y: 50 - (40 / 100) * 40, label: lang === 'tr' ? '24 Kas' : 'Nov 24', val: '40%' },
+      { x: 145, y: 50 - (61 / 100) * 40, label: lang === 'tr' ? '25 Kas' : 'Nov 25', val: '61%' },
+      { x: 214, y: 50 - (endPct / 100) * 40, label: lang === 'tr' ? 'Bugün' : 'Today', val: `${endPct}%` },
     ];
     const line = pts.map((p) => `${p.x},${p.y.toFixed(1)}`).join(' ');
-    const area = `10,52 ${line} 208,52`;
+    const area = `6,52 ${line} 214,52`;
     return { pts, line, area };
   }, [leader.progress, lang]);
 
@@ -1616,6 +1631,13 @@ export default function HomePage() {
         @keyframes slowPulse {
           0%, 100% { opacity: 1; transform: scale(1); }
           50% { opacity: 0.3; transform: scale(0.84); }
+        }
+        .no-scrollbar {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+        .no-scrollbar::-webkit-scrollbar {
+          display: none;
         }
         html, body, .gta-scroll {
           scrollbar-width: thin;
@@ -1879,33 +1901,45 @@ export default function HomePage() {
                 </span>
                 <span className={theme.accentText}>0% → {leader.progress}%</span>
               </div>
-              <svg viewBox="0 0 220 56" className="w-full h-12 overflow-visible" aria-label="Progress Sparkline">
-                <defs>
-                  <linearGradient id="sparkFill" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor={theme.sparkStop} />
-                    <stop offset="100%" stopColor="rgba(0,0,0,0)" />
-                  </linearGradient>
-                </defs>
-                <polygon points={sparkPoints.area} fill="url(#sparkFill)" />
-                <polyline
-                  fill="none"
-                  stroke={theme.sparkStroke}
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  points={sparkPoints.line}
-                />
+              <div className="relative w-full h-12">
+                <svg
+                  viewBox="0 0 220 56"
+                  preserveAspectRatio="none"
+                  className="w-full h-full overflow-visible"
+                  aria-label="Progress Sparkline"
+                >
+                  <defs>
+                    <linearGradient id="sparkFill" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor={theme.sparkStop} />
+                      <stop offset="100%" stopColor="rgba(0,0,0,0)" />
+                    </linearGradient>
+                  </defs>
+                  <polygon points={sparkPoints.area} fill="url(#sparkFill)" />
+                  <polyline
+                    fill="none"
+                    stroke={theme.sparkStroke}
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    vectorEffect="non-scaling-stroke"
+                    points={sparkPoints.line}
+                  />
+                </svg>
                 {sparkPoints.pts.map((p, idx) => (
-                  <circle
+                  <span
                     key={p.label}
-                    cx={p.x}
-                    cy={p.y}
-                    r={idx === sparkPoints.pts.length - 1 ? 4 : 2.5}
-                    fill={theme.sparkStroke}
+                    className={`pointer-events-none absolute rounded-full -translate-x-1/2 -translate-y-1/2 ${
+                      idx === sparkPoints.pts.length - 1 ? 'w-2.5 h-2.5' : 'w-1.5 h-1.5'
+                    }`}
+                    style={{
+                      left: `${(p.x / 220) * 100}%`,
+                      top: `${(p.y / 56) * 100}%`,
+                      backgroundColor: theme.sparkStroke,
+                    }}
                   />
                 ))}
-              </svg>
-              <div className={`flex justify-between text-[10px] mt-0.5 ${theme.muted}`}>
+              </div>
+              <div className={`flex justify-between text-[10px] mt-1 ${theme.muted}`}>
                 <span>{sparkPoints.pts[0].label}</span>
                 <span>{sparkPoints.pts[1].label}</span>
                 <span>{sparkPoints.pts[2].label}</span>
@@ -1915,11 +1949,17 @@ export default function HomePage() {
           </div>
         </section>
 
+        {/* SON GELİŞMELER — MOBİLDE YATAY KAYDIRILABİLİR (SWIPE), MASAÜSTÜNDE 3 SÜTUN */}
         <section className="space-y-2.5">
-          <h2 className="text-sm font-bold tracking-wider opacity-80">
-            {lang === 'tr' ? 'SON GELİŞMELER' : 'LATEST UPDATES'}
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
+          <div className="flex items-center justify-between gap-2">
+            <h2 className="text-sm font-bold tracking-wider opacity-80">
+              {lang === 'tr' ? 'SON GELİŞMELER' : 'LATEST UPDATES'}
+            </h2>
+            <span className={`md:hidden text-[11px] font-semibold ${theme.muted}`}>
+              {lang === 'tr' ? 'Kaydır →' : 'Swipe →'}
+            </span>
+          </div>
+          <div className="flex md:grid md:grid-cols-3 gap-2.5 overflow-x-auto md:overflow-visible snap-x snap-mandatory no-scrollbar -mx-3 px-3 md:mx-0 md:px-0 pb-1 md:pb-0">
             {news.slice(0, 3).map((item, idx) => {
               const badgeLabel = lang === 'tr' ? item.tagTr || 'GÜNCEL' : item.tagEn || 'LIVE';
               const rawMsg =
@@ -1927,7 +1967,10 @@ export default function HomePage() {
                   ? String(item.tr || item.text || '').replace(/(\d+)'si oyunu başlatabiliyor/g, '$1 proje oyunu başlatabiliyor')
                   : localizeDynamicText(item.en || item.tr || item.text, 'en');
               return (
-                <div key={idx} className={`rounded-xl border p-3 text-xs leading-relaxed ${theme.card}`}>
+                <div
+                  key={idx}
+                  className={`shrink-0 w-[84%] sm:w-[68%] md:w-auto snap-start rounded-xl border p-3 text-xs leading-relaxed ${theme.card}`}
+                >
                   <span
                     className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full font-black text-[10px] mb-1.5 border ${getNewsBadgeStyle(
                       badgeLabel,
@@ -1959,18 +2002,46 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* AKTİF EKİPLER — SIFIR KAYMALI 2 SATIRLI FİLTRE & ARAMA */}
+        {/* AKTİF EKİPLER — MOBİLDE SIKI TEK ŞERİT FİLTRE, MASAÜSTÜNDE 2 SATIR */}
         <section className="space-y-3">
           <div className="space-y-2">
-            {/* Satır 1: Başlık + Arama Kutusu */}
-            <div className="flex items-center justify-between gap-3 flex-wrap">
-              <h2 className="text-sm font-bold tracking-wider opacity-85 whitespace-nowrap">
-                {lang === 'tr'
-                  ? `AKTİF EKİPLER (${filteredTeams.length})`
-                  : `ACTIVE EFFORTS (${filteredTeams.length})`}
-              </h2>
+            {/* Satır 1: Başlık + (Mobilde Görünüm İkonu) + Arama Kutusu */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div className="flex items-center justify-between gap-2">
+                <h2 className="text-sm font-bold tracking-wider opacity-85 whitespace-nowrap">
+                  {lang === 'tr'
+                    ? `AKTİF EKİPLER (${filteredTeams.length})`
+                    : `ACTIVE EFFORTS (${filteredTeams.length})`}
+                </h2>
 
-              <div className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs flex-1 sm:flex-none sm:w-60 ${theme.subCard}`}>
+                {/* Mobilde Başlık Yanında Kompakt Görünüm Geçişi */}
+                <div className={`inline-flex sm:hidden rounded-lg border p-0.5 text-[11px] font-semibold ${theme.subCard}`}>
+                  <button
+                    type="button"
+                    onClick={() => setCompactView(false)}
+                    className={`inline-flex items-center gap-1 px-2 py-1 rounded-md transition ${
+                      !compactView ? theme.btnPrimary : theme.muted
+                    }`}
+                    aria-label={lang === 'tr' ? 'Detaylı Kart Görünümü' : 'Detailed Card View'}
+                    title={lang === 'tr' ? 'Detaylı' : 'Cards'}
+                  >
+                    <LayoutGrid className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCompactView(true)}
+                    className={`inline-flex items-center gap-1 px-2 py-1 rounded-md transition ${
+                      compactView ? theme.btnPrimary : theme.muted
+                    }`}
+                    aria-label={lang === 'tr' ? 'Kompakt Liste Görünümü' : 'Compact List View'}
+                    title={lang === 'tr' ? 'Kompakt' : 'Compact'}
+                  >
+                    <List className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+
+              <div className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs w-full sm:w-60 ${theme.subCard}`}>
                 <Search className="w-3.5 h-3.5 opacity-65 shrink-0" />
                 <input
                   type="text"
@@ -1994,17 +2065,17 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* Satır 2: GPU Filtreleri + Kaynak Filtreleri + Kompakt Görünüm */}
-            <div className="flex items-center justify-between gap-2 flex-wrap">
-              <div className="flex items-center gap-2 flex-wrap">
-                <div className={`inline-flex rounded-lg border p-0.5 text-[11px] font-bold ${theme.subCard}`}>
+            {/* Satır 2: Mobilde Tek Satır Kaydırılabilir Filtre Şeridi + Masaüstünde Görünüm Geçişi */}
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto sm:overflow-visible sm:flex-wrap no-scrollbar -mx-3 px-3 sm:mx-0 sm:px-0 py-0.5 sm:py-0 w-full sm:w-auto">
+                <div className={`inline-flex shrink-0 rounded-lg border p-0.5 text-[11px] font-bold ${theme.subCard}`}>
                   <button
                     type="button"
                     onClick={() => {
                       setGpuFilter('all');
                       setShowAllTeams(false);
                     }}
-                    className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md transition ${
+                    className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md whitespace-nowrap transition ${
                       gpuFilter === 'all' ? theme.btnPrimary : theme.muted
                     }`}
                   >
@@ -2017,7 +2088,7 @@ export default function HomePage() {
                       setGpuFilter('amd');
                       setShowAllTeams(false);
                     }}
-                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md transition ${
+                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md whitespace-nowrap transition ${
                       gpuFilter === 'amd'
                         ? 'bg-[#ED1C24] text-white shadow-sm'
                         : isLight
@@ -2034,7 +2105,7 @@ export default function HomePage() {
                       setGpuFilter('nvidia');
                       setShowAllTeams(false);
                     }}
-                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md transition ${
+                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md whitespace-nowrap transition ${
                       gpuFilter === 'nvidia'
                         ? 'bg-[#76B900] text-zinc-950 shadow-sm'
                         : isLight
@@ -2047,14 +2118,14 @@ export default function HomePage() {
                   </button>
                 </div>
 
-                <div className={`inline-flex rounded-lg border p-0.5 text-[11px] font-semibold ${theme.subCard}`}>
+                <div className={`inline-flex shrink-0 rounded-lg border p-0.5 text-[11px] font-semibold ${theme.subCard}`}>
                   <button
                     type="button"
                     onClick={() => {
                       setTypeFilter('all');
                       setShowAllTeams(false);
                     }}
-                    className={`px-2.5 py-1 rounded-md transition ${
+                    className={`px-2.5 py-1 rounded-md whitespace-nowrap transition ${
                       typeFilter === 'all' ? theme.btnPrimary : theme.muted
                     }`}
                   >
@@ -2066,7 +2137,7 @@ export default function HomePage() {
                       setTypeFilter('open');
                       setShowAllTeams(false);
                     }}
-                    className={`px-2.5 py-1 rounded-md transition ${
+                    className={`px-2.5 py-1 rounded-md whitespace-nowrap transition ${
                       typeFilter === 'open' ? theme.btnPrimary : theme.muted
                     }`}
                   >
@@ -2078,7 +2149,7 @@ export default function HomePage() {
                       setTypeFilter('private');
                       setShowAllTeams(false);
                     }}
-                    className={`px-2.5 py-1 rounded-md transition ${
+                    className={`px-2.5 py-1 rounded-md whitespace-nowrap transition ${
                       typeFilter === 'private' ? theme.btnPrimary : theme.muted
                     }`}
                   >
@@ -2087,7 +2158,7 @@ export default function HomePage() {
                 </div>
               </div>
 
-              <div className={`inline-flex rounded-lg border p-0.5 text-[11px] font-semibold ${theme.subCard}`}>
+              <div className={`hidden sm:inline-flex shrink-0 rounded-lg border p-0.5 text-[11px] font-semibold ${theme.subCard}`}>
                 <button
                   type="button"
                   onClick={() => setCompactView(false)}
@@ -2165,21 +2236,21 @@ export default function HomePage() {
                       </span>
                     </div>
 
-                    <div className="flex items-center gap-2.5 shrink-0">
-                      <div className="w-24 sm:w-28 h-2 rounded-full bg-zinc-700/35 overflow-hidden">
+                    <div className="flex items-center gap-2.5 w-full sm:w-auto sm:shrink-0">
+                      <div className="flex-1 sm:flex-none sm:w-28 h-2 rounded-full bg-zinc-700/35 overflow-hidden">
                         <div
                           className={`h-full rounded-full bg-gradient-to-r ${theme.accentGradient}`}
                           style={{ width: `${barWidth}%` }}
                         />
                       </div>
-                      <span className={`text-sm font-black w-14 text-right tabular-nums ${theme.accentText}`}>
+                      <span className={`text-sm font-black shrink-0 w-12 sm:w-14 text-right tabular-nums ${theme.accentText}`}>
                         {lang === 'tr' ? `%${team.progress}` : `${team.progress}%`}
                       </span>
                       <a
                         href={team.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg border text-[11px] font-semibold transition hover:opacity-80 ${theme.subCard}`}
+                        className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg border text-[11px] font-semibold shrink-0 transition hover:opacity-80 ${theme.subCard}`}
                       >
                         <ExternalLink className="w-3 h-3" />
                       </a>
@@ -2195,8 +2266,8 @@ export default function HomePage() {
                     rank === 1 ? 'ring-1 ring-orange-500/40' : ''
                   }`}
                 >
-                  <div className="flex items-start sm:items-center justify-between gap-2">
-                    <div className="flex items-center gap-2 flex-wrap min-w-0">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
                       <span
                         className={`inline-flex items-center justify-center w-7 h-7 rounded-lg text-xs font-black shrink-0 ${
                           rank === 1 ? theme.btnPrimary : theme.softChip
@@ -2209,18 +2280,18 @@ export default function HomePage() {
                         style={{ animation: 'slowPulse 2.6s ease-in-out infinite' }}
                         title={lang === 'tr' ? 'Canlı takip' : 'Live tracked'}
                       />
-                      <h3 className="text-base sm:text-lg font-extrabold tracking-tight">
+                      <h3 className="text-base sm:text-lg font-extrabold tracking-tight truncate">
                         {team.name}
                       </h3>
 
                       {isHot && (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black tracking-wider bg-gradient-to-r from-red-500 via-orange-500 to-amber-400 text-zinc-950 shadow-[0_0_16px_rgba(249,115,22,0.75)] animate-pulse">
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black tracking-wider shrink-0 bg-gradient-to-r from-red-500 via-orange-500 to-amber-400 text-zinc-950 shadow-[0_0_16px_rgba(249,115,22,0.75)] animate-pulse">
                           <Flame className="w-3 h-3 fill-current" />
                           HOT
                         </span>
                       )}
 
-                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold ${theme.softChip}`}>
+                      <span className={`hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold shrink-0 ${theme.softChip}`}>
                         {team.type === 'private' ? (
                           <Lock className="w-3 h-3 opacity-80" />
                         ) : (
@@ -2238,14 +2309,14 @@ export default function HomePage() {
                       </span>
 
                       {team.delta && (
-                        <span className={`text-[11px] font-bold ${isLight ? 'text-emerald-700' : 'text-emerald-400'}`}>
+                        <span className={`hidden sm:inline text-[11px] font-bold shrink-0 ${isLight ? 'text-emerald-700' : 'text-emerald-400'}`}>
                           ▲ {team.delta}
                         </span>
                       )}
                     </div>
 
-                    <div className="flex items-center gap-2 shrink-0">
-                      <span className={`text-lg sm:text-xl font-black tabular-nums ${theme.accentText}`}>
+                    <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+                      <span className={`text-base sm:text-xl font-black tabular-nums ${theme.accentText}`}>
                         {lang === 'tr' ? `%${team.progress}` : `${team.progress}%`}
                       </span>
                       <a
@@ -2260,7 +2331,7 @@ export default function HomePage() {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2 flex-wrap mt-2 text-xs">
+                  <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap mt-2 text-xs">
                     <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md font-semibold ${theme.softChip}`}>
                       <Monitor className={`w-3.5 h-3.5 shrink-0 ${theme.accentText}`} />
                       <span>{localizeDynamicText(team.fps, lang)}</span>
@@ -2269,6 +2340,27 @@ export default function HomePage() {
                       <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md font-semibold ${theme.softChip}`}>
                         <GpuBadgeIcons gpu={team.gpu} isLight={isLight} />
                         <span>{localizeDynamicText(team.gpu, lang)}</span>
+                      </span>
+                    )}
+                    <span className={`inline-flex sm:hidden items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold ${theme.softChip}`}>
+                      {team.type === 'private' ? (
+                        <Lock className="w-3 h-3 opacity-80" />
+                      ) : (
+                        <Code2 className="w-3 h-3 opacity-80" />
+                      )}
+                      <span>
+                        {team.type === 'private'
+                          ? lang === 'tr'
+                            ? 'Kapalı Ekip'
+                            : 'Private Build'
+                          : lang === 'tr'
+                            ? 'Açık Kaynak'
+                            : 'Open Source'}
+                      </span>
+                    </span>
+                    {team.delta && (
+                      <span className={`sm:hidden text-[11px] font-bold ${isLight ? 'text-emerald-700' : 'text-emerald-400'}`}>
+                        ▲ {team.delta}
                       </span>
                     )}
                     {team.stage && (
@@ -3042,7 +3134,7 @@ export default function HomePage() {
           )}
         </section>
 
-        <footer className={`pt-2 pb-16 space-y-4 text-center text-xs ${theme.muted}`}>
+        <footer className={`pt-2 pb-24 sm:pb-16 space-y-4 text-center text-xs ${theme.muted}`}>
           <div className="flex items-center justify-center gap-2 flex-wrap">
             <a
               href="https://x.com/batmancodex"
@@ -3094,11 +3186,13 @@ export default function HomePage() {
           setFeedbackStatus('idle');
           setFeedbackOpen(true);
         }}
+        aria-label={lang === 'tr' ? 'Tavsiye / Fikir' : 'Feedback / Idea'}
+        title={lang === 'tr' ? 'Tavsiye / Fikir' : 'Feedback / Idea'}
         style={{ animation: 'feedbackNudge 4s ease-in-out infinite' }}
-        className={`fixed bottom-5 left-4 z-40 inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-full shadow-lg text-xs font-extrabold transition hover:scale-105 ${theme.btnPrimary}`}
+        className={`fixed bottom-5 left-4 z-40 inline-flex items-center justify-center gap-1.5 w-11 h-11 sm:w-auto sm:h-auto sm:px-3.5 sm:py-2.5 rounded-full shadow-lg text-xs font-extrabold transition hover:scale-105 ${theme.btnPrimary}`}
       >
-        <MessageSquarePlus className="w-4 h-4" />
-        <span>{lang === 'tr' ? 'Tavsiye / Fikir' : 'Feedback / Idea'}</span>
+        <MessageSquarePlus className="w-5 h-5 sm:w-4 sm:h-4 shrink-0" />
+        <span className="hidden sm:inline">{lang === 'tr' ? 'Tavsiye / Fikir' : 'Feedback / Idea'}</span>
       </button>
 
       {showBackTop && (
@@ -3106,7 +3200,7 @@ export default function HomePage() {
           type="button"
           onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
           aria-label={lang === 'tr' ? 'Yukarı çık' : 'Back to top'}
-          className={`fixed bottom-5 right-4 z-40 p-3 rounded-full shadow-lg transition hover:scale-110 ${theme.btnPrimary}`}
+          className={`fixed bottom-5 right-4 z-40 w-11 h-11 inline-flex items-center justify-center rounded-full shadow-lg transition hover:scale-110 ${theme.btnPrimary}`}
         >
           <ArrowUp className="w-5 h-5" />
         </button>
