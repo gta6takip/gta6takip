@@ -50,7 +50,7 @@ import {
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
-const APP_VERSION = 'v1.2.0';
+const APP_VERSION = 'v1.2.1';
 const CHAT_CACHE_PREFIX = 'gta6takip_chat_cache_';
 const INITIAL_TEAMS_LIMIT = 5;
 const CHAT_COOLDOWN_SEC = 30;
@@ -185,56 +185,6 @@ const THEMES = {
     sbThumb: 'rgba(236, 72, 153, 0.48)',
     sbThumbHover: 'rgba(244, 114, 182, 0.85)',
   },
-  neonvice: {
-    id: 'neonvice',
-    label: { tr: 'Neon Vice', en: 'Neon Vice' },
-    dot: '#a855f7',
-    bg: 'bg-[#0b0616] text-fuchsia-50',
-    card: 'bg-[#140a26]/95 border-purple-500/30',
-    cardHover: 'hover:border-cyan-400/60 hover:shadow-[0_0_26px_rgba(34,211,238,0.22)]',
-    heroGlow: 'shadow-[0_0_46px_rgba(168,85,247,0.26)] bg-gradient-to-br from-[#1d0d38] via-[#130a24] to-[#0a1a2a]',
-    leaderGlow: 'ring-1 ring-cyan-400/60 shadow-[0_0_30px_rgba(168,85,247,0.32)]',
-    menuBg: 'bg-[#140a26] border-purple-500/40',
-    subCard: 'bg-[#0f081d] border-purple-500/25',
-    stickyBar: 'bg-[#0b0616]/90 border-purple-500/25',
-    muted: 'text-purple-200/75',
-    accentText: 'text-cyan-300',
-    accentBg: 'bg-purple-500',
-    accentGradient: 'from-pink-500 via-purple-500 to-cyan-400',
-    btnPrimary: 'bg-gradient-to-r from-pink-500 via-purple-500 to-cyan-400 text-zinc-950 hover:brightness-110',
-    pill: 'bg-purple-950/70 text-cyan-200 border-purple-400/40',
-    softChip: 'bg-purple-500/15 text-purple-100/90',
-    sparkStroke: '#22d3ee',
-    sparkStop: 'rgba(168, 85, 247, 0.36)',
-    sbTrack: '#0f081d',
-    sbThumb: 'rgba(168, 85, 247, 0.55)',
-    sbThumbHover: 'rgba(34, 211, 238, 0.85)',
-  },
-  softdark: {
-    id: 'softdark',
-    label: { tr: 'Soft Dark', en: 'Soft Dark' },
-    dot: '#818cf8',
-    bg: 'bg-[#12141c] text-slate-100',
-    card: 'bg-[#191c27]/95 border-slate-700/60',
-    cardHover: 'hover:border-indigo-400/50 hover:shadow-[0_0_22px_rgba(129,140,248,0.16)]',
-    heroGlow: 'shadow-[0_0_34px_rgba(129,140,248,0.14)] bg-gradient-to-br from-[#1d2030] via-[#191c27] to-[#161a24]',
-    leaderGlow: 'ring-1 ring-indigo-400/50 shadow-[0_0_22px_rgba(129,140,248,0.2)]',
-    menuBg: 'bg-[#191c27] border-slate-700',
-    subCard: 'bg-[#141720] border-slate-700/50',
-    stickyBar: 'bg-[#12141c]/90 border-slate-700/50',
-    muted: 'text-slate-400',
-    accentText: 'text-indigo-300',
-    accentBg: 'bg-indigo-400',
-    accentGradient: 'from-indigo-400 via-purple-400 to-cyan-300',
-    btnPrimary: 'bg-gradient-to-r from-indigo-400 to-cyan-300 text-zinc-950 hover:brightness-105',
-    pill: 'bg-indigo-950/60 text-indigo-200 border-indigo-400/30',
-    softChip: 'bg-slate-800/80 text-slate-200',
-    sparkStroke: '#818cf8',
-    sparkStop: 'rgba(129, 140, 248, 0.28)',
-    sbTrack: '#141720',
-    sbThumb: 'rgba(129, 140, 248, 0.45)',
-    sbThumbHover: 'rgba(165, 180, 252, 0.8)',
-  },
   light: {
     id: 'light',
     label: { tr: 'Açık', en: 'Light' },
@@ -310,6 +260,31 @@ const THEMES = {
     sbThumb: 'rgba(34, 211, 238, 0.48)',
     sbThumbHover: 'rgba(34, 211, 238, 0.85)',
   },
+  neonvice: {
+    id: 'neonvice',
+    label: { tr: 'Neon Vice', en: 'Neon Vice' },
+    dot: '#a855f7',
+    bg: 'bg-[#0b0616] text-fuchsia-50',
+    card: 'bg-[#140a26]/95 border-purple-500/30',
+    cardHover: 'hover:border-cyan-400/60 hover:shadow-[0_0_26px_rgba(34,211,238,0.22)]',
+    heroGlow: 'shadow-[0_0_46px_rgba(168,85,247,0.26)] bg-gradient-to-br from-[#1d0d38] via-[#130a24] to-[#0a1a2a]',
+    leaderGlow: 'ring-1 ring-cyan-400/60 shadow-[0_0_30px_rgba(168,85,247,0.32)]',
+    menuBg: 'bg-[#140a26] border-purple-500/40',
+    subCard: 'bg-[#0f081d] border-purple-500/25',
+    stickyBar: 'bg-[#0b0616]/90 border-purple-500/25',
+    muted: 'text-purple-200/75',
+    accentText: 'text-cyan-300',
+    accentBg: 'bg-purple-500',
+    accentGradient: 'from-pink-500 via-purple-500 to-cyan-400',
+    btnPrimary: 'bg-gradient-to-r from-pink-500 via-purple-500 to-cyan-400 text-zinc-950 hover:brightness-110',
+    pill: 'bg-purple-950/70 text-cyan-200 border-purple-400/40',
+    softChip: 'bg-purple-500/15 text-purple-100/90',
+    sparkStroke: '#22d3ee',
+    sparkStop: 'rgba(168, 85, 247, 0.36)',
+    sbTrack: '#0f081d',
+    sbThumb: 'rgba(168, 85, 247, 0.55)',
+    sbThumbHover: 'rgba(34, 211, 238, 0.85)',
+  },
   ocean: {
     id: 'ocean',
     label: { tr: 'Ocean Drive', en: 'Ocean Drive' },
@@ -334,6 +309,31 @@ const THEMES = {
     sbTrack: '#0c1324',
     sbThumb: 'rgba(96, 165, 250, 0.48)',
     sbThumbHover: 'rgba(96, 165, 250, 0.85)',
+  },
+  softdark: {
+    id: 'softdark',
+    label: { tr: 'Soft Dark', en: 'Soft Dark' },
+    dot: '#818cf8',
+    bg: 'bg-[#12141c] text-slate-100',
+    card: 'bg-[#191c27]/95 border-slate-700/60',
+    cardHover: 'hover:border-indigo-400/50 hover:shadow-[0_0_22px_rgba(129,140,248,0.16)]',
+    heroGlow: 'shadow-[0_0_34px_rgba(129,140,248,0.14)] bg-gradient-to-br from-[#1d2030] via-[#191c27] to-[#161a24]',
+    leaderGlow: 'ring-1 ring-indigo-400/50 shadow-[0_0_22px_rgba(129,140,248,0.2)]',
+    menuBg: 'bg-[#191c27] border-slate-700',
+    subCard: 'bg-[#141720] border-slate-700/50',
+    stickyBar: 'bg-[#12141c]/90 border-slate-700/50',
+    muted: 'text-slate-400',
+    accentText: 'text-indigo-300',
+    accentBg: 'bg-indigo-400',
+    accentGradient: 'from-indigo-400 via-purple-400 to-cyan-300',
+    btnPrimary: 'bg-gradient-to-r from-indigo-400 to-cyan-300 text-zinc-950 hover:brightness-105',
+    pill: 'bg-indigo-950/60 text-indigo-200 border-indigo-400/30',
+    softChip: 'bg-slate-800/80 text-slate-200',
+    sparkStroke: '#818cf8',
+    sparkStop: 'rgba(129, 140, 248, 0.28)',
+    sbTrack: '#141720',
+    sbThumb: 'rgba(129, 140, 248, 0.45)',
+    sbThumbHover: 'rgba(165, 180, 252, 0.8)',
   },
 };
 
@@ -397,6 +397,21 @@ const FALLBACK_FEATURED_PORT = {
 };
 
 const CHANGELOG = [
+  {
+    version: 'v1.2.1',
+    dateTr: '27 Kasım 2026',
+    dateEn: 'November 27, 2026',
+    itemsTr: [
+      'Sol üst marka alanı yenilendi: Özel GTA6takip uygulama simgesi logo olarak eklendi, uyumlu tipografiyle yeniden tasarlandı ve tıklandığında sayfayı yenileyecek şekilde bağlandı.',
+      'Tema menüsü sırası düzenlendi: Vice Sunset, Açık, Koyu ve devamı alfabetik (Leonida Neon, Neon Vice, Ocean Drive, Soft Dark).',
+      'Zirve Lider kartının her zaman gerçek #1 lideri (Belobug) göstermesi sabitlendi.',
+    ],
+    itemsEn: [
+      'Redesigned top-left brand lockup with the custom GTA6takip app icon, matching typography, and click-to-refresh behavior.',
+      'Reordered theme menu: Vice Sunset, Light, Dark, followed alphabetically by Leonida Neon, Neon Vice, Ocean Drive, and Soft Dark.',
+      'Fixed Top Leader badge to always reflect the true #1 overall leader.',
+    ],
+  },
   {
     version: 'v1.2.0',
     dateTr: '27 Kasım 2026',
@@ -2019,9 +2034,28 @@ export default function HomePage() {
         <div className="max-w-4xl mx-auto px-3 sm:px-5 py-2 sm:py-2.5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2 min-w-0">
-              <span className={`font-black tracking-tight text-lg sm:text-xl bg-gradient-to-r ${theme.accentGradient} bg-clip-text text-transparent`}>
-                GTA6TAKİP
-              </span>
+              <button
+                type="button"
+                onClick={() => window.location.reload()}
+                title={lang === 'tr' ? 'Ana sayfayı yenile' : 'Refresh homepage'}
+                className="group inline-flex items-center gap-2 text-left transition hover:opacity-95 active:scale-[0.98] cursor-pointer"
+              >
+                <img
+                  src="/icon-192.png"
+                  alt="GTA6takip"
+                  width={30}
+                  height={30}
+                  className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg object-cover shrink-0 ring-1 ring-white/15 shadow-[0_0_12px_rgba(236,72,153,0.35)] transition-transform duration-200 group-hover:scale-105"
+                />
+                <span className="inline-flex items-baseline leading-none select-none">
+                  <span className={`font-black italic tracking-tighter text-lg sm:text-[21px] bg-gradient-to-r ${theme.accentGradient} bg-clip-text text-transparent drop-shadow-[0_0_10px_rgba(236,72,153,0.28)]`}>
+                    GTA6
+                  </span>
+                  <span className={`font-extrabold tracking-[0.08em] text-[15px] sm:text-[17px] ml-0.5 bg-gradient-to-r ${theme.accentGradient} bg-clip-text text-transparent opacity-95`}>
+                    TAKİP
+                  </span>
+                </span>
+              </button>
               <button
                 type="button"
                 onClick={() => setChangelogOpen(true)}
@@ -2243,9 +2277,9 @@ export default function HomePage() {
                   <span className={theme.muted}>
                     {lang === 'tr' ? 'Zirve Lider:' : 'Top Leader:'}
                   </span>
-                  <span className={leaderGlowClass}>{fastestTeam.name}</span>
+                  <span className={leaderGlowClass}>{leader.name}</span>
                   <span className={isLight ? 'text-emerald-700 font-bold' : 'text-emerald-400 font-bold'}>
-                    {lang === 'tr' ? `%${fastestTeam.progress}` : `${fastestTeam.progress}%`}
+                    {lang === 'tr' ? `%${leader.progress}` : `${leader.progress}%`}
                   </span>
                 </div>
 
