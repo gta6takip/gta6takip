@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server';
 export const dynamic = 'force-dynamic';
 export const fetchCache = 'force-no-store';
 
-const COOLDOWN_SECONDS = 30;
+const COOLDOWN_SECONDS = 20;
 const COOLDOWN_MS = COOLDOWN_SECONDS * 1000;
 const MAX_MESSAGE_LENGTH = 280;
 const MIN_NICK_LENGTH = 2;
@@ -543,8 +543,8 @@ export async function POST(request) {
         return NextResponse.json(
           {
             error: isEn
-              ? `1 message per 30 seconds. Please wait ${retryAfter}s.`
-              : `30 saniyede en fazla 1 mesaj gönderebilirsin. Lütfen ${retryAfter} saniye bekle.`,
+              ? `1 message per 20 seconds. Please wait ${retryAfter}s.`
+              : `20 saniyede en fazla 1 mesaj gönderebilirsin. Lütfen ${retryAfter} saniye bekle.`,
             retryAfter,
           },
           { status: 429 }
@@ -569,8 +569,8 @@ export async function POST(request) {
             return NextResponse.json(
               {
                 error: isEn
-                  ? `1 message per 30 seconds. Please wait ${retryAfter}s.`
-                  : `30 saniyede en fazla 1 mesaj gönderebilirsin. Lütfen ${retryAfter} saniye bekle.`,
+                  ? `1 message per 20 seconds. Please wait ${retryAfter}s.`
+                  : `20 saniyede en fazla 1 mesaj gönderebilirsin. Lütfen ${retryAfter} saniye bekle.`,
                 retryAfter,
               },
               { status: 429 }
