@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
+export const fetchCache = 'force-no-store';
 
 const TRACKER_URLS = [
-  '[https://portwatch-vi.xyz/data/tracker.json](https://portwatch-vi.xyz/data/tracker.json)',
-  '[https://raw.githubusercontent.com/4lwayz/portwatch-vi/main/data/tracker.json](https://raw.githubusercontent.com/4lwayz/portwatch-vi/main/data/tracker.json)',
+  'https://portwatch-vi.xyz/data/tracker.json',
+  'https://raw.githubusercontent.com/4lwayz/portwatch-vi/main/data/tracker.json',
 ];
 
 function computePortWatchScore(effort) {
@@ -86,9 +87,10 @@ function buildTurkishSummary(effort, progress, fps, gpu) {
 }
 
 async function fetchTrackerJson() {
-  for (const url of TRACKER_URLS) {
+  const bust = Date.now();
+  for (const baseUrl of TRACKER_URLS) {
     try {
-      const res = await fetch(url, {
+      const res = await fetch(`${baseUrl}?t=${bust}`, {
         headers: {
           'User-Agent': 'Mozilla/5.0 (compatible; gta6takip/1.1)',
           Accept: 'application/json',
@@ -135,8 +137,8 @@ export async function GET() {
           : effort.approach || (isOpen ? 'Açık Kaynak' : 'Özel Yapı');
       const fps = buildFpsLabel(effort);
       const url = isOpen
-        ? `[https://github.com/$](https://github.com/$){effort.repo}`
-        : effort.proof?.url || '[https://portwatch-vi.xyz/#race](https://portwatch-vi.xyz/#race)';
+        ? `https://github.com/${effort.repo}`
+        : effort.proof?.url || 'https://portwatch-vi.xyz/#race';
 
       return {
         name: effort.name,
@@ -214,7 +216,7 @@ export async function GET() {
     },
     {
       headers: {
-        'Cache-Control': 's-maxage=30, stale-while-revalidate=60',
+        'Cache-Control': 'no-store, max-age=0',
       },
     }
   );
