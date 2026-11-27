@@ -58,7 +58,7 @@ import {
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
-const APP_VERSION = 'v2.0.3';
+const APP_VERSION = 'v2.1.0';
 const SCORE_SNAPSHOT_KEY = 'gta6takip_prev_scores_v2';
 const CHAT_CACHE_PREFIX = 'gta6takip_chat_cache_';
 const INITIAL_TEAMS_LIMIT = 5;
@@ -208,7 +208,7 @@ const THEMES = {
     dot: '#ec4899',
     bg: 'bg-[#12091c] text-pink-50',
     backdropGlow: 'radial-gradient(ellipse 80% 40% at 50% -10%, rgba(236,72,153,0.18), transparent 70%)',
-    card: 'bg-[#1b0f2a]/95 border-pink-500/25',
+    card: 'bg-[#1b0f2a]/90 backdrop-blur-xl border-pink-500/25 shadow-[inset_0_1px_0_rgba(255,255,255,0.07),0_10px_32px_rgba(0,0,0,0.34)]',
     cardHover: 'hover:border-pink-400/60 hover:shadow-[0_0_24px_rgba(236,72,153,0.22)]',
     heroGlow: 'shadow-[0_0_44px_rgba(236,72,153,0.18)] bg-gradient-to-br from-[#231236] via-[#1b0f2a] to-[#160d24]',
     leaderGlow: 'ring-1 ring-pink-400/55 shadow-[0_0_26px_rgba(236,72,153,0.24)]',
@@ -235,7 +235,7 @@ const THEMES = {
     dot: '#3b82f6',
     bg: 'bg-[#060b17] text-slate-100',
     backdropGlow: 'radial-gradient(ellipse 52% 45% at 16% 18%, rgba(37,99,235,0.26), transparent 72%), radial-gradient(ellipse 46% 42% at 84% 34%, rgba(234,88,12,0.19), transparent 72%)',
-    card: 'bg-[#0c1324]/78 backdrop-blur-xl border-white/[0.09] shadow-[0_8px_32px_rgba(0,0,0,0.36)]',
+    card: 'bg-[#0c1324]/78 backdrop-blur-xl border-white/[0.10] shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_10px_36px_rgba(0,0,0,0.40)]',
     cardHover: 'hover:border-blue-400/45 hover:bg-[#111b32]/85 hover:shadow-[0_0_26px_rgba(59,130,246,0.18)]',
     heroGlow: 'shadow-[0_12px_44px_rgba(0,0,0,0.45)] bg-gradient-to-br from-[#0f1930]/85 via-[#0b1222]/80 to-[#111624]/75',
     leaderGlow: 'ring-1 ring-blue-400/45 shadow-[0_0_28px_rgba(59,130,246,0.22)]',
@@ -243,7 +243,7 @@ const THEMES = {
     subCard: 'bg-white/[0.045] border-white/[0.10] backdrop-blur-md',
     stickyBar: 'bg-[#091020]/82 backdrop-blur-xl border-white/[0.11] shadow-[0_10px_34px_rgba(0,0,0,0.52)]',
     selfMsgBg: 'bg-blue-500/12 border-l-2 border-blue-400',
-    muted: 'text-slate-400',
+    muted: 'text-slate-300/80',
     accentText: 'text-blue-400',
     accentBg: 'bg-blue-500',
     accentGradient: 'from-blue-500 via-sky-400 to-orange-400',
@@ -345,6 +345,21 @@ const FALLBACK_FEATURED_PORT = {
 };
 
 const CHANGELOG = [
+  {
+    version: 'v2.1.0',
+    dateTr: '27 Kasım 2026',
+    dateEn: 'November 27, 2026',
+    itemsTr: [
+      'UI/UX tasarım sistemi revizyonu: Cam kartlara üst ışık yansıması (specular highlight), daha yüksek WCAG kontrastı ve erişilebilir odak halkaları eklendi.',
+      'Hero kartı ve 3'lü Podyum, net tipografi hiyerarşisi, parıltılı ilerleme halkası ve yükselen cam metrik kutularıyla yenilendi.',
+      'Mobil ve masaüstü butonlara 44px+ dokunma ergonomisi ve dokunsal tıklama tepkisi eklendi; tüm canlı otomasyonlar ve 3 tema korundu.',
+    ],
+    itemsEn: [
+      'UI/UX design system pass: added specular top-edge glass highlights, stronger WCAG text contrast, and accessible focus rings.',
+      'Refined the Hero telemetry card and Top-3 Podium with stronger typographic hierarchy, luminous progress ring, and elevated glass metric tiles.',
+      'Improved mobile/desktop touch ergonomics and tactile press feedback while keeping all live automations and 3 themes intact.',
+    ],
+  },
   {
     version: 'v2.0.3',
     dateTr: '27 Kasım 2026',
@@ -2213,6 +2228,13 @@ export default function HomePage() {
           background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.34), rgba(56, 189, 248, 0.30), transparent);
           animation: chatTabShimmer 4.8s ease-in-out infinite;
         }
+        button:focus-visible,
+        a:focus-visible,
+        input:focus-visible,
+        select:focus-visible {
+          outline: 2px solid rgba(59, 130, 246, 0.75);
+          outline-offset: 2px;
+        }
         @media (prefers-reduced-motion: reduce) {
           .chat-tab-attention,
           .chat-tab-shimmer::after {
@@ -2430,7 +2452,7 @@ export default function HomePage() {
                 key={tab.id}
                 type="button"
                 onClick={() => handleSelectTab(tab.id)}
-                className={`relative flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-extrabold transition ${
+                className={`relative flex items-center justify-center gap-2 py-2.5 px-3.5 rounded-xl text-xs font-extrabold transition-all duration-200 active:scale-[0.97] ${
                   active
                     ? `${theme.btnPrimary} shadow-sm`
                     : isChatAttention
@@ -2482,7 +2504,7 @@ export default function HomePage() {
                     {totalEfforts} {lang === 'tr' ? 'Girişim' : 'Tracked'} · {bootingCount} Boot
                   </span>
                 </div>
-                <h1 className="text-sm sm:text-base font-black tracking-tight opacity-95">
+                <h1 className="text-base sm:text-lg font-black tracking-tight opacity-95">
                   {lang === 'tr'
                     ? 'GTA 6 PC Port Takip & Canlı İlerleme'
                     : 'GTA VI PC Port Tracker & Live Progress'}
@@ -2492,7 +2514,7 @@ export default function HomePage() {
               {/* Yüzde + %100 İlerleme Dairesi + İstatistik Rozeti */}
               <div className="flex items-center gap-4 flex-wrap">
                 <div className="relative w-16 h-16 shrink-0 flex items-center justify-center">
-                  <svg viewBox="0 0 64 64" className="w-16 h-16 -rotate-90" aria-label={`%${leaderPct}`}>
+                  <svg viewBox="0 0 64 64" className={`w-16 h-16 -rotate-90 ${!isLight ? 'drop-shadow-[0_0_10px_rgba(59,130,246,0.35)]' : ''}`} aria-label={`%${leaderPct}`}>
                     <circle
                       cx="32"
                       cy="32"
@@ -2524,7 +2546,7 @@ export default function HomePage() {
 
                 <div className="space-y-1">
                   <div className="flex items-baseline gap-2.5 flex-wrap">
-                    <span className="text-3xl sm:text-4xl font-black tracking-tight tabular-nums">
+                    <span className={`text-3xl sm:text-4xl font-black tracking-tight tabular-nums ${!isLight ? `bg-clip-text text-transparent bg-gradient-to-r ${theme.accentGradient}` : ''}`}>
                       {lang === 'tr' ? `%${leader.progress}` : `${leader.progress}%`}
                     </span>
                     <span className={`text-xs font-semibold ${theme.muted}`}>
@@ -2585,31 +2607,53 @@ export default function HomePage() {
                 </button>
               </div>
 
-              {/* 3'LÜ PODYUM (#1 / #2 / #3) — TIKLANABİLİR DETAY ÇEKMECESİ */}
-              <div className="grid grid-cols-3 gap-2 pt-1">
-                {[leader, secondTeam, thirdTeam].filter(Boolean).map((pTeam, pIdx) => (
-                  <button
-                    key={pTeam.name}
-                    type="button"
-                    onClick={() => setSelectedTeam({ ...pTeam, globalRank: pIdx + 1 })}
-                    className={`text-left rounded-xl border px-2.5 py-2 transition hover:scale-[1.02] ${theme.subCard} ${
-                      pIdx === 0 ? 'ring-1 ring-amber-400/45' : ''
-                    }`}
-                  >
-                    <div className="flex items-center justify-between gap-1 text-[10px] font-black">
-                      <span className={pIdx === 0 ? 'text-amber-400' : theme.muted}>
-                        #{pIdx + 1}
-                      </span>
-                      <span className={`tabular-nums ${theme.accentText}`}>
-                        {lang === 'tr' ? `%${pTeam.progress}` : `${pTeam.progress}%`}
-                      </span>
-                    </div>
-                    <div className="text-xs font-extrabold truncate mt-0.5">{pTeam.name}</div>
-                    <div className={`text-[10px] truncate ${theme.muted}`}>
-                      {localizeDynamicText(pTeam.fps, lang)}
-                    </div>
-                  </button>
-                ))}
+              {/* 3'LÜ PODYUM (#1 / #2 / #3) — CAM METRİK KARTLARI */}
+              <div className="grid grid-cols-3 gap-2.5 pt-1.5">
+                {[leader, secondTeam, thirdTeam].filter(Boolean).map((pTeam, pIdx) => {
+                  const rankBadge =
+                    pIdx === 0
+                      ? isLight
+                        ? 'bg-amber-100 text-amber-800 border-amber-300'
+                        : 'bg-amber-500/15 text-amber-300 border-amber-400/35'
+                      : pIdx === 1
+                        ? isLight
+                          ? 'bg-sky-100 text-sky-800 border-sky-300'
+                          : 'bg-sky-500/15 text-sky-300 border-sky-400/30'
+                        : isLight
+                          ? 'bg-orange-100 text-orange-800 border-orange-300'
+                          : 'bg-orange-500/15 text-orange-300 border-orange-400/30';
+                  return (
+                    <button
+                      key={pTeam.name}
+                      type="button"
+                      onClick={() => setSelectedTeam({ ...pTeam, globalRank: pIdx + 1 })}
+                      className={`group text-left rounded-2xl border p-2.5 sm:p-3 transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.98] ${theme.subCard} ${
+                        pIdx === 0
+                          ? !isLight
+                            ? 'ring-1 ring-blue-400/35 shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]'
+                            : 'ring-1 ring-amber-400/50'
+                          : !isLight
+                            ? 'shadow-[inset_0_1px_0_rgba(255,255,255,0.07)]'
+                            : ''
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-1">
+                        <span className={`px-1.5 py-0.5 rounded-md text-[10px] font-black border ${rankBadge}`}>
+                          #{pIdx + 1}
+                        </span>
+                        <span className={`text-sm sm:text-base font-black tabular-nums tracking-tight ${theme.accentText}`}>
+                          {lang === 'tr' ? `%${pTeam.progress}` : `${pTeam.progress}%`}
+                        </span>
+                      </div>
+                      <div className="text-xs sm:text-[13px] font-extrabold truncate mt-1.5 group-hover:underline">
+                        {pTeam.name}
+                      </div>
+                      <div className={`text-[10px] sm:text-[11px] truncate mt-0.5 ${theme.muted}`}>
+                        {localizeDynamicText(pTeam.fps, lang)}
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
@@ -4731,7 +4775,7 @@ export default function HomePage() {
                   key={tab.id}
                   type="button"
                   onClick={() => handleSelectTab(tab.id)}
-                  className={`relative flex flex-col items-center justify-center gap-0.5 py-1.5 rounded-xl text-[10px] font-extrabold transition ${
+                  className={`relative flex flex-col items-center justify-center gap-0.5 py-2 min-h-[46px] rounded-xl text-[10px] font-extrabold transition-all duration-200 active:scale-[0.96] ${
                     active
                       ? theme.btnPrimary
                       : isChatAttention
