@@ -58,7 +58,7 @@ import {
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
-const APP_VERSION = 'v2.0.0';
+const APP_VERSION = 'v2.0.1';
 const SCORE_SNAPSHOT_KEY = 'gta6takip_prev_scores_v2';
 const CHAT_CACHE_PREFIX = 'gta6takip_chat_cache_';
 const INITIAL_TEAMS_LIMIT = 5;
@@ -345,6 +345,23 @@ const FALLBACK_FEATURED_PORT = {
 };
 
 const CHANGELOG = [
+  {
+    version: 'v2.0.1',
+    dateTr: '27 Kasım 2026',
+    dateEn: 'November 27, 2026',
+    itemsTr: [
+      'Haber & DMCA sekmesi tam otomasyona bağlandı: Seçili dile (TR/EN) göre Google News, PortWatch canlı sürüm/DMCA radarı ve Reddit (r/GTA6) tartışmaları 10 dk önbellekle otomatik akar.',
+      'Eski tekrar eden Rekor / Açık Kaynak / Güncel şeridi kaldırıldı; mobil tek sütun, masaüstü 2 sütunlu kategori filtreli canlı haber akışı eklendi.',
+      'Canlı Sohbet sekmesine (PC ve mobil alt bar) aralıklı mikro-zıplama + neon ışık geçişi (shimmer) eklendi; sohbete girince otomatik sakinleşir.',
+      'Genel İlerleme dairesel halkasındaki yüzde değeri tam ortaya hizalandı.',
+    ],
+    itemsEn: [
+      'Automated News & DMCA feed: dynamically pulls language-matched (TR/EN) press coverage, live PortWatch releases/DMCA radar, and Reddit (r/GTA6) threads with 10-min CDN caching.',
+      'Removed the redundant Record / Open Source / Live cards and added a responsive mobile/desktop live feed with category filters.',
+      'Added subtle intermittent micro-bounce + neon shimmer highlight to the Live Chat tab (calms automatically once visited).',
+      'Centered the headline percentage inside the Hero circular progress ring.',
+    ],
+  },
   {
     version: 'v2.0.0',
     dateTr: '27 Kasım 2026',
@@ -877,6 +894,10 @@ export default function HomePage() {
   const [teamSearch, setTeamSearch] = useState('');
   const [showAllTeams, setShowAllTeams] = useState(false);
   const [activeTab, setActiveTab] = useState('race');
+  const [hasVisitedChat, setHasVisitedChat] = useState(false);
+  const [newsFeedCache, setNewsFeedCache] = useState({ tr: null, en: null });
+  const [newsFeedLoading, setNewsFeedLoading] = useState(false);
+  const [newsFeedCategory, setNewsFeedCategory] = useState('all');
   const [selectedTeam, setSelectedTeam] = useState(null);
   const [activeMsgActionId, setActiveMsgActionId] = useState(null);
   const [prevScores, setPrevScores] = useState({});
@@ -1306,9 +1327,54 @@ export default function HomePage() {
     };
   }, [themeMenuOpen, onlineMenuOpen]);
 
+  const fetchLiveNewsFeed = async (targetLang, force = false) => {
+    const safeLang = targetLang === 'en' ? 'en' : 'tr';
+    if (!force && newsFeedCache[safeLang]) return;
+    setNewsFeedLoading(true);
+    try {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 7000);
+      const res = await fetch(`/api/news?lang=${safeLang}`, { signal: controller.signal });
+      clearTimeout(timer);
+      if (!res.ok) throw new Error('News fetch failed');
+      const data = await res.json();
+      if (Array.isArray(data?.items)) {
+        setNewsFeedCache((prev) => ({ ...prev, [safeLang]: data }));
+      }
+    } catch {
+      // Keep existing cache or fallback gracefully
+    } finally {
+      setNewsFeedLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'news') {
+      fetchLiveNewsFeed(lang, false);
+    }
+  }, [activeTab, lang]);
+
+  const formatNewsRelativeTime = (isoString, currentLang) => {
+    if (!isoString) return '';
+    const diffMs = Date.now() - new Date(isoString).getTime();
+    if (Number.isNaN(diffMs) || diffMs < 0) return currentLang === 'tr' ? 'Az önce' : 'Just now';
+    const mins = Math.floor(diffMs / 60000);
+    if (mins < 2) return currentLang === 'tr' ? 'Az önce' : 'Just now';
+    if (mins < 60) return currentLang === 'tr' ? `${mins} dk önce` : `${mins}m ago`;
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return currentLang === 'tr' ? `${hours} sa önce` : `${hours}h ago`;
+    const days = Math.floor(hours / 24);
+    if (days < 30) return currentLang === 'tr' ? `${days} gün önce` : `${days}d ago`;
+    return new Date(isoString).toLocaleDateString(currentLang === 'tr' ? 'tr-TR' : 'en-US', {
+      day: 'numeric',
+      month: 'short',
+    });
+  };
+
   const handleSelectTab = (tabId) => {
     setActiveTab(tabId);
     if (tabId === 'chat') {
+      setHasVisitedChat(true);
       forceScrollRef.current = true;
       isAtBottomRef.current = true;
       setChatOpen(true);
@@ -2119,6 +2185,37 @@ export default function HomePage() {
         .ticker-track:hover {
           animation-play-state: paused;
         }
+        @keyframes chatTabNudge {
+          0%, 72%, 100% { transform: translateY(0); }
+          77% { transform: translateY(-4px); }
+          82% { transform: translateY(0); }
+          87% { transform: translateY(-2.5px); }
+          92% { transform: translateY(0); }
+        }
+        @keyframes chatTabShimmer {
+          0%, 52% { transform: translateX(-140%) skewX(-18deg); }
+          100% { transform: translateX(260%) skewX(-18deg); }
+        }
+        .chat-tab-attention {
+          animation: chatTabNudge 7.5s ease-in-out infinite;
+        }
+        .chat-tab-shimmer::after {
+          content: '';
+          position: absolute;
+          top: 0;
+          bottom: 0;
+          left: 0;
+          width: 48%;
+          pointer-events: none;
+          background: linear-gradient(90deg, transparent, rgba(255, 79, 216, 0.32), rgba(56, 189, 248, 0.28), transparent);
+          animation: chatTabShimmer 4.8s ease-in-out infinite;
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .chat-tab-attention,
+          .chat-tab-shimmer::after {
+            animation: none !important;
+          }
+        }
         .no-scrollbar {
           -ms-overflow-style: none;
           scrollbar-width: none;
@@ -2357,15 +2454,30 @@ export default function HomePage() {
           ].map((tab) => {
             const IconComp = tab.icon;
             const active = activeTab === tab.id;
+            const isChatAttention = tab.id === 'chat' && !active && !hasVisitedChat;
             return (
               <button
                 key={tab.id}
                 type="button"
                 onClick={() => handleSelectTab(tab.id)}
                 className={`relative flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-extrabold transition ${
-                  active ? `${theme.btnPrimary} shadow-sm` : `${theme.muted} hover:bg-white/5`
+                  active
+                    ? `${theme.btnPrimary} shadow-sm`
+                    : isChatAttention
+                      ? `overflow-hidden chat-tab-attention chat-tab-shimmer border ${
+                          isLight
+                            ? 'border-fuchsia-300/80 bg-fuchsia-50/70 text-fuchsia-800 hover:bg-fuchsia-100/80'
+                            : 'border-fuchsia-400/40 bg-fuchsia-500/10 text-fuchsia-200 hover:bg-fuchsia-500/15'
+                        }`
+                      : `${theme.muted} hover:bg-white/5`
                 }`}
               >
+                {tab.id === 'chat' && !active && (
+                  <span className="relative flex h-2 w-2 shrink-0">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+                  </span>
+                )}
                 <IconComp className="w-3.5 h-3.5 shrink-0" />
                 <span>{lang === 'tr' ? tab.tr : tab.en}</span>
                 {tab.id === 'chat' && unreadWhileClosed > 0 && activeTab !== 'chat' && (
@@ -2430,9 +2542,12 @@ export default function HomePage() {
                       strokeDashoffset={ringOffset}
                     />
                   </svg>
-                  <span className="absolute text-[10px] font-black tabular-nums opacity-85">
-                    /100
-                  </span>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center leading-none">
+                    <span className="text-[13px] font-black tabular-nums tracking-tight">
+                      {lang === 'tr' ? `%${Math.round(leader.progress)}` : `${Math.round(leader.progress)}%`}
+                    </span>
+                    <span className="text-[8px] font-bold opacity-60 mt-0.5">/100</span>
+                  </div>
                 </div>
 
                 <div className="space-y-1">
@@ -2585,44 +2700,174 @@ export default function HomePage() {
         )}
 
         {/* SON GELİŞMELER — HABER & DMCA SEKMESİ */}
-        {activeTab === 'news' && (<section className="space-y-2.5">
-          <div className="flex items-center justify-between gap-2">
-            <h2 className="text-sm font-bold tracking-wider opacity-80">
-              {lang === 'tr' ? 'SON GELİŞMELER' : 'LATEST UPDATES'}
-            </h2>
-            <span className={`md:hidden text-[11px] font-semibold ${theme.muted}`}>
-              {lang === 'tr' ? 'Kaydır →' : 'Swipe →'}
-            </span>
-          </div>
-          <div className="flex md:grid md:grid-cols-3 gap-2.5 overflow-x-auto md:overflow-visible snap-x snap-mandatory no-scrollbar -mx-3 px-3 md:mx-0 md:px-0 pb-1 md:pb-0">
-            {news.slice(0, 3).map((item, idx) => {
-              const badgeLabel = lang === 'tr' ? item.tagTr || 'GÜNCEL' : item.tagEn || 'LIVE';
-              const rawMsg =
-                lang === 'tr'
-                  ? String(item.tr || item.text || '').replace(/(\d+)'si oyunu başlatabiliyor/g, '$1 proje oyunu başlatabiliyor')
-                  : localizeDynamicText(item.en || item.tr || item.text, 'en');
-              return (
-                <div
-                  key={idx}
-                  className={`shrink-0 w-[84%] sm:w-[68%] md:w-auto snap-start rounded-xl border p-3 text-xs leading-relaxed ${theme.card}`}
-                >
-                  <span
-                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full font-black text-[10px] mb-1.5 border ${getNewsBadgeStyle(
-                      badgeLabel,
-                      isLight
-                    )}`}
-                  >
-                    <span className="w-1.5 h-1.5 rounded-full bg-current" />
-                    {badgeLabel}
-                  </span>
-                  <p className={theme.muted}>{cleanNestedParens(rawMsg)}</p>
-                </div>
-              );
-            })}
-          </div>
-        </section>
+        {activeTab === 'news' && (() => {
+          const activeFeed = newsFeedCache[lang === 'en' ? 'en' : 'tr'];
+          const allFeedItems = Array.isArray(activeFeed?.items) ? activeFeed.items : [];
+          const filteredFeedItems =
+            newsFeedCategory === 'all'
+              ? allFeedItems
+              : allFeedItems.filter((item) => item.category === newsFeedCategory);
+          const feedCounts = activeFeed?.counts || {
+            all: allFeedItems.length,
+            press: allFeedItems.filter((i) => i.category === 'press').length,
+            release: allFeedItems.filter((i) => i.category === 'release').length,
+            community: allFeedItems.filter((i) => i.category === 'community').length,
+            dmca: allFeedItems.filter((i) => i.category === 'dmca').length,
+          };
+          const categoryMeta = (cat) => {
+            if (cat === 'dmca') {
+              return {
+                label: lang === 'tr' ? 'DMCA Radarı' : 'DMCA Radar',
+                cls: isLight
+                  ? 'bg-red-100 text-red-800 border-red-300'
+                  : 'bg-red-500/15 text-red-300 border-red-500/35',
+              };
+            }
+            if (cat === 'release') {
+              return {
+                label: lang === 'tr' ? 'Sürüm & Kod' : 'Release & Code',
+                cls: isLight
+                  ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                  : 'bg-emerald-500/15 text-emerald-300 border-emerald-500/35',
+              };
+            }
+            if (cat === 'community') {
+              return {
+                label: 'Reddit',
+                cls: isLight
+                  ? 'bg-orange-100 text-orange-800 border-orange-300'
+                  : 'bg-orange-500/15 text-orange-300 border-orange-500/35',
+              };
+            }
+            return {
+              label: lang === 'tr' ? 'Basın' : 'Press',
+              cls: isLight
+                ? 'bg-sky-100 text-sky-800 border-sky-300'
+                : 'bg-sky-500/15 text-sky-300 border-sky-500/35',
+            };
+          };
 
-        )}
+          return (
+            <section className="space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <span className="relative flex h-2.5 w-2.5 shrink-0">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500" />
+                  </span>
+                  <h2 className="text-sm sm:text-base font-black tracking-wide">
+                    {lang === 'tr' ? 'CANLI SON GELİŞMELER & DMCA AKIŞI' : 'LIVE NEWS & DMCA FEED'}
+                  </h2>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${theme.pill}`}>
+                    {lang === 'tr' ? 'TR Otomatik Akış' : 'EN Live Feed'}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => fetchLiveNewsFeed(lang, true)}
+                    disabled={newsFeedLoading}
+                    className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold border transition ${theme.pill} hover:opacity-85 disabled:opacity-50`}
+                  >
+                    <RefreshCw className={`w-3 h-3 ${newsFeedLoading ? 'animate-spin' : ''}`} />
+                    <span>{lang === 'tr' ? 'Yenile' : 'Refresh'}</span>
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar -mx-3 px-3 sm:mx-0 sm:px-0 pb-0.5">
+                {[
+                  { id: 'all', tr: 'Tümü', en: 'All', count: feedCounts.all },
+                  { id: 'press', tr: 'Basın', en: 'Press', count: feedCounts.press },
+                  { id: 'release', tr: 'Sürüm & Kod', en: 'Releases', count: feedCounts.release },
+                  { id: 'community', tr: 'Reddit', en: 'Reddit', count: feedCounts.community },
+                  { id: 'dmca', tr: 'DMCA Radarı', en: 'DMCA Radar', count: feedCounts.dmca },
+                ].map((cat) => {
+                  const isCatActive = newsFeedCategory === cat.id;
+                  return (
+                    <button
+                      key={cat.id}
+                      type="button"
+                      onClick={() => setNewsFeedCategory(cat.id)}
+                      className={`shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-extrabold border transition ${
+                        isCatActive ? `${theme.btnPrimary} border-transparent` : `${theme.card} ${theme.muted} hover:opacity-90`
+                      }`}
+                    >
+                      <span>{lang === 'tr' ? cat.tr : cat.en}</span>
+                      <span className={`text-[10px] font-black tabular-nums ${isCatActive ? 'opacity-90' : 'opacity-65'}`}>
+                        {cat.count}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {newsFeedLoading && allFeedItems.length === 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+                  {[0, 1, 2, 3].map((sk) => (
+                    <div key={sk} className={`rounded-2xl border p-3.5 space-y-2 animate-pulse ${theme.card}`}>
+                      <div className="flex items-center justify-between">
+                        <div className="h-4 w-20 rounded-full bg-current opacity-15" />
+                        <div className="h-3 w-14 rounded bg-current opacity-10" />
+                      </div>
+                      <div className="h-4 w-11/12 rounded bg-current opacity-15" />
+                      <div className="h-3 w-3/4 rounded bg-current opacity-10" />
+                    </div>
+                  ))}
+                </div>
+              ) : filteredFeedItems.length === 0 ? (
+                <div className={`rounded-2xl border p-5 text-center text-xs ${theme.card} ${theme.muted}`}>
+                  {lang === 'tr'
+                    ? 'Bu kategoride şimdilik yeni kayıt görünmüyor. Diğer sekmelere bakabilir veya akışı yenileyebilirsin.'
+                    : 'No items in this category right now. Try switching categories or refreshing the feed.'}
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+                  {filteredFeedItems.map((item) => {
+                    const meta = categoryMeta(item.category);
+                    return (
+                      <a
+                        key={item.id}
+                        href={item.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={`group flex flex-col justify-between gap-2 rounded-2xl border p-3.5 transition hover:-translate-y-0.5 ${theme.card}`}
+                      >
+                        <div className="space-y-1.5">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black border ${meta.cls}`}>
+                              <span className="w-1.5 h-1.5 rounded-full bg-current" />
+                              {meta.label}
+                            </span>
+                            <span className={`inline-flex items-center gap-1 text-[10px] font-semibold ${theme.muted}`}>
+                              <Clock className="w-3 h-3 shrink-0" />
+                              {formatNewsRelativeTime(item.publishedAt, lang)}
+                            </span>
+                          </div>
+                          <h3 className="text-xs sm:text-[13px] font-bold leading-snug line-clamp-2 group-hover:underline">
+                            {item.title}
+                          </h3>
+                          {item.summary && (
+                            <p className={`text-[11px] leading-relaxed line-clamp-2 ${theme.muted}`}>
+                              {item.summary}
+                            </p>
+                          )}
+                        </div>
+                        <div className="flex items-center justify-between gap-2 pt-1 border-t border-white/5 text-[10px] font-bold">
+                          <span className={`truncate ${theme.accentText}`}>{item.source}</span>
+                          <span className={`inline-flex items-center gap-1 shrink-0 ${theme.muted} group-hover:opacity-100`}>
+                            {lang === 'tr' ? 'Kaynağa git' : 'Read source'}
+                            <ExternalLink className="w-3 h-3" />
+                          </span>
+                        </div>
+                      </a>
+                    );
+                  })}
+                </div>
+              )}
+            </section>
+          );
+        })()}
 
         {/* ÖNE ÇIKAN YENİ PORT VİTRİNİ — YARIŞ SEKMESİ */}
         {activeTab === 'race' && featuredPort && (
@@ -4508,15 +4753,30 @@ export default function HomePage() {
             ].map((tab) => {
               const IconComp = tab.icon;
               const active = activeTab === tab.id;
+              const isChatAttention = tab.id === 'chat' && !active && !hasVisitedChat;
               return (
                 <button
                   key={tab.id}
                   type="button"
                   onClick={() => handleSelectTab(tab.id)}
                   className={`relative flex flex-col items-center justify-center gap-0.5 py-1.5 rounded-xl text-[10px] font-extrabold transition ${
-                    active ? theme.btnPrimary : theme.muted
+                    active
+                      ? theme.btnPrimary
+                      : isChatAttention
+                        ? `overflow-hidden chat-tab-attention chat-tab-shimmer border ${
+                            isLight
+                              ? 'border-fuchsia-300/80 bg-fuchsia-50/80 text-fuchsia-800'
+                              : 'border-fuchsia-400/45 bg-fuchsia-500/15 text-fuchsia-200'
+                          }`
+                        : theme.muted
                   }`}
                 >
+                  {tab.id === 'chat' && !active && unreadWhileClosed === 0 && (
+                    <span className="absolute top-1 right-4 flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+                    </span>
+                  )}
                   <IconComp className="w-4 h-4 shrink-0" />
                   <span>{lang === 'tr' ? tab.tr : tab.en}</span>
                   {tab.id === 'chat' && unreadWhileClosed > 0 && activeTab !== 'chat' && (
