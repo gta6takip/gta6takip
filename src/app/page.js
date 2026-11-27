@@ -52,7 +52,7 @@ import {
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
-const APP_VERSION = 'v1.2.2';
+const APP_VERSION = 'v1.2.3';
 const CHAT_CACHE_PREFIX = 'gta6takip_chat_cache_';
 const INITIAL_TEAMS_LIMIT = 5;
 const CHAT_COOLDOWN_SEC = 30;
@@ -432,6 +432,17 @@ const FALLBACK_FEATURED_PORT = {
 };
 
 const CHANGELOG = [
+  {
+    version: 'v1.2.3',
+    dateTr: '27 Kasım 2026',
+    dateEn: 'November 27, 2026',
+    itemsTr: [
+      'Tam Ekran Sohbet baştan cilalandı: Üstte eski header taşması (z-[100]) giderildi, kontroller tek ince satıra toplandı, sabit duyuru 1 satıra sıkıştırıldı ve mesaj akışı tam kenardan kenara (native uygulama hissi) genişletildi.',
+    ],
+    itemsEn: [
+      'Polished Fullscreen Live Chat: Fixed top header bleed (z-[100]), consolidated controls into a single slim bar, compacted pinned notice, and made messages edge-to-edge.',
+    ],
+  },
   {
     version: 'v1.2.2',
     dateTr: '27 Kasım 2026',
@@ -919,6 +930,7 @@ export default function HomePage() {
   const [chatFullscreen, setChatFullscreen] = useState(false);
   const [chatInputFocused, setChatInputFocused] = useState(false);
   const [nickEditing, setNickEditing] = useState(false);
+  const [pinExpanded, setPinExpanded] = useState(false);
   const chatOpenRef = useRef(false);
   const [chatRoom, setChatRoom] = useState('tr');
   const chatRoomRef = useRef('tr');
@@ -3199,7 +3211,7 @@ export default function HomePage() {
           id="canli-sohbet"
           className={
             chatFullscreen
-              ? `fixed inset-0 z-50 h-[100dvh] flex flex-col overflow-hidden ${theme.bg}`
+              ? `fixed top-0 left-0 right-0 bottom-0 z-[100] h-[100dvh] flex flex-col overflow-hidden ${theme.bg}`
               : `rounded-2xl border overflow-hidden shadow-xl ${theme.card}`
           }
         >
@@ -3234,10 +3246,12 @@ export default function HomePage() {
                 <span className={`w-1.5 h-1.5 rounded-full animate-pulse ${onlineDotClass}`} />
                 {Math.max(chatActiveCount, chatOpen ? 1 : 0)} {lang === 'tr' ? 'Sohbette' : 'In Chat'}
               </span>
-              <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${theme.pill}`}>
-                <ShieldCheck className={`w-3 h-3 shrink-0 ${theme.accentText}`} />
-                <span>{isEnRoom ? '30s Protection Active' : '30 Saniye Koruması Aktif'}</span>
-              </span>
+              {!chatFullscreen && (
+                <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${theme.pill}`}>
+                  <ShieldCheck className={`w-3 h-3 shrink-0 ${theme.accentText}`} />
+                  <span>{isEnRoom ? '30s Protection Active' : '30 Saniye Koruması Aktif'}</span>
+                </span>
+              )}
               {!chatOpen && unreadWhileClosed > 0 && (
                 <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black shadow-sm animate-pulse ${theme.btnPrimary}`}>
                   +{unreadWhileClosed} {lang === 'tr' ? 'yeni' : 'new'}
@@ -3276,32 +3290,36 @@ export default function HomePage() {
             <div
               className={
                 chatFullscreen
-                  ? `flex-1 min-h-0 flex flex-col px-3 sm:px-5 py-2.5 sm:py-3.5 gap-2.5 ${theme.subCard}`
+                  ? `flex-1 min-h-0 flex flex-col ${theme.bg}`
                   : `px-3.5 sm:px-4 pb-4 pt-3.5 border-t space-y-3 ${theme.subCard}`
               }
             >
               {/* Üst Kontrol Çubuğu: Oda Sekmeleri + Yetkili Kilidi + Bildirim Sesi */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                <div className={`inline-flex rounded-xl border p-1 gap-1 ${theme.card}`}>
+              <div className={
+                chatFullscreen
+                  ? `flex items-center justify-between gap-1.5 px-3 py-2 border-b shrink-0 ${theme.subCard}`
+                  : 'flex flex-col sm:flex-row sm:items-center justify-between gap-2'
+              }>
+                <div className={`inline-flex rounded-xl border p-0.5 sm:p-1 gap-1 ${theme.card}`}>
                   <button
                     type="button"
                     onClick={() => handleSwitchChatRoom('tr')}
-                    className={`flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition ${
+                    className={`flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 ${chatFullscreen ? 'px-2.5 py-1' : 'px-3 py-1.5'} rounded-lg text-xs font-bold transition ${
                       chatRoom === 'tr' ? `${theme.btnPrimary} shadow-sm` : `${theme.muted} hover:bg-white/5`
                     }`}
                   >
                     <FlagTR className="w-4 h-3 rounded-[2px] shrink-0 shadow-sm" />
-                    <span>TR (Turkish)</span>
+                    <span>{chatFullscreen ? 'TR' : 'TR (Turkish)'}</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => handleSwitchChatRoom('en')}
-                    className={`flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition ${
+                    className={`flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 ${chatFullscreen ? 'px-2.5 py-1' : 'px-3 py-1.5'} rounded-lg text-xs font-bold transition ${
                       chatRoom === 'en' ? `${theme.btnPrimary} shadow-sm` : `${theme.muted} hover:bg-white/5`
                     }`}
                   >
                     <FlagUS className="w-4 h-3 rounded-[2px] shrink-0 shadow-sm" />
-                    <span>EN (Global English)</span>
+                    <span>{chatFullscreen ? 'EN' : 'EN (Global English)'}</span>
                   </button>
                 </div>
 
@@ -3428,21 +3446,31 @@ export default function HomePage() {
 
               {/* Sabitlenmiş Duyuru Şeridi */}
               {pinnedNotice?.message && (
-                <div
-                  className={`flex items-start gap-2 px-3 py-2 rounded-xl border text-xs ${
-                    isLight
-                      ? 'bg-amber-50 border-amber-300 text-amber-950'
-                      : 'bg-amber-500/10 border-amber-400/40 text-amber-100'
+                <button
+                  type="button"
+                  onClick={() => setPinExpanded((v) => !v)}
+                  className={`w-full text-left flex items-start gap-2 text-xs transition ${
+                    chatFullscreen
+                      ? `px-3 py-1.5 border-b shrink-0 ${
+                          isLight
+                            ? 'bg-amber-50 border-amber-200 text-amber-950'
+                            : 'bg-amber-500/10 border-amber-400/25 text-amber-100'
+                        }`
+                      : `px-3 py-2 rounded-xl border ${
+                          isLight
+                            ? 'bg-amber-50 border-amber-300 text-amber-950'
+                            : 'bg-amber-500/10 border-amber-400/40 text-amber-100'
+                        }`
                   }`}
                 >
                   <Pin className="w-3.5 h-3.5 mt-0.5 text-amber-400 shrink-0" />
-                  <div className="min-w-0 flex-1 leading-relaxed">
+                  <div className={`min-w-0 flex-1 leading-relaxed ${chatFullscreen && !pinExpanded ? 'truncate' : ''}`}>
                     <span className="font-black text-[10px] uppercase tracking-wider text-amber-400 mr-1.5">
-                      {isEnRoom ? 'PINNED:' : 'SABİT DUYURU:'}
+                      {isEnRoom ? 'PINNED:' : 'DUYURU:'}
                     </span>
                     <span className="font-medium break-words">{pinnedNotice.message}</span>
                   </div>
-                </div>
+                </button>
               )}
 
               <div className={`${chatFullscreen ? 'hidden sm:flex' : 'flex'} items-center gap-1.5 text-[11px] ${theme.muted}`}>
@@ -3459,9 +3487,11 @@ export default function HomePage() {
                 <div
                   ref={chatListRef}
                   onScroll={handleChatListScroll}
-                  className={`gta-scroll rounded-2xl border p-3 overflow-y-auto space-y-2.5 ${
-                    chatFullscreen ? 'flex-1 min-h-0' : 'max-h-80 sm:max-h-[420px]'
-                  } ${theme.card}`}
+                  className={`gta-scroll overflow-y-auto space-y-2 ${
+                    chatFullscreen
+                      ? 'flex-1 min-h-0 px-3 py-2.5'
+                      : `rounded-2xl border p-3 max-h-80 sm:max-h-[420px] ${theme.card}`
+                  }`}
                 >
                   {chatLoadFailed && chatMessages.length > 0 && (
                     <div className={`flex items-center justify-between gap-2 px-3 py-1.5 rounded-xl border text-[11px] ${theme.subCard}`}>
@@ -3742,7 +3772,14 @@ export default function HomePage() {
               )}
 
               {/* Modern Giriş Barı */}
-              <form onSubmit={handleSendChat} className={`space-y-1.5 text-xs ${chatFullscreen ? 'shrink-0 pb-1' : ''}`}>
+              <form
+                onSubmit={handleSendChat}
+                className={`space-y-1.5 text-xs ${
+                  chatFullscreen
+                    ? `shrink-0 px-3 pt-2 pb-3 border-t ${theme.card}`
+                    : ''
+                }`}
+              >
                 {chatNick.trim().length >= 2 && !nickEditing && (
                   <div className="flex sm:hidden items-center justify-between px-1 text-[11px]">
                     <span className={`inline-flex items-center gap-1.5 font-bold ${theme.muted}`}>
