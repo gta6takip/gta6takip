@@ -1,3 +1,4 @@
+```javascript
 import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
@@ -37,7 +38,8 @@ function computePortWatchScore(effort) {
       typeof g.stability === 'number' && !Number.isNaN(g.stability)
         ? Math.min(1, Math.max(0, g.stability))
         : 0;
-    score += story * 15 + render * 15 + fpsNorm * 10 + stab * 10;
+    // PortWatch resmi ağırlıkları: Hikâye %17.5, Görüntü %12.5, FPS %10, Kararlılık %10
+    score += story * 17.5 + render * 12.5 + fpsNorm * 10 + stab * 10;
   }
 
   return Math.min(100, Math.round(score * 10) / 10);
@@ -90,10 +92,10 @@ async function fetchTrackerJson() {
     try {
       const res = await fetch(url, {
         headers: {
-          'User-Agent': 'Mozilla/5.0 (compatible; gta6takip/1.0)',
+          'User-Agent': 'Mozilla/5.0 (compatible; gta6takip/1.1)',
           Accept: 'application/json',
         },
-        signal: AbortSignal.timeout(5500),
+        signal: AbortSignal.timeout(7000),
         cache: 'no-store',
       });
       if (!res.ok) continue;
@@ -120,11 +122,13 @@ export async function GET() {
 
   const allEfforts = tracker.efforts;
   const totalEfforts = allEfforts.length;
+  // PortWatch ile birebir uyumlu: yalnızca oyunu gerçekten boot edebilen projeler sayılır
   const bootingCount = allEfforts.filter(
-    (e) => (Number(e?.gta?.loads) || 0) >= 1 || (Number(e?.gta?.boots) || 0) >= 1
+    (e) => (Number(e?.gta?.boots) || 0) >= 1
   ).length;
 
   const mappedTeams = allEfforts
+    .filter((effort) => !effort?.nuked && !effort?.stats?.missing)
     .map((effort) => {
       const progress = computePortWatchScore(effort);
       const isOpen = Boolean(effort.repo);
@@ -178,26 +182,28 @@ export async function GET() {
       ? `${openRunner1.name} (${openRunner1.progress}%) & ${openRunner2.name} (${openRunner2.progress}%) follow.`
       : 'Open-source teams are rapidly advancing.';
 
-  const news = [
-    {
-      tagTr: 'REKOR',
-      tagEn: 'RECORD',
-      tr: `${leader.name} %${leader.progress} ile yeni genel lider (${leader.fps} · ${leader.gpu})!`,
-      en: `${leader.name} leads overall at ${leader.progress}% (${leader.fps} · ${leader.gpu})!`,
-    },
-    {
-      tagTr: 'AÇIK KAYNAK',
-      tagEn: 'OPEN SOURCE',
-      tr: `Açık kaynak lideri ${openLeader.name} (%${openLeader.progress}); ${runnerTr}`,
-      en: `${openLeader.name} (${openLeader.progress}%) leads open source; ${runnerEn}`,
-    },
-    {
-      tagTr: 'GÜNCEL',
-      tagEn: 'LIVE',
-      tr: `PortWatch üzerinde ${totalEfforts} girişim takip ediliyor; ${bootingCount} proje oyunu başlatabiliyor (İlk 3 ort. %${top3Avg}).`,
-      en: `${totalEfforts} total efforts tracked on PortWatch, with ${bootingCount} booting GTA VI (Top-3 avg ${top3Avg}%).`,
-    },
-  ];
+  const news = leader
+    ? [
+        {
+          tagTr: 'REKOR',
+          tagEn: 'RECORD',
+          tr: `${leader.name} %${leader.progress} ile yeni genel lider (${leader.fps} · ${leader.gpu})!`,
+          en: `${leader.name} leads overall at ${leader.progress}% (${leader.fps} · ${leader.gpu})!`,
+        },
+        {
+          tagTr: 'AÇIK KAYNAK',
+          tagEn: 'OPEN SOURCE',
+          tr: `Açık kaynak lideri ${openLeader.name} (%${openLeader.progress}); ${runnerTr}`,
+          en: `${openLeader.name} (${openLeader.progress}%) leads open source; ${runnerEn}`,
+        },
+        {
+          tagTr: 'GÜNCEL',
+          tagEn: 'LIVE',
+          tr: `PortWatch üzerinde ${totalEfforts} girişim takip ediliyor; ${bootingCount} proje oyunu başlatabiliyor (İlk 3 ort. %${top3Avg}).`,
+          en: `${totalEfforts} total efforts tracked on PortWatch, with ${bootingCount} booting GTA VI (Top-3 avg ${top3Avg}%).`,
+        },
+      ]
+    : [];
 
   return NextResponse.json(
     {
@@ -211,8 +217,9 @@ export async function GET() {
     },
     {
       headers: {
-        'Cache-Control': 's-maxage=60, stale-while-revalidate=120',
+        'Cache-Control': 's-maxage=30, stale-while-revalidate=60',
       },
     }
   );
 }
+```
