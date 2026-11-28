@@ -1,4 +1,4 @@
-export const APP_VERSION = 'v4.2.0';
+export const APP_VERSION = 'v4.2.1';
 export const SCORE_SNAPSHOT_KEY = 'gta6takip_prev_scores_v2';
 export const CHAT_CACHE_PREFIX = 'gta6takip_chat_cache_';
 export const INITIAL_TEAMS_LIMIT = 8;
@@ -212,6 +212,19 @@ export const FALLBACK_DMCA = [
 ];
 
 export const CHANGELOG = [
+  {
+    version: 'v4.2.1',
+    dateTr: '28 Kasım 2026',
+    dateEn: 'November 28, 2026',
+    itemsTr: [
+      'Ekip detay penceresindeki maddeler için çok kaynaklı %100 Türkçe otomatik çeviri motoru, anlık önbellek koruması ve pencere içi kendi kendini onaran çeviri yedeği eklendi.',
+      'Netlify sunucularında soğuk başlangıçta çevirinin geçici İngilizce kalma sorunu kalıcı olarak giderildi.',
+    ],
+    itemsEn: [
+      'Upgraded automatic Turkish translation engine for team detail modals with multi-provider fallback, pre-warmed cache, CDN cache protection, and on-demand self-healing translation.',
+      'Resolved intermittent English fallback in team detail modals during Netlify cold starts.',
+    ],
+  },
   {
     version: 'v4.2.0',
     dateTr: '28 Kasım 2026',
@@ -587,6 +600,8 @@ export function localizeDynamicText(text, lang) {
       .replace(/Groundwork/gi, 'Altyapı')
       .replace(/Compatibility layer/gi, 'Uyumluluk Katmanı')
       .replace(/Static recompilation/gi, 'Statik Recomp')
+      .replace(/HLE emulator/gi, 'HLE Emülatör')
+      .replace(/Direct translation/gi, 'Doğrudan Çeviri')
       .replace(/RTX 50 Series/gi, 'RTX 50 Serisi');
   }
   return String(text)

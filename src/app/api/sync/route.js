@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { translateBatchToTurkish } from '../../../lib/translate';
+import { translateBatchToTurkish, countUntranslatedStrings } from '../../../lib/translate';
 
 export const dynamic = 'force-dynamic';
 
@@ -513,6 +513,7 @@ export async function GET() {
   }
 
   const trMap = await translateBatchToTurkish(stringsToTranslate).catch(() => new Map());
+  const untranslatedCount = countUntranslatedStrings(stringsToTranslate, trMap);
 
   mappedTeams = mappedTeams.map((tm) => ({
     ...tm,
@@ -590,10 +591,22 @@ export async function GET() {
       ]
     : [];
 
+  const translationComplete = untranslatedCount === 0;
+  const cacheHeaders = translationComplete
+    ? {
+        'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=180',
+        'Netlify-CDN-Cache-Control': 'public, max-age=60, stale-while-revalidate=180',
+      }
+    : {
+        'Cache-Control': 'no-store',
+        'Netlify-CDN-Cache-Control': 'no-store',
+      };
+
   return NextResponse.json(
     {
       liveSource: 'portwatch-tracker-json',
       updatedAt: tracker.updated || new Date().toISOString(),
+      translationComplete,
       totalEfforts,
       bootingCount,
       top3Avg,
@@ -603,10 +616,7 @@ export async function GET() {
       news,
     },
     {
-      headers: {
-        'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=180',
-        'Netlify-CDN-Cache-Control': 'public, max-age=60, stale-while-revalidate=180',
-      },
+      headers: cacheHeaders,
     }
   );
 }

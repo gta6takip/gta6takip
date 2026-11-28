@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   X,
   ExternalLink,
@@ -27,23 +27,123 @@ function useEscapeClose(isOpen, onClose) {
   }, [isOpen, onClose]);
 }
 
+function needsTurkishFallback(trLine, enLine) {
+  const tr = String(trLine || '').trim();
+  const en = String(enLine || '').trim();
+  if (!en) return false;
+  if (/[çğıİöşüâÇĞÖŞÜ]/.test(tr)) return false;
+  if (tr && tr.toLowerCase() !== en.toLowerCase()) return false;
+  return /\b(the|and|with|for|from|not|are|is|has|have|runs|about|verified|reported|code|private|playable|missing|works|still|yet|only|first|no|some|its|their|without|through|build|builds|tested|shaders|lighting|story|menu|menus|source|frame|frames|crashes|crash|game|games)\b/i.test(
+    en
+  );
+}
+
 export function TeamDetailModal({ team, lang, isLight, onClose }) {
   useEscapeClose(Boolean(team), onClose);
+
+  const [liveTrMap, setLiveTrMap] = useState({});
+  const [translatingModal, setTranslatingModal] = useState(false);
+
+  useEffect(() => {
+    if (!team || lang !== 'tr') {
+      setTranslatingModal(false);
+      return undefined;
+    }
+
+    const memCache =
+      typeof window !== 'undefined'
+        ? (window.__gta6ModalTrCache = window.__gta6ModalTrCache || {})
+        : {};
+
+    const rawH = Array.isArray(team.highlights) ? team.highlights : [];
+    const trH = Array.isArray(team.highlightsTr) ? team.highlightsTr : [];
+    const rawB = Array.isArray(team.blockers) ? team.blockers : [];
+    const trB = Array.isArray(team.blockersTr) ? team.blockersTr : [];
+
+    const missing = [];
+    const prefilled = {};
+
+    rawH.forEach((en, idx) => {
+      if (needsTurkishFallback(trH[idx], en)) {
+        if (memCache[en]) prefilled[en] = memCache[en];
+        else missing.push(en);
+      }
+    });
+    rawB.forEach((en, idx) => {
+      if (needsTurkishFallback(trB[idx], en)) {
+        if (memCache[en]) prefilled[en] = memCache[en];
+        else missing.push(en);
+      }
+    });
+
+    if (Object.keys(prefilled).length > 0) {
+      setLiveTrMap((prev) => ({ ...prev, ...prefilled }));
+    }
+
+    if (missing.length === 0) {
+      setTranslatingModal(false);
+      return undefined;
+    }
+
+    let cancelled = false;
+    setTranslatingModal(true);
+
+    fetch('/api/translate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ texts: missing }),
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (cancelled || !data?.ok || !Array.isArray(data.translations)) return;
+        const updates = {};
+        missing.forEach((orig, i) => {
+          const val = data.translations[i];
+          if (val && val !== orig) {
+            memCache[orig] = val;
+            updates[orig] = val;
+          }
+        });
+        if (Object.keys(updates).length > 0) {
+          setLiveTrMap((prev) => ({ ...prev, ...updates }));
+        }
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) setTranslatingModal(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [team, lang]);
+
   if (!team) return null;
 
+  const rawHighlights = Array.isArray(team.highlights) ? team.highlights : [];
+  const rawBlockers = Array.isArray(team.blockers) ? team.blockers : [];
+
   const displayHighlights =
-    lang === 'tr' && Array.isArray(team.highlightsTr) && team.highlightsTr.length > 0
-      ? team.highlightsTr
-      : Array.isArray(team.highlights)
-        ? team.highlights
-        : [];
+    lang === 'tr'
+      ? Array.isArray(team.highlightsTr) && team.highlightsTr.length > 0
+        ? team.highlightsTr.map((h, i) =>
+            needsTurkishFallback(h, rawHighlights[i])
+              ? liveTrMap[rawHighlights[i]] || h
+              : h
+          )
+        : rawHighlights.map((h) => liveTrMap[h] || h)
+      : rawHighlights;
 
   const displayBlockers =
-    lang === 'tr' && Array.isArray(team.blockersTr) && team.blockersTr.length > 0
-      ? team.blockersTr
-      : Array.isArray(team.blockers)
-        ? team.blockers
-        : [];
+    lang === 'tr'
+      ? Array.isArray(team.blockersTr) && team.blockersTr.length > 0
+        ? team.blockersTr.map((b, i) =>
+            needsTurkishFallback(b, rawBlockers[i])
+              ? liveTrMap[rawBlockers[i]] || b
+              : b
+          )
+        : rawBlockers.map((b) => liveTrMap[b] || b)
+      : rawBlockers;
 
   return (
     <div
@@ -88,7 +188,12 @@ export function TeamDetailModal({ team, lang, isLight, onClose }) {
               {team.commits7d > 0 && (
                 <span className="inline-flex items-center gap-1 font-tech text-ink-3">
                   <GitCommit className="w-3 h-3" />
-                  {team.commits7d} (7g)
+                  {team.commits7d} ({lang === 'tr' ? '7g' : '7d'})
+                </span>
+              )}
+              {translatingModal && lang === 'tr' && (
+                <span className="font-tech text-[10px] text-ink-3 animate-pulse">
+                  Türkçeye çevriliyor...
                 </span>
               )}
             </div>

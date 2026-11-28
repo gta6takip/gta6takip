@@ -36,8 +36,13 @@ function extractCountry(request) {
 
 export async function GET(request) {
   const country = extractCountry(request);
-  const supabaseUrl = (process.env.NEXT_PUBLIC_SUPABASE_URL || '').trim();
-  const supabaseAnonKey = (process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '').trim();
+  const env = process.env;
+  const supabaseUrl = (env['NEXT_PUBLIC_SUPABASE_URL'] || env['SUPABASE_URL'] || '').trim();
+  const supabaseAnonKey = (
+    env['NEXT_PUBLIC_SUPABASE_ANON_KEY'] ||
+    env['SUPABASE_ANON_KEY'] ||
+    ''
+  ).trim();
 
   return NextResponse.json(
     {
