@@ -12,6 +12,9 @@ import {
   MessageSquarePlus,
   Send,
   Smartphone,
+  Globe,
+  Copy,
+  Check,
 } from 'lucide-react';
 import { CHANGELOG, localizeDynamicText } from '../lib/constants';
 import { GpuBadgeIcons, RankBadge } from './Icons';
@@ -536,6 +539,129 @@ export function PwaInstallModal({ open, lang, isIosDevice, onClose }) {
         >
           {lang === 'tr' ? 'Anladım' : 'Got it'}
         </button>
+      </div>
+    </div>
+  );
+}
+
+export function WelcomeDomainModal({ open, lang, onClose }) {
+  const [dontShowAgain, setDontShowAgain] = useState(false);
+  const [copiedDomain, setCopiedDomain] = useState(false);
+
+  const handleClose = () => onClose(dontShowAgain);
+  useEscapeClose(open, handleClose);
+
+  if (!open) return null;
+
+  const handleCopyDomain = () => {
+    if (typeof navigator !== 'undefined' && navigator.clipboard) {
+      navigator.clipboard.writeText('https://gta6takip.blog');
+      setCopiedDomain(true);
+      setTimeout(() => setCopiedDomain(false), 2000);
+    }
+  };
+
+  return (
+    <div
+      onClick={handleClose}
+      className="fixed inset-0 z-[95] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="welcome-domain-title"
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-md rounded-lg border border-default bg-surface overflow-hidden shadow-popover"
+      >
+        {/* Top Accent Strip */}
+        <div className="px-5 py-3 border-b border-subtle bg-panel-tint flex items-center justify-between gap-2">
+          <div className="inline-flex items-center gap-2 text-[11px] font-tech font-bold uppercase tracking-wider text-accent">
+            <Globe className="w-3.5 h-3.5 shrink-0" />
+            <span>{lang === 'tr' ? 'Yeni Adresimiz · gta6takip.blog' : 'New Address · gta6takip.blog'}</span>
+          </div>
+          <button
+            type="button"
+            onClick={handleClose}
+            className="p-1 rounded-md border border-subtle bg-elevated text-ink-2 hover:text-ink ui-tactile"
+            aria-label={lang === 'tr' ? 'Kapat' : 'Close'}
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+
+        <div className="p-5 space-y-4">
+          <h3 id="welcome-domain-title" className="text-base font-bold tracking-tight text-ink">
+            {lang === 'tr' ? 'Artık gta6takip.blog adresindeyiz!' : 'We moved to gta6takip.blog!'}
+          </h3>
+
+          <div className="rounded-md border border-subtle bg-panel-tint p-4 text-[13px] leading-relaxed text-ink-2 space-y-2.5">
+            {lang === 'tr' ? (
+              <p>
+                Hoş geldin dostum. Dur, kutucuğu kapatma hemen çünkü sitemizi kolayca ziyaret
+                edebilmen ve aklında kalması için artık{' '}
+                <strong className="font-semibold text-accent">gta6takip.blog</strong> adresine geçiş
+                yaptık. Altyapı sorunları yaşasak dahi bize her zaman{' '}
+                <strong className="font-semibold text-accent">gta6takip.blog</strong> adresinden
+                ulaşabileceksin. Bize destek olmayı, sağda solda bizi paylaşmayı unutma. GTA 6&apos;ya
+                kavuşman dileğiyle! :)
+              </p>
+            ) : (
+              <p>
+                Welcome friend! Don&apos;t close this box just yet — so you can visit us easily and
+                always remember our link, we have moved to{' '}
+                <strong className="font-semibold text-accent">gta6takip.blog</strong>. Even if we
+                ever change hosting, you will always be able to reach us at{' '}
+                <strong className="font-semibold text-accent">gta6takip.blog</strong>. Don&apos;t
+                forget to support and share us with friends. Wishing you GTA 6 soon! :)
+              </p>
+            )}
+          </div>
+
+          {/* Quick domain badge + copy button */}
+          <div className="flex items-center justify-between gap-2 rounded-md border border-subtle bg-elevated px-3 py-2">
+            <span className="font-tech text-xs font-semibold text-ink truncate">
+              https://gta6takip.blog
+            </span>
+            <button
+              type="button"
+              onClick={handleCopyDomain}
+              className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-[11px] font-semibold border border-subtle bg-surface text-ink-2 hover:text-ink shrink-0 ui-tactile"
+            >
+              {copiedDomain ? (
+                <>
+                  <Check className="w-3 h-3 text-emerald-500" />
+                  <span>{lang === 'tr' ? 'Kopyalandı' : 'Copied'}</span>
+                </>
+              ) : (
+                <>
+                  <Copy className="w-3 h-3 text-ink-3" />
+                  <span>{lang === 'tr' ? 'Kopyala' : 'Copy'}</span>
+                </>
+              )}
+            </button>
+          </div>
+
+          {/* Bottom Controls: Don't show again checkbox + Close CTA */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
+            <label className="inline-flex items-center gap-2 cursor-pointer select-none text-xs text-ink-2 hover:text-ink">
+              <input
+                type="checkbox"
+                checked={dontShowAgain}
+                onChange={(e) => setDontShowAgain(e.target.checked)}
+                className="w-4 h-4 rounded border-default accent-[var(--accent)] cursor-pointer"
+              />
+              <span>{lang === 'tr' ? 'Bir Daha Gösterme' : "Don't show again"}</span>
+            </label>
+
+            <button
+              type="button"
+              onClick={handleClose}
+              className="px-4 py-2 rounded-md text-xs font-semibold bg-accent ui-tactile"
+            >
+              {lang === 'tr' ? 'Tamam, Siteye Geç' : 'Got it, Continue'}
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );

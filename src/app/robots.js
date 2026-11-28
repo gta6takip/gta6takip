@@ -7,6 +7,6 @@ export default function robots() {
         disallow: ['/api/'],
       },
     ],
-    sitemap: 'https://gta6takip.netlify.app/sitemap.xml',
+    sitemap: 'https://gta6takip.blog/sitemap.xml',
   };
 }

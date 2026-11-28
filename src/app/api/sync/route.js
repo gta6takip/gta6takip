@@ -8,9 +8,11 @@ const TRACKER_URLS = [
   'https://raw.githubusercontent.com/4lwayz/portwatch-vi/main/data/tracker.json',
 ];
 
+const RAZDA4A_REPO = 'crossducking/RAZDA4A-XEN';
 const SCARLETT_REPO = 'ZigZagBoi1/ScarlettPort';
 const SLAKTARN_REPO = 'Slaktarn700/SlaktarnVI';
 const GH_CACHE_TTL_MS = 10 * 60 * 1000;
+let razda4aCache = { ts: 0, data: null };
 let scarlettCache = { ts: 0, data: null };
 let slaktarnCache = { ts: 0, data: null };
 
@@ -102,6 +104,159 @@ function buildTurkishSummary(effort, progress, fps, gpu) {
   if (renderPct > 0) detailParts.push(`görüntü kalitesi %${renderPct}`);
   const detailStr = detailParts.length > 0 ? ` (${detailParts.join(', ')})` : '';
   return `${effort.name} şu an %${progress} ile yarışta · ${fps} · ${gpu}${detailStr}. ${repoNote}`;
+}
+
+function estimateRazda4aFromReadme(readmeText, waveInfo) {
+  const text = String(readmeText || '');
+  const lower = text.toLowerCase();
+
+  let nativeLow = 15;
+  let nativeHigh = 18;
+  let fgLow = 30;
+  let fgHigh = 36;
+
+  const dualMatch = text.match(/(\d{1,2})\s*[-–]\s*(\d{1,2})\s*native\s*\/\s*(\d{1,2})\s*[-–]\s*(\d{1,2})\s*fg/i);
+  if (dualMatch) {
+    nativeLow = Number(dualMatch[1]) || 15;
+    nativeHigh = Number(dualMatch[2]) || 18;
+    fgLow = Number(dualMatch[3]) || 30;
+    fgHigh = Number(dualMatch[4]) || 36;
+  }
+
+  let refNative = 31;
+  let refFg = '62-63';
+  const refMatch = text.match(/~?(\d{2})\s*native\s*\/\s*(\d{2}(?:\s*[-–]\s*\d{2})?)\s*fg/i);
+  if (refMatch) {
+    refNative = Number(refMatch[1]) || 31;
+    refFg = String(refMatch[2] || '62-63').replace(/\s+/g, '');
+  }
+
+  const hasRt =
+    lower.includes('ray tracing') &&
+    !lower.includes('off in wave') &&
+    !lower.includes('does not run');
+
+  // PortWatch-aligned conservative estimate (uses native 6-core FPS, not FG):
+  // base playable (50) + story est 0.40 (7.0) + render est 0.65 (8.125) + native FPS norm + stability est 0.45 (4.5)
+  let score =
+    50 +
+    0.4 * 17.5 +
+    0.65 * 12.5 +
+    Math.min(1, nativeHigh / 30) * 10 +
+    0.45 * 10;
+  if (hasRt) score += 2.0;
+
+  const progress = Math.min(84, Math.round(score * 10) / 10);
+  const fps = `${nativeLow}-${nativeHigh} FPS (${fgLow}-${fgHigh} FG)`;
+  const waveTag = waveInfo?.wave ? `Wave ${waveInfo.wave}` : 'Wave 13';
+  const stage = 'Oynanabilir • Hazır GUI Launcher';
+
+  return { progress, fps, waveTag, refNative, refFg, stage };
+}
+
+async function fetchRazda4aXenLive() {
+  const now = Date.now();
+  if (razda4aCache.data && now - razda4aCache.ts < GH_CACHE_TTL_MS) {
+    return razda4aCache.data;
+  }
+
+  const headers = buildGitHubHeaders();
+
+  let repoInfo = null;
+  let waveInfo = null;
+  let readmeText = '';
+
+  const [repoRes, waveRes, readmeRes] = await Promise.allSettled([
+    fetch(`https://api.github.com/repos/${RAZDA4A_REPO}`, {
+      headers,
+      signal: AbortSignal.timeout(5000),
+      cache: 'no-store',
+    }),
+    fetch(`https://raw.githubusercontent.com/${RAZDA4A_REPO}/main/WAVE.json?t=${now}`, {
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; gta6takip/4.3)' },
+      signal: AbortSignal.timeout(5000),
+      cache: 'no-store',
+    }),
+    fetch(`https://raw.githubusercontent.com/${RAZDA4A_REPO}/main/README.md?t=${now}`, {
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; gta6takip/4.3)' },
+      signal: AbortSignal.timeout(5000),
+      cache: 'no-store',
+    }),
+  ]);
+
+  if (repoRes.status === 'fulfilled' && repoRes.value.ok) {
+    repoInfo = await repoRes.value.json().catch(() => null);
+  }
+  if (waveRes.status === 'fulfilled' && waveRes.value.ok) {
+    waveInfo = await waveRes.value.json().catch(() => null);
+  }
+  if (readmeRes.status === 'fulfilled' && readmeRes.value.ok) {
+    readmeText = await readmeRes.value.text().catch(() => '');
+  }
+
+  if (!repoInfo && !waveInfo && !readmeText && razda4aCache.data) {
+    return razda4aCache.data;
+  }
+
+  const prev = razda4aCache.data;
+  const est =
+    readmeText || waveInfo
+      ? estimateRazda4aFromReadme(readmeText, waveInfo)
+      : prev || estimateRazda4aFromReadme('', null);
+  const releaseTag = est.waveTag || prev?.releaseTag || 'Wave 13';
+  const stars = Number(repoInfo?.stargazers_count) || prev?.stars || 374;
+  const updatedAt =
+    repoInfo?.pushed_at || waveInfo?.date || prev?.updatedAt || new Date().toISOString();
+
+  const result = {
+    name: 'RAZDA4A XEN',
+    progress: est.progress,
+    fps: est.fps,
+    gpu: 'AMD',
+    type: 'open',
+    stage: est.stage,
+    delta: '',
+    url: `https://github.com/${RAZDA4A_REPO}`,
+    repo: RAZDA4A_REPO,
+    tier: 'tracked',
+    updatedAt,
+    releaseTag,
+    stars,
+    commits7d: 0,
+    verification: 'self-reported',
+    approach: 'Compatibility layer (VIctory RDNA2+)',
+    isEstimated: true,
+    hasLauncher: true,
+    platformTag: 'AMD RDNA2+',
+    highlights: [
+      `Ships a prebuilt .NET 8 WPF GUI launcher (RAZDA4A XEN Launcher.exe) + zero-dependency .bat mode (${releaseTag})`,
+      `Reported performance: ${est.fps} on RX 9060 XT + Ryzen 5 5600; up to ~${est.refNative} native / ${est.refFg} FG on Ryzen 7 7800X3D`,
+      'Includes 8 GB VRAM Safe Mode (RX 7600: ~12.7 native / 24.8 FG), Warm Shaders runner, live shader compilation banner, and Linux/Proton script',
+      'GPL-3.0 open-source VIctory fork: full Rust source code is published on the dev branch; .bat/.ps1 scripts audited clean with SHA-256 checksums',
+    ],
+    highlightsTr: [
+      `Hazır .NET 8 WPF grafik başlatıcısı (RAZDA4A XEN Launcher.exe) ve sıfır gereksinimli .bat sürümüyle gelir (${releaseTag})`,
+      `Bildirilen performans: RX 9060 XT + Ryzen 5 5600 ile ${est.fps}; Ryzen 7 7800X3D sistemde ~${est.refNative} native / ${est.refFg} FG FPS`,
+      '8 GB VRAM Güvenli Modu (RX 7600: ~12.7 native / 24.8 FG), Shader ön-ısınma aracı, canlı shader derleme uyarısı ve Linux/Proton desteği sunar',
+      'GPL-3.0 açık kaynak VIctory çatalı: tam Rust kaynak kodu dev dalında açık; .bat/.ps1 betikleri temiz ve SHA256SUMS.txt doğrulamalı',
+    ],
+    blockers: [
+      'AMD RDNA2 / RDNA3 / RDNA4 (RX 6000 / 7000 / 9000) GPUs only — NVIDIA and Intel Arc are not supported yet',
+      'Prebuilt .exe binaries are unsigned (may trigger Windows Defender false positives); verify SHA256SUMS.txt or build from the dev branch for maximum safety',
+      'Ray tracing is disabled and benchmarks are self-reported (not yet independently verified by PortWatch)',
+    ],
+    blockersTr: [
+      'Yalnızca AMD RDNA2 / RDNA3 / RDNA4 (RX 6000 / 7000 / 9000) kartlarda çalışır — NVIDIA ve Intel Arc şu an desteklenmez',
+      'Hazır .exe dosyaları dijital imzasızdır (Windows Defender uyarı verebilir); en yüksek güvenlik için SHA256SUMS.txt doğrulaması yapın veya dev dalından kendiniz derleyin',
+      'Işın izleme (Ray Tracing) kapalıdır ve FPS verileri geliştirici bildirimidir (PortWatch tarafından henüz bağımsız doğrulanmadı)',
+    ],
+    summaryTr: `RAZDA4A XEN (${releaseTag}), AMD RDNA2+ (RX 6000/7000/9000) için optimize edilmiş hazır Windows GUI başlatıcılı açık kaynak VIctory çatalı. 6 çekirdekli sistemde ${est.fps}, X3D sistemde ~${est.refNative} native (${est.refFg} FG) FPS bildiriyor; 8 GB VRAM güvenli modu var. (Yalnızca AMD · İmzasız .exe · Bağımsız doğrulanmadı)`,
+    summaryEn: `RAZDA4A XEN (${releaseTag}) is an open-source VIctory fork tuned for AMD RDNA2+ with a prebuilt Windows GUI launcher and 8 GB VRAM Safe Mode (${est.fps}; up to ~${est.refNative} native on X3D). AMD-only, unsigned .exe, self-reported.`,
+    isZortos: false,
+  };
+
+  razda4aCache = { ts: now, data: result };
+  return result;
 }
 
 function estimateScarlettFromReadme(readmeText) {
@@ -381,8 +536,9 @@ async function fetchTrackerJson() {
 }
 
 export async function GET() {
-  const [tracker, scarlettLive, slaktarnLive] = await Promise.all([
+  const [tracker, razda4aLive, scarlettLive, slaktarnLive] = await Promise.all([
     fetchTrackerJson(),
+    fetchRazda4aXenLive().catch(() => null),
     fetchScarlettPortLive().catch(() => null),
     fetchSlaktarnLive().catch(() => null),
   ]);
@@ -453,7 +609,37 @@ export async function GET() {
     })
     .filter((t) => t.tier === 'tracked' || t.progress >= 2.5);
 
-  let featuredPort = scarlettLive;
+  let featuredPort = razda4aLive || scarlettLive;
+
+  if (razda4aLive) {
+    const existingRazda4aIdx = mappedTeams.findIndex(
+      (t) =>
+        String(t.repo || '').toLowerCase() === RAZDA4A_REPO.toLowerCase() ||
+        String(t.name || '').toLowerCase().includes('razda4a')
+    );
+    if (existingRazda4aIdx >= 0) {
+      const official = mappedTeams[existingRazda4aIdx];
+      featuredPort = {
+        ...official,
+        releaseTag: razda4aLive.releaseTag,
+        stars: razda4aLive.stars || official.stars,
+        isEstimated: false,
+        hasLauncher: true,
+        platformTag: 'AMD RDNA2+',
+        summaryTr: razda4aLive.summaryTr || official.summaryTr,
+        summaryEn: razda4aLive.summaryEn || official.summaryEn,
+      };
+      mappedTeams[existingRazda4aIdx] = {
+        ...official,
+        releaseTag: featuredPort.releaseTag,
+        hasLauncher: true,
+        platformTag: 'AMD RDNA2+',
+      };
+    } else {
+      mappedTeams.push(razda4aLive);
+    }
+  }
+
   const existingScarlettIdx = mappedTeams.findIndex(
     (t) =>
       String(t.repo || '').toLowerCase() === SCARLETT_REPO.toLowerCase() ||
@@ -462,18 +648,10 @@ export async function GET() {
 
   if (existingScarlettIdx >= 0) {
     const official = mappedTeams[existingScarlettIdx];
-    featuredPort = {
-      ...official,
-      releaseTag: scarlettLive?.releaseTag || 'v0.5.3',
-      stars: scarlettLive?.stars || official.stars || 1007,
-      isEstimated: false,
-      hasLauncher: true,
-      summaryTr: scarlettLive?.summaryTr || official.summaryTr,
-      summaryEn: scarlettLive?.summaryEn || official.summaryEn,
-    };
     mappedTeams[existingScarlettIdx] = {
       ...official,
-      releaseTag: featuredPort.releaseTag,
+      releaseTag: scarlettLive?.releaseTag || 'v0.5.7',
+      stars: scarlettLive?.stars || official.stars || 1430,
       hasLauncher: true,
     };
   } else if (scarlettLive) {
@@ -498,7 +676,68 @@ export async function GET() {
 
   mappedTeams = mappedTeams.sort((a, b) => b.progress - a.progress);
 
-  // Translate PortWatch English highlights, blockers, and DMCA notes to Turkish automatically
+  // Live PortWatch featured team progress bars (e.g., Whiplash and any future teamBars entries)
+  const rawTeamBars = Array.isArray(tracker.teamBars) ? tracker.teamBars : [];
+  const mappedTeamBars = rawTeamBars
+    .filter((tb) => tb && tb.name)
+    .map((tb) => {
+      const rawParts = Array.isArray(tb.parts) ? tb.parts : [];
+      const totalWeight = rawParts.reduce((acc, p) => acc + (Number(p?.weight) || 1), 0) || 1;
+      let weightedSum = 0;
+      let fpsLabel = '';
+
+      const parts = rawParts.map((p) => {
+        const w = Number(p?.weight) || 1;
+        let ratio = 0;
+        if (typeof p?.value === 'number' && !Number.isNaN(p.value)) {
+          ratio = Math.min(1, Math.max(0, p.value));
+        } else if (Number(p?.target) > 0) {
+          ratio = Math.min(1, Math.max(0, (Number(p?.current) || 0) / Number(p.target)));
+        }
+        weightedSum += ratio * w;
+
+        const isFps = String(p?.unit || '').toLowerCase() === 'fps';
+        if (isFps && Number(p?.target) > 0) {
+          fpsLabel = `${Number(p?.current) || 0} / ${Number(p.target)} FPS`;
+        }
+
+        return {
+          label: String(p?.label || ''),
+          note: String(p?.note || ''),
+          pct: Math.round(ratio * 100),
+          weightPct: Math.round((w / totalWeight) * 100),
+          current: typeof p?.current === 'number' ? p.current : null,
+          target: typeof p?.target === 'number' ? p.target : null,
+          unit: String(p?.unit || ''),
+        };
+      });
+
+      const progress = Math.min(100, Math.round((weightedSum / totalWeight) * 1000) / 10);
+      const avatarRaw = String(tb.avatar || '').trim();
+      const avatarUrl = avatarRaw
+        ? avatarRaw.startsWith('http')
+          ? avatarRaw
+          : `https://portwatch-vi.xyz/${avatarRaw.replace(/^\/+/, '')}`
+        : '';
+
+      return {
+        id: String(tb.id || tb.name).toLowerCase().replace(/[^a-z0-9-]+/g, '-'),
+        name: String(tb.name),
+        avatarUrl,
+        progress,
+        fpsLabel,
+        updatedAt: String(tb.updatedAt || tracker.updated || ''),
+        summaryEn: String(tb.summary || ''),
+        parts,
+        goals: Array.isArray(tb.goals) ? tb.goals.map((g) => String(g || '')).filter(Boolean) : [],
+        later: String(tb.later || ''),
+        access: String(tb.access || ''),
+        isPrivate: /private/i.test(String(tb.access || '')),
+        url: 'https://portwatch-vi.xyz/',
+      };
+    });
+
+  // Translate PortWatch English highlights, blockers, DMCA notes, and teamBars to Turkish automatically
   const stringsToTranslate = [];
   for (const tm of mappedTeams) {
     if (!Array.isArray(tm.highlightsTr) && Array.isArray(tm.highlights)) {
@@ -511,9 +750,32 @@ export async function GET() {
   for (const d of dmcaItems) {
     if (d.note) stringsToTranslate.push(d.note);
   }
+  for (const tb of mappedTeamBars) {
+    if (tb.summaryEn) stringsToTranslate.push(tb.summaryEn);
+    for (const p of tb.parts) {
+      if (p.label) stringsToTranslate.push(p.label);
+      if (p.note) stringsToTranslate.push(p.note);
+    }
+    for (const g of tb.goals) stringsToTranslate.push(g);
+    if (tb.later) stringsToTranslate.push(tb.later);
+    if (tb.access) stringsToTranslate.push(tb.access);
+  }
 
   const trMap = await translateBatchToTurkish(stringsToTranslate).catch(() => new Map());
   const untranslatedCount = countUntranslatedStrings(stringsToTranslate, trMap);
+
+  const localizedTeamBars = mappedTeamBars.map((tb) => ({
+    ...tb,
+    summaryTr: tb.summaryEn ? trMap.get(tb.summaryEn) || tb.summaryEn : '',
+    parts: tb.parts.map((p) => ({
+      ...p,
+      labelTr: p.label ? trMap.get(p.label) || p.label : '',
+      noteTr: p.note ? trMap.get(p.note) || p.note : '',
+    })),
+    goalsTr: tb.goals.map((g) => trMap.get(g) || g),
+    laterTr: tb.later ? trMap.get(tb.later) || tb.later : '',
+    accessTr: tb.access ? trMap.get(tb.access) || tb.access : '',
+  }));
 
   mappedTeams = mappedTeams.map((tm) => ({
     ...tm,
@@ -611,6 +873,7 @@ export async function GET() {
       bootingCount,
       top3Avg,
       teams: mappedTeams,
+      teamBars: localizedTeamBars,
       featuredPort,
       dmcaItems: localizedDmcaItems,
       news,

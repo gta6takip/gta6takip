@@ -244,5 +244,20 @@ export const TR_SEED_CACHE = {
   "Each boot stop of GTA VI's exe is written up with what cleared it": "GTA VI'nın exe'sinin her önyükleme durağı, onu temizleyen şeyle yazılır",
   "No picture yet: presented frames are black; the game's geometry produces no fragments": "Henüz resim yok: sunulan çerçeveler siyahtır; Oyunun geometrisi hiçbir parça üretmiyor",
   "Shader count rests on spirv-val, which doesn't show the shaders work": "Shader sayısı, shaderların çalıştığını göstermeyen spirv-val'e bağlıdır",
-  "Tested on one RTX 4090 only": "Yalnızca bir RTX 4090'da test edildi"
+  "Tested on one RTX 4090 only": "Yalnızca bir RTX 4090'da test edildi",
+  "Visual parity": "Görüntü Eşitliği",
+  "Memory usage": "Bellek (VRAM) Kullanımı",
+  "Frame rate": "Kare Hızı (FPS)",
+  "Whiplash is working towards a 1:1 match with the Xbox Series X version on medium-to-high-end PCs: rendered at 1440p native, like the Series X, then upscaled to 4K.": "Whiplash, orta-üst seviye PC'lerde Xbox Series X sürümüyle birebir (1:1) uyum hedefliyor: Series X gibi doğal 1440p çözünürlükte işlenip 4K'ya yükseltiliyor.",
+  "How close the picture is to the Series X version, including ray tracing on NVIDIA and AMD.": "Görüntünün NVIDIA ve AMD'de ışın izleme (ray tracing) dahil Series X sürümüne ne kadar yakın olduğu.",
+  "Video memory use is still too high for most graphics cards, which keeps the build out of reach for most PCs.": "VRAM (video belleği) tüketimi çoğu ekran kartı için hâlâ çok yüksek; bu yüzden yapı şimdilik çoğu PC'de çalıştırılamıyor.",
+  "Frames per second now, against the 30 fps goal.": "30 FPS hedefine kıyasla mevcut kare hızı.",
+  "Windows, with possible Linux support (experimental)": "Windows desteği (deneysel Linux desteği ihtimaliyle)",
+  "1440p native, upscaled to 4K": "Doğal 1440p işleme, 4K yükseltme (upscale)",
+  "1:1 visuals with the Series X": "Xbox Series X ile birebir (1:1) görüntü kalitesi",
+  "Ray tracing on NVIDIA and AMD": "NVIDIA ve AMD ekran kartlarında ışın izleme (Ray Tracing)",
+  "Video memory use most PCs can handle": "Çoğu PC'nin kaldırabileceği seviyede VRAM kullanımı",
+  "30 fps on medium-to-high-end PCs": "Orta-üst seviye PC'lerde 30 FPS",
+  "The team might work on support for lower-end PCs.": "Ekip ilerleyen aşamada daha düşük seviye PC'ler için de destek üzerinde çalışabilir.",
+  "Private: builds are shared only inside the team's own server and aren't hosted or linked anywhere, so a download that claims to be Whiplash's is fake.": "Özel Yapı: Derlemeler yalnızca ekibin kendi sunucusunda paylaşılır; hiçbir yerde barındırılmaz veya link verilmez. İnternette Whiplash adına paylaşılan tüm indirme dosyaları sahtedir."
 };

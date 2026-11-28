@@ -1,5 +1,5 @@
 export default function sitemap() {
-  const baseUrl = 'https://gta6takip.netlify.app';
+  const baseUrl = 'https://gta6takip.blog';
   const now = new Date();
 
   return [

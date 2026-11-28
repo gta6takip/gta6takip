@@ -22,6 +22,7 @@ import {
   CHAT_DOCK_KEY,
   THEMES,
   FALLBACK_TEAMS,
+  FALLBACK_TEAM_BARS,
   FALLBACK_FEATURED_PORT,
   normalizeThemeKey,
   playChatChime,
@@ -41,6 +42,7 @@ import {
   ChangelogModal,
   FeedbackModal,
   PwaInstallModal,
+  WelcomeDomainModal,
 } from '../components/Modals';
 
 export default function HomePage() {
@@ -49,6 +51,7 @@ export default function HomePage() {
   const [themeMenuOpen, setThemeMenuOpen] = useState(false);
   const [onlineMenuOpen, setOnlineMenuOpen] = useState(false);
   const [changelogOpen, setChangelogOpen] = useState(false);
+  const [welcomeDomainOpen, setWelcomeDomainOpen] = useState(false);
   const [radarOpen, setRadarOpen] = useState(true);
   const [openFaqIdx, setOpenFaqIdx] = useState(null);
   const [showBackTop, setShowBackTop] = useState(false);
@@ -136,6 +139,7 @@ export default function HomePage() {
   const [onlineCount, setOnlineCount] = useState(1);
   const [chatActiveCount, setChatActiveCount] = useState(0);
   const [featuredPort, setFeaturedPort] = useState(FALLBACK_FEATURED_PORT);
+  const [teamBars, setTeamBars] = useState(FALLBACK_TEAM_BARS);
   const [installPrompt, setInstallPrompt] = useState(null);
   const [isStandalone, setIsStandalone] = useState(false);
   const [isIosDevice, setIsIosDevice] = useState(false);
@@ -257,6 +261,12 @@ export default function HomePage() {
         setLang(savedLang);
         setChatRoom(savedLang);
         chatRoomRef.current = savedLang;
+      }
+
+      const hideWelcome = localStorage.getItem('gta6takip_hide_domain_welcome_v1') === '1';
+      const seenSession = sessionStorage.getItem('gta6takip_seen_domain_welcome_s1') === '1';
+      if (!hideWelcome && !seenSession) {
+        setWelcomeDomainOpen(true);
       }
 
       const savedNick = localStorage.getItem('gta6takip_nick');
@@ -728,6 +738,9 @@ export default function HomePage() {
       if (data?.featuredPort && data.featuredPort.name) {
         setFeaturedPort(data.featuredPort);
       }
+      if (Array.isArray(data?.teamBars)) {
+        setTeamBars(data.teamBars);
+      }
       if (Array.isArray(data?.dmcaItems) && data.dmcaItems.length > 0) {
         setDmcaItems(data.dmcaItems);
       }
@@ -1174,7 +1187,7 @@ export default function HomePage() {
       const shareUrl =
         typeof window !== 'undefined' && window.location?.origin
           ? `${window.location.origin}/`
-          : 'https://gta6takip.netlify.app/';
+          : 'https://gta6takip.blog/';
       navigator.clipboard.writeText(shareUrl);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
@@ -1194,7 +1207,7 @@ export default function HomePage() {
         },
         body: JSON.stringify({
           name: feedbackName.trim() || 'Anonim Ziyaretçi',
-          email: feedbackEmail.trim() || 'belirtilmedi@gta6takip.netlify.app',
+          email: feedbackEmail.trim() || 'belirtilmedi@gta6takip.blog',
           message: feedbackMsg.trim(),
           _subject: 'GTA6takip — Yeni Tavsiye / Fikir',
           _template: 'table',
@@ -1419,6 +1432,7 @@ export default function HomePage() {
                 amdCount={amdCount}
                 nvidiaCount={nvidiaCount}
                 lastSyncAt={lastSyncAt}
+                teamBars={teamBars}
                 featuredPort={featuredPort}
                 onSelectTeam={setSelectedTeam}
               />
@@ -1550,7 +1564,7 @@ export default function HomePage() {
               </a>
 
               <a
-                href="https://wa.me/?text=GTA%20VI%20PC%20Port%20Takip%3A%20https%3A%2F%2Fgta6takip.netlify.app%2F"
+                href="https://wa.me/?text=GTA%20VI%20PC%20Port%20Takip%3A%20https%3A%2F%2Fgta6takip.blog%2F"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-subtle bg-surface text-ink-2 hover:text-ink hover:border-default ui-tactile"
@@ -1560,7 +1574,7 @@ export default function HomePage() {
               </a>
 
               <a
-                href="https://x.com/intent/tweet?text=GTA%20VI%20PC%20Port%20Takip&url=https%3A%2F%2Fgta6takip.netlify.app%2F"
+                href="https://x.com/intent/tweet?text=GTA%20VI%20PC%20Port%20Takip&url=https%3A%2F%2Fgta6takip.blog%2F"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-subtle bg-surface text-ink-2 hover:text-ink hover:border-default ui-tactile"
@@ -1668,6 +1682,21 @@ export default function HomePage() {
         lang={lang}
         isIosDevice={isIosDevice}
         onClose={() => setIosGuideOpen(false)}
+      />
+      <WelcomeDomainModal
+        open={welcomeDomainOpen}
+        lang={lang}
+        onClose={(dontShowAgain) => {
+          setWelcomeDomainOpen(false);
+          try {
+            sessionStorage.setItem('gta6takip_seen_domain_welcome_s1', '1');
+            if (dontShowAgain) {
+              localStorage.setItem('gta6takip_hide_domain_welcome_v1', '1');
+            }
+          } catch {
+            // Ignore storage errors
+          }
+        }}
       />
     </div>
   );

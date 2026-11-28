@@ -41,7 +41,7 @@ export const viewport = {
 };
 
 export const metadata = {
-  metadataBase: new URL('https://gta6takip.netlify.app'),
+  metadataBase: new URL('https://gta6takip.blog'),
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
@@ -97,7 +97,7 @@ export const metadata = {
   openGraph: {
     type: 'website',
     locale: 'tr_TR',
-    url: 'https://gta6takip.netlify.app/',
+    url: 'https://gta6takip.blog/',
     siteName: 'GTA6takip',
     title: 'GTA6takip | GTA 6 PC Port Takip, Tracker & Canlı İlerleme',
     description:
@@ -119,18 +119,18 @@ const jsonLd = {
       '@type': 'WebSite',
       name: 'GTA6takip',
       alternateName: ['GTA 6 Takip', 'GTA VI Tracker', 'GTA 6 PC Port Tracker'],
-      url: 'https://gta6takip.netlify.app/',
+      url: 'https://gta6takip.blog/',
       inLanguage: ['tr', 'en'],
     },
     {
       '@type': 'WebPage',
       name: 'GTA 6 PC Port Takip & Canlı İlerleme',
-      url: 'https://gta6takip.netlify.app/',
-      dateModified: '2026-11-28T00:15:00+03:00',
+      url: 'https://gta6takip.blog/',
+      dateModified: '2026-11-28T19:30:00+03:00',
       inLanguage: 'tr',
       isPartOf: {
         '@type': 'WebSite',
-        url: 'https://gta6takip.netlify.app/',
+        url: 'https://gta6takip.blog/',
       },
     },
     {

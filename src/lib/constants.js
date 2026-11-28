@@ -1,4 +1,4 @@
-export const APP_VERSION = 'v4.2.1';
+export const APP_VERSION = 'v4.3.1';
 export const SCORE_SNAPSHOT_KEY = 'gta6takip_prev_scores_v2';
 export const CHAT_CACHE_PREFIX = 'gta6takip_chat_cache_';
 export const INITIAL_TEAMS_LIMIT = 8;
@@ -176,23 +176,109 @@ export const FALLBACK_TEAMS = [
 ];
 
 export const FALLBACK_FEATURED_PORT = {
-  name: 'ScarlettPort',
-  progress: 50.8,
-  fps: '4 FPS (RTX 3060)',
-  gpu: 'AMD / NVIDIA',
+  name: 'RAZDA4A XEN',
+  progress: 75.6,
+  fps: '15-18 FPS (30-36 FG)',
+  gpu: 'AMD',
   type: 'open',
-  stage: 'Oyun Dünyası • Hazır Launcher',
-  releaseTag: 'v0.5.5',
-  stars: 1232,
-  url: 'https://github.com/ZigZagBoi1/ScarlettPort',
-  repo: 'ZigZagBoi1/ScarlettPort',
+  stage: 'Oynanabilir • Hazır GUI Launcher',
+  releaseTag: 'Wave 13',
+  stars: 374,
+  url: 'https://github.com/crossducking/RAZDA4A-XEN',
+  repo: 'crossducking/RAZDA4A-XEN',
   isEstimated: true,
   hasLauncher: true,
+  platformTag: 'AMD RDNA2+',
+  highlightsTr: [
+    'Hazır .NET 8 WPF grafik başlatıcısı (RAZDA4A XEN Launcher.exe) ve sıfır gereksinimli .bat sürümüyle gelir (Wave 13)',
+    'Bildirilen performans: RX 9060 XT + Ryzen 5 5600 ile 15-18 FPS (30-36 FG); Ryzen 7 7800X3D sistemde ~31 native / 62-63 FG FPS',
+    '8 GB VRAM Güvenli Modu (RX 7600: ~12.7 native / 24.8 FG), Shader ön-ısınma aracı, canlı shader derleme uyarısı ve Linux/Proton desteği sunar',
+    'GPL-3.0 açık kaynak VIctory çatalı: tam Rust kaynak kodu dev dalında açık; .bat/.ps1 betikleri temiz ve SHA256SUMS.txt doğrulamalı',
+  ],
+  blockersTr: [
+    'Yalnızca AMD RDNA2 / RDNA3 / RDNA4 (RX 6000 / 7000 / 9000) kartlarda çalışır — NVIDIA ve Intel Arc şu an desteklenmez',
+    'Hazır .exe dosyaları dijital imzasızdır (Windows Defender uyarı verebilir); en yüksek güvenlik için SHA256SUMS.txt doğrulaması yapın veya dev dalından kendiniz derleyin',
+    'Işın izleme (Ray Tracing) kapalıdır ve FPS verileri geliştirici bildirimidir (PortWatch tarafından henüz bağımsız doğrulanmadı)',
+  ],
   summaryTr:
-    "Kaynak kod derlemeye gerek kalmadan hazır Windows başlatıcısı (ScarlettPort.exe) sunan ilk açık kaynak GTA VI PC port katmanı. VIctory + XCL altyapısını birleştiriyor; RTX 3060'ta 3–4 FPS, topluluk testlerinde RX 9060 XT ile 22 FPS'e kadar ulaşıyor.",
+    'RAZDA4A XEN (Wave 13), AMD RDNA2+ (RX 6000/7000/9000) için optimize edilmiş hazır Windows GUI başlatıcılı açık kaynak VIctory çatalı. 6 çekirdekli sistemde 15-18 FPS (30-36 FG), X3D sistemde ~31 native (62-63 FG) FPS bildiriyor; 8 GB VRAM güvenli modu var. (Yalnızca AMD · İmzasız .exe · Bağımsız doğrulanmadı)',
   summaryEn:
-    'First open-source GTA VI PC port layer shipping a prebuilt Windows launcher (ScarlettPort.exe) combining VIctory + XCL runtimes. Reaches lit open world at 3–4 FPS on RTX 3060 and up to 22 FPS in community RX 9060 XT tests.',
+    'RAZDA4A XEN (Wave 13) is an open-source VIctory fork tuned for AMD RDNA2+ with a prebuilt Windows GUI launcher and 8 GB VRAM Safe Mode (15-18 native / 30-36 FG; up to ~31 native on X3D). AMD-only, unsigned .exe, self-reported.',
 };
+
+export const FALLBACK_TEAM_BARS = [
+  {
+    id: 'whiplash',
+    name: 'Whiplash',
+    avatarUrl: 'https://portwatch-vi.xyz/assets/img/efforts/whiplash.jpg',
+    progress: 60,
+    fpsLabel: '17 / 30 FPS',
+    updatedAt: '2026-11-28',
+    summaryEn:
+      'Whiplash is working towards a 1:1 match with the Xbox Series X version on medium-to-high-end PCs: rendered at 1440p native, like the Series X, then upscaled to 4K.',
+    summaryTr:
+      "Whiplash, orta-üst seviye PC'lerde Xbox Series X sürümüyle birebir (1:1) uyum hedefliyor: Series X gibi doğal 1440p çözünürlükte işlenip 4K'ya yükseltiliyor.",
+    parts: [
+      {
+        label: 'Visual parity',
+        labelTr: 'Görüntü Eşitliği',
+        note: 'How close the picture is to the Series X version, including ray tracing on NVIDIA and AMD.',
+        noteTr: "Görüntünün NVIDIA ve AMD'de ışın izleme (ray tracing) dahil Series X sürümüne ne kadar yakın olduğu.",
+        pct: 90,
+        weightPct: 47,
+        current: null,
+        target: null,
+        unit: '',
+      },
+      {
+        label: 'Memory usage',
+        labelTr: 'Bellek (VRAM) Kullanımı',
+        note: 'Video memory use is still too high for most graphics cards, which keeps the build out of reach for most PCs.',
+        noteTr: "VRAM (video belleği) tüketimi çoğu ekran kartı için hâlâ çok yüksek; bu yüzden yapı şimdilik çoğu PC'de çalıştırılamıyor.",
+        pct: 20,
+        weightPct: 33,
+        current: null,
+        target: null,
+        unit: '',
+      },
+      {
+        label: 'Frame rate',
+        labelTr: 'Kare Hızı (FPS)',
+        note: 'Frames per second now, against the 30 fps goal.',
+        noteTr: '30 FPS hedefine kıyasla mevcut kare hızı.',
+        pct: 57,
+        weightPct: 20,
+        current: 17,
+        target: 30,
+        unit: 'fps',
+      },
+    ],
+    goals: [
+      'Windows, with possible Linux support (experimental)',
+      '1440p native, upscaled to 4K',
+      '1:1 visuals with the Series X',
+      'Ray tracing on NVIDIA and AMD',
+      'Video memory use most PCs can handle',
+      '30 fps on medium-to-high-end PCs',
+    ],
+    goalsTr: [
+      'Windows desteği (deneysel Linux desteği ihtimaliyle)',
+      'Doğal 1440p işleme, 4K yükseltme (upscale)',
+      'Xbox Series X ile birebir (1:1) görüntü kalitesi',
+      'NVIDIA ve AMD ekran kartlarında ışın izleme (Ray Tracing)',
+      "Çoğu PC'nin kaldırabileceği seviyede VRAM kullanımı",
+      "Orta-üst seviye PC'lerde 30 FPS",
+    ],
+    later: 'The team might work on support for lower-end PCs.',
+    laterTr: "Ekip ilerleyen aşamada daha düşük seviye PC'ler için de destek üzerinde çalışabilir.",
+    access:
+      "Private: builds are shared only inside the team's own server and aren't hosted or linked anywhere, so a download that claims to be Whiplash's is fake.",
+    accessTr:
+      'Özel Yapı: Derlemeler yalnızca ekibin kendi sunucusunda paylaşılır; hiçbir yerde barındırılmaz veya link verilmez. İnternette Whiplash adına paylaşılan tüm indirme dosyaları sahtedir.',
+    isPrivate: true,
+    url: 'https://portwatch-vi.xyz/',
+  },
+];
 
 export const FALLBACK_DMCA = [
   {
@@ -212,6 +298,43 @@ export const FALLBACK_DMCA = [
 ];
 
 export const CHANGELOG = [
+  {
+    version: 'v4.3.1',
+    dateTr: '28 Kasım 2026',
+    dateEn: 'November 28, 2026',
+    itemsTr: [
+      'gta6takip.blog yeni alan adı karşılama kutusu ("Bir Daha Gösterme" seçeneği ve tek tıkla link kopyalama ile) eklendi.',
+      'Öne Çıkan Proje kartı canlı GitHub takibiyle RAZDA4A XEN (Wave 13 · %75.6 tahmini bar · AMD RDNA2+ · hazır GUI Launcher) olarak güncellendi; ScarlettPort aktif ekipler listesinde takip edilmeye devam ediyor.',
+    ],
+    itemsEn: [
+      'Added the gta6takip.blog domain welcome modal with a persistent "Don\'t show again" option and one-click URL copy.',
+      'Updated Spotlight project to RAZDA4A XEN (Wave 13 · 75.6% estimated progress bar · AMD RDNA2+ · prebuilt GUI Launcher) with live GitHub sync while keeping ScarlettPort tracked in the leaderboard.',
+    ],
+  },
+  {
+    version: 'v4.3.0',
+    dateTr: '28 Kasım 2026',
+    dateEn: 'November 28, 2026',
+    itemsTr: [
+      "PortWatch'un yeni Özel Ekip Hedef Takibi (teamBars — Whiplash ve gelecekte eklenecek diğer ekipler) veri akışı otomasyona bağlandı; görüntü eşitliği, VRAM ve FPS alt metrikleriyle %100 Türkçe ve canlı güncellenir.",
+    ],
+    itemsEn: [
+      'Connected PortWatch teamBars live telemetry (Whiplash and any future teams) with weighted sub-metrics, goals, and automatic Turkish localization.',
+    ],
+  },
+  {
+    version: 'v4.2.2',
+    dateTr: '28 Kasım 2026',
+    dateEn: 'November 28, 2026',
+    itemsTr: [
+      'Özel alan adına geçiş tamamlandı: SEO canonical, sitemap.xml, robots.txt, OpenGraph ve WhatsApp/X paylaşım linkleri https://gta6takip.blog adresine güncellendi.',
+      'Netlify reklam rozeti kaldırıldığı için masaüstü, mobil ve tam ekran Canlı Sohbet paneli tam boya genişletilerek ferahlatıldı.',
+    ],
+    itemsEn: [
+      'Completed custom domain migration: updated SEO canonical, sitemap.xml, robots.txt, OpenGraph, and WhatsApp/X share links to https://gta6takip.blog.',
+      'Reclaimed bottom viewport space on desktop, mobile, and fullscreen Live Chat panels.',
+    ],
+  },
   {
     version: 'v4.2.1',
     dateTr: '28 Kasım 2026',
