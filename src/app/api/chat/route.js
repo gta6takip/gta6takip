@@ -45,6 +45,8 @@ function cleanupMaps(now) {
 }
 
 function getClientIp(request) {
+  const nfIp = request.headers.get('x-nf-client-connection-ip');
+  if (nfIp) return nfIp.trim();
   const xff = request.headers.get('x-forwarded-for');
   if (xff) return xff.split(',')[0].trim();
   return request.headers.get('x-real-ip') || 'unknown';

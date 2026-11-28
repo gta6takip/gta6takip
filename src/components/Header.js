@@ -105,10 +105,10 @@ export function Header({
     );
 
   const navItems = [
-    { id: 'race', icon: Trophy, tr: 'Yarış Tablosu', en: 'Leaderboard' },
-    { id: 'chat', icon: MessageSquare, tr: 'Canlı Sohbet', en: 'Live Chat' },
-    { id: 'system', icon: Cpu, tr: 'Sistem Testi', en: 'System Check' },
-    { id: 'news', icon: Newspaper, tr: 'Haber & DMCA', en: 'News & DMCA' },
+    { id: 'race', icon: Trophy, tr: 'Yarış Tablosu', mobileTr: 'Yarış', en: 'Leaderboard', mobileEn: 'Race' },
+    { id: 'chat', icon: MessageSquare, tr: 'Canlı Sohbet', mobileTr: 'Sohbet', en: 'Live Chat', mobileEn: 'Chat' },
+    { id: 'system', icon: Cpu, tr: 'Sistem Testi', mobileTr: 'Sistem', en: 'System Check', mobileEn: 'System' },
+    { id: 'news', icon: Newspaper, tr: 'Haber & DMCA', mobileTr: 'Haber', en: 'News & DMCA', mobileEn: 'News' },
   ];
 
   const renderOnlinePopover = () =>
@@ -139,7 +139,7 @@ export function Header({
     <header className="sticky top-0 z-40 border-b border-subtle bg-header-glass">
       <div className="max-w-[1380px] mx-auto px-3 sm:px-5 lg:px-6">
         {/* Desktop & Mobile Top Row */}
-        <div className="h-14 flex items-center justify-between gap-2">
+        <div className="h-12 sm:h-14 flex items-center justify-between gap-2">
           {/* Left: Brand + Desktop Inline Nav */}
           <div className="flex items-center gap-3 xl:gap-4 min-w-0 shrink-0">
             <div className="flex items-center gap-2 shrink-0">
@@ -156,10 +156,10 @@ export function Header({
               >
                 <BrandLogoMark />
                 <span className="font-brand inline-flex items-baseline leading-none select-none">
-                  <span className="font-display font-extrabold tracking-tight text-[21px] text-ink">
+                  <span className="font-display font-extrabold tracking-tight text-[20px] sm:text-[21px] text-ink">
                     GTA6
                   </span>
-                  <span className="font-semibold tracking-[0.09em] text-[12px] ml-0.5 text-ink-2">
+                  <span className="font-semibold tracking-[0.09em] text-[11px] sm:text-[12px] ml-0.5 text-ink-2">
                     TAKIP
                   </span>
                 </span>
@@ -168,7 +168,7 @@ export function Header({
               <button
                 type="button"
                 onClick={onOpenChangelog}
-                className="sm:inline-flex lg:hidden xl:inline-flex font-tech px-1.5 py-0.5 text-[10px] font-medium rounded border border-subtle bg-elevated text-ink-2 hover:text-ink hover:border-default ui-tactile"
+                className="hidden sm:inline-flex lg:hidden xl:inline-flex font-tech px-1.5 py-0.5 text-[10px] font-medium rounded border border-subtle bg-elevated text-ink-2 hover:text-ink hover:border-default ui-tactile"
                 title={lang === 'tr' ? 'Sürüm Notları' : 'Release Notes'}
               >
                 {APP_VERSION}
@@ -249,7 +249,21 @@ export function Header({
               {renderOnlinePopover()}
             </div>
 
-            {/* Language Switcher */}
+            {/* Language Switcher (Compact on mobile, dual on sm+) */}
+            <button
+              type="button"
+              onClick={() => onSelectLang(lang === 'tr' ? 'en' : 'tr')}
+              className="inline-flex sm:hidden items-center gap-1 px-2 py-1.5 rounded-md border border-subtle bg-elevated text-[11px] font-semibold text-ink ui-tactile"
+              title={lang === 'tr' ? 'Switch to English' : "Türkçe'ye geç"}
+            >
+              {lang === 'tr' ? (
+                <FlagTR className="w-3 h-2 rounded-[1px]" />
+              ) : (
+                <FlagUS className="w-3 h-2 rounded-[1px]" />
+              )}
+              <span>{lang.toUpperCase()}</span>
+            </button>
+
             <div className="hidden sm:inline-flex items-center rounded-md border border-subtle bg-elevated p-0.5">
               <button
                 type="button"
@@ -273,8 +287,8 @@ export function Header({
               </button>
             </div>
 
-            {/* Theme Switcher */}
-            <div className="relative hidden sm:block" data-dropdown-root="true">
+            {/* Theme Switcher (Always visible on mobile & desktop) */}
+            <div className="relative" data-dropdown-root="true">
               <button
                 type="button"
                 onClick={() => {
@@ -313,11 +327,11 @@ export function Header({
               type="button"
               onClick={onRefresh}
               disabled={syncing}
-              className="hidden sm:inline-flex items-center gap-1 px-2 py-1.5 rounded-md border border-subtle bg-elevated text-xs font-medium text-ink-2 hover:text-ink hover:border-default ui-tactile disabled:opacity-60"
+              className="inline-flex items-center gap-1 px-2 py-1.5 rounded-md border border-subtle bg-elevated text-xs font-medium text-ink-2 hover:text-ink hover:border-default ui-tactile disabled:opacity-60"
               title={lang === 'tr' ? 'Verileri şimdi yenile' : 'Refresh data now'}
             >
               <RefreshCw className={`w-3.5 h-3.5 ${syncing ? 'animate-spin text-accent' : 'text-ink-3'}`} />
-              <span className="font-tech text-[11px]">{countdown}s</span>
+              <span className="hidden sm:inline font-tech text-[11px]">{countdown}s</span>
             </button>
 
             {/* Desktop Chat Dock Toggle (when on Race tab) */}
@@ -380,138 +394,51 @@ export function Header({
           })}
         </div>
 
-        {/* Mobile Compact Utility Strip */}
-        <div className="flex sm:hidden items-center justify-between gap-1.5 pb-2.5 pt-0.5">
-          <div className="inline-flex items-center rounded-md border border-subtle bg-elevated p-0.5">
-            <button
-              type="button"
-              onClick={() => onSelectLang('tr')}
-              className={`inline-flex items-center gap-1 px-2 py-1 rounded text-[11px] font-semibold ${
-                lang === 'tr' ? 'bg-active-pill' : 'text-ink-2'
-              }`}
-            >
-              <FlagTR className="w-3.5 h-2.5 rounded-[1px]" />
-              <span>TR</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => onSelectLang('en')}
-              className={`inline-flex items-center gap-1 px-2 py-1 rounded text-[11px] font-semibold ${
-                lang === 'en' ? 'bg-active-pill' : 'text-ink-2'
-              }`}
-            >
-              <FlagUS className="w-3.5 h-2.5 rounded-[1px]" />
-              <span>EN</span>
-            </button>
-          </div>
-
-          <div className="flex items-center gap-1.5">
-            <div className="relative" data-dropdown-root="true">
+        {/* Mobile Top 4-Tab Bar (Keeps bottom completely clear of Netlify badge) */}
+        <nav
+          className="grid grid-cols-4 sm:hidden border-t border-subtle -mx-3 px-1"
+          aria-label={lang === 'tr' ? 'Mobil Menü' : 'Mobile Navigation'}
+        >
+          {navItems.map((tab) => {
+            const IconComp = tab.icon;
+            const active = activeTab === tab.id;
+            return (
               <button
+                key={tab.id}
                 type="button"
-                onClick={() => {
-                  setOnlineMenuOpen(false);
-                  setThemeMenuOpen((v) => !v);
-                }}
-                className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md border border-subtle bg-elevated text-[11px] font-medium text-ink-2"
+                onClick={() => onSelectTab(tab.id)}
+                className={`relative flex items-center justify-center gap-1.5 h-10 text-[12px] font-medium ui-tactile ${
+                  active ? 'text-ink font-semibold' : 'text-ink-2'
+                }`}
               >
-                <span
-                  className="w-2 h-2 rounded-full shrink-0"
-                  style={{ backgroundColor: theme.dot }}
+                <IconComp
+                  strokeWidth={1.8}
+                  className={`w-3.5 h-3.5 shrink-0 ${active ? 'text-accent' : 'text-ink-3'}`}
                 />
-                <span>{lang === 'tr' ? 'Tema' : 'Theme'}</span>
-                <ChevronDown className="w-3 h-3 text-ink-3" />
+                <span>{lang === 'tr' ? tab.mobileTr : tab.mobileEn}</span>
+                {tab.id === 'chat' && !active && unreadWhileClosed > 0 && (
+                  <span className="font-tech px-1 rounded text-[9px] font-bold bg-accent">
+                    +{unreadWhileClosed}
+                  </span>
+                )}
+                {tab.id === 'chat' && (active || unreadWhileClosed === 0) && chatActiveCount > 0 && (
+                  <span className="font-tech text-[10px] text-ink-3">{chatActiveCount}</span>
+                )}
+                {active && (
+                  <span
+                    className="absolute bottom-0 inset-x-2 h-[2px] rounded-full"
+                    style={{ backgroundColor: 'var(--accent)' }}
+                  />
+                )}
               </button>
-              {renderThemePopover()}
-            </div>
-
-            {!isStandalone && (
-              <button
-                type="button"
-                onClick={onInstallPwa}
-                className="inline-flex items-center gap-1 px-2 py-1 rounded-md border border-subtle bg-elevated text-[11px] font-medium text-ink-2"
-              >
-                <Smartphone className="w-3 h-3 text-ink-3" />
-                <span>{lang === 'tr' ? 'Yükle' : 'App'}</span>
-              </button>
-            )}
-
-            <button
-              type="button"
-              onClick={onRefresh}
-              disabled={syncing}
-              className="inline-flex items-center gap-1 px-2 py-1 rounded-md border border-subtle bg-elevated text-[11px] font-tech text-ink-2"
-            >
-              <RefreshCw className={`w-3 h-3 ${syncing ? 'animate-spin text-accent' : 'text-ink-3'}`} />
-              <span>{countdown}s</span>
-            </button>
-          </div>
-        </div>
+            );
+          })}
+        </nav>
       </div>
     </header>
   );
 }
 
-export function MobileBottomNav({
-  lang,
-  activeTab,
-  onSelectTab,
-  unreadWhileClosed,
-  chatActiveCount,
-  hidden,
-}) {
-  if (hidden) return null;
-
-  const items = [
-    { id: 'race', icon: Trophy, tr: 'Yarış', en: 'Race' },
-    { id: 'chat', icon: MessageSquare, tr: 'Sohbet', en: 'Chat' },
-    { id: 'system', icon: Cpu, tr: 'Sistem', en: 'System' },
-    { id: 'news', icon: Newspaper, tr: 'Haber', en: 'News' },
-  ];
-
-  return (
-    <nav
-      className="fixed bottom-0 inset-x-0 z-40 sm:hidden border-t border-subtle bg-header-glass pb-[env(safe-area-inset-bottom)]"
-      aria-label={lang === 'tr' ? 'Mobil Menü' : 'Mobile Navigation'}
-    >
-      <div className="grid grid-cols-4">
-        {items.map((tab) => {
-          const IconComp = tab.icon;
-          const active = activeTab === tab.id;
-          return (
-            <button
-              key={tab.id}
-              type="button"
-              onClick={() => onSelectTab(tab.id)}
-              className={`relative flex flex-col items-center justify-center gap-1 py-2.5 min-h-[54px] text-[10px] font-medium ui-tactile ${
-                active ? 'text-ink font-semibold' : 'text-ink-3'
-              }`}
-            >
-              {active && (
-                <span
-                  className="absolute top-0 inset-x-4 h-[2px] rounded-full"
-                  style={{ backgroundColor: 'var(--accent)' }}
-                />
-              )}
-              <div className="relative">
-                <IconComp
-                  strokeWidth={1.8}
-                  className={`w-[18px] h-[18px] ${active ? 'text-accent' : ''}`}
-                />
-                {tab.id === 'chat' && !active && unreadWhileClosed > 0 && (
-                  <span className="absolute -top-1.5 -right-3 font-tech px-1 rounded text-[9px] font-bold bg-accent">
-                    +{unreadWhileClosed}
-                  </span>
-                )}
-                {tab.id === 'chat' && !active && unreadWhileClosed === 0 && chatActiveCount > 0 && (
-                  <span className="absolute -top-0.5 -right-1 w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                )}
-              </div>
-              <span>{lang === 'tr' ? tab.tr : tab.en}</span>
-            </button>
-          );
-        })}
-      </div>
-    </nav>
-  );
+export function MobileBottomNav() {
+  return null;
 }

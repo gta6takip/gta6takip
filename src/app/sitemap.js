@@ -1,5 +1,5 @@
 export default function sitemap() {
-  const baseUrl = 'https://gta6takip.vercel.app';
+  const baseUrl = 'https://gta6takip.netlify.app';
   const now = new Date();
 
   return [

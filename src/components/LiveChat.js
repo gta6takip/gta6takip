@@ -117,6 +117,7 @@ export function LiveChat({
   onListScroll,
   unreadWhileScrolled,
   onScrollBottom,
+  chatInputFocused,
   setChatInputFocused,
 }) {
   const isEnRoom = chatRoom === 'en';
@@ -128,8 +129,8 @@ export function LiveChat({
   const containerClass = chatFullscreen
     ? 'fixed inset-0 z-[100] h-[100dvh] flex flex-col bg-canvas overflow-hidden'
     : isDock
-      ? 'h-[calc(100dvh-88px)] rounded-lg border border-subtle bg-surface flex flex-col overflow-hidden'
-      : 'h-[calc(100dvh-186px)] sm:h-[calc(100dvh-116px)] min-h-[480px] rounded-lg border border-subtle bg-surface flex flex-col overflow-hidden';
+      ? 'h-[calc(100dvh-152px)] min-h-[420px] rounded-lg border border-subtle bg-surface flex flex-col overflow-hidden'
+      : 'h-[calc(100dvh-188px)] sm:h-[calc(100dvh-152px)] min-h-[400px] rounded-lg border border-subtle bg-surface flex flex-col overflow-hidden';
 
   return (
     <section
@@ -839,7 +840,12 @@ export function LiveChat({
           </div>
         )}
 
-        <form onSubmit={onSendChat} className="p-2.5 sm:p-3 space-y-2">
+        <form
+          onSubmit={onSendChat}
+          className={`p-2.5 sm:p-3 space-y-2 ${
+            chatFullscreen && !chatInputFocused ? 'pb-[72px]' : ''
+          }`}
+        >
           {/* Nickname Bar: Collapses to sleek identity chip once set! */}
           {!hasValidNick || nickEditing ? (
             <div className="flex items-center gap-2 rounded-md border border-default bg-surface px-2.5 py-1.5 focus-within:border-strong">

@@ -103,7 +103,7 @@ export function Leaderboard({
       </div>
 
       {/* Filters + View Switcher Bar */}
-      <div className="sticky top-[92px] sm:static z-30 -mx-3 px-3 py-2 sm:mx-0 sm:px-0 sm:py-0 bg-header-glass sm:bg-transparent sm:backdrop-blur-none border-b sm:border-b-0 border-subtle flex items-center justify-between gap-2">
+      <div className="sticky top-[89px] sm:static z-30 -mx-3 px-3 py-2 sm:mx-0 sm:px-0 sm:py-0 bg-header-glass sm:bg-transparent sm:backdrop-blur-none border-b sm:border-b-0 border-subtle flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 overflow-x-auto no-scrollbar w-full sm:w-auto">
           {/* GPU Filter */}
           <div className="inline-flex shrink-0 rounded-md border border-subtle bg-elevated p-0.5 text-[11px] font-medium">

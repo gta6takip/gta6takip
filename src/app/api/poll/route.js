@@ -17,6 +17,7 @@ globalThis.__gta6takipMainPoll = store;
 
 function getClientIp(request) {
   return (
+    request.headers.get('x-nf-client-connection-ip')?.trim() ||
     request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
     request.headers.get('x-real-ip') ||
     'unknown'

@@ -355,6 +355,7 @@ export async function GET(request) {
     {
       headers: {
         'Cache-Control': 'public, s-maxage=600, stale-while-revalidate=1800',
+        'Netlify-CDN-Cache-Control': 'public, max-age=600, stale-while-revalidate=1800',
       },
     }
   );

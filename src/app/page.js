@@ -151,16 +151,58 @@ export default function HomePage() {
   const showDesktopDock = isDesktop && activeTab === 'race' && chatDockOpen;
   const chatVisible = activeTab === 'chat' || showDesktopDock;
 
+  const [runtimeSupabaseCfg, setRuntimeSupabaseCfg] = useState({
+    url: (process.env.NEXT_PUBLIC_SUPABASE_URL || '').trim(),
+    key: (process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '').trim(),
+  });
+  const [detectedCountry, setDetectedCountry] = useState(() => guessClientCountry());
+
+  // Always fetch /api/geo once on mount to detect country (Netlify/Vercel) and fallback Supabase public config
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch('/api/geo', { cache: 'no-store' });
+        if (!res.ok || cancelled) return;
+        const data = await res.json().catch(() => null);
+        if (!data || cancelled) return;
+
+        if (data.country && /^[A-Z]{2}$/.test(data.country)) {
+          setDetectedCountry(data.country);
+          viewerCountryRef.current = data.country;
+          try {
+            sessionStorage.setItem('gta6takip_geo_country', data.country);
+          } catch {
+            // Ignore
+          }
+        }
+
+        const rtUrl = typeof data.supabaseUrl === 'string' ? data.supabaseUrl.trim() : '';
+        const rtKey = typeof data.supabaseAnonKey === 'string' ? data.supabaseAnonKey.trim() : '';
+        if (rtUrl && rtKey) {
+          setRuntimeSupabaseCfg((prev) =>
+            prev.url === rtUrl && prev.key === rtKey ? prev : { url: rtUrl, key: rtKey }
+          );
+        }
+      } catch {
+        // Keep local fallback
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const supabaseClient = useMemo(() => {
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    const url = runtimeSupabaseCfg.url;
+    const key = runtimeSupabaseCfg.key;
     if (!url || !key) return null;
     try {
       return createClient(url, key);
     } catch {
       return null;
     }
-  }, []);
+  }, [runtimeSupabaseCfg.url, runtimeSupabaseCfg.key]);
 
   // Track desktop breakpoint (>= 1024px) for Split View
   useEffect(() => {
@@ -550,88 +592,70 @@ export default function HomePage() {
     };
   }, [supabaseClient]);
 
+  // Gentle fallback polling if Supabase Realtime client is unavailable
+  useEffect(() => {
+    if (supabaseClient || !chatVisible) return undefined;
+    const poll = setInterval(() => {
+      if (typeof document !== 'undefined' && document.hidden) return;
+      fetchChatMessages(chatRoomRef.current);
+    }, 20000);
+    return () => clearInterval(poll);
+  }, [supabaseClient, chatVisible]);
+
   // Supabase Online Presence + Geo
   useEffect(() => {
-    const localCountry = guessClientCountry();
-    setCountryStats([{ code: localCountry, count: 1 }]);
+    const viewerCountry = detectedCountry || guessClientCountry();
+    viewerCountryRef.current = viewerCountry;
+    setCountryStats([{ code: viewerCountry, count: 1 }]);
     if (!supabaseClient) return undefined;
 
     let channel;
-    let cancelled = false;
-
-    const initPresence = async () => {
-      let viewerCountry = localCountry;
-      try {
-        const cachedGeo = sessionStorage.getItem('gta6takip_geo_country');
-        if (cachedGeo && /^[A-Z]{2}$/.test(cachedGeo)) {
-          viewerCountry = cachedGeo;
-        } else {
-          const geoRes = await fetch('/api/geo', { cache: 'no-store' });
-          if (geoRes.ok) {
-            const geoJson = await geoRes.json();
-            if (geoJson?.country && /^[A-Z]{2}$/.test(geoJson.country)) {
-              viewerCountry = geoJson.country;
-              sessionStorage.setItem('gta6takip_geo_country', geoJson.country);
+    try {
+      const clientId = `v-${Math.random().toString(36).slice(2, 10)}`;
+      channel = supabaseClient.channel('gta6takip-presence', {
+        config: { presence: { key: clientId } },
+      });
+      channel
+        .on('presence', { event: 'sync' }, () => {
+          const state = channel.presenceState();
+          const entries = Object.values(state);
+          const count = entries.length;
+          if (count > 0) {
+            setOnlineCount(count);
+            let inChatCnt = 0;
+            const countsMap = {};
+            for (const presList of entries) {
+              const latest = Array.isArray(presList) ? presList[presList.length - 1] : null;
+              const code = String(latest?.country || 'TR').toUpperCase();
+              countsMap[code] = (countsMap[code] || 0) + 1;
+              if (latest?.in_chat) inChatCnt += 1;
             }
+            setChatActiveCount(inChatCnt);
+            const sortedStats = Object.entries(countsMap)
+              .map(([code, cnt]) => ({ code, count: cnt }))
+              .sort((a, b) => b.count - a.count);
+            setCountryStats(sortedStats);
           }
-        }
-      } catch {
-        // Use local fallback
-      }
-
-      if (cancelled) return;
-
-      try {
-        const clientId = `v-${Math.random().toString(36).slice(2, 10)}`;
-        channel = supabaseClient.channel('gta6takip-presence', {
-          config: { presence: { key: clientId } },
+        })
+        .subscribe(async (status) => {
+          if (status === 'SUBSCRIBED') {
+            presenceChannelRef.current = channel;
+            await channel.track({
+              online_at: new Date().toISOString(),
+              country: viewerCountryRef.current || viewerCountry,
+              in_chat: chatVisibleRef.current,
+            });
+          }
         });
-        channel
-          .on('presence', { event: 'sync' }, () => {
-            const state = channel.presenceState();
-            const entries = Object.values(state);
-            const count = entries.length;
-            if (count > 0) {
-              setOnlineCount(count);
-              let inChatCnt = 0;
-              const countsMap = {};
-              for (const presList of entries) {
-                const latest = Array.isArray(presList) ? presList[presList.length - 1] : null;
-                const code = String(latest?.country || 'TR').toUpperCase();
-                countsMap[code] = (countsMap[code] || 0) + 1;
-                if (latest?.in_chat) inChatCnt += 1;
-              }
-              setChatActiveCount(inChatCnt);
-              const sortedStats = Object.entries(countsMap)
-                .map(([code, cnt]) => ({ code, count: cnt }))
-                .sort((a, b) => b.count - a.count);
-              setCountryStats(sortedStats);
-            }
-          })
-          .subscribe(async (status) => {
-            if (status === 'SUBSCRIBED') {
-              presenceChannelRef.current = channel;
-              viewerCountryRef.current = viewerCountry;
-              await channel.track({
-                online_at: new Date().toISOString(),
-                country: viewerCountry,
-                in_chat: chatVisibleRef.current,
-              });
-            }
-          });
-      } catch {
-        // Keep default 1
-      }
-    };
-
-    initPresence();
+    } catch {
+      // Keep default 1
+    }
 
     return () => {
-      cancelled = true;
       if (presenceChannelRef.current === channel) presenceChannelRef.current = null;
       if (channel) channel.unsubscribe();
     };
-  }, [supabaseClient]);
+  }, [supabaseClient, detectedCountry]);
 
   // PortWatch Sync
   const fetchSyncData = async () => {
@@ -1147,7 +1171,11 @@ export default function HomePage() {
 
   const handleCopyLink = () => {
     if (typeof navigator !== 'undefined' && navigator.clipboard) {
-      navigator.clipboard.writeText('https://gta6takip.vercel.app/');
+      const shareUrl =
+        typeof window !== 'undefined' && window.location?.origin
+          ? `${window.location.origin}/`
+          : 'https://gta6takip.netlify.app/';
+      navigator.clipboard.writeText(shareUrl);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }
@@ -1166,7 +1194,7 @@ export default function HomePage() {
         },
         body: JSON.stringify({
           name: feedbackName.trim() || 'Anonim Ziyaretçi',
-          email: feedbackEmail.trim() || 'belirtilmedi@gta6takip.vercel.app',
+          email: feedbackEmail.trim() || 'belirtilmedi@gta6takip.netlify.app',
           message: feedbackMsg.trim(),
           _subject: 'GTA6takip — Yeni Tavsiye / Fikir',
           _template: 'table',
@@ -1335,6 +1363,7 @@ export default function HomePage() {
     onListScroll: handleChatListScroll,
     unreadWhileScrolled,
     onScrollBottom: handleScrollChatBottom,
+    chatInputFocused,
     setChatInputFocused,
   };
 
@@ -1493,9 +1522,9 @@ export default function HomePage() {
         )}
       </main>
 
-      {/* CLEAN EDITORIAL FOOTER (No bouncing floating overlays) */}
+      {/* CLEAN EDITORIAL FOOTER (Bottom-padded clear of Netlify badge) */}
       {activeTab !== 'chat' && (
-        <footer className="border-t border-subtle mt-8 pb-24 sm:pb-10 pt-6 px-4">
+        <footer className="border-t border-subtle mt-8 pb-24 sm:pb-20 pt-6 px-4">
           <div className="max-w-[1380px] mx-auto flex flex-col items-center gap-4 text-center text-xs text-ink-3">
             <div className="flex items-center justify-center gap-2 flex-wrap">
               <button
@@ -1521,7 +1550,7 @@ export default function HomePage() {
               </a>
 
               <a
-                href="https://wa.me/?text=GTA%20VI%20PC%20Port%20Takip%3A%20https%3A%2F%2Fgta6takip.vercel.app%2F"
+                href="https://wa.me/?text=GTA%20VI%20PC%20Port%20Takip%3A%20https%3A%2F%2Fgta6takip.netlify.app%2F"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-subtle bg-surface text-ink-2 hover:text-ink hover:border-default ui-tactile"
@@ -1531,7 +1560,7 @@ export default function HomePage() {
               </a>
 
               <a
-                href="https://x.com/intent/tweet?text=GTA%20VI%20PC%20Port%20Takip&url=https%3A%2F%2Fgta6takip.vercel.app%2F"
+                href="https://x.com/intent/tweet?text=GTA%20VI%20PC%20Port%20Takip&url=https%3A%2F%2Fgta6takip.netlify.app%2F"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-subtle bg-surface text-ink-2 hover:text-ink hover:border-default ui-tactile"
@@ -1587,13 +1616,13 @@ export default function HomePage() {
         </footer>
       )}
 
-      {/* Subtle Back-to-top button (non-intrusive, never overlaps chat) */}
+      {/* Subtle Back-to-top button (Bottom-left so it never collides with Netlify bottom-right badge) */}
       {showBackTop && activeTab !== 'chat' && !chatFullscreen && !chatInputFocused && (
         <button
           type="button"
           onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
           aria-label={lang === 'tr' ? 'Yukarı çık' : 'Back to top'}
-          className="fixed bottom-20 right-4 sm:bottom-6 sm:right-6 z-40 w-9 h-9 inline-flex items-center justify-center rounded-md border border-default bg-surface text-ink-2 hover:text-ink hover:border-strong shadow-popover ui-tactile"
+          className="fixed bottom-5 left-4 sm:bottom-6 sm:left-6 z-40 w-9 h-9 inline-flex items-center justify-center rounded-md border border-default bg-surface text-ink-2 hover:text-ink hover:border-strong shadow-popover ui-tactile"
         >
           <ArrowUp className="w-4 h-4" />
         </button>

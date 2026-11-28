@@ -1,4 +1,4 @@
-export const APP_VERSION = 'v4.1.0';
+export const APP_VERSION = 'v4.2.0';
 export const SCORE_SNAPSHOT_KEY = 'gta6takip_prev_scores_v2';
 export const CHAT_CACHE_PREFIX = 'gta6takip_chat_cache_';
 export const INITIAL_TEAMS_LIMIT = 8;
@@ -212,6 +212,21 @@ export const FALLBACK_DMCA = [
 ];
 
 export const CHANGELOG = [
+  {
+    version: 'v4.2.0',
+    dateTr: '28 Kasım 2026',
+    dateEn: 'November 28, 2026',
+    itemsTr: [
+      'Netlify altyapısı tam uyumu: Ülke tespiti (x-nf-geo), gerçek ziyaretçi IP koruması, CDN önbellek başlıkları ve çalışma zamanı Supabase Realtime/Çevrimiçi sayacı yedeği eklendi.',
+      'Mobil navigasyon üst sabit bara taşındı ve masaüstü/mobil sohbet kutusuna alt-sağ güvenlik boşluğu eklendi — Netlify rozeti artık hiçbir butonu kapatmıyor.',
+      'Site paylaşım linkleri, SEO canonical/sitemap ve PWA tema renkleri gta6takip.netlify.app alan adına güncellendi.',
+    ],
+    itemsEn: [
+      'Full Netlify compatibility: added x-nf-geo country detection, client IP headers, Netlify CDN cache headers, and runtime Supabase Realtime/Presence fallback.',
+      'Moved mobile 4-tab navigation into the sticky top header and added bottom clearance to desktop/mobile Live Chat so the Netlify badge never blocks controls.',
+      'Updated canonical URLs, sitemap, share links, and PWA manifest colors for gta6takip.netlify.app.',
+    ],
+  },
   {
     version: 'v4.1.0',
     dateTr: '28 Kasım 2026',
